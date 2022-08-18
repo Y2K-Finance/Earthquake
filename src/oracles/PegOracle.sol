@@ -15,7 +15,7 @@ contract PegOracle{
         require(_oracle1 != address(0), "oracle1 cannot be the zero address");
         require(_oracle2 != address(0), "oracle2 cannot be the zero address");
         require(_oracle1 != _oracle2, "Cannot be same Oracle");
-        require(AggregatorV3Interface(_oracle1).decimals() == AggregatorV3Interface(_oracle2).decimals(), "Decimals must be same");
+        // require(AggregatorV3Interface(_oracle1).decimals() == AggregatorV3Interface(_oracle2).decimals(), "Decimals must be same");
         
         oracle1 = _oracle1;
         oracle2 = _oracle2;
@@ -37,9 +37,10 @@ contract PegOracle{
             uint80 answeredInRound1
         ) = priceFeed1.latestRoundData();
 
-        int decimals = 10e18;
+        //unifying decimals
+        int decimals = 10e18 / int(10**priceFeed1.decimals());
 
-        return (roundID1, ((price1*decimals)/(getOracle2_Price()*decimals)) / decimals, startedAt1, timeStamp1, answeredInRound1);
+        return (roundID1, ((price1*decimals)/(getOracle2_Price()*decimals)) / 10e18, startedAt1, timeStamp1, answeredInRound1);
     }
 
     function getOracle1_Price() public view returns(int price){

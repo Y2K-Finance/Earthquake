@@ -74,7 +74,7 @@ contract VaultFactory {
     @param _fee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     @param _token address of the oracle to lookup the price in chainlink oracles;
-    @param _strikePrice uint256 representing the price to trigger the depeg event;
+    @param _strikePrice uint256 representing the price to trigger the depeg event, needs to be the same decimals as the oracle price;
     @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
     @param  _oracle address representing the smart contract to lookup the price of the given _token param;
@@ -92,6 +92,10 @@ contract VaultFactory {
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
         require(controller != address(0), "Controller is not set!");
+        require(_strikePrice < 100, "Strike price must be less than 99");
+        require(_strikePrice > 0, "Strike price must be greater than 0");
+
+        _strikePrice = 10e17 * _strikePrice;
 
         marketIndex += 1;
 
