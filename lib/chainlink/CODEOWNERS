@@ -1,0 +1,62 @@
+# Chains
+/core/chains/evm/bulletprooftxmanager @samsondav @archseer
+/core/chains/evm/client @spooktheducks @samsondav
+/core/chains/evm/estimator @samsondav @archseer
+/core/chains/evm/headtracker @pinebit @samsondav
+/core/chains/evm/log @jmank88 @spooktheducks 
+/core/chains/evm @samsondav
+/core/chains/terra @connorwstein @jmank88
+
+# Services
+/core/services/cron @spooktheducks @samsondav
+/core/services/directrequest @spooktheducks @connorwstein @samsondav
+/core/services/feeds @jkongie
+/core/services/fluxmonitorv2 @jkongie @PiotrTrzpil @spooktheducks @connorwstein
+/core/services/health @archseer @samsondav
+/core/services/job @spooktheducks @connorwstein @archseer
+/core/services/keeper @smartcontractkit/keepers
+/core/services/keystore @RyanRHall
+/core/services/offchainreporting @spooktheducks @connorwstein @samsondav @archseer
+/core/services/periodicbackup @PiotrTrzpil @samsondav
+/core/services/pg @samsondav
+/core/services/pipeline @spooktheducks @connorwstein @archseer @prashantkumar1982
+/core/services/synchronization
+/core/services/telemetry
+/core/services/vrf @connorwstein @Nic0s @makramkd
+/core/services/webhook @spooktheducks @archseer
+
+# API
+/core/web @jkongie
+
+# CLI
+/core/cmd @jkongie
+
+# UI
+/operator-ui/ @DeividasK @jkongie
+
+# Contracts
+/contracts/ @alexroan @se3000 @connorwstein
+/contracts/**/Keeper* @smartcontractkit/keepers
+
+# Tests
+/integration-tests/ @kalverra
+
+# Misc
+/core/store @archseer @samsondav @jmank88
+/core/chains @samsondav
+/core/logger @jmank88
+/core/internal @samsondav @jmank88 @archseer
+
+# CI/CD
+/.github/** @alexroan @chainchad @HenryNguyen5 @javuto @jkongie @jmank88 @samsondav
+
+# Dependencies
+contracts/scripts/requirements.txt @smartcontractkit/prodsec-public
+.tool-versions @smartcontractkit/prodsec-public
+.nvmrc @smartcontractkit/prodsec-public
+package.json @smartcontractkit/prodsec-public
+yarn.lock @smartcontractkit/prodsec-public
+go.mod @smartcontractkit/prodsec-public
+go.sum @smartcontractkit/prodsec-public
+flake.nix @smartcontractkit/prodsec-public
+flake.lock @smartcontractkit/prodsec-public

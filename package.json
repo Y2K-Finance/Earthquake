@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "prettier": "prettier --write 'src/**/*.sol'",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "prettier": "^2.6.2",
+    "prettier-plugin-solidity": "*",
+    "scripty": "^2.1.0",
+    "solhint": "^3.3.7"
+  }
+}

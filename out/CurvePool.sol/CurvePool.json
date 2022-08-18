@@ -1,0 +1,131 @@
+{
+  "abi": [
+    {
+      "inputs": [],
+      "name": "A",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "A()": "f446c1d0"
+  },
+  "ast": {
+    "absolutePath": "test/interfaces/CurvePool.sol",
+    "id": 20622,
+    "exportedSymbols": {
+      "CurvePool": [
+        20621
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "42:99:6",
+    "nodes": [
+      {
+        "id": 20615,
+        "nodeType": "PragmaDirective",
+        "src": "42:24:6",
+        "literals": [
+          "solidity",
+          ">=",
+          "0.8",
+          ".0"
+        ]
+      },
+      {
+        "id": 20621,
+        "nodeType": "ContractDefinition",
+        "src": "68:72:6",
+        "nodes": [
+          {
+            "id": 20620,
+            "nodeType": "FunctionDefinition",
+            "src": "94:44:6",
+            "functionSelector": "f446c1d0",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "A",
+            "nameLocation": "103:1:6",
+            "parameters": {
+              "id": 20616,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "104:2:6"
+            },
+            "returnParameters": {
+              "id": 20619,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 20618,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 20620,
+                  "src": "129:7:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 20617,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "129:7:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "128:9:6"
+            },
+            "scope": 20621,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "CurvePool",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          20621
+        ],
+        "name": "CurvePool",
+        "nameLocation": "78:9:6",
+        "scope": 20622,
+        "usedErrors": []
+      }
+    ],
+    "license": "AGPL-3.0-only"
+  },
+  "id": 6
+}
