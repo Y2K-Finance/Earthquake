@@ -37,7 +37,7 @@ contract PegOracle{
             uint80 answeredInRound1
         ) = priceFeed1.latestRoundData();
 
-        int256 decimals = priceFeed1.decimals();
+        int decimals = 10e18;
 
         return (roundID1, ((price1*decimals)/(getOracle2_Price()*decimals)) / decimals, startedAt1, timeStamp1, answeredInRound1);
     }

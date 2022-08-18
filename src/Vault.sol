@@ -104,6 +104,13 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         address _controller
     ) SemiFungibleVault(ERC20(_assetAddress), _name, _symbol) {
         require(_fee < 150, "Fee must be less than 15%");
+        require(_riskWithdrawalFee < 150, "Fee must be less than 15%");
+        require(_treasury != address(0), "Treasury address cannot be 0x0");
+        require(_controller != address(0), "Controller address cannot be 0x0");
+        require(_token != address(0), "Token address cannot be 0x0");
+        require(_strikePrice > 0, "Strike price must be greater than 0");
+        //require(_strikePrice > 99999999, "Maximum 8 decimal points");
+
         tokenInsured = _token;
         feeTaken = _fee;
         treasury = _treasury;
@@ -369,6 +376,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyFactory
     {
         require(idExists[epochEnd] == false, "ID_EXISTS");
+        require(epochBegin < epochEnd, "INVALID_EPOCH");
+
         idExists[epochEnd] = true;
         idEpochBegin[epochEnd] = epochBegin;
         epochs.push(epochEnd);

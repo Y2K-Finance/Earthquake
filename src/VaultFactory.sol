@@ -92,8 +92,6 @@ contract VaultFactory {
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
         require(controller != address(0), "Controller is not set!");
-        require(_fee < 1000, "Fee is too high!"); //100% fee is too high
-        require(_withdrawalFee < 1000, "Withdrawal Fee is too high!"); //100% fee is too high
 
         marketIndex += 1;
 
