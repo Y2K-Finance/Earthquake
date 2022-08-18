@@ -78,6 +78,7 @@ contract VaultFactory {
     @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
     @param  _oracle address representing the smart contract to lookup the price of the given _token param;
+    @param  _name string representing the name of the peg market, example: "y2kFRAX_99*AUG";
     @return insr    address of the deployed hedge vault;
     @return rsk     address of the deployed risk vault;
      */
@@ -97,7 +98,7 @@ contract VaultFactory {
 
         marketIndex += 1;
 
-        //y2kUSDC_R99*AUG
+        //y2kFRAX_99*AUG
 
         Vault hedge = new Vault(
             WETH,

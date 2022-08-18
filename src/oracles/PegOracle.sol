@@ -35,30 +35,9 @@ contract PegOracle{
             uint80 answeredInRound1
         ) = priceFeed1.latestRoundData();
 
-        require(price1 > 0, "Chainlink price <= 0");
-        require(answeredInRound1 >= roundID1, "RoundID from Oracle is outdated!");
-        require(timeStamp1 != 0, "Timestamp == 0 !");
-
-        AggregatorV3Interface priceFeed2 = AggregatorV3Interface(
-            oracle2
-        );
-        (
-            uint80 roundID2,
-            int256 price2,
-            ,
-            uint256 timeStamp2,
-            uint80 answeredInRound2
-        ) = priceFeed2.latestRoundData();
-
-        require(price2 > 0, "Chainlink price <= 0");
-        require(answeredInRound2 >= roundID2, "RoundID from Oracle is outdated!");
-        require(timeStamp2 != 0, "Timestamp == 0 !");
-
         int256 decimals = 10e20;
 
-        //require(((timeStamp1 - timeStamp2) <= 5) || (timeStamp2 - timeStamp1) <= 5, "Timestamps are not equal!");
-
-        return (roundID1, ((price1*decimals)/(price2*decimals)) / decimals, startedAt1, timeStamp1, answeredInRound1);
+        return (roundID1, ((price1*decimals)/(getOracle2_Price()*decimals)) / decimals, startedAt1, timeStamp1, answeredInRound1);
     }
 
     function getOracle1_Price() public view returns(int price){
