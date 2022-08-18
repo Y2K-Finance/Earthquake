@@ -178,8 +178,60 @@ contract AssertTest is Test {
         vm.stopPrank();
     }
 
+    function DepositDepeg() public {
+        vm.deal(alice, 10 ether);
+        vm.deal(bob, 20 ether);
+        vm.deal(chad, 100 ether);
+        vm.deal(degen, 200 ether);
+
+        vm.prank(admin);
+        vaultFactory.createNewMarket(10, 50, tokenFRAX, 200000000, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+        
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        //ALICE hedge DEPOSIT
+        vm.startPrank(alice);
+        ERC20(WETH).approve(hedge, 10 ether);
+        vHedge.depositETH{value: 10 ether}(endEpoch, alice);
+
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == (10 ether - vHedge.calculateFeeValue(10 ether)));
+        vm.stopPrank();
+
+        //BOB hedge DEPOSIT
+        vm.startPrank(bob);
+        ERC20(WETH).approve(hedge, 20 ether);
+        vHedge.depositETH{value: 20 ether}(endEpoch, bob);
+
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == (20 ether - vHedge.calculateFeeValue(20 ether)));
+        vm.stopPrank();
+
+        //CHAD risk DEPOSIT
+        vm.startPrank(chad);
+        ERC20(WETH).approve(risk, 100 ether);
+        vRisk.depositETH{value: 100 ether}(endEpoch, chad);
+
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether - vRisk.calculateFeeValue(100 ether)));
+        vm.stopPrank();
+
+        //DEGEN risk DEPOSIT
+        vm.startPrank(degen);
+        ERC20(WETH).approve(risk, 200 ether);
+        vRisk.depositETH{value: 200 ether}(endEpoch, degen);
+
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether - vRisk.calculateFeeValue(200 ether)));
+        vm.stopPrank();
+    }
+
 
     function testController() public{
-        
+
+        DepositDepeg();
+
+        vm.warp();
+
     }
 }
