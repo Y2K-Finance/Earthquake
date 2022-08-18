@@ -6,6 +6,8 @@ import {Vault} from "../src/Vault.sol";
 import {VaultFactory} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
+import "@chainlink/interfaces/AggregatorV3Interface.sol";
+
 
 import {IWETH} from "./interfaces/IWETH.sol";
 
@@ -35,12 +37,13 @@ contract AssertTest is Test {
     address chad = address(4);
     address degen = address(5);
 
-    int256 depegAAA = 99000000;
-    int256 depegBBB = 97000000;
-    int256 depegCCC = 95000000;
+    int256 depegAAA = 99;
+    int256 depegBBB = 97;
+    int256 depegCCC = 95;
+    int256 depegPrice = 109;
 
-    uint256 endEpoch = block.timestamp + 30 days;
-    uint256 beginEpoch = block.timestamp + 2 days;
+    uint256 endEpoch;
+    uint256 beginEpoch;
     
     function setUp() public {
         vaultFactory = new VaultFactory(admin,WETH,admin);
@@ -48,6 +51,9 @@ contract AssertTest is Test {
 
         vm.prank(admin);
         vaultFactory.setController(address(controller));
+
+        endEpoch = block.timestamp + 30 days;
+        beginEpoch = block.timestamp + 2 days;
     }
 
     function testALLMarketsCreation() public {
@@ -56,6 +62,7 @@ contract AssertTest is Test {
         // Create FRAX market
         //index 1
         vaultFactory.createNewMarket(10, 50, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+        assertTrue(Vault(vaultFactory.getVaults(1)[0]).strikePrice() == 99 * 10e16, "Decimals incorrect");
         //index 2
         vaultFactory.createNewMarket(10, 50, tokenFRAX, depegBBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*SET");
         //index 3
@@ -185,7 +192,7 @@ contract AssertTest is Test {
         vm.deal(degen, 200 ether);
 
         vm.prank(admin);
-        vaultFactory.createNewMarket(10, 50, tokenFRAX, 200000000, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(10, 50, tokenFRAX, depegPrice, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
 
         address hedge = vaultFactory.getVaults(1)[0];
         address risk = vaultFactory.getVaults(1)[1];
@@ -227,11 +234,46 @@ contract AssertTest is Test {
     }
 
 
-    function testController() public{
+    function testControllerDepeg() public{
 
         DepositDepeg();
 
-        vm.warp();
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
 
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        vm.warp(beginEpoch + 10 days);
+
+        emit log_named_int("strike price", vHedge.strikePrice());
+        emit log_named_int("oracle price", controller.getLatestPrice(tokenFRAX));
+
+        controller.triggerDepeg(1, endEpoch);
+
+        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL Risk not equal to Total Tvl Hedge");
+        assertTrue(vRisk.totalAssets(endEpoch) == vHedge.idClaimTVL(endEpoch), "Claim TVL Hedge not equal to Total Tvl Risk");
+    }
+
+    function testControllerEndEpoch() public{
+
+        testDeposit();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        vm.warp(endEpoch + 1 days);
+
+        emit log_named_int("strike price", vHedge.strikePrice());
+        emit log_named_int("oracle price", controller.getLatestPrice(tokenFRAX));
+
+        controller.triggerEndEpoch(1, endEpoch);
+
+        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
+        //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
+        assertTrue(0 == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 }

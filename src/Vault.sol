@@ -109,7 +109,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         require(_controller != address(0), "Controller address cannot be 0x0");
         require(_token != address(0), "Token address cannot be 0x0");
         require(_strikePrice > 0, "Strike price must be greater than 0");
-        //require(_strikePrice > 99999999, "Maximum 8 decimal points");
 
         tokenInsured = _token;
         feeTaken = _fee;

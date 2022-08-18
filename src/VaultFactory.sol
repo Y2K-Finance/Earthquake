@@ -92,10 +92,10 @@ contract VaultFactory {
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
         require(controller != address(0), "Controller is not set!");
-        require(_strikePrice < 100, "Strike price must be less than 99");
+        require(_strikePrice < 110, "Strike price must be less than 100");
         require(_strikePrice > 0, "Strike price must be greater than 0");
 
-        _strikePrice = 10e17 * _strikePrice;
+        _strikePrice = 10e16 * _strikePrice;
 
         marketIndex += 1;
 
