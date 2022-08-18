@@ -35,8 +35,8 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     //////////////////////////////////////////////////////////////*/
     ERC20 public immutable asset;
     bytes constant EMPTY = "";
-    string name;
-    string symbol;
+    string public name;
+    string public symbol;
 
     constructor(
         ERC20 _asset,

@@ -16,7 +16,7 @@ contract Controller {
     event DepegInsurance(
         uint256 index,
         uint256 epoch,
-        string tokenName,
+        string name,
         uint256 time,
         int256 depegPrice        
     );
@@ -108,7 +108,7 @@ contract Controller {
         emit DepegInsurance(
             marketIndex,
             mintId,
-            insrVault.tokenName(),
+            insrVault.name(),
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())            
         );
@@ -152,7 +152,7 @@ contract Controller {
         emit DepegInsurance(
             marketIndex,
             mintId,
-            insrVault.tokenName(),
+            insrVault.name(),
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())            
         );

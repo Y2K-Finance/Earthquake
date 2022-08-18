@@ -2,14 +2,12 @@
 pragma solidity 0.8.15;
 
 import {SemiFungibleVault} from "./SemiFungibleVault.sol";
-import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Vault is SemiFungibleVault, ReentrancyGuard {
-    using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
     uint256[] public epochs;
@@ -73,8 +71,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     int256 public immutable strikePrice;
     address private immutable Factory;
     address public controller;
-    string public tokenName;
-    string public tokenSymbol;
     uint256 public withdrawalFee;
 
     /*//////////////////////////////////////////////////////////////
@@ -111,8 +107,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         Factory = msg.sender;
         controller = _controller;
         timewindow = 1 days;
-        tokenName = _name;
-        tokenSymbol = _symbol;
         withdrawalFee = _riskWithdrawalFee;
     }
 
@@ -144,7 +138,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         uint256 sharesMinusFee = beforeDeposit(shares);
         // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), sharesMinusFee);
+        asset.transferFrom(msg.sender, address(this), sharesMinusFee);
 
         _mint(receiver, id, sharesMinusFee, EMPTY);
 
@@ -188,7 +182,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         uint256 assetsMinusFee = beforeDeposit(assets);
 
         // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), assetsMinusFee);
+        asset.transferFrom(msg.sender, address(this), assetsMinusFee);
 
         _mint(receiver, id, assetsMinusFee, EMPTY);
 
@@ -238,10 +232,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         //Taking fee from the amount
         uint feeValue = calculateWithdrawalFeeValue(entitledShares);
         entitledShares = entitledShares - feeValue;
-        asset.safeTransfer(treasury, feeValue);
+        asset.transfer(treasury, feeValue);
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
-        asset.safeTransfer(receiver, entitledShares);
+        asset.transfer(receiver, entitledShares);
 
         return entitledShares;
     }
@@ -278,10 +272,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         //Taking fee from the amount
         uint feeValue = calculateWithdrawalFeeValue(entitledAssets);
         entitledAssets = entitledAssets - feeValue;
-        asset.safeTransfer(treasury, feeValue);
+        asset.transfer(treasury, feeValue);
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledAssets);
-        asset.safeTransfer(receiver, entitledAssets);
+        asset.transfer(receiver, entitledAssets);
 
         return entitledAssets;
     }
@@ -411,7 +405,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyController
         marketExists(id)
     {
-        asset.safeTransfer(_counterparty, idFinalTVL[id]);
+        asset.transfer(_counterparty, idFinalTVL[id]);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -430,7 +424,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         uint256 feeValue = calculateFeeValue(shares);
         uint256 valueMinusFee = shares - feeValue;
         //Payment of fee
-        asset.safeTransferFrom(msg.sender, treasury, feeValue);
+        asset.transferFrom(msg.sender, treasury, feeValue);
 
         return valueMinusFee;
     }

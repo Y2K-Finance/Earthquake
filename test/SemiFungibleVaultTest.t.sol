@@ -100,7 +100,7 @@ contract SemiFungibleVaultTest is Test {
 
         (address insurance, ) = testCreationNewVaultsDepeg();
 
-        emit log(Vault(insurance).tokenName());
+        emit log(Vault(insurance).name());
 
         vm.startPrank(user);
 

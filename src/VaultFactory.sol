@@ -21,7 +21,7 @@ contract VaultFactory {
         int256 price,
         uint256 startEpoch,
         uint256 endEpoch,
-        string tokenName
+        string name
     );
 
     event controllerSet(address indexed newController);
@@ -178,7 +178,7 @@ contract VaultFactory {
             Vault(hedge).strikePrice(),
             beginEpoch,
             endEpoch,
-            Vault(hedge).tokenName()
+            Vault(hedge).name()
         );
     }
 
