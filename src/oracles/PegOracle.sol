@@ -2,24 +2,37 @@
 pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
+import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
+
 
 contract PegOracle {
+    using FixedPointMathLib for int256;
+
     /***
     @dev  for example: oracle1 would be stETH / USD, while oracle2 would be ETH / USD oracle
     ***/
     address public oracle1;
     address public oracle2;
 
+    uint8 public decimals;
+
+    AggregatorV3Interface internal priceFeed1;
+    AggregatorV3Interface internal priceFeed2;
+
+
     constructor(address _oracle1, address _oracle2) {
         require(_oracle1 != address(0), "oracle1 cannot be the zero address");
         require(_oracle2 != address(0), "oracle2 cannot be the zero address");
         require(_oracle1 != _oracle2, "Cannot be same Oracle");
-        require((AggregatorV3Interface(_oracle1).decimals() <= 18) &&
-         (AggregatorV3Interface(_oracle2).decimals() <= 18), 
-         "Decimals must be less or equal to 18");
+        priceFeed1 = AggregatorV3Interface(_oracle1);
+        priceFeed2 = AggregatorV3Interface(_oracle2);
+        require((priceFeed1.decimals() == priceFeed2.decimals()), 
+        "Decimals must be the same");
 
         oracle1 = _oracle1;
         oracle2 = _oracle2;
+
+        decimals = priceFeed1.decimals();
     }
 
     function latestRoundData()
@@ -33,8 +46,7 @@ contract PegOracle {
             uint80 answeredInRound
         )
     {
-        AggregatorV3Interface priceFeed1 = AggregatorV3Interface(oracle1);
-        AggregatorV3Interface priceFeed2 = AggregatorV3Interface(oracle2);
+
         (
             uint80 roundID1,
             int256 price1,
@@ -43,13 +55,20 @@ contract PegOracle {
             uint80 answeredInRound1
         ) = priceFeed1.latestRoundData();
 
-        //unifying decimals
-        int256 decimals1 = 10e18 / int256(10**priceFeed1.decimals());
-        int256 decimals2 = 10e18 / int256(10**priceFeed2.decimals());
+        int256 price2 = getOracle2_Price();
+
+        if(price1 > price2){
+            nowPrice = (price2*10000) / price1;
+        } else {
+            nowPrice = (price1*10000) / price2;
+        }
+
+        int256 decimals10 = int256(10**(18 - priceFeed1.decimals()));
+        nowPrice = nowPrice * decimals10;
 
         return (
             roundID1,
-            ((price1 * decimals1) / (getOracle2_Price() * decimals2)) / 10e18,
+            nowPrice/1000000,
             startedAt1,
             timeStamp1,
             answeredInRound1
@@ -57,7 +76,7 @@ contract PegOracle {
     }
 
     function getOracle1_Price() public view returns (int256 price) {
-        AggregatorV3Interface priceFeed1 = AggregatorV3Interface(oracle1);
+
         (
             uint80 roundID1,
             int256 price1,
@@ -77,22 +96,21 @@ contract PegOracle {
     }
 
     function getOracle2_Price() public view returns (int256 price) {
-        AggregatorV3Interface priceFeed1 = AggregatorV3Interface(oracle2);
         (
-            uint80 roundID1,
-            int256 price1,
+            uint80 roundID2,
+            int256 price2,
             ,
-            uint256 timeStamp1,
-            uint80 answeredInRound1
-        ) = priceFeed1.latestRoundData();
+            uint256 timeStamp2,
+            uint80 answeredInRound2
+        ) = priceFeed2.latestRoundData();
 
-        require(price1 > 0, "Chainlink price <= 0");
+        require(price2 > 0, "Chainlink price <= 0");
         require(
-            answeredInRound1 >= roundID1,
+            answeredInRound2 >= roundID2,
             "RoundID from Oracle is outdated!"
         );
-        require(timeStamp1 != 0, "Timestamp == 0 !");
+        require(timeStamp2 != 0, "Timestamp == 0 !");
 
-        return price1;
+        return price2;
     }
 }

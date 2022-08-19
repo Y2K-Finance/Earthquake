@@ -3,18 +3,22 @@ pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
-contract DepegOracle {
+contract FakeOracle {
 
     address public oracle;
     AggregatorV3Interface public priceFeed;
 
-    uint8 public decimals = 18;
+    uint8 public decimals;
+    int256 public priceSimulation;
 
-    constructor (address _oracle) {
+    constructor (address _oracle, int256 _priceSimulation) {
         require(_oracle != address(0), "oracle cannot be the zero address");
-        require(AggregatorV3Interface(_oracle).decimals() <= 18, "Decimals must be less or equal to 18");
         oracle = _oracle;
         priceFeed = AggregatorV3Interface(_oracle);
+
+        priceSimulation = _priceSimulation;
+        decimals = priceFeed.decimals();
+
     }
 
     function latestRoundData()
@@ -31,11 +35,11 @@ contract DepegOracle {
         (
             uint80 roundID,
             ,
-            ,
+            uint256 startedAt,
             uint256 timeStamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        return (roundID, 8888888888888888888, 0, timeStamp, answeredInRound);
+        return (roundID, priceSimulation, startedAt, timeStamp, answeredInRound);
     }
 }

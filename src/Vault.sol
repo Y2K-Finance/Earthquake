@@ -259,6 +259,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     function changeController(address _controller) public onlyFactory {
+        require(_controller != address(0), "Controller address cannot be 0");
         controller = _controller;
     }
 
