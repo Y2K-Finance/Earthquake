@@ -133,7 +133,7 @@ contract AssertTest is Test {
         // Create FRAX market
         //index 1
         vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
-        // assertTrue(Vault(vaultFactory.getVaults(1)[0]).strikePrice() == 99 * 10e16, "Decimals incorrect");
+        assertTrue(Vault(vaultFactory.getVaults(1)[0]).strikePrice() == 99 * 10e16, "Decimals incorrect");
         //index 2
         vaultFactory.createNewMarket(50, tokenFRAX, depegBBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*SET");
         //index 3
@@ -443,19 +443,33 @@ function Deposit(uint256 _index) public {
         assets = vHedge.balanceOf(alice,endEpoch);
         vHedge.withdraw(endEpoch, assets, alice, alice);
 
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
+        uint256 entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(alice));
+
         vm.stopPrank();
 
         //BOB hedge WITHDRAW
         vm.startPrank(bob);
         assets = vHedge.balanceOf(bob,endEpoch);
         vHedge.withdraw(endEpoch, assets, bob, bob);
+        
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == 0);
+        entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
+
+        emit log_named_uint("hedge balance", ERC20(WETH).balanceOf(address(vHedge)));
 
         //CHAD risk WITHDRAW
         vm.startPrank(chad);
         assets = vRisk.balanceOf(chad,endEpoch);
         vRisk.withdraw(endEpoch, assets, chad, chad);
+
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == 0);
+        entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -464,7 +478,13 @@ function Deposit(uint256 _index) public {
         assets = vRisk.balanceOf(degen,endEpoch);
         vRisk.withdraw(endEpoch, assets, degen, degen);
 
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == 0);
+        entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(degen));
+
         vm.stopPrank();
+
+        emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
 
     }
 
@@ -484,19 +504,33 @@ function Deposit(uint256 _index) public {
         assets = vHedge.balanceOf(alice,endEpoch);
         vHedge.withdraw(endEpoch, assets, alice, alice);
 
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
+        uint256 entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(alice));
+
         vm.stopPrank();
 
         //BOB hedge WITHDRAW
         vm.startPrank(bob);
         assets = vHedge.balanceOf(bob,endEpoch);
         vHedge.withdraw(endEpoch, assets, bob, bob);
+        
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == 0);
+        entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
+
+        emit log_named_uint("hedge balance", ERC20(WETH).balanceOf(address(vHedge)));
 
         //CHAD risk WITHDRAW
         vm.startPrank(chad);
         assets = vRisk.balanceOf(chad,endEpoch);
         vRisk.withdraw(endEpoch, assets, chad, chad);
+
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == 0);
+        entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -505,7 +539,12 @@ function Deposit(uint256 _index) public {
         assets = vRisk.balanceOf(degen,endEpoch);
         vRisk.withdraw(endEpoch, assets, degen, degen);
 
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == 0);
+        entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(degen));
+
         vm.stopPrank();
 
+        emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
     }
 }
