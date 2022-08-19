@@ -184,16 +184,20 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        if(priceFeed.decimals() != 18){
-            int256 decimals = 10e18 / int256(10**priceFeed.decimals());
-            price = price * decimals; 
-        }
-            
         
-        require(price > 0, "Chainlink price <= 0");
+        int256 decimals = 10e18 / int256(10**priceFeed.decimals());
+        price = price * decimals; 
+        
+        require(price > 0, "Oracle price <= 0");
         require(answeredInRound >= roundID, "RoundID from Oracle is outdated!");
         require(timeStamp != 0, "Timestamp == 0 !");
 
         return price;
     }
+
+
+    function getVaultFactory() external view returns (address) {
+        return address(vaultFactory);
+    }
+
 }
