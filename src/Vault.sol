@@ -2,15 +2,13 @@
 pragma solidity 0.8.15;
 
 import {SemiFungibleVault} from "./SemiFungibleVault.sol";
-import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Vault is SemiFungibleVault, ReentrancyGuard {
-    // @audit assumes that asset is WETH no need for SafeTransferLib
-    using SafeTransferLib for ERC20;
+    // @audit assumes that asset is WETH no need for transferLib
     using FixedPointMathLib for uint256;
 
     uint256[] public epochs;
@@ -51,8 +49,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
-    // @audit change to EpochHasNotStarted
-    modifier EpochHasStarted(uint256 id) {
+    modifier EpochHasNotStarted(uint256 id) {
         require(
             block.timestamp < idEpochBegin[id] - timewindow,
             "Deposit time is over, Epoch has already started!"
@@ -138,14 +135,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         override
         // @audit can be external as no parameters have sideeffects
         marketExists(id)
-        EpochHasStarted(id)
+        EpochHasNotStarted(id)
         nonReentrant
         returns (uint256 shares)
     {
         // Check for rounding error since we round down in previewDeposit.
         require((shares = previewDeposit(id, assets)) != 0, "ZERO_SHARES");
 
-        asset.safeTransferFrom(msg.sender, address(this), shares);
+        asset.transferFrom(msg.sender, address(this), shares);
 
         _mint(receiver, id, shares, EMPTY);
 
@@ -169,52 +166,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     /**
-        @notice Mint function from ERC4626, with payment of a fee to a treasury implemented;
-        @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
-        @param  shares  uint256 representing how many assets the user wants to mint, a fee will be taken from this value;
-        @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the transfered asset;
-        @return assets how many assets the owner is entitled to, removing the fee from it's shares;
-     */
-    // @audit pollutes contract
-    function mint(
-        uint256 id,
-        uint256 shares,
-        address receiver
-    )
-        public
-        override
-        marketExists(id)
-        EpochHasStarted(id)
-        nonReentrant
-        returns (uint256 assets)
-    {
-        assets = previewMint(id, shares); // No need to check for rounding error, previewMint rounds up.
-
-        // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), assets);
-
-        _mint(receiver, id, assets, EMPTY);
-
-        emit Deposit(msg.sender, receiver, id, assets, shares);
-
-        return assets;
-    }
-
-    // @audit pollutes contract
-    function mintETH(uint256 id, address receiver)
-        external
-        payable
-        returns (uint256 shares)
-    {
-        require(msg.value > 0, "ETH amount must be greater than 0");
-
-        IWETH(address(asset)).deposit{value: msg.value}();
-        assert(IWETH(address(asset)).transfer(msg.sender, msg.value));
-
-        return mint(id, msg.value, receiver);
-    }
-
-    /**
     @notice Withdraw entitled deposited assets, checking if a depeg event //TODO add GOV token rewards
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
@@ -228,9 +179,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         address receiver,
         address owner
     )
-        public
+        external
         override
-        // @audit can be external as no parameters have sideeffects
         EpochHasEnded(id)
         marketExists(id)
         returns (uint256 shares)
@@ -250,57 +200,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         //Taking fee from the amount
         uint256 feeValue = calculateWithdrawalFeeValue(entitledShares);
         entitledShares = entitledShares - feeValue;
-        asset.safeTransfer(treasury, feeValue);
+        asset.transfer(treasury, feeValue);
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
-        asset.safeTransfer(receiver, entitledShares);
+        asset.transfer(receiver, entitledShares);
 
         return entitledShares;
     }
 
-    /**
-    @notice Redeem entitled deposited assets, checking if a depeg event //TODO add GOV token rewards
-    @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
-    @param shares   uint256 of how many shares you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
-    @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the transfered asset;
-    @param owner    address of the owner of these said assets;
-    @return assets how many assets the owner is entitled to, according to the conditions;
-     */
-    function redeem(
-        uint256 id,
-        uint256 shares,
-        address receiver,
-        address owner
-    )
-        public
-        override
-        // @audit can be external as no parameters have sideeffects
-        EpochHasEnded(id)
-        marketExists(id)
-        returns (uint256 assets)
-    {
-        require(
-            msg.sender == owner || isApprovedForAll(owner, receiver),
-            "Owner needs to approve receiver for all"
-        );
-
-        assets = previewWithdraw(id, shares); // No need to check for rounding error, previewWithdraw rounds up.
-
-        // Check for rounding error since we round down in previewRedeem.
-        require((assets = previewRedeem(id, shares)) != 0, "ZERO_ASSETS");
-        uint256 entitledAssets = beforeWithdraw(id, assets);
-        _burn(owner, id, shares);
-
-        //Taking fee from the amount
-        uint256 feeValue = calculateWithdrawalFeeValue(entitledAssets);
-        entitledAssets = entitledAssets - feeValue;
-        asset.safeTransfer(treasury, feeValue);
-
-        emit Withdraw(msg.sender, receiver, owner, id, assets, entitledAssets);
-        asset.safeTransfer(receiver, entitledAssets);
-
-        return entitledAssets;
-    }
 
     /*///////////////////////////////////////////////////////////////
                            ACCOUNTING LOGIC
@@ -412,7 +319,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyController
         marketExists(id)
     {
-        asset.safeTransfer(_counterparty, idFinalTVL[id]);
+        asset.transfer(_counterparty, idFinalTVL[id]);
     }
 
     /*///////////////////////////////////////////////////////////////
