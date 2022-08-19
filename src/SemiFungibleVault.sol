@@ -93,8 +93,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         address receiver,
         address owner
     ) public virtual returns (uint256 shares) {
-        require(msg.sender == owner || isApprovedForAll(owner, receiver), "Only owner can withdraw, or owner has approved receiver for all");
-        
+        require(
+            msg.sender == owner || isApprovedForAll(owner, receiver),
+            "Only owner can withdraw, or owner has approved receiver for all"
+        );
+
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         beforeWithdraw(id, assets, shares);
@@ -110,8 +113,10 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         address receiver,
         address owner
     ) public virtual returns (uint256 assets) {
-        
-        require(msg.sender == owner || isApprovedForAll(owner, receiver), "Only owner can withdraw, or owner has approved receiver for all");
+        require(
+            msg.sender == owner || isApprovedForAll(owner, receiver),
+            "Only owner can withdraw, or owner has approved receiver for all"
+        );
 
         // Check for rounding error since we round down in previewRedeem.
         require((assets = previewRedeem(id, shares)) != 0, "ZERO_ASSETS");
@@ -244,6 +249,4 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         uint256 assets,
         uint256 shares
     ) internal virtual {}
-
-
 }

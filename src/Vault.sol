@@ -51,6 +51,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
+    // @audit change to EpochHasNotStarted
     modifier EpochHasStarted(uint256 id) {
         require(
             block.timestamp < idEpochBegin[id] - timewindow,
@@ -72,13 +73,17 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     address public immutable tokenInsured;
+    // @audit id can be uint8 as never over 150
     uint256 public feeTaken;
     address private treasury;
+    // @audit id can be int128
     int256 public immutable strikePrice;
     address private immutable Factory;
     address public controller;
+    // @audit already provided in SemiFungibleVault
     string public tokenName;
     string public tokenSymbol;
+    // @audit id can be uint8
     uint256 public withdrawalFee;
 
     /*//////////////////////////////////////////////////////////////
@@ -144,6 +149,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
+        // @audit can be external as no parameters have sideeffects
         marketExists(id)
         EpochHasStarted(id)
         nonReentrant
@@ -165,6 +171,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return sharesMinusFee;
     }
 
+    // @audit pollutes contract
     function depositETH(uint256 id, address receiver)
         external
         payable
@@ -185,6 +192,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the transfered asset;
         @return assets how many assets the owner is entitled to, removing the fee from it's shares;
      */
+    // @audit pollutes contract
     function mint(
         uint256 id,
         uint256 shares,
@@ -213,6 +221,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return assetsMinusFee;
     }
 
+    // @audit pollutes contract
     function mintETH(uint256 id, address receiver)
         external
         payable
@@ -242,6 +251,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
+        // @audit can be external as no parameters have sideeffects
         EpochHasEnded(id)
         marketExists(id)
         returns (uint256 shares)
@@ -285,6 +295,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
+        // @audit can be external as no parameters have sideeffects
         EpochHasEnded(id)
         marketExists(id)
         returns (uint256 assets)

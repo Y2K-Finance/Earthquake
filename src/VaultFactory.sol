@@ -27,11 +27,13 @@ contract VaultFactory {
     event controllerSet(address indexed newController);
 
     event changedTreasury(address _treasury, uint256 indexed _marketIndex);
-    event changedVaultFee(uint indexed _marketIndex, uint _feeRate);
-    event changeWithdrawalFee(uint indexed _marketIndex, uint _feeRate);
-    event changedTimeWindow(uint indexed _marketIndex, uint _timeWindow);
-    event changedController(uint indexed _marketIndex, address indexed controller);
-
+    event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
+    event changeWithdrawalFee(uint256 indexed _marketIndex, uint256 _feeRate);
+    event changedTimeWindow(uint256 indexed _marketIndex, uint256 _timeWindow);
+    event changedController(
+        uint256 indexed _marketIndex,
+        address indexed controller
+    );
 
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
@@ -54,11 +56,15 @@ contract VaultFactory {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _treasury, address _WETH, address _admin) {
+    constructor(
+        address _treasury,
+        address _WETH,
+        address _admin
+    ) {
         require(_admin != address(0), "admin cannot be the zero address");
         require(_WETH != address(0), "WETH cannot be the zero address");
         require(_treasury != address(0), "treasury cannot be the zero address");
-        
+
         Admin = _admin;
         WETH = _WETH;
         marketIndex = 0;
@@ -91,10 +97,13 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
+        // @audit should be IController(controller).vaultFactory == address(this)
         require(controller != address(0), "Controller is not set!");
         require(_strikePrice < 110, "Strike price must be less than 100");
         require(_strikePrice > 0, "Strike price must be greater than 0");
 
+        // @audit require IERC20(_token).decimals() <= 18
+        // @audit should be 10**(18 - IERC20(_token).decimals())
         _strikePrice = 10e16 * _strikePrice;
 
         marketIndex += 1;
@@ -145,7 +154,6 @@ contract VaultFactory {
             epochBegin,
             epochEnd,
             _name
-
         );
 
         return (address(hedge), address(risk));
@@ -170,7 +178,6 @@ contract VaultFactory {
         Vault(risk).createAssets(beginEpoch, endEpoch);
 
         indexEpochs[marketIndex].push(endEpoch);
-
 
         emit PegMarketCreated(
             marketIndex,
@@ -204,7 +211,6 @@ contract VaultFactory {
         public
         onlyAdmin
     {
-
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
         Vault risk = Vault(vaults[1]);
@@ -223,7 +229,6 @@ contract VaultFactory {
         public
         onlyAdmin
     {
-
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
         Vault risk = Vault(vaults[1]);
@@ -265,7 +270,7 @@ contract VaultFactory {
         onlyAdmin
     {
         require(_controller != address(0), "Controller address cannot be 0x0");
-        
+
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
         Vault risk = Vault(vaults[1]);
@@ -291,5 +296,4 @@ contract VaultFactory {
     {
         return indexVaults[index];
     }
-
 }
