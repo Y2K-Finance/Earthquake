@@ -460,6 +460,8 @@ function Deposit(uint256 _index) public {
 
         vm.stopPrank();
 
+        emit log_named_uint("hedge balance", ERC20(WETH).balanceOf(address(vHedge)));
+
         //CHAD risk WITHDRAW
         vm.startPrank(chad);
         assets = vRisk.balanceOf(chad,endEpoch);
@@ -481,6 +483,8 @@ function Deposit(uint256 _index) public {
         assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(degen));
 
         vm.stopPrank();
+
+        emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
 
     }
 
@@ -517,6 +521,8 @@ function Deposit(uint256 _index) public {
 
         vm.stopPrank();
 
+        emit log_named_uint("hedge balance", ERC20(WETH).balanceOf(address(vHedge)));
+
         //CHAD risk WITHDRAW
         vm.startPrank(chad);
         assets = vRisk.balanceOf(chad,endEpoch);
@@ -539,5 +545,6 @@ function Deposit(uint256 _index) public {
 
         vm.stopPrank();
 
+        emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
     }
 }
