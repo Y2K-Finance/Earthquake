@@ -184,8 +184,11 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        int256 decimals = 10e18 / int256(10**priceFeed.decimals());
-        price = price * decimals;
+        if(priceFeed.decimals() != 18){
+            int256 decimals = 10e18 / int256(10**priceFeed.decimals());
+            price = price * decimals; 
+        }
+            
         
         require(price > 0, "Chainlink price <= 0");
         require(answeredInRound >= roundID, "RoundID from Oracle is outdated!");
