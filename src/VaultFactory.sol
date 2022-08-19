@@ -3,6 +3,10 @@ pragma solidity 0.8.15;
 
 import {Vault} from "./Vault.sol";
 
+interface IController {
+    function getVaultFactory() external view returns (address);
+}
+
 contract VaultFactory {
     address public immutable Admin;
     address public immutable WETH;
@@ -95,10 +99,10 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
-        // @audit should be IController(controller).vaultFactory == address(this)
+        require(IController(controller).getVaultFactory() == address(this), "Vault Factory not set in Controller to this address");
         require(controller != address(0), "Controller is not set!");
         require(_strikePrice < 100, "Strike price must be less than 100");
-        require(_strikePrice > 0, "Strike price must be greater than 0");
+        require(_strikePrice > 10, "Strike price must be greater than 10");
 
         _strikePrice = _strikePrice * 10e16;
 

@@ -196,4 +196,10 @@ contract Controller {
 
         return price;
     }
+
+
+    function getVaultFactory() external view returns (address) {
+        return address(vaultFactory);
+    }
+
 }
