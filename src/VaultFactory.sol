@@ -100,9 +100,7 @@ contract VaultFactory {
         require(_strikePrice < 110, "Strike price must be less than 100");
         require(_strikePrice > 0, "Strike price must be greater than 0");
 
-        // @audit require IERC20(_token).decimals() <= 18
-        // @audit should be 10**(18 - IERC20(_token).decimals())
-        _strikePrice = 10e16 * _strikePrice;
+        _strikePrice = _strikePrice * 10e16;
 
         marketIndex += 1;
 

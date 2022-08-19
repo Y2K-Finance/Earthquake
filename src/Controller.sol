@@ -97,9 +97,8 @@ contract Controller {
         insrVault.setClaimTVL(mintId, riskVault.idFinalTVL(mintId));
         riskVault.setClaimTVL(mintId, insrVault.idFinalTVL(mintId));
 
-        // @audit should be address(riskVault) or address(insrVault)
-        insrVault.sendTokens(mintId, vaultsAddress[1]);
-        riskVault.sendTokens(mintId, vaultsAddress[0]);
+        insrVault.sendTokens(mintId, address(riskVault));
+        riskVault.sendTokens(mintId, address(insrVault));
 
         emit VaultTVL(
             riskVault.idClaimTVL(mintId),
@@ -143,8 +142,7 @@ contract Controller {
 
         insrVault.setClaimTVL(mintId, 0);
         riskVault.setClaimTVL(mintId, insrVault.idFinalTVL(mintId));
-        // @audit sendt to address(riskVault) for clarity
-        insrVault.sendTokens(mintId, vaultsAddress[1]);
+        insrVault.sendTokens(mintId, address(riskVault));
 
         emit VaultTVL(
             riskVault.idClaimTVL(mintId),
@@ -186,10 +184,9 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        // @audit 10**(18 - priceFeed1.decimals())
         int256 decimals = 10e18 / int256(10**priceFeed.decimals());
         price = price * decimals;
-
+        
         require(price > 0, "Chainlink price <= 0");
         require(answeredInRound >= roundID, "RoundID from Oracle is outdated!");
         require(timeStamp != 0, "Timestamp == 0 !");

@@ -8,7 +8,6 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Vault is SemiFungibleVault, ReentrancyGuard {
-    // @audit assumes that asset is WETH no need for transferLib
     using FixedPointMathLib for uint256;
 
     uint256[] public epochs;
@@ -133,7 +132,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
-        // @audit can be external as no parameters have sideeffects
         marketExists(id)
         EpochHasNotStarted(id)
         nonReentrant
@@ -151,7 +149,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return shares;
     }
 
-    // @audit pollutes contract
     function depositETH(uint256 id, address receiver)
         external
         payable

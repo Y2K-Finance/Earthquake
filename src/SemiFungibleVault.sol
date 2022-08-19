@@ -70,29 +70,12 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         afterDeposit(id, assets, shares);
     }
 
-    function mint(
-        uint256 id,
-        uint256 shares,
-        address receiver
-    ) public virtual returns (uint256 assets) {
-        assets = previewMint(id, shares); // No need to check for rounding error, previewMint rounds up.
-
-        // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), assets);
-
-        _mint(receiver, id, assets, EMPTY);
-
-        emit Deposit(msg.sender, receiver, id, assets, shares);
-
-        afterDeposit(id, assets, shares);
-    }
-
     function withdraw(
         uint256 id,
         uint256 assets,
         address receiver,
         address owner
-    ) public virtual returns (uint256 shares) {
+    ) external virtual returns (uint256 shares) {
         require(
             msg.sender == owner || isApprovedForAll(owner, receiver),
             "Only owner can withdraw, or owner has approved receiver for all"
@@ -100,26 +83,6 @@ abstract contract SemiFungibleVault is ERC1155Supply {
 
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.
 
-        beforeWithdraw(id, assets, shares);
-        _burn(owner, id, shares);
-
-        emit Withdraw(msg.sender, receiver, owner, id, assets, shares);
-        asset.safeTransfer(receiver, assets);
-    }
-
-    function redeem(
-        uint256 id,
-        uint256 shares,
-        address receiver,
-        address owner
-    ) public virtual returns (uint256 assets) {
-        require(
-            msg.sender == owner || isApprovedForAll(owner, receiver),
-            "Only owner can withdraw, or owner has approved receiver for all"
-        );
-
-        // Check for rounding error since we round down in previewRedeem.
-        require((assets = previewRedeem(id, shares)) != 0, "ZERO_ASSETS");
         beforeWithdraw(id, assets, shares);
         _burn(owner, id, shares);
 
