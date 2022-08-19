@@ -9,6 +9,7 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Vault is SemiFungibleVault, ReentrancyGuard {
+    // @audit assumes that asset is WETH no need for SafeTransferLib
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -21,8 +22,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
     mapping(uint256 => uint256) public idFinalTVL;
     mapping(uint256 => uint256) public idClaimTVL;
+    // @audit uint32 for timestamp is enough for the next 80 years
     mapping(uint256 => uint256) public idEpochBegin;
+    // @audit id can be uint32
     mapping(uint256 => bool) public idDepegged;
+    // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
 
     /*//////////////////////////////////////////////////////////////
@@ -47,6 +51,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
+    // @audit change to EpochHasNotStarted
     modifier EpochHasStarted(uint256 id) {
         require(
             block.timestamp < idEpochBegin[id] - timewindow,
@@ -131,9 +136,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
+        // @audit can be external as no parameters have sideeffects
         marketExists(id)
         EpochHasStarted(id)
-        nonReentrant()
+        nonReentrant
         returns (uint256 shares)
     {
         // Check for rounding error since we round down in previewDeposit.
@@ -148,13 +154,18 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return shares;
     }
 
-    function depositETH(uint id, address receiver) external payable returns (uint shares){
-            require(msg.value > 0, "ETH amount must be greater than 0");
+    // @audit pollutes contract
+    function depositETH(uint256 id, address receiver)
+        external
+        payable
+        returns (uint256 shares)
+    {
+        require(msg.value > 0, "ETH amount must be greater than 0");
 
-            IWETH(address(asset)).deposit{value: msg.value}();
-            assert(IWETH(address(asset)).transfer(msg.sender, msg.value));
+        IWETH(address(asset)).deposit{value: msg.value}();
+        assert(IWETH(address(asset)).transfer(msg.sender, msg.value));
 
-            return deposit(id, msg.value, receiver);
+        return deposit(id, msg.value, receiver);
     }
 
     /**
@@ -164,6 +175,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the transfered asset;
         @return assets how many assets the owner is entitled to, removing the fee from it's shares;
      */
+    // @audit pollutes contract
     function mint(
         uint256 id,
         uint256 shares,
@@ -173,7 +185,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         override
         marketExists(id)
         EpochHasStarted(id)
-        nonReentrant()
+        nonReentrant
         returns (uint256 assets)
     {
         assets = previewMint(id, shares); // No need to check for rounding error, previewMint rounds up.
@@ -187,8 +199,13 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         return assets;
     }
-    
-    function mintETH(uint id, address receiver) external payable returns (uint256 shares){
+
+    // @audit pollutes contract
+    function mintETH(uint256 id, address receiver)
+        external
+        payable
+        returns (uint256 shares)
+    {
         require(msg.value > 0, "ETH amount must be greater than 0");
 
         IWETH(address(asset)).deposit{value: msg.value}();
@@ -213,19 +230,25 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
+        // @audit can be external as no parameters have sideeffects
         EpochHasEnded(id)
         marketExists(id)
         returns (uint256 shares)
     {
-        require(msg.sender == owner || isApprovedForAll(owner, receiver) || msg.sender == Factory, "Owner needs to approve receiver for all");
-        
+        require(
+            msg.sender == owner ||
+                isApprovedForAll(owner, receiver) ||
+                msg.sender == Factory,
+            "Owner needs to approve receiver for all"
+        );
+
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         uint256 entitledShares = beforeWithdraw(id, shares);
         _burn(owner, id, shares);
 
         //Taking fee from the amount
-        uint feeValue = calculateWithdrawalFeeValue(entitledShares);
+        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares);
         entitledShares = entitledShares - feeValue;
         asset.safeTransfer(treasury, feeValue);
 
@@ -251,12 +274,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         public
         override
+        // @audit can be external as no parameters have sideeffects
         EpochHasEnded(id)
         marketExists(id)
         returns (uint256 assets)
     {
-        require(msg.sender == owner || isApprovedForAll(owner, receiver), "Owner needs to approve receiver for all");
-        
+        require(
+            msg.sender == owner || isApprovedForAll(owner, receiver),
+            "Owner needs to approve receiver for all"
+        );
+
         assets = previewWithdraw(id, shares); // No need to check for rounding error, previewWithdraw rounds up.
 
         // Check for rounding error since we round down in previewRedeem.
@@ -265,7 +292,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _burn(owner, id, shares);
 
         //Taking fee from the amount
-        uint feeValue = calculateWithdrawalFeeValue(entitledAssets);
+        uint256 feeValue = calculateWithdrawalFeeValue(entitledAssets);
         entitledAssets = entitledAssets - feeValue;
         asset.safeTransfer(treasury, feeValue);
 
@@ -315,6 +342,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
         require(_withdrawalFee < 150, "Fee is too high!"); //15% fee is too high
         withdrawalFee = _withdrawalFee;
+
     }
 
     function changeTreasury(address _treasury) public onlyFactory {
@@ -424,7 +452,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
                         1 ether
                     ) +
                     amount;
-
             } else {
                 //depeg event did happen
                 entitledAmount = amount.divWadDown(idFinalTVL[id]).mulDivDown(
@@ -452,10 +479,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return epochs.length;
     }
 
-    function getNextEpoch(uint _epoch) public view returns(uint nextEpochEnd){
-        for(uint i = 0; i < epochsLength(); i++){
-            if(epochs[i] == _epoch){
-                if(i == epochsLength() - 1){
+    function getNextEpoch(uint256 _epoch)
+        public
+        view
+        returns (uint256 nextEpochEnd)
+    {
+        for (uint256 i = 0; i < epochsLength(); i++) {
+            if (epochs[i] == _epoch) {
+                if (i == epochsLength() - 1) {
                     return 0;
                 }
                 return epochs[i + 1];

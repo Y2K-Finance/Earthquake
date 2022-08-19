@@ -5,6 +5,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "./Vault.sol";
 import "./VaultFactory.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
+
 contract Controller {
     address public immutable admin;
     VaultFactory immutable vaultFactory;
@@ -18,7 +19,7 @@ contract Controller {
         uint256 epoch,
         string name,
         uint256 time,
-        int256 depegPrice        
+        int256 depegPrice
     );
 
     event VaultTVL(
@@ -96,21 +97,23 @@ contract Controller {
         insrVault.setClaimTVL(mintId, riskVault.idFinalTVL(mintId));
         riskVault.setClaimTVL(mintId, insrVault.idFinalTVL(mintId));
 
+        // @audit should be address(riskVault) or address(insrVault)
         insrVault.sendTokens(mintId, vaultsAddress[1]);
         riskVault.sendTokens(mintId, vaultsAddress[0]);
 
         emit VaultTVL(
-            riskVault.idClaimTVL(mintId), 
-            insrVault.idClaimTVL(mintId), 
-            riskVault.idFinalTVL(mintId), 
-            insrVault.idFinalTVL(mintId));
+            riskVault.idClaimTVL(mintId),
+            insrVault.idClaimTVL(mintId),
+            riskVault.idFinalTVL(mintId),
+            insrVault.idFinalTVL(mintId)
+        );
 
         emit DepegInsurance(
             marketIndex,
             mintId,
             insrVault.name(),
             block.timestamp,
-            getLatestPrice(insrVault.tokenInsured())            
+            getLatestPrice(insrVault.tokenInsured())
         );
     }
 
@@ -140,21 +143,22 @@ contract Controller {
 
         insrVault.setClaimTVL(mintId, 0);
         riskVault.setClaimTVL(mintId, insrVault.idFinalTVL(mintId));
-
+        // @audit sendt to address(riskVault) for clarity
         insrVault.sendTokens(mintId, vaultsAddress[1]);
 
         emit VaultTVL(
-            riskVault.idClaimTVL(mintId), 
-            insrVault.idClaimTVL(mintId), 
-            riskVault.idFinalTVL(mintId), 
-            insrVault.idFinalTVL(mintId));
+            riskVault.idClaimTVL(mintId),
+            insrVault.idClaimTVL(mintId),
+            riskVault.idFinalTVL(mintId),
+            insrVault.idFinalTVL(mintId)
+        );
 
         emit DepegInsurance(
             marketIndex,
             mintId,
             insrVault.name(),
             block.timestamp,
-            getLatestPrice(insrVault.tokenInsured())            
+            getLatestPrice(insrVault.tokenInsured())
         );
     }
 
@@ -182,9 +186,9 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        int decimals = 10e18 / int(10**priceFeed.decimals());
+        // @audit 10**(18 - priceFeed1.decimals())
+        int256 decimals = 10e18 / int256(10**priceFeed.decimals());
         price = price * decimals;
-        
 
         require(price > 0, "Chainlink price <= 0");
         require(answeredInRound >= roundID, "RoundID from Oracle is outdated!");
