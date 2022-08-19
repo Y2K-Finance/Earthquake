@@ -8,7 +8,7 @@ import {Controller} from "../src/Controller.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
-
+import {DepegOracle} from "./DepegOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
 contract AssertTest is Test {
@@ -40,7 +40,6 @@ contract AssertTest is Test {
     int256 depegAAA = 99;
     int256 depegBBB = 97;
     int256 depegCCC = 95;
-    int256 depegPrice = 109;
 
     uint256 endEpoch;
     uint256 beginEpoch;
@@ -189,8 +188,10 @@ contract AssertTest is Test {
         vm.deal(chad, 100 ether);
         vm.deal(degen, 200 ether);
 
-        vm.prank(admin);
-        vaultFactory.createNewMarket(50, tokenFRAX, depegPrice, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+        vm.startPrank(admin);
+        DepegOracle depegOracle = new DepegOracle(oracleFRAX);
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(depegOracle), "y2kFRAX_99*SET");
+        vm.stopPrank();
 
         address hedge = vaultFactory.getVaults(1)[0];
         address risk = vaultFactory.getVaults(1)[1];
