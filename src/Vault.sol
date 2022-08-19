@@ -68,13 +68,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     address public immutable tokenInsured;
-    uint256 public feeTaken;
     address private treasury;
     int256 public immutable strikePrice;
     address private immutable Factory;
     address public controller;
-    string public tokenName;
-    string public tokenSymbol;
     uint256 public withdrawalFee;
 
     /*//////////////////////////////////////////////////////////////
@@ -86,8 +83,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param  _assetAddress    token address representing your asset to be deposited;
         @param  _name   token name for the ERC1155 mints. Insert the name of your token; Example: Y2K_USDC_1.2$
         @param  _symbol token symbol for the ERC1155 mints. insert here if risk or hedge + Symbol. Example: HedgeY2K or riskY2K;
-        @param  _fee    Insert fee uint256 number in percent * 10 => Example: 0.5% = 5; 1% = 10; 40% = 400;
-        @param  _riskWithdrawalFee Insert withdrawal fee uint256 number in percent * 10 => Example: 0.5% = 5; 1% = 10; 40% = 400;
+        @param  _withdrawalFee Insert withdrawal fee uint256 number in percent * 10 => Example: 0.5% = 5; 1% = 10; 40% = 400;
         @param  _token  address of the oracle to lookup the price in chainlink oracles;
         @param  _strikePrice    uint256 representing the price to trigger the depeg event;
         @param _controller  address of the controller contract, this contract can trigger the depeg events;
@@ -97,29 +93,24 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         string memory _name,
         string memory _symbol,
         address _treasury,
-        uint256 _fee,
-        uint256 _riskWithdrawalFee,
+        uint256 _withdrawalFee,
         address _token,
         int256 _strikePrice,
         address _controller
     ) SemiFungibleVault(ERC20(_assetAddress), _name, _symbol) {
-        require(_fee < 150, "Fee must be less than 15%");
-        require(_riskWithdrawalFee < 150, "Fee must be less than 15%");
+        require(_withdrawalFee < 150, "Fee must be less than 15%");
         require(_treasury != address(0), "Treasury address cannot be 0x0");
         require(_controller != address(0), "Controller address cannot be 0x0");
         require(_token != address(0), "Token address cannot be 0x0");
         require(_strikePrice > 0, "Strike price must be greater than 0");
 
         tokenInsured = _token;
-        feeTaken = _fee;
         treasury = _treasury;
         strikePrice = _strikePrice;
         Factory = msg.sender;
         controller = _controller;
         timewindow = 1 days;
-        tokenName = _name;
-        tokenSymbol = _symbol;
-        withdrawalFee = _riskWithdrawalFee;
+        withdrawalFee = _withdrawalFee;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -148,17 +139,13 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         // Check for rounding error since we round down in previewDeposit.
         require((shares = previewDeposit(id, assets)) != 0, "ZERO_SHARES");
 
-        uint256 sharesMinusFee = beforeDeposit(shares);
-        // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), sharesMinusFee);
+        asset.safeTransferFrom(msg.sender, address(this), shares);
 
-        _mint(receiver, id, sharesMinusFee, EMPTY);
+        _mint(receiver, id, shares, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, sharesMinusFee, shares);
+        emit Deposit(msg.sender, receiver, id, shares, shares);
 
-        //afterDeposit(id, assets, sharesMinusFee);
-
-        return sharesMinusFee;
+        return shares;
     }
 
     function depositETH(uint id, address receiver) external payable returns (uint shares){
@@ -191,18 +178,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     {
         assets = previewMint(id, shares); // No need to check for rounding error, previewMint rounds up.
 
-        uint256 assetsMinusFee = beforeDeposit(assets);
-
         // Need to transfer before minting or ERC777s could reenter.
-        asset.safeTransferFrom(msg.sender, address(this), assetsMinusFee);
+        asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        _mint(receiver, id, assetsMinusFee, EMPTY);
+        _mint(receiver, id, assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assetsMinusFee, shares);
+        emit Deposit(msg.sender, receiver, id, assets, shares);
 
-        //afterDeposit(id, assetsMinusFee, shares);
-
-        return assetsMinusFee;
+        return assets;
     }
     
     function mintETH(uint id, address receiver) external payable returns (uint256 shares){
@@ -313,17 +296,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /**
     @notice calculates how much ether the %fee is taking from @param amount
      */
-    function calculateFeeValue(uint256 amount)
-        public
-        view
-        returns (uint256 feeValue)
-    {
-        // 0.5% = multiply by 1000 then divide by 5
-        return (amount * feeTaken) / 1000;
-    }
-    /**
-    @notice calculates how much ether the %fee is taking from @param amount
-     */
     function calculateWithdrawalFeeValue(uint256 amount)
         public
         view
@@ -338,18 +310,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-        @param _fee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
+        @param _withdrawalFee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     **/
-    function changeFee(uint256 _fee) public onlyFactory {
-        require(_fee < 1000, "Fee is too high!"); //100% fee is too high
-        feeTaken = _fee;
-    }
-    /**
-        @param _riskWithdrawalFee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
-    **/
-    function changeWithdrawalFee(uint256 _riskWithdrawalFee) public onlyFactory {
-        require(_riskWithdrawalFee < 1000, "Fee is too high!"); //100% fee is too high
-        withdrawalFee = _riskWithdrawalFee;
+    function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
+        require(_withdrawalFee < 150, "Fee is too high!"); //15% fee is too high
+        withdrawalFee = _withdrawalFee;
     }
 
     function changeTreasury(address _treasury) public onlyFactory {
@@ -427,23 +392,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-    @notice logic to deduct the fee from @param shares before depositing to the vault, also does the transfer of said fee value to the treasury;
-    @return sharesMinusFee value of the shares the user is going to receive, subtracted the fee from the shares;
-    */
-    function beforeDeposit(uint256 shares)
-        internal
-        returns (uint256 sharesMinusFee)
-    {
-        //calculation of fee
-        uint256 feeValue = calculateFeeValue(shares);
-        uint256 valueMinusFee = shares - feeValue;
-        //Payment of fee
-        asset.safeTransferFrom(msg.sender, treasury, feeValue);
-
-        return valueMinusFee;
-    }
-
-    /**
     @notice Calculations of how much the user will receive;
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param amount uint256 of the amount the user wants to withdraw;
@@ -499,7 +447,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         return entitledAmount;
     }
-
 
     function epochsLength() public view returns (uint256) {
         return epochs.length;

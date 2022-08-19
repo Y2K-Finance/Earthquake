@@ -71,7 +71,6 @@ contract VaultFactory {
 
     /**
     @notice function to create two new vaults, hedge and risk, with the respective params, and storing the oracle for the token provided
-    @param _fee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     @param _token address of the oracle to lookup the price in chainlink oracles;
     @param _strikePrice uint256 representing the price to trigger the depeg event, needs to be the same decimals as the oracle price;
@@ -82,7 +81,6 @@ contract VaultFactory {
     @return rsk     address of the deployed risk vault;
      */
     function createNewMarket(
-        uint256 _fee,
         uint256 _withdrawalFee,
         address _token,
         int256 _strikePrice,
@@ -106,7 +104,6 @@ contract VaultFactory {
             _name,
             "hY2K",
             treasury,
-            _fee,
             _withdrawalFee,
             _token,
             _strikePrice,
@@ -118,7 +115,6 @@ contract VaultFactory {
             _name,
             "rY2K",
             treasury,
-            _fee,
             _withdrawalFee,
             _token,
             _strikePrice,
@@ -180,7 +176,7 @@ contract VaultFactory {
             Vault(hedge).strikePrice(),
             beginEpoch,
             endEpoch,
-            Vault(hedge).tokenName()
+            Vault(hedge).name()
         );
     }
 
@@ -195,24 +191,6 @@ contract VaultFactory {
         emit controllerSet(_controller);
     }
 
-    /**
-    @notice admin function to change fees on running vaults;
-    @param _marketIndex uint256 of the market index which to the vaults are associated to;
-    @param _fee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
-     */
-    function changeVaultFee(uint256 _marketIndex, uint256 _fee)
-        public
-        onlyAdmin
-    {
-
-        address[] memory vaults = indexVaults[_marketIndex];
-        Vault insr = Vault(vaults[0]);
-        Vault risk = Vault(vaults[1]);
-        insr.changeFee(_fee);
-        risk.changeFee(_fee);
-
-        emit changedVaultFee(_marketIndex, _fee);
-    }
 
     /**
     @notice admin function to change fees on running vaults;

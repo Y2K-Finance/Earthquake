@@ -61,44 +61,44 @@ contract AssertTest is Test {
 
         // Create FRAX market
         //index 1
-        vaultFactory.createNewMarket(10, 50, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
         assertTrue(Vault(vaultFactory.getVaults(1)[0]).strikePrice() == 99 * 10e16, "Decimals incorrect");
         //index 2
-        vaultFactory.createNewMarket(10, 50, tokenFRAX, depegBBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegBBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*SET");
         //index 3
-        vaultFactory.createNewMarket(10, 50, tokenFRAX, depegCCC, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_95*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegCCC, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_95*SET");
 
         // Create MIM market
         //index 4
-        vaultFactory.createNewMarket(10, 50, tokenMIM, depegAAA, beginEpoch, endEpoch, oracleMIM, "y2kMIM_99*SET");
+        vaultFactory.createNewMarket(50, tokenMIM, depegAAA, beginEpoch, endEpoch, oracleMIM, "y2kMIM_99*SET");
         //index 5
-        vaultFactory.createNewMarket(10, 50, tokenMIM, depegBBB, beginEpoch, endEpoch, oracleMIM, "y2kMIM_97*SET");
+        vaultFactory.createNewMarket(50, tokenMIM, depegBBB, beginEpoch, endEpoch, oracleMIM, "y2kMIM_97*SET");
         //index 6
-        vaultFactory.createNewMarket(10, 50, tokenMIM, depegCCC, beginEpoch, endEpoch, oracleMIM, "y2kMIM_95*SET");
+        vaultFactory.createNewMarket(50, tokenMIM, depegCCC, beginEpoch, endEpoch, oracleMIM, "y2kMIM_95*SET");
 
         // Create FEI market
         //index 7
-        vaultFactory.createNewMarket(10, 50, tokenFEI, depegAAA, beginEpoch, endEpoch, oracleFEI, "y2kFEI_99*SET");
+        vaultFactory.createNewMarket(50, tokenFEI, depegAAA, beginEpoch, endEpoch, oracleFEI, "y2kFEI_99*SET");
         //index 8
-        vaultFactory.createNewMarket(10, 50, tokenFEI, depegBBB, beginEpoch, endEpoch, oracleFEI, "y2kFEI_97*SET");
+        vaultFactory.createNewMarket(50, tokenFEI, depegBBB, beginEpoch, endEpoch, oracleFEI, "y2kFEI_97*SET");
         //index 9
-        vaultFactory.createNewMarket(10, 50, tokenFEI, depegCCC, beginEpoch, endEpoch, oracleFEI, "y2kFEI_95*SET");
+        vaultFactory.createNewMarket(50, tokenFEI, depegCCC, beginEpoch, endEpoch, oracleFEI, "y2kFEI_95*SET");
 
         // Create USDC market
         //index 10
-        vaultFactory.createNewMarket(10, 50, tokenUSDC, depegAAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*SET");
+        vaultFactory.createNewMarket(50, tokenUSDC, depegAAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*SET");
         //index 11
-        vaultFactory.createNewMarket(10, 50, tokenUSDC, depegBBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*SET");
+        vaultFactory.createNewMarket(50, tokenUSDC, depegBBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*SET");
         //index 12
-        vaultFactory.createNewMarket(10, 50, tokenUSDC, depegCCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*SET");
+        vaultFactory.createNewMarket(50, tokenUSDC, depegCCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*SET");
 
         // Create DAI market
         //index 13
-        vaultFactory.createNewMarket(10, 50, tokenDAI, depegAAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*SET");
+        vaultFactory.createNewMarket(50, tokenDAI, depegAAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*SET");
         //index 14
-        vaultFactory.createNewMarket(10, 50, tokenDAI, depegBBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*SET");
+        vaultFactory.createNewMarket(50, tokenDAI, depegBBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*SET");
         //index 15
-        vaultFactory.createNewMarket(10, 50, tokenDAI, depegCCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*SET");
+        vaultFactory.createNewMarket(50, tokenDAI, depegCCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*SET");
         
         vm.stopPrank();
     }
@@ -144,7 +144,7 @@ contract AssertTest is Test {
         vm.deal(degen, 200 ether);
 
         vm.prank(admin);
-        vaultFactory.createNewMarket(10, 50, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
 
         address hedge = vaultFactory.getVaults(1)[0];
         address risk = vaultFactory.getVaults(1)[1];
@@ -156,8 +156,6 @@ contract AssertTest is Test {
         vm.startPrank(alice);
         ERC20(WETH).approve(hedge, 10 ether);
         vHedge.depositETH{value: 10 ether}(endEpoch, alice);
-
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (10 ether - vHedge.calculateFeeValue(10 ether)));
         vm.stopPrank();
 
         //BOB hedge DEPOSIT
@@ -165,7 +163,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(hedge, 20 ether);
         vHedge.depositETH{value: 20 ether}(endEpoch, bob);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == (20 ether - vHedge.calculateFeeValue(20 ether)));
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == 20 ether);
         vm.stopPrank();
 
         //CHAD risk DEPOSIT
@@ -173,7 +171,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(risk, 100 ether);
         vRisk.depositETH{value: 100 ether}(endEpoch, chad);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether - vRisk.calculateFeeValue(100 ether)));
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether));
         vm.stopPrank();
 
         //DEGEN risk DEPOSIT
@@ -181,7 +179,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(risk, 200 ether);
         vRisk.depositETH{value: 200 ether}(endEpoch, degen);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether - vRisk.calculateFeeValue(200 ether)));
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether));
         vm.stopPrank();
     }
 
@@ -192,7 +190,7 @@ contract AssertTest is Test {
         vm.deal(degen, 200 ether);
 
         vm.prank(admin);
-        vaultFactory.createNewMarket(10, 50, tokenFRAX, depegPrice, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegPrice, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
 
         address hedge = vaultFactory.getVaults(1)[0];
         address risk = vaultFactory.getVaults(1)[1];
@@ -205,7 +203,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(hedge, 10 ether);
         vHedge.depositETH{value: 10 ether}(endEpoch, alice);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (10 ether - vHedge.calculateFeeValue(10 ether)));
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == (10 ether));
         vm.stopPrank();
 
         //BOB hedge DEPOSIT
@@ -213,7 +211,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(hedge, 20 ether);
         vHedge.depositETH{value: 20 ether}(endEpoch, bob);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == (20 ether - vHedge.calculateFeeValue(20 ether)));
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == (20 ether));
         vm.stopPrank();
 
         //CHAD risk DEPOSIT
@@ -221,7 +219,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(risk, 100 ether);
         vRisk.depositETH{value: 100 ether}(endEpoch, chad);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether - vRisk.calculateFeeValue(100 ether)));
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether));
         vm.stopPrank();
 
         //DEGEN risk DEPOSIT
@@ -229,7 +227,7 @@ contract AssertTest is Test {
         ERC20(WETH).approve(risk, 200 ether);
         vRisk.depositETH{value: 200 ether}(endEpoch, degen);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether - vRisk.calculateFeeValue(200 ether)));
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether));
         vm.stopPrank();
     }
 
@@ -275,5 +273,47 @@ contract AssertTest is Test {
         assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
         //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
         assertTrue(0 == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
+    }
+
+
+    function testWithdrawDepeg() public {
+        testControllerDepeg();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        uint assets;
+
+        //ALICE hedge WITHDRAW
+        vm.startPrank(alice);
+        assets = vHedge.balanceOf(alice,endEpoch);
+        vHedge.withdraw(endEpoch, assets, alice, alice);
+
+        vm.stopPrank();
+
+        //BOB hedge WITHDRAW
+        vm.startPrank(bob);
+        assets = vHedge.balanceOf(bob,endEpoch);
+        vHedge.withdraw(endEpoch, assets, bob, bob);
+
+        vm.stopPrank();
+
+        //CHAD risk WITHDRAW
+        vm.startPrank(chad);
+        assets = vRisk.balanceOf(chad,endEpoch);
+        vRisk.withdraw(endEpoch, assets, chad, chad);
+
+        vm.stopPrank();
+
+        //DEGEN risk WITHDRAW
+        vm.startPrank(degen);
+        assets = vRisk.balanceOf(degen,endEpoch);
+        vRisk.withdraw(endEpoch, assets, degen, degen);
+
+        vm.stopPrank();
+
     }
 }
