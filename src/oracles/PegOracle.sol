@@ -2,12 +2,9 @@
 pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
-import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 
 contract PegOracle {
-    using FixedPointMathLib for int256;
-
     /***
     @dev  for example: oracle1 would be stETH / USD, while oracle2 would be ETH / USD oracle
     ***/
