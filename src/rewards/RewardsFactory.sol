@@ -19,8 +19,8 @@ contract RewardsFactory {
         _;
     }
 
-    constructor(address _govToken, address _factory) {
-        admin = msg.sender;
+    constructor(address _govToken, address _factory, address _admin) {
+        admin = _admin;
         govToken = _govToken;
         factory = _factory;
     }
