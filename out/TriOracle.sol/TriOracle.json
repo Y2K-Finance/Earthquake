@@ -2,33 +2,33 @@
   "abi": [],
   "bytecode": {
     "object": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea264697066735822122044bfae2a022cb491aaf2a57eb5145831eb82708be8e9f2b9b346b0eec258d3e164736f6c634300080f0033",
-    "sourceMap": "84:21:31:-:0;;;;;;;;;;;;;;;;;;;",
+    "sourceMap": "84:21:32:-:0;;;;;;;;;;;;;;;;;;;",
     "linkReferences": {}
   },
   "deployedBytecode": {
     "object": "0x6080604052600080fdfea264697066735822122044bfae2a022cb491aaf2a57eb5145831eb82708be8e9f2b9b346b0eec258d3e164736f6c634300080f0033",
-    "sourceMap": "84:21:31:-:0;;;;;",
+    "sourceMap": "84:21:32:-:0;;;;;",
     "linkReferences": {}
   },
   "methodIdentifiers": {},
   "ast": {
     "absolutePath": "src/oracles/TriOracle.sol",
-    "id": 28159,
+    "id": 28098,
     "exportedSymbols": {
       "AggregatorV3Interface": [
         45
       ],
       "TriOracle": [
-        28158
+        28097
       ]
     },
     "nodeType": "SourceUnit",
-    "src": "0:106:31",
+    "src": "0:106:32",
     "nodes": [
       {
-        "id": 28156,
+        "id": 28095,
         "nodeType": "PragmaDirective",
-        "src": "0:23:31",
+        "src": "0:23:32",
         "literals": [
           "solidity",
           "0.8",
@@ -36,21 +36,21 @@
         ]
       },
       {
-        "id": 28157,
+        "id": 28096,
         "nodeType": "ImportDirective",
-        "src": "25:57:31",
+        "src": "25:57:32",
         "absolutePath": "lib/chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol",
         "file": "@chainlink/interfaces/AggregatorV3Interface.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 28159,
+        "scope": 28098,
         "sourceUnit": 46,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 28158,
+        "id": 28097,
         "nodeType": "ContractDefinition",
-        "src": "84:21:31",
+        "src": "84:21:32",
         "abstract": false,
         "baseContracts": [],
         "canonicalName": "TriOracle",
@@ -58,14 +58,14 @@
         "contractKind": "contract",
         "fullyImplemented": true,
         "linearizedBaseContracts": [
-          28158
+          28097
         ],
         "name": "TriOracle",
-        "nameLocation": "93:9:31",
-        "scope": 28159,
+        "nameLocation": "93:9:32",
+        "scope": 28098,
         "usedErrors": []
       }
     ]
   },
-  "id": 31
+  "id": 32
 }

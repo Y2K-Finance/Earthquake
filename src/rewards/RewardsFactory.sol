@@ -28,7 +28,7 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
-    event createdStakingReward(uint indexed mIndex, uint indexed date);
+    event createdStakingReward(uint indexed mIndex, uint indexed date, address hedge_farm, address risk_farm);
 
     /*//////////////////////////////////////////////////////////////
                                  MAPPINGS
@@ -40,7 +40,6 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   METHODS
     //////////////////////////////////////////////////////////////*/
-
     function createStakingRewards(uint _marketIndex, uint _epoch) external onlyAdmin returns(address insr, address risk) {
 
         VaultFactory vault_factory = VaultFactory(factory);
@@ -54,11 +53,10 @@ contract RewardsFactory {
         bytes32 hashedIndex = keccak256(abi.encode(_marketIndex,_epoch));
         hashedIndex_StakingRewards[hashedIndex] = [address(insrStake), address(riskStake)];
 
-        emit createdStakingReward(_marketIndex, _epoch);
+        emit createdStakingReward(_marketIndex, _epoch, address(insrStake), address(riskStake));
 
         return (address(insrStake), address(riskStake));
     }
-
     function getHashedIndex(uint _index, uint _epoch) public pure returns(bytes32 hashedIndex){
         return keccak256(abi.encode(_index,_epoch));
     }
