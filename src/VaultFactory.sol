@@ -175,10 +175,10 @@ contract VaultFactory {
         Vault(hedge).createAssets(beginEpoch, endEpoch);
         Vault(risk).createAssets(beginEpoch, endEpoch);
 
-        indexEpochs[marketIndex].push(endEpoch);
+        indexEpochs[index].push(endEpoch);
 
         emit PegMarketCreated(
-            marketIndex,
+            index,
             address(hedge),
             address(risk),
             Vault(hedge).tokenInsured(),
