@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
 import "../src/rewards/RewardsFactory.sol";
-import "../GovToken.sol";
+import "../test/GovToken.sol";
 
 //forge script script/DeployContract.s.sol:ContractScript --rpc-url $ARBITRUM_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract DeployScript is Script {
