@@ -5,10 +5,18 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "./Vault.sol";
 import "./VaultFactory.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
+
 
 contract Controller {
     address public immutable admin;
     VaultFactory immutable vaultFactory;
+    AggregatorV2V3Interface internal sequencerUptimeFeed;
+
+    uint256 private constant GRACE_PERIOD_TIME = 3600;
+
+    error SequencerDown();
+    error GracePeriodNotOver();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -66,11 +74,12 @@ contract Controller {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _factory, address _admin) {
+    constructor(address _factory, address _admin, address _l2Sequencer) {
         require(_admin != address(0), "admin cannot be the zero address");
         require(_factory != address(0), "factory cannot be the zero address");
         admin = _admin;
         vaultFactory = VaultFactory(_factory);
+        sequencerUptimeFeed = AggregatorV2V3Interface(_l2Sequencer);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -176,6 +185,27 @@ contract Controller {
         view
         returns (int256 nowPrice)
     {
+        (
+        /*uint80 roundId*/,
+        int256 answer,
+        uint256 startedAt,
+        /*uint256 updatedAt*/,
+        /*uint80 answeredInRound*/
+        ) = sequencerUptimeFeed.latestRoundData();
+
+        // Answer == 0: Sequencer is up
+        // Answer == 1: Sequencer is down
+        bool isSequencerUp = answer == 0;
+        if (!isSequencerUp) {
+        revert SequencerDown();
+        }
+
+        // Make sure the grace period has passed after the sequencer is back up.
+        uint256 timeSinceUp = block.timestamp - startedAt;
+        if (timeSinceUp <= GRACE_PERIOD_TIME) {
+        revert GracePeriodNotOver();
+        }
+
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             vaultFactory.tokenToOracle(_token)
         );

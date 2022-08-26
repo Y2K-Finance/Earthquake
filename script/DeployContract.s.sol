@@ -29,6 +29,9 @@ contract DeployScript is Script {
     address oracleUSDC = 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
     address oracleDAI = 0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB;
 
+    address arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+
+
     address public admin = 0xFB0a3A93e9acd461747e7D613eb3722d53B96613;
 
     int256 depegAAA = 99;
@@ -44,7 +47,7 @@ contract DeployScript is Script {
     
     function setUp() public {
         vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin);
+        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
 
         vm.prank(admin);
         vaultFactory.setController(address(controller));
