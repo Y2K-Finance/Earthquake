@@ -23,6 +23,7 @@ contract Controller {
     //////////////////////////////////////////////////////////////*/
 
     event DepegInsurance(
+        bytes32 epochMarketID,
         VaultTVL tvl,
         uint256 index,
         uint256 epoch,
@@ -118,6 +119,7 @@ contract Controller {
         );
 
         emit DepegInsurance(
+            keccak256(abi.encodePacked(marketIndex, insrVault.idEpochBegin(epochEnd), epochEnd)),
             tvl,
             marketIndex,
             epochEnd,
@@ -163,6 +165,7 @@ contract Controller {
         );
 
         emit DepegInsurance(
+            keccak256(abi.encodePacked(marketIndex, insrVault.idEpochBegin(epochEnd), epochEnd)),
             tvl,
             marketIndex,
             epochEnd,

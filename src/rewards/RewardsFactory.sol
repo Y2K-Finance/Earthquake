@@ -3,6 +3,7 @@ pragma solidity 0.8.15;
 
 import {StakingRewards} from "./StakingRewards.sol";
 import {VaultFactory} from "../VaultFactory.sol";
+import {Vault} from "../Vault.sol";
 
 contract RewardsFactory {
 
@@ -28,7 +29,7 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
-    event createdStakingReward(uint indexed mIndex, uint indexed date, address hedge_farm, address risk_farm);
+    event createdStakingReward(bytes32 epochMarketID, uint indexed mIndex, uint indexed date, address hedge_farm, address risk_farm);
 
     /*//////////////////////////////////////////////////////////////
                                  MAPPINGS
@@ -53,7 +54,7 @@ contract RewardsFactory {
         bytes32 hashedIndex = keccak256(abi.encode(_marketIndex,_epoch));
         hashedIndex_StakingRewards[hashedIndex] = [address(insrStake), address(riskStake)];
 
-        emit createdStakingReward(_marketIndex, _epoch, address(insrStake), address(riskStake));
+        emit createdStakingReward(keccak256(abi.encodePacked(_marketIndex, Vault(_insrToken).idEpochBegin(_epoch), _epoch)), _marketIndex, _epoch, address(insrStake), address(riskStake));
 
         return (address(insrStake), address(riskStake));
     }

@@ -17,8 +17,8 @@ contract VaultFactory {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-    event PegMarketCreated(
-        bytes32 indexed ID,
+    event Market(
+        bytes32 indexed epochMarketId,
         uint256 indexed index,
         address hedgeVault,
         address riskVault,
@@ -29,8 +29,8 @@ contract VaultFactory {
         string tokenName
     );
 
-    event EpochMarketCreated(
-        bytes32 indexed ID,
+    event EpochMarket(
+        bytes32 indexed epochMarketId,
         uint256 indexed index,
         address hedgeVault,
         address riskVault,
@@ -156,7 +156,7 @@ contract VaultFactory {
             tokenToOracle[_token] = _oracle;
         }
 
-        emit PegMarketCreated(
+        emit Market(
             keccak256(abi.encodePacked(marketIndex,epochBegin,epochEnd)),
             marketIndex,
             address(hedge),
@@ -191,7 +191,7 @@ contract VaultFactory {
 
         indexEpochs[index].push(endEpoch);
 
-        emit EpochMarketCreated(
+        emit EpochMarket(
             keccak256(abi.encodePacked(marketIndex,beginEpoch,endEpoch)),
             index,
             address(hedge),
