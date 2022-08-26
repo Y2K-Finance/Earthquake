@@ -18,6 +18,19 @@ contract VaultFactory {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     event PegMarketCreated(
+        bytes32 indexed ID,
+        uint256 indexed index,
+        address hedgeVault,
+        address riskVault,
+        address token,
+        int256 price,
+        uint256 startEpoch,
+        uint256 endEpoch,
+        string tokenName
+    );
+
+    event EpochMarketCreated(
+        bytes32 indexed ID,
         uint256 indexed index,
         address hedgeVault,
         address riskVault,
@@ -144,6 +157,7 @@ contract VaultFactory {
         }
 
         emit PegMarketCreated(
+            keccak256(abi.encodePacked(marketIndex,epochBegin,epochEnd)),
             marketIndex,
             address(hedge),
             address(risk),
@@ -177,7 +191,8 @@ contract VaultFactory {
 
         indexEpochs[index].push(endEpoch);
 
-        emit PegMarketCreated(
+        emit EpochMarketCreated(
+            keccak256(abi.encodePacked(marketIndex,beginEpoch,endEpoch)),
             index,
             address(hedge),
             address(risk),

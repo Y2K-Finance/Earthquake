@@ -15,6 +15,7 @@ contract Controller {
     //////////////////////////////////////////////////////////////*/
 
     event DepegInsurance(
+        VaultTVL tvl,
         uint256 index,
         uint256 epoch,
         string name,
@@ -22,12 +23,12 @@ contract Controller {
         int256 depegPrice
     );
 
-    event VaultTVL(
-        uint256 RISK_claimTVL,
-        uint256 RISK_finalTVL,
-        uint256 INSR_claimTVL,
-        uint256 INSR_finalTVL
-    );
+    struct VaultTVL{
+        uint256 RISK_claimTVL;
+        uint256 RISK_finalTVL;
+        uint256 INSR_claimTVL;
+        uint256 INSR_finalTVL;
+    }
 
     /*//////////////////////////////////////////////////////////////
                                  MODIFIERS
@@ -38,7 +39,7 @@ contract Controller {
         _;
     }
 
-    modifier isDisaster(uint256 marketIndex, uint256 mintId) {
+    modifier isDisaster(uint256 marketIndex, uint256 epochEnd) {
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
         require(
             vaultsAddress.length == 2,
@@ -51,11 +52,11 @@ contract Controller {
             "Current price is not at the strike price target!"
         );
         require(
-            vault.idEpochBegin(mintId) < block.timestamp,
+            vault.idEpochBegin(epochEnd) < block.timestamp,
             "Epoch has not started, cannot insure until epoch has started!"
         );
         require(
-            block.timestamp < mintId,
+            block.timestamp < epochEnd,
             "Epoch for this insurance has expired!"
         );
         _;
@@ -79,37 +80,38 @@ contract Controller {
     /**
     @notice trigger depeg event
      */
-    function triggerDepeg(uint256 marketIndex, uint256 mintId)
+    function triggerDepeg(uint256 marketIndex, uint256 epochEnd)
         public
-        isDisaster(marketIndex, mintId)
+        isDisaster(marketIndex, epochEnd)
     {
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
         //require this function cannot be called twice in the same epoch for the same vault
-        require(insrVault.idFinalTVL(mintId) == 0, "Error: TVLs must be 0");
-        require(riskVault.idFinalTVL(mintId) == 0, "Error: TVLs must tbe 0");
+        require(insrVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must be 0");
+        require(riskVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must tbe 0");
 
-        insrVault.endEpoch(mintId, true);
-        riskVault.endEpoch(mintId, true);
+        insrVault.endEpoch(epochEnd, true);
+        riskVault.endEpoch(epochEnd, true);
 
-        insrVault.setClaimTVL(mintId, riskVault.idFinalTVL(mintId));
-        riskVault.setClaimTVL(mintId, insrVault.idFinalTVL(mintId));
+        insrVault.setClaimTVL(epochEnd, riskVault.idFinalTVL(epochEnd));
+        riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd));
 
-        insrVault.sendTokens(mintId, address(riskVault));
-        riskVault.sendTokens(mintId, address(insrVault));
+        insrVault.sendTokens(epochEnd, address(riskVault));
+        riskVault.sendTokens(epochEnd, address(insrVault));
 
-        emit VaultTVL(
-            riskVault.idClaimTVL(mintId),
-            insrVault.idClaimTVL(mintId),
-            riskVault.idFinalTVL(mintId),
-            insrVault.idFinalTVL(mintId)
+        VaultTVL memory tvl = VaultTVL(
+            riskVault.idClaimTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
+            riskVault.idFinalTVL(epochEnd),
+            insrVault.idFinalTVL(epochEnd)
         );
 
         emit DepegInsurance(
+            tvl,
             marketIndex,
-            mintId,
+            epochEnd,
             insrVault.name(),
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
@@ -119,13 +121,13 @@ contract Controller {
     /**
     @notice no depeg event, and epoch is over
      */
-    function triggerEndEpoch(uint256 marketIndex, uint256 mintId) public {
+    function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) public {
         require(
             vaultFactory.getVaults(marketIndex).length == 2,
             "There is no market available for this market Index!"
         );
         require(
-            block.timestamp >= mintId,
+            block.timestamp >= epochEnd,
             "Epoch for this insurance has not expired!"
         );
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
@@ -134,26 +136,27 @@ contract Controller {
         Vault riskVault = Vault(vaultsAddress[1]);
 
         //require this function cannot be called twice in the same epoch for the same vault
-        require(insrVault.idFinalTVL(mintId) == 0, "Error: TVLs must be 0");
-        require(riskVault.idFinalTVL(mintId) == 0, "Error: TVLs must be 0");
+        require(insrVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must be 0");
+        require(riskVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must be 0");
 
-        insrVault.endEpoch(mintId, false);
-        riskVault.endEpoch(mintId, false);
+        insrVault.endEpoch(epochEnd, false);
+        riskVault.endEpoch(epochEnd, false);
 
-        insrVault.setClaimTVL(mintId, 0);
-        riskVault.setClaimTVL(mintId, insrVault.idFinalTVL(mintId));
-        insrVault.sendTokens(mintId, address(riskVault));
+        insrVault.setClaimTVL(epochEnd, 0);
+        riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd));
+        insrVault.sendTokens(epochEnd, address(riskVault));
 
-        emit VaultTVL(
-            riskVault.idClaimTVL(mintId),
-            insrVault.idClaimTVL(mintId),
-            riskVault.idFinalTVL(mintId),
-            insrVault.idFinalTVL(mintId)
+        VaultTVL memory tvl = VaultTVL(
+            riskVault.idClaimTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
+            riskVault.idFinalTVL(epochEnd),
+            insrVault.idFinalTVL(epochEnd)
         );
 
         emit DepegInsurance(
+            tvl,
             marketIndex,
-            mintId,
+            epochEnd,
             insrVault.name(),
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
