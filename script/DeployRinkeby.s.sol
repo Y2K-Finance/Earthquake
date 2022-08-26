@@ -8,7 +8,7 @@ import "../src/rewards/RewardsFactory.sol";
 import "../test/GovToken.sol";
 
 /*
-forge script script/DeployRinkeby.s.sol:DeployRinkebyScript --rpc-url $ARBITRUM_RINKEBY_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+forge script script/DeployRinkeby.s.sol:DeployRinkebyScript --rpc-url $ARBITRUM_RINKEBY_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
 */
 contract DeployRinkebyScript is Script {
 
