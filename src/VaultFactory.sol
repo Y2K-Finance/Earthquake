@@ -17,27 +17,24 @@ contract VaultFactory {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-    event Market(
-        bytes32 indexed epochMarketId,
-        uint256 indexed index,
+    event MarketCreated(
+        bytes32 indexed marketEpochId,
+        uint256 indexed mIndex
         address hedgeVault,
         address riskVault,
         address token,
-        int256 price,
-        uint256 startEpoch,
-        uint256 endEpoch,
         string tokenName
     );
 
-    event EpochMarket(
-        bytes32 indexed epochMarketId,
-        uint256 indexed index,
+    event EpochCreated(
+        bytes32 indexed marketEpochId,
+        uint256 indexed mIndex,
+        uint256 startEpoch,
+        uint256 endEpoch,
+        int256 strikePrice,
         address hedgeVault,
         address riskVault,
         address token,
-        int256 price,
-        uint256 startEpoch,
-        uint256 endEpoch,
         string tokenName
     );
 
@@ -112,7 +109,10 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
-        require(IController(controller).getVaultFactory() == address(this), "Vault Factory not set in Controller to this address");
+        require(
+            IController(controller).getVaultFactory() == address(this),
+            "Vault Factory not set in Controller to this address"
+        );
         require(controller != address(0), "Controller is not set!");
         require(_strikePrice < 100, "Strike price must be less than 100");
         require(_strikePrice > 10, "Strike price must be greater than 10");
@@ -156,15 +156,24 @@ contract VaultFactory {
             tokenToOracle[_token] = _oracle;
         }
 
-        emit Market(
-            keccak256(abi.encodePacked(marketIndex,epochBegin,epochEnd)),
+        emit MarketCreated(
+            keccak256(abi.encodePacked(marketIndex, epochBegin, epochEnd)),
             marketIndex,
             address(hedge),
             address(risk),
             _token,
+            _name
+        );
+
+        emit EpochCreated(
+            keccak256(abi.encodePacked(marketIndex, epochBegin, epochEnd)),
+            marketIndex,
+            beginEpoch,
+            endEpoch,
             _strikePrice,
-            epochBegin,
-            epochEnd,
+            address(hedge),
+            address(risk),
+            _token,
             _name
         );
 
@@ -179,27 +188,27 @@ contract VaultFactory {
      */
     function deployMoreAssets(
         uint256 index,
-        uint256 beginEpoch,
-        uint256 endEpoch
+        uint256 epochBegin,
+        uint256 epochEnd
     ) public onlyAdmin {
         require(controller != address(0), "Controller is not set!");
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 
-        Vault(hedge).createAssets(beginEpoch, endEpoch);
-        Vault(risk).createAssets(beginEpoch, endEpoch);
+        Vault(hedge).createAssets(epochBegin, epochEnd);
+        Vault(risk).createAssets(epochBegin, epochEnd);
 
-        indexEpochs[index].push(endEpoch);
+        indexEpochs[index].push(epochEnd);
 
-        emit EpochMarket(
-            keccak256(abi.encodePacked(marketIndex,beginEpoch,endEpoch)),
+        emit EpochCreated(
+            keccak256(abi.encodePacked(index, epochBegin, epochEnd)),
             index,
+            epochBegin,
+            epochEnd,
+            Vault(hedge).strikePrice(),
             address(hedge),
             address(risk),
             Vault(hedge).tokenInsured(),
-            Vault(hedge).strikePrice(),
-            beginEpoch,
-            endEpoch,
             Vault(hedge).name()
         );
     }
