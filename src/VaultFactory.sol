@@ -14,16 +14,20 @@ contract VaultFactory {
     address public controller;
     uint256 public marketIndex;
 
+    struct Market{
+        address hedge;
+        address risk;
+        address token;
+        string name;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     event MarketCreated(
         bytes32 indexed marketEpochId,
-        uint256 indexed mIndex
-        address hedgeVault,
-        address riskVault,
-        address token,
-        string tokenName
+        uint256 indexed mIndex,
+        Market market
     );
 
     event EpochCreated(
@@ -32,10 +36,7 @@ contract VaultFactory {
         uint256 startEpoch,
         uint256 endEpoch,
         int256 strikePrice,
-        address hedgeVault,
-        address riskVault,
-        address token,
-        string tokenName
+        Market market
     );
 
     event controllerSet(address indexed newController);
@@ -159,22 +160,16 @@ contract VaultFactory {
         emit MarketCreated(
             keccak256(abi.encodePacked(marketIndex, epochBegin, epochEnd)),
             marketIndex,
-            address(hedge),
-            address(risk),
-            _token,
-            _name
+            Market(address(hedge),address(risk),_token, _name)
         );
 
         emit EpochCreated(
             keccak256(abi.encodePacked(marketIndex, epochBegin, epochEnd)),
             marketIndex,
-            beginEpoch,
-            endEpoch,
+            epochBegin,
+            epochEnd,
             _strikePrice,
-            address(hedge),
-            address(risk),
-            _token,
-            _name
+            Market(address(hedge),address(risk), _token, _name)
         );
 
         return (address(hedge), address(risk));
@@ -183,8 +178,8 @@ contract VaultFactory {
     /**    
     @notice function to deploy hedge assets for given epochs, after the creation of this vault, where the Index is the date of the end of epoch;
     @param  index uint256 of the market index to create more assets in;
-    @param  beginEpoch uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
-    @param  endEpoch uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
+    @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
+    @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
      */
     function deployMoreAssets(
         uint256 index,
@@ -206,10 +201,7 @@ contract VaultFactory {
             epochBegin,
             epochEnd,
             Vault(hedge).strikePrice(),
-            address(hedge),
-            address(risk),
-            Vault(hedge).tokenInsured(),
-            Vault(hedge).name()
+            Market(address(hedge), address(risk), Vault(hedge).tokenInsured(), Vault(hedge).name())
         );
     }
 
