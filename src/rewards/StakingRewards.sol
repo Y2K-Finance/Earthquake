@@ -2,13 +2,17 @@ pragma solidity 0.8.15;
 
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {
+    ReentrancyGuard
+} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // Inheritance
 import {IStakingRewards} from "./IStakingRewards.sol";
 import {RewardsDistributionRecipient} from "./RewardsDistributionRecipient.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
-import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import {
+    ERC1155Holder
+} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "./Owned.sol";

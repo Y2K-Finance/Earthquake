@@ -3,7 +3,6 @@ pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
-
 contract PegOracle {
     /***
     @dev  for example: oracle1 would be stETH / USD, while oracle2 would be ETH / USD oracle
@@ -16,15 +15,16 @@ contract PegOracle {
     AggregatorV3Interface internal priceFeed1;
     AggregatorV3Interface internal priceFeed2;
 
-
     constructor(address _oracle1, address _oracle2) {
         require(_oracle1 != address(0), "oracle1 cannot be the zero address");
         require(_oracle2 != address(0), "oracle2 cannot be the zero address");
         require(_oracle1 != _oracle2, "Cannot be same Oracle");
         priceFeed1 = AggregatorV3Interface(_oracle1);
         priceFeed2 = AggregatorV3Interface(_oracle2);
-        require((priceFeed1.decimals() == priceFeed2.decimals()), 
-        "Decimals must be the same");
+        require(
+            (priceFeed1.decimals() == priceFeed2.decimals()),
+            "Decimals must be the same"
+        );
 
         oracle1 = _oracle1;
         oracle2 = _oracle2;
@@ -43,7 +43,6 @@ contract PegOracle {
             uint80 answeredInRound
         )
     {
-
         (
             uint80 roundID1,
             int256 price1,
@@ -54,10 +53,10 @@ contract PegOracle {
 
         int256 price2 = getOracle2_Price();
 
-        if(price1 > price2){
-            nowPrice = (price2*10000) / price1;
+        if (price1 > price2) {
+            nowPrice = (price2 * 10000) / price1;
         } else {
-            nowPrice = (price1*10000) / price2;
+            nowPrice = (price1 * 10000) / price2;
         }
 
         int256 decimals10 = int256(10**(18 - priceFeed1.decimals()));
@@ -65,7 +64,7 @@ contract PegOracle {
 
         return (
             roundID1,
-            nowPrice/1000000,
+            nowPrice / 1000000,
             startedAt1,
             timeStamp1,
             answeredInRound1
@@ -73,7 +72,6 @@ contract PegOracle {
     }
 
     function getOracle1_Price() public view returns (int256 price) {
-
         (
             uint80 roundID1,
             int256 price1,

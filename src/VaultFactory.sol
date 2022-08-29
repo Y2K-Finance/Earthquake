@@ -15,6 +15,11 @@ contract VaultFactory {
     uint256 public marketIndex;
 
     /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error MarketDoesNotExist(uint256 marketIndex);
+
+    /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     event MarketCreated(
@@ -177,6 +182,9 @@ contract VaultFactory {
         uint256 epochEnd
     ) public onlyAdmin {
         require(controller != address(0), "Controller is not set!");
+        if (index > marketIndex) {
+            revert MarketDoesNotExist(index);
+        }
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 

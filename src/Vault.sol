@@ -5,7 +5,9 @@ import {SemiFungibleVault} from "./SemiFungibleVault.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {
+    ReentrancyGuard
+} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Vault is SemiFungibleVault, ReentrancyGuard {
     using FixedPointMathLib for uint256;
@@ -205,7 +207,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return entitledShares;
     }
 
-
     /*///////////////////////////////////////////////////////////////
                            ACCOUNTING LOGIC
     //////////////////////////////////////////////////////////////*/
@@ -246,7 +247,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
         require(_withdrawalFee < 150, "Fee is too high!"); //15% fee is too high
         withdrawalFee = _withdrawalFee;
-
     }
 
     function changeTreasury(address _treasury) public onlyFactory {
