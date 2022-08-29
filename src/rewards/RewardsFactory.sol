@@ -11,6 +11,24 @@ contract RewardsFactory {
     address public factory;
 
     /*//////////////////////////////////////////////////////////////
+                                 MAPPINGS
+    //////////////////////////////////////////////////////////////*/
+
+    //mapping(uint => mapping(uint => address[])) public marketIndex_epoch_StakingRewards; //Market Index, Epoch, Staking Rewards [0] = insrance, [1] = risk
+    // solhint-disable-next-line var-name-mixedcase
+    mapping(bytes32 => address[]) public hashedIndex_StakingRewards; //Hashed Index, Staking Rewards [0] = insrance, [1] = risk
+
+    /*//////////////////////////////////////////////////////////////
+                                  EVENTS
+    //////////////////////////////////////////////////////////////*/
+    event CreatedStakingReward(
+        bytes32 indexed marketEpochId,
+        uint256 indexed mIndex,
+        address hedgeFarm,
+        address riskFarm
+    );
+
+    /*//////////////////////////////////////////////////////////////
                                   MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
@@ -30,23 +48,6 @@ contract RewardsFactory {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                  EVENTS
-    //////////////////////////////////////////////////////////////*/
-    event CreatedStakingReward(
-        bytes32 indexed MarketEpochId,
-        uint256 indexed mIndex,
-        address hedge_farm,
-        address risk_farm
-    );
-
-    /*//////////////////////////////////////////////////////////////
-                                 MAPPINGS
-    //////////////////////////////////////////////////////////////*/
-
-    //mapping(uint => mapping(uint => address[])) public marketIndex_epoch_StakingRewards; //Market Index, Epoch, Staking Rewards [0] = insrance, [1] = risk
-    mapping(bytes32 => address[]) public hashedIndex_StakingRewards; //Hashed Index, Staking Rewards [0] = insrance, [1] = risk
-
-    /*//////////////////////////////////////////////////////////////
                                   METHODS
     //////////////////////////////////////////////////////////////*/
     function createStakingRewards(uint256 _marketIndex, uint256 epochEnd)
@@ -54,10 +55,10 @@ contract RewardsFactory {
         onlyAdmin
         returns (address insr, address risk)
     {
-        VaultFactory vault_factory = VaultFactory(factory);
+        VaultFactory vaultFactory = VaultFactory(factory);
 
-        address _insrToken = vault_factory.getVaults(_marketIndex)[0];
-        address _riskToken = vault_factory.getVaults(_marketIndex)[1];
+        address _insrToken = vaultFactory.getVaults(_marketIndex)[0];
+        address _riskToken = vaultFactory.getVaults(_marketIndex)[1];
 
         StakingRewards insrStake = new StakingRewards(
             admin,

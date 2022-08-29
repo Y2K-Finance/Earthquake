@@ -7,8 +7,6 @@ import "./Owned.sol";
 abstract contract RewardsDistributionRecipient is Owned {
     address public rewardsDistribution;
 
-    function notifyRewardAmount(uint256 reward) external virtual;
-
     modifier onlyRewardsDistribution() {
         require(
             msg.sender == rewardsDistribution,
@@ -16,6 +14,8 @@ abstract contract RewardsDistributionRecipient is Owned {
         );
         _;
     }
+
+    function notifyRewardAmount(uint256 reward) external virtual;
 
     function setRewardsDistribution(address _rewardsDistribution)
         external

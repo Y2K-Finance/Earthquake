@@ -14,6 +14,14 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     using FixedPointMathLib for uint256;
 
     /*///////////////////////////////////////////////////////////////
+                               IMMUTABLES AND STORAGE
+    //////////////////////////////////////////////////////////////*/
+    ERC20 public immutable asset;
+    string public name;
+    string public symbol;
+    bytes internal constant EMPTY = "";
+
+    /*///////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     event Deposit(
@@ -31,14 +39,6 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         uint256 assets,
         uint256 shares
     );
-
-    /*///////////////////////////////////////////////////////////////
-                               IMMUTABLES AND STORAGE
-    //////////////////////////////////////////////////////////////*/
-    ERC20 public immutable asset;
-    bytes constant EMPTY = "";
-    string public name;
-    string public symbol;
 
     constructor(
         ERC20 _asset,
@@ -202,7 +202,7 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /*///////////////////////////////////////////////////////////////
                          INTERNAL HOOKS LOGIC
     //////////////////////////////////////////////////////////////*/
-
+    // solhint-disable no-empty-blocks
     function beforeWithdraw(
         uint256 id,
         uint256 assets,

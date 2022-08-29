@@ -71,6 +71,7 @@ contract PegOracle {
         );
     }
 
+    /* solhint-disbable-next-line func-name-mixedcase */
     function getOracle1_Price() public view returns (int256 price) {
         (
             uint80 roundID1,
@@ -90,6 +91,7 @@ contract PegOracle {
         return price1;
     }
 
+    /* solhint-disbable-next-line func-name-mixedcase */
     function getOracle2_Price() public view returns (int256 price) {
         (
             uint80 roundID2,

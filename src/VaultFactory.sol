@@ -8,8 +8,10 @@ interface IController {
 }
 
 contract VaultFactory {
+    // solhint-disable var-name-mixedcase
     address public immutable Admin;
     address public immutable WETH;
+    // solhint-enable var-name-mixedcase
     address public treasury;
     address public controller;
     uint256 public marketIndex;
@@ -77,15 +79,15 @@ contract VaultFactory {
 
     constructor(
         address _treasury,
-        address _WETH,
+        address _weth,
         address _admin
     ) {
         require(_admin != address(0), "admin cannot be the zero address");
-        require(_WETH != address(0), "WETH cannot be the zero address");
+        require(_weth != address(0), "WETH cannot be the zero address");
         require(_treasury != address(0), "treasury cannot be the zero address");
 
         Admin = _admin;
-        WETH = _WETH;
+        WETH = _weth;
         marketIndex = 0;
         treasury = _treasury;
     }

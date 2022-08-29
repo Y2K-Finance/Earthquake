@@ -9,7 +9,7 @@ import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 
 contract Controller {
     address public immutable admin;
-    VaultFactory immutable vaultFactory;
+    VaultFactory public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
@@ -24,17 +24,20 @@ contract Controller {
     event DepegInsurance(
         bytes32 epochMarketID,
         VaultTVL tvl,
+        bool isDisaster,
         uint256 epoch,
         uint256 time,
         int256 depegPrice
     );
 
+    /* solhint-disable  var-name-mixedcase */
     struct VaultTVL {
         uint256 RISK_claimTVL;
         uint256 RISK_finalTVL;
         uint256 INSR_claimTVL;
         uint256 INSR_finalTVL;
     }
+    /* solhint-enable  var-name-mixedcase */
 
     /*//////////////////////////////////////////////////////////////
                                  MODIFIERS
@@ -128,6 +131,7 @@ contract Controller {
                 )
             ),
             tvl,
+            false,
             epochEnd,
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
@@ -178,6 +182,7 @@ contract Controller {
                 )
             ),
             tvl,
+            false,
             epochEnd,
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
