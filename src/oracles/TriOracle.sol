@@ -2,4 +2,7 @@ pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
-contract TriOracle {}
+/* solhint-disable-next-line no-empty-blocks */
+contract TriOracle {
+
+}

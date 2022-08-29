@@ -8,24 +8,41 @@ interface IController {
 }
 
 contract VaultFactory {
+    // solhint-disable var-name-mixedcase
     address public immutable Admin;
     address public immutable WETH;
+    // solhint-enable var-name-mixedcase
     address public treasury;
     address public controller;
     uint256 public marketIndex;
 
     /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error MarketDoesNotExist(uint256 marketIndex);
+
+    /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-    event PegMarketCreated(
-        uint256 indexed index,
-        address hedgeVault,
-        address riskVault,
+    event MarketCreated(
+        uint256 indexed mIndex,
+        address hedge,
+        address risk,
         address token,
-        int256 price,
+        string name,
+        int256 strikePrice
+    );
+
+    event EpochCreated(
+        bytes32 indexed marketEpochId,
+        uint256 indexed mIndex,
         uint256 startEpoch,
         uint256 endEpoch,
-        string tokenName
+        address hedge,
+        address risk,
+        address token,
+        string name,
+        int256 strikePrice
     );
 
     event controllerSet(address indexed newController);
@@ -62,15 +79,15 @@ contract VaultFactory {
 
     constructor(
         address _treasury,
-        address _WETH,
+        address _weth,
         address _admin
     ) {
         require(_admin != address(0), "admin cannot be the zero address");
-        require(_WETH != address(0), "WETH cannot be the zero address");
+        require(_weth != address(0), "WETH cannot be the zero address");
         require(_treasury != address(0), "treasury cannot be the zero address");
 
         Admin = _admin;
-        WETH = _WETH;
+        WETH = _weth;
         marketIndex = 0;
         treasury = _treasury;
     }
@@ -99,7 +116,10 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
-        require(IController(controller).getVaultFactory() == address(this), "Vault Factory not set in Controller to this address");
+        require(
+            IController(controller).getVaultFactory() == address(this),
+            "Vault Factory not set in Controller to this address"
+        );
         require(controller != address(0), "Controller is not set!");
         require(_strikePrice < 100, "Strike price must be less than 100");
         require(_strikePrice > 10, "Strike price must be greater than 10");
@@ -134,25 +154,20 @@ contract VaultFactory {
 
         indexVaults[marketIndex] = [address(hedge), address(risk)];
 
-        hedge.createAssets(epochBegin, epochEnd);
-        risk.createAssets(epochBegin, epochEnd);
-
-        indexEpochs[marketIndex].push(epochEnd);
-
         if (tokenToOracle[_token] == address(0)) {
             tokenToOracle[_token] = _oracle;
         }
 
-        emit PegMarketCreated(
+        emit MarketCreated(
             marketIndex,
             address(hedge),
             address(risk),
             _token,
-            _strikePrice,
-            epochBegin,
-            epochEnd,
-            _name
+            _name,
+            _strikePrice
         );
+
+        _createEpoch(marketIndex, epochBegin, epochEnd, hedge, risk);
 
         return (address(hedge), address(risk));
     }
@@ -160,32 +175,46 @@ contract VaultFactory {
     /**    
     @notice function to deploy hedge assets for given epochs, after the creation of this vault, where the Index is the date of the end of epoch;
     @param  index uint256 of the market index to create more assets in;
-    @param  beginEpoch uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
-    @param  endEpoch uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
+    @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
+    @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
      */
     function deployMoreAssets(
         uint256 index,
-        uint256 beginEpoch,
-        uint256 endEpoch
+        uint256 epochBegin,
+        uint256 epochEnd
     ) public onlyAdmin {
         require(controller != address(0), "Controller is not set!");
+        if (index > marketIndex) {
+            revert MarketDoesNotExist(index);
+        }
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 
-        Vault(hedge).createAssets(beginEpoch, endEpoch);
-        Vault(risk).createAssets(beginEpoch, endEpoch);
+        _createEpoch(index, epochBegin, epochEnd, Vault(hedge), Vault(risk));
+    }
 
-        indexEpochs[marketIndex].push(endEpoch);
+    function _createEpoch(
+        uint256 index,
+        uint256 epochBegin,
+        uint256 epochEnd,
+        Vault hedge,
+        Vault risk
+    ) internal {
+        hedge.createAssets(epochBegin, epochEnd);
+        risk.createAssets(epochBegin, epochEnd);
 
-        emit PegMarketCreated(
-            marketIndex,
+        indexEpochs[index].push(epochEnd);
+
+        emit EpochCreated(
+            keccak256(abi.encodePacked(index, epochBegin, epochEnd)),
+            index,
+            epochBegin,
+            epochEnd,
             address(hedge),
             address(risk),
             Vault(hedge).tokenInsured(),
-            Vault(hedge).strikePrice(),
-            beginEpoch,
-            endEpoch,
-            Vault(hedge).name()
+            Vault(hedge).name(),
+            Vault(hedge).strikePrice()
         );
     }
 

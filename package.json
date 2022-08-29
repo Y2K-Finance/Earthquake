@@ -1,6 +1,9 @@
 {
   "scripts": {
-    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "solhint": "./node_modules/.bin/solhint -f table src/**/*.sol",
+    "format": "prettier --write .",
+    "format:check": "prettier --check '*/**/*.{js,sol,json,md,ts}'",
+    "lint": "solhint 'src/**/*.sol'",
     "prettier": "prettier --write 'src/**/*.sol'",
     "prepare": "husky install"
   },
@@ -10,5 +13,8 @@
     "prettier-plugin-solidity": "*",
     "scripty": "^2.1.0",
     "solhint": "^3.3.7"
+  },
+  "dependencies": {
+    "solhint-plugin-prettier": "^0.0.5"
   }
 }

@@ -5,10 +5,23 @@ import {SemiFungibleVault} from "./SemiFungibleVault.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {
+    ReentrancyGuard
+} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Vault is SemiFungibleVault, ReentrancyGuard {
     using FixedPointMathLib for uint256;
+
+    /*///////////////////////////////////////////////////////////////
+                               IMMUTABLES AND STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    address public immutable tokenInsured;
+    address private treasury;
+    int256 public immutable strikePrice;
+    address private immutable factory;
+    address public controller;
+    uint256 public withdrawalFee;
 
     uint256[] public epochs;
     uint256 public timewindow;
@@ -31,7 +44,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyFactory() {
-        require(msg.sender == Factory, "You are not Factory!");
+        require(msg.sender == factory, "You are not Factory!");
         _;
     }
 
@@ -48,7 +61,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
-    modifier EpochHasNotStarted(uint256 id) {
+    modifier epochHasNotStarted(uint256 id) {
         require(
             block.timestamp < idEpochBegin[id] - timewindow,
             "Deposit time is over, Epoch has already started!"
@@ -56,24 +69,13 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
-    modifier EpochHasEnded(uint256 id) {
+    modifier epochHasEnded(uint256 id) {
         require(
             (block.timestamp >= id) || idDepegged[id] == true,
             "Epoch has not ended, or depeg event has not ocurred in the time being!"
         );
         _;
     }
-
-    /*///////////////////////////////////////////////////////////////
-                               IMMUTABLES AND STORAGE
-    //////////////////////////////////////////////////////////////*/
-
-    address public immutable tokenInsured;
-    address private treasury;
-    int256 public immutable strikePrice;
-    address private immutable Factory;
-    address public controller;
-    uint256 public withdrawalFee;
 
     /*//////////////////////////////////////////////////////////////
                                  CONSTRUCTOR
@@ -108,7 +110,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         tokenInsured = _token;
         treasury = _treasury;
         strikePrice = _strikePrice;
-        Factory = msg.sender;
+        factory = msg.sender;
         controller = _controller;
         timewindow = 1 days;
         withdrawalFee = _withdrawalFee;
@@ -133,7 +135,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         public
         override
         marketExists(id)
-        EpochHasNotStarted(id)
+        epochHasNotStarted(id)
         nonReentrant
         returns (uint256 shares)
     {
@@ -178,14 +180,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     )
         external
         override
-        EpochHasEnded(id)
+        epochHasEnded(id)
         marketExists(id)
         returns (uint256 shares)
     {
         require(
             msg.sender == owner ||
                 isApprovedForAll(owner, receiver) ||
-                msg.sender == Factory,
+                msg.sender == factory,
             "Owner needs to approve receiver for all"
         );
 
@@ -204,7 +206,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         return entitledShares;
     }
-
 
     /*///////////////////////////////////////////////////////////////
                            ACCOUNTING LOGIC
@@ -246,7 +247,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
         require(_withdrawalFee < 150, "Fee is too high!"); //15% fee is too high
         withdrawalFee = _withdrawalFee;
-
     }
 
     function changeTreasury(address _treasury) public onlyFactory {
@@ -308,6 +308,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     /**
+    solhint-disable-next-line max-line-length
     @notice Function to be called after endEpoch and setClaimTVL functions, respecting the calls in order, after storing the TVL of the end of epoch and the TVL amount to claim, this function will allow the transfer of tokens to the counterparty vault;
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param _counterparty address of the other vault, meaning address of the risk vault, if this is an hedge vault, and vice-versa;

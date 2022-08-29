@@ -34,6 +34,8 @@ contract AssertTest is Test {
     address oracleSTETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
     address oracleETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
 
+    address arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+
     address admin = address(1);
 
     address alice = address(2);
@@ -50,7 +52,7 @@ contract AssertTest is Test {
     
     function setUp() public {
         vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin);
+        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
 
         vm.prank(admin);
         vaultFactory.setController(address(controller));
