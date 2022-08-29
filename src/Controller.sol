@@ -7,7 +7,6 @@ import "./VaultFactory.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 
-
 contract Controller {
     address public immutable admin;
     VaultFactory immutable vaultFactory;
@@ -25,14 +24,12 @@ contract Controller {
     event DepegInsurance(
         bytes32 epochMarketID,
         VaultTVL tvl,
-        uint256 index,
         uint256 epoch,
-        string name,
         uint256 time,
         int256 depegPrice
     );
 
-    struct VaultTVL{
+    struct VaultTVL {
         uint256 RISK_claimTVL;
         uint256 RISK_finalTVL;
         uint256 INSR_claimTVL;
@@ -75,7 +72,11 @@ contract Controller {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _factory, address _admin, address _l2Sequencer) {
+    constructor(
+        address _factory,
+        address _admin,
+        address _l2Sequencer
+    ) {
         require(_admin != address(0), "admin cannot be the zero address");
         require(_factory != address(0), "factory cannot be the zero address");
         admin = _admin;
@@ -119,11 +120,15 @@ contract Controller {
         );
 
         emit DepegInsurance(
-            keccak256(abi.encodePacked(marketIndex, insrVault.idEpochBegin(epochEnd), epochEnd)),
+            keccak256(
+                abi.encodePacked(
+                    marketIndex,
+                    insrVault.idEpochBegin(epochEnd),
+                    epochEnd
+                )
+            ),
             tvl,
-            marketIndex,
             epochEnd,
-            insrVault.name(),
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
         );
@@ -165,11 +170,15 @@ contract Controller {
         );
 
         emit DepegInsurance(
-            keccak256(abi.encodePacked(marketIndex, insrVault.idEpochBegin(epochEnd), epochEnd)),
+            keccak256(
+                abi.encodePacked(
+                    marketIndex,
+                    insrVault.idEpochBegin(epochEnd),
+                    epochEnd
+                )
+            ),
             tvl,
-            marketIndex,
             epochEnd,
-            insrVault.name(),
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
         );
@@ -189,24 +198,25 @@ contract Controller {
         returns (int256 nowPrice)
     {
         (
-        /*uint80 roundId*/,
-        int256 answer,
-        uint256 startedAt,
-        /*uint256 updatedAt*/,
-        /*uint80 answeredInRound*/
+            ,
+            /*uint80 roundId*/
+            int256 answer,
+            uint256 startedAt, /*uint256 updatedAt*/ /*uint80 answeredInRound*/
+            ,
+
         ) = sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down
         bool isSequencerUp = answer == 0;
         if (!isSequencerUp) {
-        revert SequencerDown();
+            revert SequencerDown();
         }
 
         // Make sure the grace period has passed after the sequencer is back up.
         uint256 timeSinceUp = block.timestamp - startedAt;
         if (timeSinceUp <= GRACE_PERIOD_TIME) {
-        revert GracePeriodNotOver();
+            revert GracePeriodNotOver();
         }
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
@@ -220,10 +230,9 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        
         int256 decimals = 10e18 / int256(10**priceFeed.decimals());
-        price = price * decimals; 
-        
+        price = price * decimals;
+
         require(price > 0, "Oracle price <= 0");
         require(answeredInRound >= roundID, "RoundID from Oracle is outdated!");
         require(timeStamp != 0, "Timestamp == 0 !");
@@ -231,9 +240,7 @@ contract Controller {
         return price;
     }
 
-
     function getVaultFactory() external view returns (address) {
         return address(vaultFactory);
     }
-
 }

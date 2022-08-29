@@ -35,7 +35,6 @@ contract RewardsFactory {
     event CreatedStakingReward(
         bytes32 indexed MarketEpochId,
         uint256 indexed mIndex,
-        uint256 indexed date,
         address hedge_farm,
         address risk_farm
     );
@@ -50,7 +49,7 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   METHODS
     //////////////////////////////////////////////////////////////*/
-    function createStakingRewards(uint256 _marketIndex, uint256 _epoch)
+    function createStakingRewards(uint256 _marketIndex, uint256 epochEnd)
         external
         onlyAdmin
         returns (address insr, address risk)
@@ -65,17 +64,17 @@ contract RewardsFactory {
             admin,
             govToken,
             _insrToken,
-            _epoch
+            epochEnd
         );
         StakingRewards riskStake = new StakingRewards(
             admin,
             admin,
             govToken,
             _riskToken,
-            _epoch
+            epochEnd
         );
 
-        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, _epoch));
+        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, epochEnd));
         hashedIndex_StakingRewards[hashedIndex] = [
             address(insrStake),
             address(riskStake)
@@ -85,12 +84,11 @@ contract RewardsFactory {
             keccak256(
                 abi.encodePacked(
                     _marketIndex,
-                    Vault(_insrToken).idEpochBegin(_epoch),
-                    _epoch
+                    Vault(_insrToken).idEpochBegin(epochEnd),
+                    epochEnd
                 )
             ),
             _marketIndex,
-            _epoch,
             address(insrStake),
             address(riskStake)
         );

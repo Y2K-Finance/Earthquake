@@ -14,20 +14,16 @@ contract VaultFactory {
     address public controller;
     uint256 public marketIndex;
 
-    struct Market{
-        address hedge;
-        address risk;
-        address token;
-        string name;
-    }
-
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     event MarketCreated(
-        bytes32 indexed marketEpochId,
         uint256 indexed mIndex,
-        Market market
+        address hedge,
+        address risk,
+        address token,
+        string name,
+        int256 strikePrice
     );
 
     event EpochCreated(
@@ -35,8 +31,11 @@ contract VaultFactory {
         uint256 indexed mIndex,
         uint256 startEpoch,
         uint256 endEpoch,
-        int256 strikePrice,
-        Market market
+        address hedge,
+        address risk,
+        address token,
+        string name,
+        int256 strikePrice
     );
 
     event controllerSet(address indexed newController);
@@ -148,29 +147,20 @@ contract VaultFactory {
 
         indexVaults[marketIndex] = [address(hedge), address(risk)];
 
-        hedge.createAssets(epochBegin, epochEnd);
-        risk.createAssets(epochBegin, epochEnd);
-
-        indexEpochs[marketIndex].push(epochEnd);
-
         if (tokenToOracle[_token] == address(0)) {
             tokenToOracle[_token] = _oracle;
         }
 
         emit MarketCreated(
-            keccak256(abi.encodePacked(marketIndex, epochBegin, epochEnd)),
             marketIndex,
-            Market(address(hedge),address(risk),_token, _name)
+            address(hedge),
+            address(risk),
+            _token,
+            _name,
+            _strikePrice
         );
 
-        emit EpochCreated(
-            keccak256(abi.encodePacked(marketIndex, epochBegin, epochEnd)),
-            marketIndex,
-            epochBegin,
-            epochEnd,
-            _strikePrice,
-            Market(address(hedge),address(risk), _token, _name)
-        );
+        _createEpoch(marketIndex, epochBegin, epochEnd, hedge, risk);
 
         return (address(hedge), address(risk));
     }
@@ -190,8 +180,18 @@ contract VaultFactory {
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 
-        Vault(hedge).createAssets(epochBegin, epochEnd);
-        Vault(risk).createAssets(epochBegin, epochEnd);
+        _createEpoch(index, epochBegin, epochEnd, Vault(hedge), Vault(risk));
+    }
+
+    function _createEpoch(
+        uint256 index,
+        uint256 epochBegin,
+        uint256 epochEnd,
+        Vault hedge,
+        Vault risk
+    ) internal {
+        hedge.createAssets(epochBegin, epochEnd);
+        risk.createAssets(epochBegin, epochEnd);
 
         indexEpochs[index].push(epochEnd);
 
@@ -200,8 +200,11 @@ contract VaultFactory {
             index,
             epochBegin,
             epochEnd,
-            Vault(hedge).strikePrice(),
-            Market(address(hedge), address(risk), Vault(hedge).tokenInsured(), Vault(hedge).name())
+            address(hedge),
+            address(risk),
+            Vault(hedge).tokenInsured(),
+            Vault(hedge).name(),
+            Vault(hedge).strikePrice()
         );
     }
 
