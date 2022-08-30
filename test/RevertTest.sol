@@ -81,7 +81,25 @@ contract RevertTest is Test {
     }
 
     function testGetLatestPriceReverts() public {
-        //to-do: find way to force SequencerDown()
+        //create invalid controller(w/any address other than arbitrum_sequencer)
+        controller = new Controller(address(vaultFactory),admin, oracleFEI);
+
+        //create fake oracle for price feed
+        vm.startPrank(admin);
+        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 90995265);
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*SET");
+        vm.stopPrank();
+
+        //expect SequencerDown and GracePeriodNotOver
+        vm.startPrank(admin);
+        vm.expectRevert(Controller.SequencerDown.selector);
+        controller.getLatestPrice(tokenFRAX);
+        vm.stopPrank();
+
+        //expect GracePeriodNotOver
+
+
+        //to-do: 
         //use vm.warp() to force GracePeriodNotOver()
         //assertEquals between pre and post-revert variables
     }
