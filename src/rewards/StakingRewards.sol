@@ -73,12 +73,13 @@ contract StakingRewards is
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _id
+        uint256 _epochEnd
     ) Owned(_owner) {
         rewardsToken = ERC20(_rewardsToken);
         stakingToken = IERC1155(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
-        id = _id;
+        id = _epochEnd;
+        rewardsDuration = _epochEnd - block.timestamp;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */

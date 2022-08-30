@@ -11,68 +11,6 @@
     "linkReferences": {}
   },
   "methodIdentifiers": {},
-  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.15+commit.e14f2714\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/oracles/TriOracle.sol\":\"TriOracle\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@chainlink/=lib/chainlink/contracts/src/v0.8/\",\":@openzeppelin/=lib/openzeppelin-contracts/\",\":@solmate/=lib/solmate/src/\",\":chainlink/=lib/chainlink/\",\":ds-test/=lib/ds-test/src/\",\":forge-std/=lib/forge-std/src/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\",\":solmate/=lib/solmate/src/\"]},\"sources\":{\"lib/chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\":{\"keccak256\":\"0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120\",\"dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG\"]},\"src/oracles/TriOracle.sol\":{\"keccak256\":\"0x650d4957213fb21fcaa47c0a2365d8deb9170536eb10748a7518cedc1269e6a8\",\"urls\":[\"bzz-raw://d89a6c96cd2539c1e37737ea77c4edbdf1b0738017a5a522710f4507d75151ab\",\"dweb:/ipfs/QmTH9C3cXHTsfRck6G784af5cGgH28Zg4KGQj21ikcD2Xv\"]}},\"version\":1}",
-  "metadata": {
-    "compiler": {
-      "version": "0.8.15+commit.e14f2714"
-    },
-    "language": "Solidity",
-    "output": {
-      "abi": [],
-      "devdoc": {
-        "kind": "dev",
-        "methods": {},
-        "version": 1
-      },
-      "userdoc": {
-        "kind": "user",
-        "methods": {},
-        "version": 1
-      }
-    },
-    "settings": {
-      "remappings": [
-        ":@chainlink/=lib/chainlink/contracts/src/v0.8/",
-        ":@openzeppelin/=lib/openzeppelin-contracts/",
-        ":@solmate/=lib/solmate/src/",
-        ":chainlink/=lib/chainlink/",
-        ":ds-test/=lib/ds-test/src/",
-        ":forge-std/=lib/forge-std/src/",
-        ":openzeppelin-contracts/=lib/openzeppelin-contracts/",
-        ":solmate/=lib/solmate/src/"
-      ],
-      "optimizer": {
-        "enabled": true,
-        "runs": 200
-      },
-      "metadata": {
-        "bytecodeHash": "ipfs"
-      },
-      "compilationTarget": {
-        "src/oracles/TriOracle.sol": "TriOracle"
-      },
-      "libraries": {}
-    },
-    "sources": {
-      "lib/chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol": {
-        "keccak256": "0xf2b6c9adb3552254df1445b73563cf014434ff5e78663e9b961b6c059506ceb5",
-        "urls": [
-          "bzz-raw://6c1f59e0c7334c22fb54288728fc32546bdc9c8133d6db0d60223e3c28f52120",
-          "dweb:/ipfs/QmeuxawUVBhMWQJXaEhhnubCTc4Jwn5wYK8gbhq6NjrpfG"
-        ],
-        "license": "MIT"
-      },
-      "src/oracles/TriOracle.sol": {
-        "keccak256": "0x650d4957213fb21fcaa47c0a2365d8deb9170536eb10748a7518cedc1269e6a8",
-        "urls": [
-          "bzz-raw://d89a6c96cd2539c1e37737ea77c4edbdf1b0738017a5a522710f4507d75151ab",
-          "dweb:/ipfs/QmTH9C3cXHTsfRck6G784af5cGgH28Zg4KGQj21ikcD2Xv"
-        ],
-        "license": null
-      }
-    },
-    "version": 1
-  },
   "ast": {
     "absolutePath": "src/oracles/TriOracle.sol",
     "id": 28657,
