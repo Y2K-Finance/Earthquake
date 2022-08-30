@@ -42,10 +42,34 @@ contract DeployRinkebyScript is Script {
     uint256 nextBegin;
     
     function setUp() public {
+        // vaultFactory = new VaultFactory(admin,WETH,admin);
+        // controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+
+        // vm.prank(admin);
+        // vaultFactory.setController(address(controller));
+
+        // govToken = new GovToken();
+
+        // rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+                
+        // console2.log("Controller address", address(controller));
+        // console2.log("Vault Factory address", address(vaultFactory));
+        // console2.log("Rewards Factory address", address(rewardsFactory));
+
+        // endEpoch = block.timestamp + 30 days;
+        // beginEpoch = block.timestamp + 5 days;
+
+        // nextEpoch = block.timestamp + 60 days;
+        // nextBegin = block.timestamp + 30 days;
+    }
+
+    function run() public {
+        vm.startBroadcast();
+
+        // setUp();
         vaultFactory = new VaultFactory(admin,WETH,admin);
         controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
 
-        vm.prank(admin);
         vaultFactory.setController(address(controller));
 
         govToken = new GovToken();
@@ -55,18 +79,13 @@ contract DeployRinkebyScript is Script {
         console2.log("Controller address", address(controller));
         console2.log("Vault Factory address", address(vaultFactory));
         console2.log("Rewards Factory address", address(rewardsFactory));
+        console2.log("GovToken address", address(govToken));
 
         endEpoch = block.timestamp + 30 days;
         beginEpoch = block.timestamp + 5 days;
 
         nextEpoch = block.timestamp + 60 days;
         nextBegin = block.timestamp + 30 days;
-    }
-
-    function run() public {
-        vm.startBroadcast();
-
-        // setUp();
         
         //create New Market and respective farms
         // Create USDC market
