@@ -22,8 +22,8 @@ contract RewardsFactory {
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
     
-    /** @notice Triggers whenever staking rewards are created
-      * @param marketEpochID Current market epoch ID
+    /** @notice Creates staking rewards when event triggers
+      * @param marketEpochId Current market epoch ID
       * @param mIndex Current market index
       * @param hedgeFarm Hedge farm address
       * @param riskFarm Risk farm address
@@ -118,6 +118,11 @@ contract RewardsFactory {
         return (address(insrStake), address(riskStake));
     }
 
+    /** @notice Lookup hashed indexes
+      * @param _index Target index
+      * @param _epoch Target epoch
+      * @return hashedIndex hashed index
+      */
     function getHashedIndex(uint256 _index, uint256 _epoch)
         public
         pure

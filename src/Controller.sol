@@ -21,7 +21,7 @@ contract Controller {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     
-    /** @notice Triggers whenever insurance vault depegs 
+    /** @notice Depegs insurance vault when event triggers
       * @param epochMarketID Current market epoch ID
       * @param tvl Current TVL
       * @param isDisaster Flag if event isDisaster

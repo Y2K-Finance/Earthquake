@@ -24,6 +24,14 @@ contract VaultFactory {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
+    
+    /** @notice Market is created when event triggers
+      * @param mIndex Current market index
+      * @param hedge Hedge vault address
+      * @param risk Risk vault address
+      * @param token Token address
+      * @param name Market name
+      */ 
     event MarketCreated(
         uint256 indexed mIndex,
         address hedge,
@@ -33,6 +41,17 @@ contract VaultFactory {
         int256 strikePrice
     );
 
+    /** @notice Epoch is created when event triggers
+      * @param marketEpochId Current market epoch id
+      * @param mIndex Current market index
+      * @param startEpoch Epoch start time
+      * @param endEpoch Epoch end time
+      * @param hedge Hedge vault address
+      * @param risk Risk vault address
+      * @param token Token address
+      * @param name Market name
+      * @param strikePrice Vault strike price
+      */ 
     event EpochCreated(
         bytes32 indexed marketEpochId,
         uint256 indexed mIndex,
@@ -45,12 +64,39 @@ contract VaultFactory {
         int256 strikePrice
     );
 
+    /** @notice Controller is set when event triggers
+      * @param newController Address for new controller
+      */ 
     event controllerSet(address indexed newController);
 
+    /** @notice Treasury is changed when event triggers
+      * @param _treasury Treasury address
+      * @param _marketIndex Target market index
+      */ 
     event changedTreasury(address _treasury, uint256 indexed _marketIndex);
+
+    /** @notice Vault fee is changed when event triggers
+      * @param _marketIndex Target market index
+      * @param _feeRate Target fee rate
+      */ 
     event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
+
+     /** @notice Withdrawal fee is changed when event triggers
+      * @param _marketIndex Target market index
+      * @param _feeRate Target fee rate
+      */ 
     event changeWithdrawalFee(uint256 indexed _marketIndex, uint256 _feeRate);
+
+    /** @notice Time window is changed when event triggers
+      * @param _marketIndex Target market index
+      * @param _timeWindow Target time window
+      */ 
     event changedTimeWindow(uint256 indexed _marketIndex, uint256 _timeWindow);
+    
+    /** @notice Controller is changed when event triggers
+      * @param _marketIndex Target market index
+      * @param controller Target controller address
+      */ 
     event changedController(
         uint256 indexed _marketIndex,
         address indexed controller
@@ -76,7 +122,11 @@ contract VaultFactory {
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-
+    /** @notice Contract constructor
+      * @param _treasury Treasury address
+      * @param _weth Wrapped Ether token address
+      * @param _admin Admin address
+      */ 
     constructor(
         address _treasury,
         address _weth,
