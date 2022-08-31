@@ -20,6 +20,13 @@ contract VaultFactory {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error MarketDoesNotExist(uint256 marketIndex);
+    error AddressNotAdmin(address addr);
+    error AddressZero();
+    error AddressNotController();
+    error AddressFactoryNotInController();
+    error StrikePriceGreaterThan100(int256 strikePrice);
+    error StrikePriceLesserThan10(int256 strikePrice);
+    error ControllerNotSet();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -69,7 +76,8 @@ contract VaultFactory {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyAdmin() {
-        require(msg.sender == Admin, "You are not Admin!");
+        if(msg.sender != Admin)
+            revert AddressNotAdmin(msg.sender);
         _;
     }
 
@@ -82,9 +90,13 @@ contract VaultFactory {
         address _weth,
         address _admin
     ) {
-        require(_admin != address(0), "admin cannot be the zero address");
-        require(_weth != address(0), "WETH cannot be the zero address");
-        require(_treasury != address(0), "treasury cannot be the zero address");
+        if(_admin == address(0))
+            revert AddressZero();
+        if(_weth == address(0))
+            revert AddressZero();
+
+        if(_treasury == address(0))
+            revert AddressZero();
 
         Admin = _admin;
         WETH = _weth;
@@ -116,13 +128,19 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
-        require(
-            IController(controller).getVaultFactory() == address(this),
-            "Vault Factory not set in Controller to this address"
-        );
-        require(controller != address(0), "Controller is not set!");
-        require(_strikePrice < 100, "Strike price must be less than 100");
-        require(_strikePrice > 10, "Strike price must be greater than 10");
+        if(
+            IController(controller).getVaultFactory() != address(this)
+            )
+            revert AddressFactoryNotInController();
+
+        if(controller == address(0))
+            revert ControllerNotSet();
+
+        if(_strikePrice > 100)
+            revert StrikePriceGreaterThan100(_strikePrice);
+
+        if(_strikePrice < 10)
+            revert StrikePriceLesserThan10(_strikePrice);
 
         _strikePrice = _strikePrice * 10e16;
 
@@ -183,7 +201,9 @@ contract VaultFactory {
         uint256 epochBegin,
         uint256 epochEnd
     ) public onlyAdmin {
-        require(controller != address(0), "Controller is not set!");
+        if(controller == address(0))
+            revert ControllerNotSet();
+
         if (index > marketIndex) {
             revert MarketDoesNotExist(index);
         }
@@ -223,7 +243,8 @@ contract VaultFactory {
     @param  _controller address of the controller smart contract;
      */
     function setController(address _controller) public onlyAdmin {
-        require(_controller != address(0), "Controller address cannot be 0x0");
+        if(_controller == address(0))
+            revert AddressZero();
         controller = _controller;
 
         emit controllerSet(_controller);
@@ -278,7 +299,8 @@ contract VaultFactory {
         public
         onlyAdmin
     {
-        require(_controller != address(0), "Controller address cannot be 0x0");
+        if(_controller == address(0))
+            revert AddressZero();
 
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);

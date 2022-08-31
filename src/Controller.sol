@@ -13,9 +13,26 @@ contract Controller {
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
+    uint256 public constant VAULTS_LENGTH = 2;
 
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error MarketDoesNotExist(uint256 marketId);
     error SequencerDown();
     error GracePeriodNotOver();
+    error ZeroAddress();
+    error NotZeroTVL();
+    error PriceNotAtStrikePrice(int256 price);
+    error EpochNotStarted(uint256 epoch);
+    error EpochExpired(uint256 epoch);
+    error OraclePriceZero();
+    error RoundIDOutdated();
+    error TimestampZero();
+    error AddressNotAdmin();
+    error EpochNotExist(uint256 epoch);
+    error EpochNotExpired(uint256 epoch);
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -44,30 +61,37 @@ contract Controller {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyAdmin() {
-        require(msg.sender == admin);
+        if(msg.sender != admin)
+            revert AddressNotAdmin();
         _;
     }
 
     modifier isDisaster(uint256 marketIndex, uint256 epochEnd) {
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-        require(
-            vaultsAddress.length == 2,
-            "There is no market available for this market Index!"
-        );
+        if(
+            vaultsAddress.length != VAULTS_LENGTH
+            )
+            revert MarketDoesNotExist(marketIndex);
+
         address vaultAddress = vaultsAddress[0];
         Vault vault = Vault(vaultAddress);
-        require(
-            vault.strikePrice() >= getLatestPrice(vault.tokenInsured()),
-            "Current price is not at the strike price target!"
-        );
-        require(
-            vault.idEpochBegin(epochEnd) < block.timestamp,
-            "Epoch has not started, cannot insure until epoch has started!"
-        );
-        require(
-            block.timestamp < epochEnd,
-            "Epoch for this insurance has expired!"
-        );
+
+        if(vault.idExists(epochEnd) == false)
+            revert EpochNotExist(epochEnd);
+
+        if(
+            vault.strikePrice() < getLatestPrice(vault.tokenInsured())
+            )
+            revert PriceNotAtStrikePrice(getLatestPrice(vault.tokenInsured()));
+
+        if(
+            vault.idEpochBegin(epochEnd) > block.timestamp)
+            revert EpochNotStarted(epochEnd);
+
+        if(
+            block.timestamp > epochEnd
+            )
+            revert EpochExpired(epochEnd);
         _;
     }
 
@@ -80,8 +104,15 @@ contract Controller {
         address _admin,
         address _l2Sequencer
     ) {
-        require(_admin != address(0), "admin cannot be the zero address");
-        require(_factory != address(0), "factory cannot be the zero address");
+        if(_admin == address(0))
+            revert ZeroAddress();
+
+        if(_factory == address(0)) 
+            revert ZeroAddress();
+
+        if(_l2Sequencer == address(0))
+            revert ZeroAddress();
+        
         admin = _admin;
         vaultFactory = VaultFactory(_factory);
         sequencerUptimeFeed = AggregatorV2V3Interface(_l2Sequencer);
@@ -103,8 +134,10 @@ contract Controller {
         Vault riskVault = Vault(vaultsAddress[1]);
 
         //require this function cannot be called twice in the same epoch for the same vault
-        require(insrVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must be 0");
-        require(riskVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must tbe 0");
+        if(insrVault.idFinalTVL(epochEnd) != 0)
+            revert NotZeroTVL();
+        if(riskVault.idFinalTVL(epochEnd) != 0) 
+            revert NotZeroTVL();
 
         insrVault.endEpoch(epochEnd, true);
         riskVault.endEpoch(epochEnd, true);
@@ -142,22 +175,26 @@ contract Controller {
     @notice no depeg event, and epoch is over
      */
     function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) public {
-        require(
-            vaultFactory.getVaults(marketIndex).length == 2,
-            "There is no market available for this market Index!"
-        );
-        require(
-            block.timestamp >= epochEnd,
-            "Epoch for this insurance has not expired!"
-        );
+        if(
+            vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
+                revert MarketDoesNotExist(marketIndex);
+        if(
+            block.timestamp < epochEnd)
+            revert EpochNotExpired(epochEnd);
+
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
 
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
+        if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
+            revert EpochNotExist(epochEnd);
+
         //require this function cannot be called twice in the same epoch for the same vault
-        require(insrVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must be 0");
-        require(riskVault.idFinalTVL(epochEnd) == 0, "Error: TVLs must be 0");
+        if(insrVault.idFinalTVL(epochEnd) != 0)
+            revert NotZeroTVL();
+        if(riskVault.idFinalTVL(epochEnd) != 0) 
+            revert NotZeroTVL();
 
         insrVault.endEpoch(epochEnd, false);
         riskVault.endEpoch(epochEnd, false);
@@ -238,9 +275,14 @@ contract Controller {
         int256 decimals = 10e18 / int256(10**priceFeed.decimals());
         price = price * decimals;
 
-        require(price > 0, "Oracle price <= 0");
-        require(answeredInRound >= roundID, "RoundID from Oracle is outdated!");
-        require(timeStamp != 0, "Timestamp == 0 !");
+        if(price <= 0)
+            revert OraclePriceZero();
+
+        if(answeredInRound < roundID)
+            revert RoundIDOutdated();
+
+        if(timeStamp == 0)
+            revert TimestampZero();
 
         return price;
     }

@@ -12,6 +12,21 @@ import {
 contract Vault is SemiFungibleVault, ReentrancyGuard {
     using FixedPointMathLib for uint256;
 
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error AddressZero();
+    error AddressNotFactory(address _contract);
+    error AddressNotController(address _contract);
+    error MarketEpochDoesNotExist(uint256 _epoch);
+    error EpochAlreadyStarted(uint256 _epoch);
+    error EpochNotFinished(uint256 _epoch);
+    error FeeLessThan150(uint256 _fee);
+    error ZeroValue();
+    error OwnerDidNotAuthorize(address _sender, address _owner);
+    error EpochEndMustBeAfterBegin(uint256 _begin, uint256 _end);
+    error MarketEpochExists(uint256 _epoch);
+
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -44,36 +59,32 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyFactory() {
-        require(msg.sender == factory, "You are not Factory!");
+        if(msg.sender != factory)
+            revert AddressNotFactory(msg.sender);
         _;
     }
 
     modifier onlyController() {
-        require(
-            msg.sender == controller,
-            "You are not calling from the Controller!"
-        );
+        if(msg.sender != controller)
+            revert AddressNotController(msg.sender);
         _;
     }
 
     modifier marketExists(uint256 id) {
-        require(idExists[id] == true, "Market does not Exist!");
+        if(idExists[id] != true)
+            revert MarketEpochDoesNotExist(id);
         _;
     }
 
     modifier epochHasNotStarted(uint256 id) {
-        require(
-            block.timestamp < idEpochBegin[id] - timewindow,
-            "Deposit time is over, Epoch has already started!"
-        );
+        if(block.timestamp > idEpochBegin[id] - timewindow)
+            revert EpochAlreadyStarted(id);
         _;
     }
 
     modifier epochHasEnded(uint256 id) {
-        require(
-            (block.timestamp >= id) || idDepegged[id] == true,
-            "Epoch has not ended, or depeg event has not ocurred in the time being!"
-        );
+        if((block.timestamp < id) && idDepegged[id] == false)
+            revert EpochNotFinished(id);
         _;
     }
 
@@ -101,11 +112,17 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         int256 _strikePrice,
         address _controller
     ) SemiFungibleVault(ERC20(_assetAddress), _name, _symbol) {
-        require(_withdrawalFee < 150, "Fee must be less than 15%");
-        require(_treasury != address(0), "Treasury address cannot be 0x0");
-        require(_controller != address(0), "Controller address cannot be 0x0");
-        require(_token != address(0), "Token address cannot be 0x0");
-        require(_strikePrice > 0, "Strike price must be greater than 0");
+        if(_withdrawalFee > 150)
+            revert FeeLessThan150(_withdrawalFee);
+
+        if(_treasury == address(0))
+            revert AddressZero();
+
+        if(_controller == address(0))
+            revert AddressZero();
+
+        if(_token == address(0))
+            revert AddressZero();
 
         tokenInsured = _token;
         treasury = _treasury;
@@ -140,7 +157,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         returns (uint256 shares)
     {
         // Check for rounding error since we round down in previewDeposit.
-        require((shares = previewDeposit(id, assets)) != 0, "ZERO_SHARES");
+        require((shares = previewDeposit(id, assets)) != 0, "ZeroValue");
 
         asset.transferFrom(msg.sender, address(this), shares);
 
@@ -156,7 +173,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         payable
         returns (uint256 shares)
     {
-        require(msg.value > 0, "ETH amount must be greater than 0");
+        require(msg.value > 0, "ZeroValue");
 
         IWETH(address(asset)).deposit{value: msg.value}();
         assert(IWETH(address(asset)).transfer(msg.sender, msg.value));
@@ -184,12 +201,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
         returns (uint256 shares)
     {
-        require(
-            msg.sender == owner ||
-                isApprovedForAll(owner, receiver) ||
-                msg.sender == factory,
-            "Owner needs to approve receiver for all"
-        );
+        if(
+            msg.sender != owner || 
+            isApprovedForAll(owner, receiver))
+            revert OwnerDidNotAuthorize(msg.sender, owner);
 
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.
 
@@ -245,12 +260,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param _withdrawalFee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     **/
     function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
-        require(_withdrawalFee < 150, "Fee is too high!"); //15% fee is too high
+        if(_withdrawalFee > 150)
+            revert FeeLessThan150(_withdrawalFee); //15% fee is too high
         withdrawalFee = _withdrawalFee;
     }
 
     function changeTreasury(address _treasury) public onlyFactory {
-        require(_treasury != address(0), "Treasury address cannot be 0");
+        if(_treasury == address(0))
+            revert AddressZero();
         treasury = _treasury;
     }
 
@@ -259,7 +276,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     function changeController(address _controller) public onlyFactory {
-        require(_controller != address(0), "Controller address cannot be 0");
+        if(_controller == address(0))
+            revert AddressZero();
         controller = _controller;
     }
 
@@ -272,8 +290,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         public
         onlyFactory
     {
-        require(idExists[epochEnd] == false, "ID_EXISTS");
-        require(epochBegin < epochEnd, "INVALID_EPOCH");
+        if(idExists[epochEnd] == true)
+            revert MarketEpochExists(epochEnd);
+        
+        if(epochBegin >= epochEnd)
+            revert EpochEndMustBeAfterBegin(epochBegin, epochEnd);
 
         idExists[epochEnd] = true;
         idEpochBegin[epochEnd] = epochBegin;
