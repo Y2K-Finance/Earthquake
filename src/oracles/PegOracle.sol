@@ -15,6 +15,10 @@ contract PegOracle {
     AggregatorV3Interface internal priceFeed1;
     AggregatorV3Interface internal priceFeed2;
 
+    /** @notice Contract constructor
+      * @param _oracle1 First oracle address
+      * @param _oracle2 Second oracle address
+      */ 
     constructor(address _oracle1, address _oracle2) {
         require(_oracle1 != address(0), "oracle1 cannot be the zero address");
         require(_oracle2 != address(0), "oracle2 cannot be the zero address");
@@ -32,6 +36,13 @@ contract PegOracle {
         decimals = priceFeed1.decimals();
     }
 
+    /** @notice Returns oracle-fed data from the latest round
+      * @return roundID Current round id 
+      * @return nowPrice Current price
+      * @return startedAt Starting timestamp
+      * @return timeStamp Current timestamp
+      * @return answeredInRound Round id for which answer was computed 
+      */ 
     function latestRoundData()
         public
         view
@@ -72,6 +83,10 @@ contract PegOracle {
     }
 
     /* solhint-disbable-next-line func-name-mixedcase */
+
+    /** @notice Lookup first oracle price
+      * @return price Current first oracle price
+      */ 
     function getOracle1_Price() public view returns (int256 price) {
         (
             uint80 roundID1,
@@ -92,6 +107,10 @@ contract PegOracle {
     }
 
     /* solhint-disbable-next-line func-name-mixedcase */
+
+    /** @notice Lookup second oracle price
+      * @return price Current second oracle price
+      */ 
     function getOracle2_Price() public view returns (int256 price) {
         (
             uint80 roundID2,
