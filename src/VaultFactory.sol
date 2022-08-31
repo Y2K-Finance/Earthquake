@@ -113,7 +113,9 @@ contract VaultFactory {
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
-
+    
+    /** @notice Only admin addresses can call functions with this modifier
+      */
     modifier onlyAdmin() {
         require(msg.sender == Admin, "You are not Admin!");
         _;

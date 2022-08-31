@@ -39,7 +39,7 @@ contract RewardsFactory {
                                   MODIFIERS
     //////////////////////////////////////////////////////////////*/
     
-    /** @notice Admin permissions
+    /** @notice Only admin addresses can call functions with this modifier
       */
     modifier onlyAdmin() {
         require(msg.sender == admin);

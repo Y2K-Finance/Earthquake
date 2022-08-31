@@ -50,7 +50,8 @@ contract Controller {
     /*//////////////////////////////////////////////////////////////
                                  MODIFIERS
     //////////////////////////////////////////////////////////////*/
-    /** @notice Admin permissions
+
+    /** @notice Only admin addresses can call functions with this modifier
       */
     modifier onlyAdmin() {
         require(msg.sender == admin);
@@ -269,6 +270,9 @@ contract Controller {
         return price;
     }
 
+    /** @notice Lookup target VaultFactory address
+      * @dev need to find way to express typecasts in NatSpec
+      */
     function getVaultFactory() external view returns (address) {
         return address(vaultFactory);
     }

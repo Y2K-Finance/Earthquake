@@ -43,11 +43,15 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Only factory addresses can call functions with this modifier
+      */
     modifier onlyFactory() {
         require(msg.sender == factory, "You are not Factory!");
         _;
     }
 
+    /** @notice Only controller addresses can call functions with this modifier
+      */
     modifier onlyController() {
         require(
             msg.sender == controller,
@@ -56,11 +60,15 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
+    /** @notice Only market addresses can call functions with this modifier
+      */
     modifier marketExists(uint256 id) {
         require(idExists[id] == true, "Market does not Exist!");
         _;
     }
 
+    /** @notice You can only call functions with this modifier before the current epoch has started
+      */
     modifier epochHasNotStarted(uint256 id) {
         require(
             block.timestamp < idEpochBegin[id] - timewindow,
@@ -69,6 +77,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
+    /** @notice You can only call functions with this modifier after the current epoch has started
+      */
     modifier epochHasEnded(uint256 id) {
         require(
             (block.timestamp >= id) || idDepegged[id] == true,
@@ -125,7 +135,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
         @param  assets  uint256 representing how many assets the user wants to deposit, a fee will be taken from this value;
         @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
-        @return shares how many assets the owner is entitled to, removing the fee from it's shares;
+        @return shares how many assets the owner is entitled to, removing the fee from its shares;
      */
     function deposit(
         uint256 id,
@@ -151,6 +161,12 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return shares;
     }
 
+    /**
+        @notice Deposit ETH function
+        @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
+        @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
+        @return shares how many assets the owner is entitled to, removing the fee from its shares;
+     */
     function depositETH(uint256 id, address receiver)
         external
         payable
@@ -380,11 +396,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         return entitledAmount;
     }
-
+    /** @notice Lookup total epochs length
+      */
     function epochsLength() public view returns (uint256) {
         return epochs.length;
     }
 
+    /** @notice Lookup next epochs' end from target
+        @param _epoch Target epoch
+        @return nextEpochEnd Next epoch end
+      */
     function getNextEpoch(uint256 _epoch)
         public
         view
