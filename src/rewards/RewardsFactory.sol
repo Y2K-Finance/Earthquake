@@ -21,6 +21,13 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
+    
+    /** @notice Triggers whenever staking rewards are created
+      * @param marketEpochID Current market epoch ID
+      * @param mIndex Current market index
+      * @param hedgeFarm Hedge farm address
+      * @param riskFarm Risk farm address
+      */   
     event CreatedStakingReward(
         bytes32 indexed marketEpochId,
         uint256 indexed mIndex,
@@ -31,12 +38,19 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   MODIFIERS
     //////////////////////////////////////////////////////////////*/
-
+    
+    /** @notice Admin permissions
+      */
     modifier onlyAdmin() {
         require(msg.sender == admin);
         _;
     }
 
+    /** @notice Contract constructor
+      * @param _govToken Governance token address
+      * @param _factory VaultFactory address
+      * @param _admin Admin address
+      */ 
     constructor(
         address _govToken,
         address _factory,
@@ -50,6 +64,13 @@ contract RewardsFactory {
     /*//////////////////////////////////////////////////////////////
                                   METHODS
     //////////////////////////////////////////////////////////////*/
+    
+    /** @notice Trigger staking rewards event
+      * @param _marketIndex Target market index
+      * @param epochEnd End of epoch set for market
+      * @return insr Insurance rewards address, first tuple address entry 
+      * @return risk Risk rewards address, second tuple address entry 
+      */
     function createStakingRewards(uint256 _marketIndex, uint256 epochEnd)
         external
         onlyAdmin
