@@ -42,75 +42,134 @@ contract DeployRinkebyScript is Script {
     uint256 nextBegin;
     
     function setUp() public {
-        vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        // vaultFactory = new VaultFactory(admin,WETH,admin);
+        // controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
 
-        vm.prank(admin);
-        vaultFactory.setController(address(controller));
+        // vm.prank(admin);
+        // vaultFactory.setController(address(controller));
 
-        govToken = new GovToken();
+        // govToken = new GovToken();
 
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        // rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+                
+        // console2.log("Controller address", address(controller));
+        // console2.log("Vault Factory address", address(vaultFactory));
+        // console2.log("Rewards Factory address", address(rewardsFactory));
 
-        endEpoch = block.timestamp + 30 days;
-        beginEpoch = block.timestamp + 2 days;
+        // endEpoch = block.timestamp + 30 days;
+        // beginEpoch = block.timestamp + 5 days;
 
-        nextEpoch = endEpoch + 30 days;
-        nextBegin = beginEpoch + 30 days;
+        // nextEpoch = block.timestamp + 60 days;
+        // nextBegin = block.timestamp + 30 days;
     }
 
     function run() public {
         vm.startBroadcast();
 
         // setUp();
+        vaultFactory = new VaultFactory(admin,WETH,admin);
+        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+
+        vaultFactory.setController(address(controller));
+
+        govToken = new GovToken();
+
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+                
+        console2.log("Controller address", address(controller));
+        console2.log("Vault Factory address", address(vaultFactory));
+        console2.log("Rewards Factory address", address(rewardsFactory));
+        console2.log("GovToken address", address(govToken));
+
+        endEpoch = block.timestamp + 30 days;
+        beginEpoch = block.timestamp + 5 days;
+
+        nextEpoch = block.timestamp + 60 days;
+        nextBegin = block.timestamp + 30 days;
         
         //create New Market and respective farms
         // Create USDC market
         //index 1
-        vaultFactory.createNewMarket(50, tokenUSDC, depegAAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*SET");
-        rewardsFactory.createStakingRewards(1, endEpoch);
+        vaultFactory.createNewMarket(50, tokenUSDC, depegAAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*");
+        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
+        //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         //index 2
-        vaultFactory.createNewMarket(50, tokenUSDC, depegBBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*SET");
-        rewardsFactory.createStakingRewards(2, endEpoch);
+        vaultFactory.createNewMarket(50, tokenUSDC, depegBBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*");
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(2, endEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         //index 3
-        vaultFactory.createNewMarket(50, tokenUSDC, depegCCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*SET");
-        rewardsFactory.createStakingRewards(3, endEpoch);
+        vaultFactory.createNewMarket(50, tokenUSDC, depegCCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*");
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(3, endEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         // Create DAI market
         //index 4
-        vaultFactory.createNewMarket(50, tokenDAI, depegAAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*SET");
-        rewardsFactory.createStakingRewards(4, endEpoch);
+        vaultFactory.createNewMarket(50, tokenDAI, depegAAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*");
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(4, endEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         //index 5
-        vaultFactory.createNewMarket(50, tokenDAI, depegBBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*SET");
-        rewardsFactory.createStakingRewards(5, endEpoch);
+        vaultFactory.createNewMarket(50, tokenDAI, depegBBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*");
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(5, endEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         //index 6
-        vaultFactory.createNewMarket(50, tokenDAI, depegCCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*SET");
-        rewardsFactory.createStakingRewards(6, endEpoch);
+        vaultFactory.createNewMarket(50, tokenDAI, depegCCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*");
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(6, endEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         //deploy More Assets and respective farms
         // Deploy more USDC market
         vaultFactory.deployMoreAssets(1, nextBegin, nextEpoch);
-        rewardsFactory.createStakingRewards(1, nextEpoch);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(1, nextEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         vaultFactory.deployMoreAssets(2, nextBegin, nextEpoch);
-        rewardsFactory.createStakingRewards(2, nextEpoch);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(2, nextEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
         
         vaultFactory.deployMoreAssets(3, nextBegin, nextEpoch);
-        rewardsFactory.createStakingRewards(3, nextEpoch);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(3, nextEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         // Deploy more DAI market
         vaultFactory.deployMoreAssets(4, nextBegin, nextEpoch);
-        rewardsFactory.createStakingRewards(4, nextEpoch);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(4, nextEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         vaultFactory.deployMoreAssets(5, nextBegin, nextEpoch);
-        rewardsFactory.createStakingRewards(5, nextEpoch);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(5, nextEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         vaultFactory.deployMoreAssets(6, nextBegin, nextEpoch);
-        rewardsFactory.createStakingRewards(6, nextEpoch);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(6, nextEpoch);
+                //sending gov tokens to farms
+        govToken.moneyPrinterGoesBrr(rHedge);
+        govToken.moneyPrinterGoesBrr(rRisk);
 
         vm.stopBroadcast();
     }

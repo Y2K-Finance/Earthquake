@@ -128,11 +128,11 @@ contract VaultFactory {
 
         marketIndex += 1;
 
-        //y2kUSDC_R99*AUG
+        //y2kUSDC_99*RISK or y2kUSDC_99*HEDGE
 
         Vault hedge = new Vault(
             WETH,
-            _name,
+            string(abi.encodePacked(_name,"HEDGE")),
             "hY2K",
             treasury,
             _withdrawalFee,
@@ -143,7 +143,7 @@ contract VaultFactory {
 
         Vault risk = new Vault(
             WETH,
-            _name,
+            string(abi.encodePacked(_name,"RISK")),
             "rY2K",
             treasury,
             _withdrawalFee,

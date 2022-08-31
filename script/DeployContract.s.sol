@@ -61,6 +61,10 @@ contract DeployScript is Script {
 
         nextEpoch = endEpoch + 30 days;
         nextBegin = beginEpoch + 30 days;
+
+        console2.log("Controller address", address(controller));
+        console2.log("Vault Factory address", address(vaultFactory));
+        console2.log("Rewards Factory address", address(rewardsFactory));
     }
 
     function run() public {
