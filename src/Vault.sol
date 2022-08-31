@@ -243,6 +243,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
     /**
     @notice calculates how much ether the %fee is taking from @param amount
+    @return feeValue current fee value
      */
     function calculateWithdrawalFeeValue(uint256 amount)
         public
@@ -258,6 +259,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
+        @notice factory function that changes withdrawal fee;
         @param _withdrawalFee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
     **/
     function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
@@ -265,15 +267,27 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         withdrawalFee = _withdrawalFee;
     }
 
+    /**
+    @notice factory function that changes treasury address;
+    @param _treasury new treasury address;
+     */
     function changeTreasury(address _treasury) public onlyFactory {
         require(_treasury != address(0), "Treasury address cannot be 0");
         treasury = _treasury;
     }
 
+    /**
+    @notice factory function that changes vault time window;
+    @param _timewindow new vault time window;
+     */
     function changeTimewindow(uint256 _timewindow) public onlyFactory {
         timewindow = _timewindow;
     }
 
+    /**
+    @notice factory function that changes controller address;
+    @param _controller new controller address;
+     */
     function changeController(address _controller) public onlyFactory {
         require(_controller != address(0), "Controller address cannot be 0");
         controller = _controller;
@@ -315,7 +329,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     /**
-    @notice Function to be called after endEpoch, by the Controller only, this function stores the TVL of the counterparty vault in a mapping to be used for later calculations of the entitled withdraw.
+    @notice Controller function to be called after endEpoch, by the Controller only, this function stores the TVL of the counterparty vault in a mapping to be used for later calculations of the entitled withdraw.
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping;
      */
@@ -325,7 +339,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
     /**
     solhint-disable-next-line max-line-length
-    @notice Function to be called after endEpoch and setClaimTVL functions, respecting the calls in order, after storing the TVL of the end of epoch and the TVL amount to claim, this function will allow the transfer of tokens to the counterparty vault;
+    @notice Controller function to be called after endEpoch and setClaimTVL functions, respecting the calls in order, after storing the TVL of the end of epoch and the TVL amount to claim, this function will allow the transfer of tokens to the counterparty vault;
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param _counterparty address of the other vault, meaning address of the risk vault, if this is an hedge vault, and vice-versa;
     */
@@ -396,6 +410,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         return entitledAmount;
     }
+
     /** @notice Lookup total epochs length
       */
     function epochsLength() public view returns (uint256) {

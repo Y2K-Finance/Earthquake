@@ -24,6 +24,14 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /*///////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
+    
+    /** @notice Deposit into vault when event is emitted
+      * @param caller to-do
+      * @param owner to-do
+      * @param id to-do
+      * @param assets to-do
+      * @param shares to-do
+      */ 
     event Deposit(
         address caller,
         address indexed owner,
@@ -31,6 +39,15 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         uint256 assets,
         uint256 shares
     );
+
+    /** @notice Withdraw from vault when event is emitted
+      * @param caller to-do
+      * @param receiver to-do
+      * @param owner to-do
+      * @param id to-do
+      * @param assets to-do
+      * @param shares to-do
+      */ 
     event Withdraw(
         address caller,
         address receiver,
@@ -40,6 +57,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         uint256 shares
     );
 
+    /** @notice Contract constructor
+      * @param _asset ERC20 token
+      * @param _name Token name
+      * @param _symbol Token symbol 
+      */ 
     constructor(
         ERC20 _asset,
         string memory _name,
@@ -54,6 +76,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Triggers deposit into vault and mints shares for receiver
+      * @param id Vault id
+      * @param assets Amount of tokens to deposit
+      * @param receiver Receiver of shares
+      */ 
     function deposit(
         uint256 id,
         uint256 assets,
@@ -72,6 +99,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         afterDeposit(id, assets, shares);
     }
 
+    /** @notice Triggers withdraw from vault and burns receivers' shares
+      * @param id Vault id
+      * @param assets Amount of tokens to withdraw
+      * @param receiver Receiver of shares
+      */ 
     function withdraw(
         uint256 id,
         uint256 assets,
@@ -103,9 +135,9 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     function totalAssets(uint256 _id) public view virtual returns (uint256);
 
     /**
-        @notice returns total assets for token
+        @notice converts assets to shares
         @param  id uint256 token id of token
-        @param assets total number of asset
+        @param assets total number of assets
      */
     function convertToShares(uint256 id, uint256 assets)
         public
@@ -119,6 +151,10 @@ abstract contract SemiFungibleVault is ERC1155Supply {
             supply == 0 ? assets : assets.mulDivDown(supply, totalAssets(id));
     }
 
+    /** @notice converts shares to assets
+        @param  id uint256 token id of token
+        @param shares total number of shares
+     */
     function convertToAssets(uint256 id, uint256 shares)
         public
         view
@@ -130,6 +166,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
             supply == 0 ? shares : shares.mulDivDown(totalAssets(id), supply);
     }
 
+     /**
+        @notice shows shares conversion output from depositing assets
+        @param  id uint256 token id of token
+        @param assets total number of assets
+     */
     function previewDeposit(uint256 id, uint256 assets)
         public
         view
@@ -139,6 +180,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         return convertToShares(id, assets);
     }
 
+     /**
+        @notice shows shares conversion output from minting shares
+        @param  id uint256 token id of token
+        @param shares total number of shares
+     */
     function previewMint(uint256 id, uint256 shares)
         public
         view
@@ -150,6 +196,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         return supply == 0 ? shares : shares.mulDivUp(totalAssets(id), supply);
     }
 
+    /**
+        @notice shows assets conversion output from withdrawing assets
+        @param  id uint256 token id of token
+        @param assets total number of assets
+     */
     function previewWithdraw(uint256 id, uint256 assets)
         public
         view
@@ -161,6 +212,11 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets(id));
     }
 
+    /**
+        @notice shows assets conversion output from burning shares
+        @param  id uint256 token id of token
+        @param shares total number of shares
+     */
     function previewRedeem(uint256 id, uint256 shares)
         public
         view
@@ -173,14 +229,24 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /*///////////////////////////////////////////////////////////////
                      DEPOSIT/WITHDRAWAL LIMIT LOGIC
     //////////////////////////////////////////////////////////////*/
+    
+    /**
+        @notice Shows max amount of assets depositable into vault
+     */
     function maxDeposit(address) public view virtual returns (uint256) {
         return type(uint256).max;
     }
 
+    /**
+        @notice Shows max amount of mintable shares
+     */
     function maxMint(address) public view virtual returns (uint256) {
         return type(uint256).max;
     }
 
+    /**
+        @notice Shows max amount of assets withdrawable from vault
+     */
     function maxWithdraw(uint256 id, address owner)
         public
         view
@@ -190,6 +256,9 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         return convertToAssets(id, balanceOf(owner, id));
     }
 
+    /**
+        @notice Shows max amount of redeemable assets
+     */
     function maxRedeem(uint256 id, address owner)
         public
         view

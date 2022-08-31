@@ -22,7 +22,7 @@ contract RewardsFactory {
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
     
-    /** @notice Creates staking rewards when event triggers
+    /** @notice Creates staking rewards when event is emitted
       * @param marketEpochId Current market epoch ID
       * @param mIndex Current market index
       * @param hedgeFarm Hedge farm address

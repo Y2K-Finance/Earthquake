@@ -25,7 +25,7 @@ contract VaultFactory {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     
-    /** @notice Market is created when event triggers
+    /** @notice Market is created when event is emitted
       * @param mIndex Current market index
       * @param hedge Hedge vault address
       * @param risk Risk vault address
@@ -41,7 +41,7 @@ contract VaultFactory {
         int256 strikePrice
     );
 
-    /** @notice Epoch is created when event triggers
+    /** @notice Epoch is created when event is emitted
       * @param marketEpochId Current market epoch id
       * @param mIndex Current market index
       * @param startEpoch Epoch start time
@@ -64,36 +64,36 @@ contract VaultFactory {
         int256 strikePrice
     );
 
-    /** @notice Controller is set when event triggers
+    /** @notice Controller is set when event is emitted
       * @param newController Address for new controller
       */ 
     event controllerSet(address indexed newController);
 
-    /** @notice Treasury is changed when event triggers
+    /** @notice Treasury is changed when event is emitted
       * @param _treasury Treasury address
       * @param _marketIndex Target market index
       */ 
     event changedTreasury(address _treasury, uint256 indexed _marketIndex);
 
-    /** @notice Vault fee is changed when event triggers
+    /** @notice Vault fee is changed when event is emitted
       * @param _marketIndex Target market index
       * @param _feeRate Target fee rate
       */ 
     event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
 
-     /** @notice Withdrawal fee is changed when event triggers
+     /** @notice Withdrawal fee is changed when event is emitted
       * @param _marketIndex Target market index
       * @param _feeRate Target fee rate
       */ 
     event changeWithdrawalFee(uint256 indexed _marketIndex, uint256 _feeRate);
 
-    /** @notice Time window is changed when event triggers
+    /** @notice Vault time window is changed when event is emitted
       * @param _marketIndex Target market index
       * @param _timeWindow Target time window
       */ 
     event changedTimeWindow(uint256 indexed _marketIndex, uint256 _timeWindow);
     
-    /** @notice Controller is changed when event triggers
+    /** @notice Controller is changed when event is emitted
       * @param _marketIndex Target market index
       * @param controller Target controller address
       */ 
@@ -299,6 +299,11 @@ contract VaultFactory {
         emit changeWithdrawalFee(_marketIndex, _fee);
     }
 
+    /**
+    @notice admin function to change the assigned treasury address;
+    @param _treasury treasury address;
+    @param  _marketIndex target market index;
+     */
     function changeTreasury(address _treasury, uint256 _marketIndex)
         public
         onlyAdmin
@@ -313,6 +318,11 @@ contract VaultFactory {
         emit changedTreasury(_treasury, _marketIndex);
     }
 
+    /**
+    @notice admin function to change vault time window;
+    @param _marketIndex target market index;
+    @param  _timewindow new time window;
+     */
     function changeTimewindow(uint256 _marketIndex, uint256 _timewindow)
         public
         onlyAdmin
@@ -325,6 +335,12 @@ contract VaultFactory {
 
         emit changedTimeWindow(_marketIndex, _timewindow);
     }
+
+    /**
+    @notice admin function to change vault time window;
+    @param _marketIndex target market index;
+    @param  _controller address of the controller smart contract;
+     */
 
     function changeController(uint256 _marketIndex, address _controller)
         public
