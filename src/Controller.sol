@@ -20,7 +20,15 @@ contract Controller {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-
+    
+    /** @notice Triggers whenever insurance vault depegs (
+      * @param epochMarketID Current market index
+      * @param tvl Current TVL
+      * @param isDisaster Flag if event isDisaster
+      * @param epoch Current epoch 
+      * @param time Current time
+      * @param depegPrice Price that triggered depeg
+      */   
     event DepegInsurance(
         bytes32 epochMarketID,
         VaultTVL tvl,
@@ -42,12 +50,17 @@ contract Controller {
     /*//////////////////////////////////////////////////////////////
                                  MODIFIERS
     //////////////////////////////////////////////////////////////*/
-
+    /** @notice Admin permissions
+      */
     modifier onlyAdmin() {
         require(msg.sender == admin);
         _;
     }
 
+    /** @notice Modifier to ensure market exists, current market epoch time and price are valid 
+      * @param marketIndex Target market index
+      * @param epochEnd End of epoch set for market
+      */
     modifier isDisaster(uint256 marketIndex, uint256 epochEnd) {
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
         require(
@@ -75,6 +88,11 @@ contract Controller {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Contract constructor
+      * @param _factory VaultFactory address
+      * @param _admin Admin address
+      * @param _l2Sequencer Arbitrum sequencer address
+      */ 
     constructor(
         address _factory,
         address _admin,
@@ -91,9 +109,10 @@ contract Controller {
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-    @notice trigger depeg event
-     */
+    /** @notice Trigger depeg event
+      * @param marketIndex Target market index
+      * @param epochEnd End of epoch set for market
+      */
     function triggerDepeg(uint256 marketIndex, uint256 epochEnd)
         public
         isDisaster(marketIndex, epochEnd)
@@ -138,9 +157,10 @@ contract Controller {
         );
     }
 
-    /**
-    @notice no depeg event, and epoch is over
-     */
+    /** @notice Trigger epoch end without depeg event
+      * @param marketIndex Target market index
+      * @param epochEnd End of epoch set for market
+      */
     function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) public {
         require(
             vaultFactory.getVaults(marketIndex).length == 2,
@@ -197,6 +217,10 @@ contract Controller {
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Lookup token price
+      * @param _token Target token address
+      * @return nowPrice Current token price
+      */
     function getLatestPrice(address _token)
         public
         view
