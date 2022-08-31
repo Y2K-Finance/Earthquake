@@ -11,6 +11,14 @@ contract RewardsFactory {
     address public factory;
 
     /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error MarketDoesNotExist(uint marketId);
+    error AddressNotAdmin();
+    error EpochDoesNotExist(uint epoch);
+
+    /*//////////////////////////////////////////////////////////////
                                  MAPPINGS
     //////////////////////////////////////////////////////////////*/
 
@@ -33,7 +41,8 @@ contract RewardsFactory {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyAdmin() {
-        require(msg.sender == admin);
+        if(msg.sender != admin)
+            revert AddressNotAdmin();
         _;
     }
 
@@ -59,6 +68,12 @@ contract RewardsFactory {
 
         address _insrToken = vaultFactory.getVaults(_marketIndex)[0];
         address _riskToken = vaultFactory.getVaults(_marketIndex)[1];
+
+        if(_insrToken == address(0) || _riskToken == address(0))
+            revert MarketDoesNotExist(_marketIndex);
+
+        if(Vault(_insrToken).idExists(epochEnd) == false || Vault(_riskToken).idExists(epochEnd) == false)
+            revert EpochDoesNotExist(epochEnd);
 
         StakingRewards insrStake = new StakingRewards(
             admin,
