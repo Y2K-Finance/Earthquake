@@ -25,7 +25,7 @@ contract RevertTest is Helper {
         //expect MarketDoesNotExist
         vm.startPrank(admin);
         vm.expectRevert(abi.encodeWithSelector(VaultFactory.MarketDoesNotExist.selector, 3));
-        vaultFactory.deployMoreAssets(3, beginEpoch, endEpoch);
+        vaultFactory.deployMoreAssets(3, beginEpoch, endEpoch, FEE);
         vm.stopPrank();
 
         //to-do: assertEquals between pre and post-revert variables
