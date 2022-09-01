@@ -12,6 +12,21 @@ import {
 contract Vault is SemiFungibleVault, ReentrancyGuard {
     using FixedPointMathLib for uint256;
 
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error AddressZero();
+    error AddressNotFactory(address _contract);
+    error AddressNotController(address _contract);
+    error MarketEpochDoesNotExist(uint256 _epoch);
+    error EpochAlreadyStarted(uint256 _epoch);
+    error EpochNotFinished(uint256 _epoch);
+    error FeeMoreThan150(uint256 _fee);
+    error ZeroValue();
+    error OwnerDidNotAuthorize(address _sender, address _owner);
+    error EpochEndMustBeAfterBegin(uint256 _begin, uint256 _end);
+    error MarketEpochExists(uint256 _epoch);
+
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -21,7 +36,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     int256 public immutable strikePrice;
     address private immutable factory;
     address public controller;
-    uint256 public withdrawalFee;
 
     uint256[] public epochs;
     uint256 public timewindow;
@@ -38,42 +52,39 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     mapping(uint256 => bool) public idDepegged;
     // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
+    mapping(uint256 => uint256) public epochFee;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyFactory() {
-        require(msg.sender == factory, "You are not Factory!");
+        if(msg.sender != factory)
+            revert AddressNotFactory(msg.sender);
         _;
     }
 
     modifier onlyController() {
-        require(
-            msg.sender == controller,
-            "You are not calling from the Controller!"
-        );
+        if(msg.sender != controller)
+            revert AddressNotController(msg.sender);
         _;
     }
 
     modifier marketExists(uint256 id) {
-        require(idExists[id] == true, "Market does not Exist!");
+        if(idExists[id] != true)
+            revert MarketEpochDoesNotExist(id);
         _;
     }
 
     modifier epochHasNotStarted(uint256 id) {
-        require(
-            block.timestamp < idEpochBegin[id] - timewindow,
-            "Deposit time is over, Epoch has already started!"
-        );
+        if(block.timestamp > idEpochBegin[id] - timewindow)
+            revert EpochAlreadyStarted(id);
         _;
     }
 
     modifier epochHasEnded(uint256 id) {
-        require(
-            (block.timestamp >= id) || idDepegged[id] == true,
-            "Epoch has not ended, or depeg event has not ocurred in the time being!"
-        );
+        if((block.timestamp < id) && idDepegged[id] == false)
+            revert EpochNotFinished(id);
         _;
     }
 
@@ -86,7 +97,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param  _assetAddress    token address representing your asset to be deposited;
         @param  _name   token name for the ERC1155 mints. Insert the name of your token; Example: Y2K_USDC_1.2$
         @param  _symbol token symbol for the ERC1155 mints. insert here if risk or hedge + Symbol. Example: HedgeY2K or riskY2K;
-        @param  _withdrawalFee Insert withdrawal fee uint256 number in percent * 10 => Example: 0.5% = 5; 1% = 10; 40% = 400;
         @param  _token  address of the oracle to lookup the price in chainlink oracles;
         @param  _strikePrice    uint256 representing the price to trigger the depeg event;
         @param _controller  address of the controller contract, this contract can trigger the depeg events;
@@ -96,16 +106,19 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         string memory _name,
         string memory _symbol,
         address _treasury,
-        uint256 _withdrawalFee,
         address _token,
         int256 _strikePrice,
         address _controller
     ) SemiFungibleVault(ERC20(_assetAddress), _name, _symbol) {
-        require(_withdrawalFee < 150, "Fee must be less than 15%");
-        require(_treasury != address(0), "Treasury address cannot be 0x0");
-        require(_controller != address(0), "Controller address cannot be 0x0");
-        require(_token != address(0), "Token address cannot be 0x0");
-        require(_strikePrice > 0, "Strike price must be greater than 0");
+
+        if(_treasury == address(0))
+            revert AddressZero();
+
+        if(_controller == address(0))
+            revert AddressZero();
+
+        if(_token == address(0))
+            revert AddressZero();
 
         tokenInsured = _token;
         treasury = _treasury;
@@ -113,7 +126,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         factory = msg.sender;
         controller = _controller;
         timewindow = 1 days;
-        withdrawalFee = _withdrawalFee;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -140,7 +152,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         returns (uint256 shares)
     {
         // Check for rounding error since we round down in previewDeposit.
-        require((shares = previewDeposit(id, assets)) != 0, "ZERO_SHARES");
+        require((shares = previewDeposit(id, assets)) != 0, "ZeroValue");
 
         asset.transferFrom(msg.sender, address(this), shares);
 
@@ -156,7 +168,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         payable
         returns (uint256 shares)
     {
-        require(msg.value > 0, "ETH amount must be greater than 0");
+        require(msg.value > 0, "ZeroValue");
 
         IWETH(address(asset)).deposit{value: msg.value}();
         assert(IWETH(address(asset)).transfer(msg.sender, msg.value));
@@ -184,12 +196,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
         returns (uint256 shares)
     {
-        require(
-            msg.sender == owner ||
-                isApprovedForAll(owner, receiver) ||
-                msg.sender == factory,
-            "Owner needs to approve receiver for all"
-        );
+        if(
+            msg.sender != owner || 
+            isApprovedForAll(owner, receiver))
+            revert OwnerDidNotAuthorize(msg.sender, owner);
 
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.
 
@@ -197,7 +207,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _burn(owner, id, shares);
 
         //Taking fee from the amount
-        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares);
+        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
         entitledShares = entitledShares - feeValue;
         asset.transfer(treasury, feeValue);
 
@@ -228,29 +238,22 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /**
     @notice calculates how much ether the %fee is taking from @param amount
      */
-    function calculateWithdrawalFeeValue(uint256 amount)
+    function calculateWithdrawalFeeValue(uint256 amount, uint256 _epoch)
         public
         view
         returns (uint256 feeValue)
     {
         // 0.5% = multiply by 1000 then divide by 5
-        return (amount * withdrawalFee) / 1000;
+        return (amount * epochFee[_epoch]) / 1000;
     }
 
     /*///////////////////////////////////////////////////////////////
                            Factory FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-        @param _withdrawalFee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
-    **/
-    function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
-        require(_withdrawalFee < 150, "Fee is too high!"); //15% fee is too high
-        withdrawalFee = _withdrawalFee;
-    }
-
     function changeTreasury(address _treasury) public onlyFactory {
-        require(_treasury != address(0), "Treasury address cannot be 0");
+        if(_treasury == address(0))
+            revert AddressZero();
         treasury = _treasury;
     }
 
@@ -259,7 +262,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     function changeController(address _controller) public onlyFactory {
-        require(_controller != address(0), "Controller address cannot be 0");
+        if(_controller == address(0))
+            revert AddressZero();
         controller = _controller;
     }
 
@@ -267,17 +271,26 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice function to deploy hedge assets for given epochs, after the creation of this vault.
     @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
+    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
      */
-    function createAssets(uint256 epochBegin, uint256 epochEnd)
+    function createAssets(uint256 epochBegin, uint256 epochEnd, uint256 _withdrawalFee)
         public
         onlyFactory
     {
-        require(idExists[epochEnd] == false, "ID_EXISTS");
-        require(epochBegin < epochEnd, "INVALID_EPOCH");
+        if(_withdrawalFee > 150)
+            revert FeeMoreThan150(_withdrawalFee);
+
+        if(idExists[epochEnd] == true)
+            revert MarketEpochExists(epochEnd);
+        
+        if(epochBegin >= epochEnd)
+            revert EpochEndMustBeAfterBegin(epochBegin, epochEnd);
 
         idExists[epochEnd] = true;
         idEpochBegin[epochEnd] = epochBegin;
         epochs.push(epochEnd);
+
+        epochFee[epochEnd] = _withdrawalFee;
     }
 
     /*///////////////////////////////////////////////////////////////

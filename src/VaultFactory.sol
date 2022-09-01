@@ -20,6 +20,13 @@ contract VaultFactory {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error MarketDoesNotExist(uint256 marketIndex);
+    error AddressNotAdmin(address addr);
+    error AddressZero();
+    error AddressNotController();
+    error AddressFactoryNotInController();
+    error StrikePriceGreaterThan100(int256 strikePrice);
+    error StrikePriceLesserThan10(int256 strikePrice);
+    error ControllerNotSet();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -42,19 +49,20 @@ contract VaultFactory {
         address risk,
         address token,
         string name,
-        int256 strikePrice
+        int256 strikePrice,
+        uint256 withdrawalFee
     );
 
     event controllerSet(address indexed newController);
 
     event changedTreasury(address _treasury, uint256 indexed _marketIndex);
     event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
-    event changeWithdrawalFee(uint256 indexed _marketIndex, uint256 _feeRate);
     event changedTimeWindow(uint256 indexed _marketIndex, uint256 _timeWindow);
     event changedController(
         uint256 indexed _marketIndex,
         address indexed controller
     );
+    event changeOracle(address indexed _token, address _oracle);
 
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
@@ -69,7 +77,8 @@ contract VaultFactory {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyAdmin() {
-        require(msg.sender == Admin, "You are not Admin!");
+        if(msg.sender != Admin)
+            revert AddressNotAdmin(msg.sender);
         _;
     }
 
@@ -82,9 +91,13 @@ contract VaultFactory {
         address _weth,
         address _admin
     ) {
-        require(_admin != address(0), "admin cannot be the zero address");
-        require(_weth != address(0), "WETH cannot be the zero address");
-        require(_treasury != address(0), "treasury cannot be the zero address");
+        if(_admin == address(0))
+            revert AddressZero();
+        if(_weth == address(0))
+            revert AddressZero();
+
+        if(_treasury == address(0))
+            revert AddressZero();
 
         Admin = _admin;
         WETH = _weth;
@@ -116,13 +129,19 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
-        require(
-            IController(controller).getVaultFactory() == address(this),
-            "Vault Factory not set in Controller to this address"
-        );
-        require(controller != address(0), "Controller is not set!");
-        require(_strikePrice < 100, "Strike price must be less than 100");
-        require(_strikePrice > 10, "Strike price must be greater than 10");
+        if(
+            IController(controller).getVaultFactory() != address(this)
+            )
+            revert AddressFactoryNotInController();
+
+        if(controller == address(0))
+            revert ControllerNotSet();
+
+        if(_strikePrice > 100)
+            revert StrikePriceGreaterThan100(_strikePrice);
+
+        if(_strikePrice < 10)
+            revert StrikePriceLesserThan10(_strikePrice);
 
         _strikePrice = _strikePrice * 10e16;
 
@@ -135,7 +154,6 @@ contract VaultFactory {
             string(abi.encodePacked(_name,"HEDGE")),
             "hY2K",
             treasury,
-            _withdrawalFee,
             _token,
             _strikePrice,
             controller
@@ -146,7 +164,6 @@ contract VaultFactory {
             string(abi.encodePacked(_name,"RISK")),
             "rY2K",
             treasury,
-            _withdrawalFee,
             _token,
             _strikePrice,
             controller
@@ -167,7 +184,7 @@ contract VaultFactory {
             _strikePrice
         );
 
-        _createEpoch(marketIndex, epochBegin, epochEnd, hedge, risk);
+        _createEpoch(marketIndex, epochBegin, epochEnd, hedge, risk, _withdrawalFee);
 
         return (address(hedge), address(risk));
     }
@@ -177,20 +194,24 @@ contract VaultFactory {
     @param  index uint256 of the market index to create more assets in;
     @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
+    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
      */
     function deployMoreAssets(
         uint256 index,
         uint256 epochBegin,
-        uint256 epochEnd
+        uint256 epochEnd,
+        uint256 _withdrawalFee
     ) public onlyAdmin {
-        require(controller != address(0), "Controller is not set!");
+        if(controller == address(0))
+            revert ControllerNotSet();
+
         if (index > marketIndex) {
             revert MarketDoesNotExist(index);
         }
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 
-        _createEpoch(index, epochBegin, epochEnd, Vault(hedge), Vault(risk));
+        _createEpoch(index, epochBegin, epochEnd, Vault(hedge), Vault(risk), _withdrawalFee);
     }
 
     function _createEpoch(
@@ -198,10 +219,11 @@ contract VaultFactory {
         uint256 epochBegin,
         uint256 epochEnd,
         Vault hedge,
-        Vault risk
+        Vault risk,
+        uint256 _withdrawalFee
     ) internal {
-        hedge.createAssets(epochBegin, epochEnd);
-        risk.createAssets(epochBegin, epochEnd);
+        hedge.createAssets(epochBegin, epochEnd, _withdrawalFee);
+        risk.createAssets(epochBegin, epochEnd, _withdrawalFee);
 
         indexEpochs[index].push(epochEnd);
 
@@ -214,7 +236,8 @@ contract VaultFactory {
             address(risk),
             Vault(hedge).tokenInsured(),
             Vault(hedge).name(),
-            Vault(hedge).strikePrice()
+            Vault(hedge).strikePrice(),
+            _withdrawalFee
         );
     }
 
@@ -223,28 +246,11 @@ contract VaultFactory {
     @param  _controller address of the controller smart contract;
      */
     function setController(address _controller) public onlyAdmin {
-        require(_controller != address(0), "Controller address cannot be 0x0");
+        if(_controller == address(0))
+            revert AddressZero();
         controller = _controller;
 
         emit controllerSet(_controller);
-    }
-
-    /**
-    @notice admin function to change fees on running vaults;
-    @param _marketIndex uint256 of the market index which to the vaults are associated to;
-    @param _fee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
-     */
-    function changeWithdrawalVaultFee(uint256 _marketIndex, uint256 _fee)
-        public
-        onlyAdmin
-    {
-        address[] memory vaults = indexVaults[_marketIndex];
-        Vault insr = Vault(vaults[0]);
-        Vault risk = Vault(vaults[1]);
-        insr.changeWithdrawalFee(_fee);
-        risk.changeWithdrawalFee(_fee);
-
-        emit changeWithdrawalFee(_marketIndex, _fee);
     }
 
     function changeTreasury(address _treasury, uint256 _marketIndex)
@@ -278,7 +284,8 @@ contract VaultFactory {
         public
         onlyAdmin
     {
-        require(_controller != address(0), "Controller address cannot be 0x0");
+        if(_controller == address(0))
+            revert AddressZero();
 
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
@@ -287,6 +294,16 @@ contract VaultFactory {
         risk.changeController(_controller);
 
         emit changedController(_marketIndex, _controller);
+    }
+
+    function changeOracle(address _token, address _oracle) public onlyAdmin {
+        if(_oracle == address(0))
+            revert AddressZero();
+        if(_token == address(0))
+            revert AddressZero();
+            
+        tokenToOracle[_token] = _oracle;
+        emit changedOracle(_token, _oracle);
     }
 
     /*//////////////////////////////////////////////////////////////

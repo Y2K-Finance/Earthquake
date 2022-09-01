@@ -52,6 +52,8 @@ contract Helper is Test {
     int256 depegBBB = 97;
     int256 depegCCC = 95;
 
+    uint256 FEE = 55;
+
     uint256 endEpoch;
     uint256 beginEpoch;
     
@@ -218,7 +220,7 @@ contract Helper is Test {
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
         uint256 entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(alice));
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
 
         vm.stopPrank();
 
@@ -229,7 +231,7 @@ contract Helper is Test {
         
         assertTrue(vHedge.balanceOf(bob,endEpoch) == 0);
         entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(bob));
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
 
@@ -242,7 +244,7 @@ contract Helper is Test {
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == 0);
         entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(chad));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -253,7 +255,7 @@ contract Helper is Test {
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == 0);
         entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares) == ERC20(WETH).balanceOf(degen));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
 
         vm.stopPrank();
 
