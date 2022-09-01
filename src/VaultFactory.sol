@@ -62,6 +62,7 @@ contract VaultFactory {
         uint256 indexed _marketIndex,
         address indexed controller
     );
+    event changeOracle(address indexed _token, address _oracle);
 
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
@@ -293,6 +294,16 @@ contract VaultFactory {
         risk.changeController(_controller);
 
         emit changedController(_marketIndex, _controller);
+    }
+
+    function changeOracle(address _token, address _oracle) public onlyAdmin {
+        if(_oracle == address(0))
+            revert AddressZero();
+        if(_token == address(0))
+            revert AddressZero();
+            
+        tokenToOracle[_token] = _oracle;
+        emit changedOracle(_token, _oracle);
     }
 
     /*//////////////////////////////////////////////////////////////
