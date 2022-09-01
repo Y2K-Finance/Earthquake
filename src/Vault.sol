@@ -21,7 +21,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     error MarketEpochDoesNotExist(uint256 _epoch);
     error EpochAlreadyStarted(uint256 _epoch);
     error EpochNotFinished(uint256 _epoch);
-    error FeeLessThan150(uint256 _fee);
+    error FeeMoreThan150(uint256 _fee);
     error ZeroValue();
     error OwnerDidNotAuthorize(address _sender, address _owner);
     error EpochEndMustBeAfterBegin(uint256 _begin, uint256 _end);
@@ -36,7 +36,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     int256 public immutable strikePrice;
     address private immutable factory;
     address public controller;
-    uint256 public withdrawalFee;
 
     uint256[] public epochs;
     uint256 public timewindow;
@@ -53,6 +52,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     mapping(uint256 => bool) public idDepegged;
     // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
+    mapping(uint256 => uint256) public epochFee;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -97,7 +97,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @param  _assetAddress    token address representing your asset to be deposited;
         @param  _name   token name for the ERC1155 mints. Insert the name of your token; Example: Y2K_USDC_1.2$
         @param  _symbol token symbol for the ERC1155 mints. insert here if risk or hedge + Symbol. Example: HedgeY2K or riskY2K;
-        @param  _withdrawalFee Insert withdrawal fee uint256 number in percent * 10 => Example: 0.5% = 5; 1% = 10; 40% = 400;
         @param  _token  address of the oracle to lookup the price in chainlink oracles;
         @param  _strikePrice    uint256 representing the price to trigger the depeg event;
         @param _controller  address of the controller contract, this contract can trigger the depeg events;
@@ -107,13 +106,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         string memory _name,
         string memory _symbol,
         address _treasury,
-        uint256 _withdrawalFee,
         address _token,
         int256 _strikePrice,
         address _controller
     ) SemiFungibleVault(ERC20(_assetAddress), _name, _symbol) {
-        if(_withdrawalFee > 150)
-            revert FeeLessThan150(_withdrawalFee);
 
         if(_treasury == address(0))
             revert AddressZero();
@@ -130,7 +126,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         factory = msg.sender;
         controller = _controller;
         timewindow = 1 days;
-        withdrawalFee = _withdrawalFee;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -212,7 +207,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _burn(owner, id, shares);
 
         //Taking fee from the amount
-        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares);
+        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
         entitledShares = entitledShares - feeValue;
         asset.transfer(treasury, feeValue);
 
@@ -243,27 +238,18 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /**
     @notice calculates how much ether the %fee is taking from @param amount
      */
-    function calculateWithdrawalFeeValue(uint256 amount)
+    function calculateWithdrawalFeeValue(uint256 amount, uint256 _epoch)
         public
         view
         returns (uint256 feeValue)
     {
         // 0.5% = multiply by 1000 then divide by 5
-        return (amount * withdrawalFee) / 1000;
+        return (amount * epochFee[_epoch]) / 1000;
     }
 
     /*///////////////////////////////////////////////////////////////
                            Factory FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-
-    /**
-        @param _withdrawalFee  uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
-    **/
-    function changeWithdrawalFee(uint256 _withdrawalFee) public onlyFactory {
-        if(_withdrawalFee > 150)
-            revert FeeLessThan150(_withdrawalFee); //15% fee is too high
-        withdrawalFee = _withdrawalFee;
-    }
 
     function changeTreasury(address _treasury) public onlyFactory {
         if(_treasury == address(0))
@@ -285,11 +271,15 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice function to deploy hedge assets for given epochs, after the creation of this vault.
     @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
+    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
      */
-    function createAssets(uint256 epochBegin, uint256 epochEnd)
+    function createAssets(uint256 epochBegin, uint256 epochEnd, uint256 _withdrawalFee)
         public
         onlyFactory
     {
+        if(_withdrawalFee > 150)
+            revert FeeMoreThan150(_withdrawalFee);
+
         if(idExists[epochEnd] == true)
             revert MarketEpochExists(epochEnd);
         
@@ -299,6 +289,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         idExists[epochEnd] = true;
         idEpochBegin[epochEnd] = epochBegin;
         epochs.push(epochEnd);
+
+        epochFee[epochEnd] = _withdrawalFee;
     }
 
     /*///////////////////////////////////////////////////////////////

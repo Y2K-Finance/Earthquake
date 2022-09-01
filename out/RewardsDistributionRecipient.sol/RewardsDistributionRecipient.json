@@ -139,20 +139,20 @@
   },
   "ast": {
     "absolutePath": "src/rewards/RewardsDistributionRecipient.sol",
-    "id": 28855,
+    "id": 29238,
     "exportedSymbols": {
       "Owned": [
-        28817
+        29200
       ],
       "RewardsDistributionRecipient": [
-        28854
+        29237
       ]
     },
     "nodeType": "SourceUnit",
     "src": "0:672:37",
     "nodes": [
       {
-        "id": 28819,
+        "id": 29202,
         "nodeType": "PragmaDirective",
         "src": "0:23:37",
         "literals": [
@@ -162,24 +162,24 @@
         ]
       },
       {
-        "id": 28820,
+        "id": 29203,
         "nodeType": "ImportDirective",
         "src": "40:21:37",
         "absolutePath": "src/rewards/Owned.sol",
         "file": "./Owned.sol",
         "nameLocation": "-1:-1:-1",
-        "scope": 28855,
-        "sourceUnit": 28818,
+        "scope": 29238,
+        "sourceUnit": 29201,
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "id": 28854,
+        "id": 29237,
         "nodeType": "ContractDefinition",
         "src": "148:523:37",
         "nodes": [
           {
-            "id": 28824,
+            "id": 29207,
             "nodeType": "VariableDeclaration",
             "src": "210:34:37",
             "constant": false,
@@ -187,7 +187,7 @@
             "mutability": "mutable",
             "name": "rewardsDistribution",
             "nameLocation": "225:19:37",
-            "scope": 28854,
+            "scope": 29237,
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
@@ -195,7 +195,7 @@
               "typeString": "address"
             },
             "typeName": {
-              "id": 28823,
+              "id": 29206,
               "name": "address",
               "nodeType": "ElementaryTypeName",
               "src": "210:7:37",
@@ -208,11 +208,11 @@
             "visibility": "public"
           },
           {
-            "id": 28836,
+            "id": 29219,
             "nodeType": "ModifierDefinition",
             "src": "251:185:37",
             "body": {
-              "id": 28835,
+              "id": 29218,
               "nodeType": "Block",
               "src": "286:150:37",
               "statements": [
@@ -224,14 +224,14 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 28830,
+                        "id": 29213,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
                           "expression": {
-                            "id": 28827,
+                            "id": 29210,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -242,7 +242,7 @@
                               "typeString": "msg"
                             }
                           },
-                          "id": 28828,
+                          "id": 29211,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -258,11 +258,11 @@
                         "nodeType": "BinaryOperation",
                         "operator": "==",
                         "rightExpression": {
-                          "id": 28829,
+                          "id": 29212,
                           "name": "rewardsDistribution",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 28824,
+                          "referencedDeclaration": 29207,
                           "src": "331:19:37",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -277,7 +277,7 @@
                       },
                       {
                         "hexValue": "43616c6c6572206973206e6f742052657761726473446973747269627574696f6e20636f6e7472616374",
-                        "id": 28831,
+                        "id": 29214,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -303,7 +303,7 @@
                           "typeString": "literal_string \"Caller is not RewardsDistribution contract\""
                         }
                       ],
-                      "id": 28826,
+                      "id": 29209,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -317,7 +317,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 28832,
+                    "id": 29215,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -332,12 +332,12 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 28833,
+                  "id": 29216,
                   "nodeType": "ExpressionStatement",
                   "src": "296:122:37"
                 },
                 {
-                  "id": 28834,
+                  "id": 29217,
                   "nodeType": "PlaceholderStatement",
                   "src": "428:1:37"
                 }
@@ -346,7 +346,7 @@
             "name": "onlyRewardsDistribution",
             "nameLocation": "260:23:37",
             "parameters": {
-              "id": 28825,
+              "id": 29208,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "283:2:37"
@@ -355,7 +355,7 @@
             "visibility": "internal"
           },
           {
-            "id": 28841,
+            "id": 29224,
             "nodeType": "FunctionDefinition",
             "src": "442:61:37",
             "functionSelector": "3c6b16ab",
@@ -365,17 +365,17 @@
             "name": "notifyRewardAmount",
             "nameLocation": "451:18:37",
             "parameters": {
-              "id": 28839,
+              "id": 29222,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 28838,
+                  "id": 29221,
                   "mutability": "mutable",
                   "name": "reward",
                   "nameLocation": "478:6:37",
                   "nodeType": "VariableDeclaration",
-                  "scope": 28841,
+                  "scope": 29224,
                   "src": "470:14:37",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -384,7 +384,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 28837,
+                    "id": 29220,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "470:7:37",
@@ -399,38 +399,38 @@
               "src": "469:16:37"
             },
             "returnParameters": {
-              "id": 28840,
+              "id": 29223,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "502:0:37"
             },
-            "scope": 28854,
+            "scope": 29237,
             "stateMutability": "nonpayable",
             "virtual": true,
             "visibility": "external"
           },
           {
-            "id": 28853,
+            "id": 29236,
             "nodeType": "FunctionDefinition",
             "src": "509:160:37",
             "body": {
-              "id": 28852,
+              "id": 29235,
               "nodeType": "Block",
               "src": "610:59:37",
               "statements": [
                 {
                   "expression": {
-                    "id": 28850,
+                    "id": 29233,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
-                      "id": 28848,
+                      "id": 29231,
                       "name": "rewardsDistribution",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 28824,
+                      "referencedDeclaration": 29207,
                       "src": "620:19:37",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -440,11 +440,11 @@
                     "nodeType": "Assignment",
                     "operator": "=",
                     "rightHandSide": {
-                      "id": 28849,
+                      "id": 29232,
                       "name": "_rewardsDistribution",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 28843,
+                      "referencedDeclaration": 29226,
                       "src": "642:20:37",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -457,7 +457,7 @@
                       "typeString": "address"
                     }
                   },
-                  "id": 28851,
+                  "id": 29234,
                   "nodeType": "ExpressionStatement",
                   "src": "620:42:37"
                 }
@@ -468,13 +468,13 @@
             "kind": "function",
             "modifiers": [
               {
-                "id": 28846,
+                "id": 29229,
                 "kind": "modifierInvocation",
                 "modifierName": {
-                  "id": 28845,
+                  "id": 29228,
                   "name": "onlyOwner",
                   "nodeType": "IdentifierPath",
-                  "referencedDeclaration": 28732,
+                  "referencedDeclaration": 29115,
                   "src": "596:9:37"
                 },
                 "nodeType": "ModifierInvocation",
@@ -484,17 +484,17 @@
             "name": "setRewardsDistribution",
             "nameLocation": "518:22:37",
             "parameters": {
-              "id": 28844,
+              "id": 29227,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 28843,
+                  "id": 29226,
                   "mutability": "mutable",
                   "name": "_rewardsDistribution",
                   "nameLocation": "549:20:37",
                   "nodeType": "VariableDeclaration",
-                  "scope": 28853,
+                  "scope": 29236,
                   "src": "541:28:37",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -503,7 +503,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 28842,
+                    "id": 29225,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "541:7:37",
@@ -519,12 +519,12 @@
               "src": "540:30:37"
             },
             "returnParameters": {
-              "id": 28847,
+              "id": 29230,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "610:0:37"
             },
-            "scope": 28854,
+            "scope": 29237,
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "external"
@@ -534,13 +534,13 @@
         "baseContracts": [
           {
             "baseName": {
-              "id": 28821,
+              "id": 29204,
               "name": "Owned",
               "nodeType": "IdentifierPath",
-              "referencedDeclaration": 28817,
+              "referencedDeclaration": 29200,
               "src": "198:5:37"
             },
-            "id": 28822,
+            "id": 29205,
             "nodeType": "InheritanceSpecifier",
             "src": "198:5:37"
           }
@@ -550,12 +550,12 @@
         "contractKind": "contract",
         "fullyImplemented": false,
         "linearizedBaseContracts": [
-          28854,
-          28817
+          29237,
+          29200
         ],
         "name": "RewardsDistributionRecipient",
         "nameLocation": "166:28:37",
-        "scope": 28855,
+        "scope": 29238,
         "usedErrors": []
       }
     ]
