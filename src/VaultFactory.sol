@@ -62,7 +62,7 @@ contract VaultFactory {
         uint256 indexed _marketIndex,
         address indexed controller
     );
-    event changeOracle(address indexed _token, address _oracle);
+    event changedOracle(address indexed _token, address _oracle);
 
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
