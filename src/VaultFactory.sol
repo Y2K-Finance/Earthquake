@@ -294,7 +294,7 @@ contract VaultFactory {
             _marketVault.hedge.tokenInsured(),
             _marketVault.hedge.name(),
             _marketVault.hedge.strikePrice(),
-            _marketVault.hedge.epochFee(_marketVault.index)
+            _marketVault.withdrawalFee
         );
     }
 
