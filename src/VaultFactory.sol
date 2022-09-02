@@ -200,7 +200,7 @@ contract VaultFactory {
         if(_strikePrice < 100)
             revert StrikePriceLesserThan100(_strikePrice);
 
-        _strikePrice = _strikePrice * 10e16;
+        _strikePrice = _strikePrice * 10e15;
 
         marketIndex += 1;
 
