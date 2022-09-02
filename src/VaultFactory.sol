@@ -31,6 +31,14 @@ contract VaultFactory {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
+    
+    /** @notice Market is created when event is emitted
+      * @param mIndex Current market index
+      * @param hedge Hedge vault address
+      * @param risk Risk vault address
+      * @param token Token address
+      * @param name Market name
+      */ 
     event MarketCreated(
         uint256 indexed mIndex,
         address hedge,
@@ -40,6 +48,17 @@ contract VaultFactory {
         int256 strikePrice
     );
 
+    /** @notice Epoch is created when event is emitted
+      * @param marketEpochId Current market epoch id
+      * @param mIndex Current market index
+      * @param startEpoch Epoch start time
+      * @param endEpoch Epoch end time
+      * @param hedge Hedge vault address
+      * @param risk Risk vault address
+      * @param token Token address
+      * @param name Market name
+      * @param strikePrice Vault strike price
+      */
     event EpochCreated(
         bytes32 indexed marketEpochId,
         uint256 indexed mIndex,
@@ -53,11 +72,33 @@ contract VaultFactory {
         uint256 withdrawalFee
     );
 
+    /** @notice Controller is set when event is emitted
+      * @param newController Address for new controller
+      */ 
     event controllerSet(address indexed newController);
 
+    /** @notice Treasury is changed when event is emitted
+      * @param _treasury Treasury address
+      * @param _marketIndex Target market index
+      */ 
     event changedTreasury(address _treasury, uint256 indexed _marketIndex);
+
+    /** @notice Vault fee is changed when event is emitted
+      * @param _marketIndex Target market index
+      * @param _feeRate Target fee rate
+      */ 
     event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
+
+    /** @notice Vault time window is changed when event is emitted
+      * @param _marketIndex Target market index
+      * @param _timeWindow Target time window
+      */ 
     event changedTimeWindow(uint256 indexed _marketIndex, uint256 _timeWindow);
+    
+    /** @notice Controller is changed when event is emitted
+      * @param _marketIndex Target market index
+      * @param controller Target controller address
+      */ 
     event changedController(
         uint256 indexed _marketIndex,
         address indexed controller
@@ -76,6 +117,8 @@ contract VaultFactory {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Only admin addresses can call functions that use this modifier
+      */
     modifier onlyAdmin() {
         if(msg.sender != Admin)
             revert AddressNotAdmin(msg.sender);
@@ -86,6 +129,11 @@ contract VaultFactory {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Contract constructor
+      * @param _treasury Treasury address
+      * @param _weth Wrapped Ether token address
+      * @param _admin Admin address
+      */ 
     constructor(
         address _treasury,
         address _weth,
@@ -110,15 +158,15 @@ contract VaultFactory {
     //////////////////////////////////////////////////////////////*/
 
     /**
-    @notice function to create two new vaults, hedge and risk, with the respective params, and storing the oracle for the token provided
-    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
-    @param _token address of the oracle to lookup the price in chainlink oracles;
-    @param _strikePrice uint256 representing the price to trigger the depeg event, needs to be the same decimals as the oracle price;
-    @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
-    @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
-    @param  _oracle address representing the smart contract to lookup the price of the given _token param;
-    @return insr    address of the deployed hedge vault;
-    @return rsk     address of the deployed risk vault;
+    @notice Function to create two new vaults, hedge and risk, with the respective params, and storing the oracle for the token provided
+    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5
+    @param _token Address of the oracle to lookup the price in chainlink oracles
+    @param _strikePrice uint256 representing the price to trigger the depeg event, needs to be the same decimals as the oracle price
+    @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000
+    @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000
+    @param  _oracle Address representing the smart contract to lookup the price of the given _token param
+    @return insr    Address of the deployed hedge vault
+    @return rsk     Address of the deployed risk vault
      */
     function createNewMarket(
         uint256 _withdrawalFee,
@@ -190,11 +238,11 @@ contract VaultFactory {
     }
 
     /**    
-    @notice function to deploy hedge assets for given epochs, after the creation of this vault, where the Index is the date of the end of epoch;
-    @param  index uint256 of the market index to create more assets in;
-    @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000;
-    @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000;
-    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5;
+    @notice Function to deploy hedge assets for given epochs, after the creation of this vault, where the Index is the date of the end of epoch
+    @param  index uint256 of the market index to create more assets in
+    @param  epochBegin uint256 in UNIX timestamp, representing the begin date of the epoch. Example: Epoch begins in 31/May/2022 at 00h 00min 00sec: 1654038000
+    @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000
+    @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5
      */
     function deployMoreAssets(
         uint256 index,
@@ -242,8 +290,8 @@ contract VaultFactory {
     }
 
     /**
-    @notice function to set the controller address;
-    @param  _controller address of the controller smart contract;
+    @notice Admin function, sets the controller address
+    @param  _controller Address of the controller smart contract
      */
     function setController(address _controller) public onlyAdmin {
         if(_controller == address(0))
@@ -253,6 +301,11 @@ contract VaultFactory {
         emit controllerSet(_controller);
     }
 
+    /**
+    @notice Admin function, changes the assigned treasury address
+    @param _treasury Treasury address
+    @param  _marketIndex Target market index
+     */
     function changeTreasury(address _treasury, uint256 _marketIndex)
         public
         onlyAdmin
@@ -267,6 +320,11 @@ contract VaultFactory {
         emit changedTreasury(_treasury, _marketIndex);
     }
 
+    /**
+    @notice Admin function, changes vault time window
+    @param _marketIndex Target market index
+    @param  _timewindow New time window
+     */
     function changeTimewindow(uint256 _marketIndex, uint256 _timewindow)
         public
         onlyAdmin
@@ -280,6 +338,11 @@ contract VaultFactory {
         emit changedTimeWindow(_marketIndex, _timewindow);
     }
 
+    /**
+    @notice Admin function, changes controller address
+    @param _marketIndex Target market index
+    @param  _controller Address of the controller smart contract
+     */
     function changeController(uint256 _marketIndex, address _controller)
         public
         onlyAdmin
@@ -296,6 +359,11 @@ contract VaultFactory {
         emit changedController(_marketIndex, _controller);
     }
 
+    /**
+    @notice Admin function, changes oracle address for a given token
+    @param _token Target token address
+    @param  _oracle Oracle address
+     */
     function changeOracle(address _token, address _oracle) public onlyAdmin {
         if(_oracle == address(0))
             revert AddressZero();
@@ -311,9 +379,9 @@ contract VaultFactory {
     //////////////////////////////////////////////////////////////*/
 
     /**
-    @notice function the retrieve the addresses of the hedge and risk vaults, in an array, in the respective order;
-    @param index uint256 of the market index which to the vaults are associated to;
-    @return vaults address array of two vaults addresses, [0] being the hedge vault, [1] being the risk vault;
+    @notice Function the retrieve the addresses of the hedge and risk vaults, in an array, in the respective order
+    @param index uint256 of the market index which to the vaults are associated to
+    @return vaults Address array of two vaults addresses, [0] being the hedge vault, [1] being the risk vault
      */
     function getVaults(uint256 index)
         public
