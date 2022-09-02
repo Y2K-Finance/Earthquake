@@ -133,7 +133,7 @@ contract Helper is Test {
 
         vm.startPrank(admin);
         FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 90995265);
-        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         address hedge = vaultFactory.getVaults(1)[0];
