@@ -16,6 +16,15 @@ contract VaultFactory {
     address public controller;
     uint256 public marketIndex;
 
+    struct MarketVault{
+        uint256 index;
+        uint256 epochBegin;
+        uint256 epochEnd;
+        Vault hedge;
+        Vault risk;
+        uint256 withdrawalFee;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -232,7 +241,9 @@ contract VaultFactory {
             _strikePrice
         );
 
-        _createEpoch(marketIndex, epochBegin, epochEnd, hedge, risk, _withdrawalFee);
+        MarketVault memory marketVault = MarketVault(marketIndex, epochBegin, epochEnd, hedge, risk, _withdrawalFee);
+
+        _createEpoch(marketVault);
 
         return (address(hedge), address(risk));
     }
@@ -259,33 +270,31 @@ contract VaultFactory {
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 
-        _createEpoch(index, epochBegin, epochEnd, Vault(hedge), Vault(risk), _withdrawalFee);
+        MarketVault memory marketVault = MarketVault(index, epochBegin, epochEnd, Vault(hedge), Vault(risk), _withdrawalFee);
+
+        _createEpoch(marketVault);
     }
 
     function _createEpoch(
-        uint256 index,
-        uint256 epochBegin,
-        uint256 epochEnd,
-        Vault hedge,
-        Vault risk,
-        uint256 _withdrawalFee
+        MarketVault memory _marketVault
     ) internal {
-        hedge.createAssets(epochBegin, epochEnd, _withdrawalFee);
-        risk.createAssets(epochBegin, epochEnd, _withdrawalFee);
+        
+        _marketVault.hedge.createAssets(_marketVault.epochBegin, _marketVault.epochEnd, _marketVault.withdrawalFee);
+        _marketVault.risk.createAssets(_marketVault.epochBegin, _marketVault.epochEnd, _marketVault.withdrawalFee);
 
-        indexEpochs[index].push(epochEnd);
+        indexEpochs[_marketVault.index].push(_marketVault.epochEnd);
 
         emit EpochCreated(
-            keccak256(abi.encodePacked(index, epochBegin, epochEnd)),
-            index,
-            epochBegin,
-            epochEnd,
-            address(hedge),
-            address(risk),
-            Vault(hedge).tokenInsured(),
-            Vault(hedge).name(),
-            Vault(hedge).strikePrice(),
-            _withdrawalFee
+            keccak256(abi.encodePacked(_marketVault.index, _marketVault.epochBegin, _marketVault.epochEnd)),
+            _marketVault.index,
+            _marketVault.epochBegin,
+            _marketVault.epochEnd,
+            address(_marketVault.hedge),
+            address(_marketVault.risk),
+            _marketVault.hedge.tokenInsured(),
+            _marketVault.hedge.name(),
+            _marketVault.hedge.strikePrice(),
+            _marketVault.withdrawalFee
         );
     }
 
