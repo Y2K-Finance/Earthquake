@@ -33,8 +33,8 @@ contract VaultFactory {
     error AddressZero();
     error AddressNotController();
     error AddressFactoryNotInController();
-    error StrikePriceGreaterThan100(int256 strikePrice);
-    error StrikePriceLesserThan10(int256 strikePrice);
+    error StrikePriceGreaterThan1000(int256 strikePrice);
+    error StrikePriceLesserThan100(int256 strikePrice);
     error ControllerNotSet();
 
     /*//////////////////////////////////////////////////////////////
@@ -194,11 +194,11 @@ contract VaultFactory {
         if(controller == address(0))
             revert ControllerNotSet();
 
-        if(_strikePrice > 100)
-            revert StrikePriceGreaterThan100(_strikePrice);
+        if(_strikePrice > 1000)
+            revert StrikePriceGreaterThan1000(_strikePrice);
 
-        if(_strikePrice < 10)
-            revert StrikePriceLesserThan10(_strikePrice);
+        if(_strikePrice < 100)
+            revert StrikePriceLesserThan100(_strikePrice);
 
         _strikePrice = _strikePrice * 10e16;
 

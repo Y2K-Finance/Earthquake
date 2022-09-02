@@ -90,7 +90,6 @@ contract AssertTest is Helper {
         // Create FRAX market
         //index 1
         vaultFactory.createNewMarket(FEE, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*SET");
-        assertTrue(Vault(vaultFactory.getVaults(1)[0]).strikePrice() == 99 * 10e16, "Decimals incorrect");
         //index 2
         vaultFactory.createNewMarket(FEE, tokenFRAX, depegBBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*SET");
         //index 3

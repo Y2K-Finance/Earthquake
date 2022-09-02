@@ -48,9 +48,9 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    int256 depegAAA = 99;
-    int256 depegBBB = 97;
-    int256 depegCCC = 95;
+    int256 depegAAA = 995;
+    int256 depegBBB = 975;
+    int256 depegCCC = 955;
 
     uint256 FEE = 55;
 
