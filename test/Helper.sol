@@ -48,9 +48,9 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    int256 depegAAA = 99;
-    int256 depegBBB = 97;
-    int256 depegCCC = 95;
+    int256 depegAAA = 995555555555555555;
+    int256 depegBBB = 975555555555555555;
+    int256 depegCCC = 955555555555555555;
 
     uint256 FEE = 55;
 
@@ -133,7 +133,7 @@ contract Helper is Test {
 
         vm.startPrank(admin);
         FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 90995265);
-        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         address hedge = vaultFactory.getVaults(1)[0];

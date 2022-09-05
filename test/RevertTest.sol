@@ -19,7 +19,7 @@ contract RevertTest is Helper {
         //create fake oracle for price feed
         vm.startPrank(admin);
         FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 90995265);
-        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*SET");
+        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         //expect MarketDoesNotExist

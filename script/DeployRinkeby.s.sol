@@ -30,9 +30,9 @@ contract DeployRinkebyScript is Script {
 
     address public admin = 0xFB0a3A93e9acd461747e7D613eb3722d53B96613;
 
-    int256 depegAAA = 99;
-    int256 depegBBB = 97;
-    int256 depegCCC = 95;
+    int256 depegAAA = 995555555555555555;
+    int256 depegBBB = 975555555555555555;
+    int256 depegCCC = 955555555555555555;
     //int256 depegPrice = 109;
 
     uint256 endEpoch;
