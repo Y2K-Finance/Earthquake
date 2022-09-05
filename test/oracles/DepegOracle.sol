@@ -10,15 +10,15 @@ contract DepegOracle {
 
     uint8 public decimals = 18;
     int256 public priceSimulation;
+    address public admin;
 
-    constructor (address _oracle, int256 _priceSimulation) {
+    constructor (address _oracle, int256 _priceSimulation, address _admin) {
         require(_oracle != address(0), "oracle cannot be the zero address");
-        require(AggregatorV3Interface(_oracle).decimals() <= 18, "Decimals must be less or equal to 18");
-        require(_priceSimulation < 100, "_priceSimulation must be less than 100");
-        require(_priceSimulation > 10, "_priceSimulation must be greater than 10");
+
         oracle = _oracle;
         priceFeed = AggregatorV3Interface(_oracle);
         priceSimulation = _priceSimulation;
+        admin = _admin;
     }
 
     function latestRoundData()
@@ -42,6 +42,14 @@ contract DepegOracle {
 
         nowPrice1 = priceSimulation * int256(10e16);
 
-        return (roundID, nowPrice1, 0, timeStamp, answeredInRound);
+        if(priceSimulation == 0)
+            return (roundID, nowPrice1, 0, timeStamp, answeredInRound);
+        else
+            return (roundID, priceSimulation, 0, timeStamp, answeredInRound);
+    }
+
+    function setPriceSimulation(int256 _priceSimulation) public {
+        require(msg.sender == admin, "only admin can set price simulation");
+        priceSimulation = _priceSimulation;
     }
 }
