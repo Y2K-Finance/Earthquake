@@ -296,8 +296,8 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        int256 decimals = 10e18 / int256(10**priceFeed.decimals());
-        price = price * decimals;
+        uint256 decimals = 10**(18-(priceFeed.decimals()));
+        price = price * int256(decimals);
 
         if(price <= 0)
             revert OraclePriceZero();
