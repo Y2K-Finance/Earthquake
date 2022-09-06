@@ -18,31 +18,37 @@ GovToken address 0x4bd30F77809730E38EE59eE0e8FF008407dD3025
 */
 contract MaintainScript is Script {
 
-    address vf = 0xAD78ccB7F26CAECf09406a0541012330874A8466;
-    //address cl = 0xE3790E0bc21F43868A2527a999A9a11c807AD659;
-    address rf = 0x2c4C123b87Ee0019F830c4AB30118c8f53cD2b9F;
+    address vf = 0xb597ADcE4adB828e5CAA724a8F4437568FD8bB6c;
+    address cl = 0xb07385a11207F59207F2f9EfD69961CeD723aEd4;
+    address rf = 0x076d579dc8E204a013e9524942AeAcac1Dd0c62C;
     //address gt = 0x4bd30F77809730E38EE59eE0e8FF008407dD3025;
 
-    uint256 epochEnd = block.timestamp + 1 hours + 20 minutes;
-    uint256 epochBegin = block.timestamp + 1 hours;
+    uint256 epochEnd = block.timestamp + 1 days;
+    uint256 epochBegin = block.timestamp;
 
     uint256 FEE = 55;
-    uint256 nextEpochEnd = epochEnd + 1 hours;
-    uint256 nextEpochBegin = epochBegin + 1 hours;
+    uint256 nextEpochEnd = epochEnd + 30 minutes;
+    uint256 nextEpochBegin = epochBegin + 20 minutes;
 
-    address tokenUSDC = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
-    address tokenDAI = 0x4dCf5ac4509888714dd43A5cCc46d7ab389D9c23;
+    // address tokenUSDC = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
+    // address tokenDAI = 0x4dCf5ac4509888714dd43A5cCc46d7ab389D9c23;
 
-    address oracleUSDC = 0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8;
-    address oracleDAI = 0x3e3546c6b5689f7EAa1BA7Bc9571322c3168D786;
+    // address oracleUSDC = 0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8;
+    // address oracleDAI = 0x3e3546c6b5689f7EAa1BA7Bc9571322c3168D786;
 
     function run() public {
-
-        VaultFactory vaultFactory = VaultFactory(vf);
-        //Controller controller = Controller(cl);
-        RewardsFactory rewardsFactory = RewardsFactory(rf);
+        vm.startBroadcast();
+        Controller controller = Controller(cl);
+        controller.triggerEndEpoch(1, 1662401072);
         //GovToken govToken = GovToken(gt);
-        
+        //deployMore();
+
+        vm.stopBroadcast();
+    }
+
+    function deployMore() public {
+        VaultFactory vaultFactory = VaultFactory(vf);
+        RewardsFactory rewardsFactory = RewardsFactory(rf);
         console2.log("Market index", vaultFactory.marketIndex());
 
         //USDC
@@ -64,7 +70,6 @@ contract MaintainScript is Script {
 
         vaultFactory.deployMoreAssets(6, epochBegin, epochEnd, FEE);
         rewardsFactory.createStakingRewards(6, epochEnd);
-
     }
 
 }

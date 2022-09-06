@@ -12,12 +12,11 @@ contract DepegOracle {
     int256 public priceSimulation;
     address public admin;
 
-    constructor (address _oracle, int256 _priceSimulation, address _admin) {
+    constructor (address _oracle, address _admin) {
         require(_oracle != address(0), "oracle cannot be the zero address");
 
         oracle = _oracle;
         priceFeed = AggregatorV3Interface(_oracle);
-        priceSimulation = _priceSimulation;
         admin = _admin;
     }
 
