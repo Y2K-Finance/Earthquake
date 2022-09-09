@@ -39,7 +39,7 @@ cast send 0x0905CDFa438191ECc1e8C0204b2fc867B26255A9 "deployMoreAssets(uint256,u
 cast call 0xe71e1983ced2872cc85b66062daf7123a3ae218a "getLatestPrice(address)(int256)"  0xeb8f08a975Ab53E34D8a0330E0D34de942C95926 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
 
 #Controller TRIGGER
-cast send 0xb07385a11207F59207F2f9EfD69961CeD723aEd4 "triggerDepeg(uint256,uint256)" 1 1662059423 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
+cast send 0xc359A787B34c71A9d1c89b4d88A362afe10970aB "triggerDepeg(uint256,uint256)" 3 1662652800 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
 
 cast send 0xb07385a11207F59207F2f9EfD69961CeD723aEd4 "triggerEndEpoch(uint256,uint256)" 1 1662401072 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=0x28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
 
@@ -59,3 +59,6 @@ cast send 0xDAd186AE5e64e1eB8b3e867292fF390CEfB3973E "createStakingRewards(uint2
 #cast send 0xDAd186AE5e64e1eB8b3e867292fF390CEfB3973E "createStakingRewards(uint256,uint256)(address,address)" 1 1662838492 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
 cast send 0xDAd186AE5e64e1eB8b3e867292fF390CEfB3973E "createStakingRewards(uint256,uint256)(address,address)" 2 1661899487 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
 cast send 0xDAd186AE5e64e1eB8b3e867292fF390CEfB3973E "createStakingRewards(uint256,uint256)(address,address)" 3 1661899487 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733
+
+#Depeg Oracle Simulation
+#cast send 0x27dAd1a2754751b5129d8Bc6387A97Df11b3d4c5 "setPriceSimulation(int256)" 123 --rpc-url https://rinkeby.arbitrum.io/rpc --private-key=28d5e6bc9e88e32a62c4c4d7638328f063a4659eebed036096daf96538b00733

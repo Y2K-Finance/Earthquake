@@ -19,11 +19,11 @@ GovToken address 0x4bd30F77809730E38EE59eE0e8FF008407dD3025
 contract MaintainScript is Script {
 
     address vf = 0xb597ADcE4adB828e5CAA724a8F4437568FD8bB6c;
-    address cl = 0xb07385a11207F59207F2f9EfD69961CeD723aEd4;
+    address cl = 0xc359A787B34c71A9d1c89b4d88A362afe10970aB;
     address rf = 0x076d579dc8E204a013e9524942AeAcac1Dd0c62C;
     //address gt = 0x4bd30F77809730E38EE59eE0e8FF008407dD3025;
 
-    uint256 epochEnd = block.timestamp + 1 days;
+    uint256 epochEnd = 1662825600;
     uint256 epochBegin = block.timestamp;
 
     uint256 FEE = 55;
@@ -39,7 +39,12 @@ contract MaintainScript is Script {
     function run() public {
         vm.startBroadcast();
         Controller controller = Controller(cl);
-        controller.triggerEndEpoch(1, 1662401072);
+        controller.triggerEndEpoch(1, epochEnd);
+        controller.triggerEndEpoch(2, epochEnd);
+        controller.triggerEndEpoch(3, epochEnd);
+        // controller.triggerDepeg(4, epochEnd);
+        // controller.triggerDepeg(5, epochEnd);
+        // controller.triggerDepeg(6, epochEnd);
         //GovToken govToken = GovToken(gt);
         //deployMore();
 

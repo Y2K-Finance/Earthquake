@@ -44,10 +44,6 @@ contract DeployRinkebyScript is Script {
     uint256 nextBegin;
 
     uint256 FEE = 55;
-    
-    function setUp() public {
-
-    }
 
     function run() public {
         vm.startBroadcast();
@@ -70,11 +66,11 @@ contract DeployRinkebyScript is Script {
         console2.log("GovToken address", address(govToken));
         console2.log("DepegOracle address", address(depegOracle));
 
-        endEpoch = 1662652800;
-        beginEpoch = 1662566400;
+        beginEpoch = 1662652800;
+        endEpoch = 1662825600;
 
-        nextEpoch = block.timestamp + 1 hours;
-        nextBegin = block.timestamp + 1 hours + 30 minutes;
+        // nextEpoch = block.timestamp + 1 hours;
+        // nextBegin = block.timestamp + 1 hours + 30 minutes;
         
         //create New Market and respective farms
         // Create USDC market
