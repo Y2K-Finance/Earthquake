@@ -184,7 +184,7 @@ contract Controller {
                 )
             ),
             tvl,
-            false,
+            true,
             epochEnd,
             block.timestamp,
             getLatestPrice(insrVault.tokenInsured())
