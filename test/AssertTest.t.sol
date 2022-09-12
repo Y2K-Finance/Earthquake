@@ -272,7 +272,7 @@ contract AssertTest is Helper {
 
     
 
-    function testTriggerDepeg() public {
+    /*function testTriggerDepeg() public {
         DepositDepeg();
         vm.startPrank(admin);
         DepegOracle depegOracle = new DepegOracle(address(oracleFRAX), address(admin));
@@ -281,13 +281,12 @@ contract AssertTest is Helper {
         vaultFactory.setController(address(controller));
         vm.stopPrank();
 
-        vm.startPrank(admin);
-        vm.warp(endEpoch);
+        vm.warp(beginEpoch + 1 days);
         controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
         VaultFactory testFactory = controller.vaultFactory();
         assertEq(vaultFactory.getVaults(vaultFactory.marketIndex()), testFactory.getVaults(testFactory.marketIndex()));
-        vm.stopPrank();
-    }
+
+    }*/
 
     function testTriggerEndEpoch() public {
         DepositDepeg();

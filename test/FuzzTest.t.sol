@@ -68,7 +68,7 @@ contract FuzzTest is FuzzHelper{
         vm.stopPrank();
     }
 
-    function testFuzzControllerDepeg(uint256 index) public{
+    /*function testFuzzControllerDepeg(uint256 index) public{
         vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
         vm.startPrank(admin);
         FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 995);
@@ -95,7 +95,7 @@ contract FuzzTest is FuzzHelper{
 
         assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL Risk not equal to Total Tvl Hedge");
         assertTrue(vRisk.totalAssets(endEpoch) == vHedge.idClaimTVL(endEpoch), "Claim TVL Hedge not equal to Total Tvl Risk");
-    }
+    }*/
 
     function testFuzzVaultFactoryMarketCreation(uint256 index) public {
         vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
