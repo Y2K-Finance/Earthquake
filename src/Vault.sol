@@ -213,8 +213,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         returns (uint256 shares)
     {
         if(
-            msg.sender != owner || 
-            isApprovedForAll(owner, receiver))
+            msg.sender != owner &&
+            isApprovedForAll(owner, receiver) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.

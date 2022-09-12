@@ -489,6 +489,8 @@ contract AssertTest is Helper {
                            AUTHORIZATION functions
     //////////////////////////////////////////////////////////////*/
     
+    //@dev: please assess this case and check if contract logic fault or test logic fault
+
     function testOwnerAuthorize() public {
         vm.deal(alice, 10 ether);
         
@@ -510,6 +512,13 @@ contract AssertTest is Helper {
         vm.startPrank(alice);
         vm.warp(endEpoch + 1 days);
         vHedge.setApprovalForAll(bob, true);
+        if(vHedge.isApprovedForAll(alice, bob)){
+            emit log_named_uint("Can continue", 1);
+        }
+
+        else {
+            emit log_named_uint("Cannot continue", 0);
+        }
         vm.stopPrank();
         
         vm.startPrank(bob);
@@ -518,4 +527,6 @@ contract AssertTest is Helper {
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
         vm.stopPrank();
     }
+
+    
 }
