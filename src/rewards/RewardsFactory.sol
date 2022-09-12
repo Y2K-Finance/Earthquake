@@ -76,11 +76,11 @@ contract RewardsFactory {
     
     /** @notice Trigger staking rewards event
       * @param _marketIndex Target market index
-      * @param epochEnd End of epoch set for market
+      * @param _epochEnd End of epoch set for market
       * @return insr Insurance rewards address, first tuple address entry 
       * @return risk Risk rewards address, second tuple address entry 
       */
-    function createStakingRewards(uint256 _marketIndex, uint256 epochEnd)
+    function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd, uint256 _rewardDuration, uint256 _rewardRate)
         external
         onlyAdmin
         returns (address insr, address risk)
@@ -93,25 +93,29 @@ contract RewardsFactory {
         if(_insrToken == address(0) || _riskToken == address(0))
             revert MarketDoesNotExist(_marketIndex);
 
-        if(Vault(_insrToken).idExists(epochEnd) == false || Vault(_riskToken).idExists(epochEnd) == false)
-            revert EpochDoesNotExist(epochEnd);
+        if(Vault(_insrToken).idExists(_epochEnd) == false || Vault(_riskToken).idExists(_epochEnd) == false)
+            revert EpochDoesNotExist(_epochEnd);
 
         StakingRewards insrStake = new StakingRewards(
             admin,
             admin,
             govToken,
             _insrToken,
-            epochEnd
+            _epochEnd,
+            _rewardDuration,
+            _rewardRate
         );
         StakingRewards riskStake = new StakingRewards(
             admin,
             admin,
             govToken,
             _riskToken,
-            epochEnd
+            _epochEnd,
+            _rewardDuration,
+            _rewardRate
         );
 
-        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, epochEnd));
+        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, _epochEnd));
         hashedIndex_StakingRewards[hashedIndex] = [
             address(insrStake),
             address(riskStake)
@@ -121,8 +125,8 @@ contract RewardsFactory {
             keccak256(
                 abi.encodePacked(
                     _marketIndex,
-                    Vault(_insrToken).idEpochBegin(epochEnd),
-                    epochEnd
+                    Vault(_insrToken).idEpochBegin(_epochEnd),
+                    _epochEnd
                 )
             ),
             _marketIndex,

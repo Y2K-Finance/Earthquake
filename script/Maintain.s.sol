@@ -30,6 +30,9 @@ contract MaintainScript is Script {
     uint256 nextEpochEnd = epochEnd + 30 minutes;
     uint256 nextEpochBegin = epochBegin + 20 minutes;
 
+    uint256 rewardsDuration = 10 days;
+    uint256 rewardRate = 10;
+
     // address tokenUSDC = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
     // address tokenDAI = 0x4dCf5ac4509888714dd43A5cCc46d7ab389D9c23;
 
@@ -58,23 +61,23 @@ contract MaintainScript is Script {
 
         //USDC
         vaultFactory.deployMoreAssets(1, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(1, epochEnd);
+        rewardsFactory.createStakingRewards(1, epochEnd, rewardsDuration, rewardRate);
 
         vaultFactory.deployMoreAssets(2, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(2, epochEnd);
+        rewardsFactory.createStakingRewards(2, epochEnd, rewardsDuration, rewardRate);
 
         vaultFactory.deployMoreAssets(3, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(3, epochEnd);
+        rewardsFactory.createStakingRewards(3, epochEnd, rewardsDuration, rewardRate);
 
         //DAI
         vaultFactory.deployMoreAssets(4, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(4, epochEnd);
+        rewardsFactory.createStakingRewards(4, epochEnd, rewardsDuration, rewardRate);
 
         vaultFactory.deployMoreAssets(5, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(5, epochEnd);
+        rewardsFactory.createStakingRewards(5, epochEnd, rewardsDuration, rewardRate);
 
         vaultFactory.deployMoreAssets(6, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(6, epochEnd);
+        rewardsFactory.createStakingRewards(6, epochEnd, rewardsDuration, rewardRate);
     }
 
 }
