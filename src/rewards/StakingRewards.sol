@@ -34,8 +34,8 @@ contract StakingRewards is
     ERC20 public immutable rewardsToken;
     IERC1155 public immutable stakingToken;
     uint256 public periodFinish = 0;
-    uint256 public rewardRate = 10;
-    uint256 public rewardsDuration = 7 days;
+    uint256 public rewardRate;
+    uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     uint256 public id;
@@ -74,13 +74,16 @@ contract StakingRewards is
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _epochEnd
+        uint256 _epochEnd,
+        uint256 _rewardsDuration,
+        uint256 _rewardRate
     ) Owned(_owner) {
         rewardsToken = ERC20(_rewardsToken);
         stakingToken = IERC1155(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
         id = _epochEnd;
-        rewardsDuration = _epochEnd - block.timestamp;
+        rewardsDuration = _rewardsDuration;
+        rewardRate = _rewardRate;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
