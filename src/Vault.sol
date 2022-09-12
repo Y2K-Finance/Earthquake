@@ -135,7 +135,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         strikePrice = _strikePrice;
         factory = msg.sender;
         controller = _controller;
-        timewindow = 1;
+        timewindow = 1 days;
     }
 
     /*///////////////////////////////////////////////////////////////
