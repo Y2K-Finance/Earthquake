@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 import "forge-std/Test.sol";
 import {Vault} from "../src/Vault.sol";
 import {VaultFactory} from "../src/VaultFactory.sol";
-import {Controller} from "../src/Controller.sol";
+import {Controller} from "../src/Controller.sol"; 
 import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
 import {GovToken} from "./GovToken.sol";
@@ -38,6 +38,7 @@ contract Helper is Test {
     address oracleDAI = 0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB;
     address oracleSTETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
     address oracleETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
+    address btcEthOracle = 0xc5a90A6d7e4Af242dA238FFe279e9f2BA0c64B2e;
 
     address arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
 
@@ -48,11 +49,30 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    int256 depegAAA = 995555555555555555;
-    int256 depegBBB = 975555555555555555;
-    int256 depegCCC = 955555555555555555;
+    uint256 immutable FEE = 55;
+    uint256 immutable SINGLE_MARKET_INDEX = 1;
+    uint256 immutable ALL_MARKETS_INDEX = 15;
+    uint256 immutable MARKET_OVERFLOW = 3;
+    uint256 immutable NULL_VALUE = 0;
+    uint256 immutable NULL_BALANCE = 0;
+    uint256 immutable REWARDS_DURATION = 10 days;
+    uint256 immutable REWARD_RATE = 10;
+    uint256 immutable AMOUNT = 10 ether;
+    uint256 immutable BEGIN_DAYS = 2 days;
+    uint256 immutable END_DAYS = 30 days;
+    uint256 immutable BOB_MULTIPLIER = 2;
+    uint256 immutable CHAD_MULTIPLIER = 10;
+    uint256 immutable DEGEN_MULTIPLIER = 20;
 
-    uint256 FEE = 55;
+    int256 immutable LESS_THAN_100 = 99;
+    int256 immutable STRIKE_PRICE_FAKE_ORACLE = 90995265;
+    int256 immutable CREATION_STRK = 129919825000;
+    int256 immutable VAULT_STRIKE_PRICE = 9950000;
+    int256 immutable DEPEG_AAA = 995555555555555555;
+    int256 immutable DEPEG_BBB = 975555555555555555;
+    int256 immutable DEPEG_CCC = 955555555555555555;
+
+    
 
     uint256 endEpoch;
     uint256 beginEpoch;
@@ -64,8 +84,8 @@ contract Helper is Test {
         vm.prank(admin);
         vaultFactory.setController(address(controller));
 
-        endEpoch = block.timestamp + 30 days;
-        beginEpoch = block.timestamp + 2 days;
+        endEpoch = block.timestamp + END_DAYS;
+        beginEpoch = block.timestamp + BEGIN_DAYS;
 
         govToken = new GovToken();
         rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
@@ -77,10 +97,10 @@ contract Helper is Test {
     //////////////////////////////////////////////////////////////*/
 
     function Deposit(uint256 _index) public {
-        deal(alice, 10 ether);
-        deal(bob, 20 ether);
-        vm.deal(chad, 100 ether);
-        vm.deal(degen, 200 ether);
+        deal(alice, AMOUNT);
+        deal(bob, AMOUNT * BOB_MULTIPLIER);
+        vm.deal(chad, AMOUNT * CHAD_MULTIPLIER);
+        vm.deal(degen, AMOUNT * DEGEN_MULTIPLIER);
 
         address hedge = vaultFactory.getVaults(_index)[0];
         address risk = vaultFactory.getVaults(_index)[1];
@@ -90,14 +110,14 @@ contract Helper is Test {
 
         //ALICE hedge DEPOSIT
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, 10 ether);
-        vHedge.depositETH{value: 10 ether}(endEpoch, alice);
+        ERC20(WETH).approve(hedge, AMOUNT);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
         vm.stopPrank();
 
         //BOB hedge DEPOSIT
         vm.startPrank(bob);
-        ERC20(WETH).approve(hedge, 20 ether);
-        vHedge.depositETH{value: 20 ether}(endEpoch, bob);
+        ERC20(WETH).approve(hedge, AMOUNT * BOB_MULTIPLIER);
+        vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
 
         assertTrue(vHedge.balanceOf(bob,endEpoch) == 20 ether);
         vm.stopPrank();
@@ -107,18 +127,18 @@ contract Helper is Test {
 
         //CHAD risk DEPOSIT
         vm.startPrank(chad);
-        ERC20(WETH).approve(risk, 100 ether);
-        vRisk.depositETH{value: 100 ether}(endEpoch, chad);
+        ERC20(WETH).approve(risk, AMOUNT * CHAD_MULTIPLIER);
+        vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether));
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
         vm.stopPrank();
 
         //DEGEN risk DEPOSIT
         vm.startPrank(degen);
-        ERC20(WETH).approve(risk, 200 ether);
-        vRisk.depositETH{value: 200 ether}(endEpoch, degen);
+        ERC20(WETH).approve(risk, AMOUNT * DEGEN_MULTIPLIER);
+        vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether));
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
         vm.stopPrank();
 
         vRisk.totalAssets(endEpoch);
@@ -126,14 +146,14 @@ contract Helper is Test {
     }
 
     function DepositDepeg() public {
-        vm.deal(alice, 10 ether);
-        vm.deal(bob, 20 ether);
-        vm.deal(chad, 100 ether);
-        vm.deal(degen, 200 ether);
+        vm.deal(alice, AMOUNT);
+        vm.deal(bob, AMOUNT * BOB_MULTIPLIER);
+        vm.deal(chad, AMOUNT * CHAD_MULTIPLIER);
+        vm.deal(degen, AMOUNT * DEGEN_MULTIPLIER);
 
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 90995265);
-        vaultFactory.createNewMarket(50, tokenFRAX, depegAAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
+        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         address hedge = vaultFactory.getVaults(1)[0];
@@ -144,34 +164,34 @@ contract Helper is Test {
 
         //ALICE hedge DEPOSIT
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, 10 ether);
-        vHedge.depositETH{value: 10 ether}(endEpoch, alice);
+        ERC20(WETH).approve(hedge, AMOUNT);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (10 ether));
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == (AMOUNT));
         vm.stopPrank();
 
         //BOB hedge DEPOSIT
         vm.startPrank(bob);
-        ERC20(WETH).approve(hedge, 20 ether);
-        vHedge.depositETH{value: 20 ether}(endEpoch, bob);
+        ERC20(WETH).approve(hedge, AMOUNT * BOB_MULTIPLIER);
+        vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == (20 ether));
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == (AMOUNT * BOB_MULTIPLIER));
         vm.stopPrank();
 
         //CHAD risk DEPOSIT
         vm.startPrank(chad);
-        ERC20(WETH).approve(risk, 100 ether);
-        vRisk.depositETH{value: 100 ether}(endEpoch, chad);
+        ERC20(WETH).approve(risk, AMOUNT * CHAD_MULTIPLIER);
+        vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (100 ether));
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
         vm.stopPrank();
 
         //DEGEN risk DEPOSIT
         vm.startPrank(degen);
-        ERC20(WETH).approve(risk, 200 ether);
-        vRisk.depositETH{value: 200 ether}(endEpoch, degen);
+        ERC20(WETH).approve(risk, AMOUNT * DEGEN_MULTIPLIER);
+        vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (200 ether));
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
         vm.stopPrank();
     }
 
@@ -196,7 +216,27 @@ contract Helper is Test {
 
         assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
         //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
-        assertTrue(0 == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
+        assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
+    }
+
+    function ControllerDepeg(address _token, uint256 _index) public{
+
+        address hedge = vaultFactory.getVaults(_index)[0];
+        address risk = vaultFactory.getVaults(_index)[1];
+
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        vm.warp(endEpoch + 1 days);
+
+        emit log_named_int("strike price", vHedge.strikePrice());
+        emit log_named_int("oracle price", controller.getLatestPrice(_token));
+
+        controller.triggerDepeg(_index, endEpoch);
+
+        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
+        //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
+        assertTrue(vRisk.totalAssets(endEpoch) == vHedge.idClaimTVL(endEpoch), "Risk Claim TVL not equal");
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -218,7 +258,7 @@ contract Helper is Test {
         assets = vHedge.balanceOf(alice,endEpoch);
         vHedge.withdraw(endEpoch, assets, alice, alice);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_BALANCE);
         uint256 entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
 
@@ -229,7 +269,7 @@ contract Helper is Test {
         assets = vHedge.balanceOf(bob,endEpoch);
         vHedge.withdraw(endEpoch, assets, bob, bob);
         
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == 0);
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_BALANCE);
         entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
 
@@ -242,7 +282,7 @@ contract Helper is Test {
         assets = vRisk.balanceOf(chad,endEpoch);
         vRisk.withdraw(endEpoch, assets, chad, chad);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == 0);
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
 
@@ -253,7 +293,7 @@ contract Helper is Test {
         assets = vRisk.balanceOf(degen,endEpoch);
         vRisk.withdraw(endEpoch, assets, degen, degen);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == 0);
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
 

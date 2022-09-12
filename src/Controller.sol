@@ -25,14 +25,14 @@ contract Controller {
     error ZeroAddress();
     error NotZeroTVL();
     error PriceNotAtStrikePrice(int256 price);
-    error EpochNotStarted(uint256 epoch);
-    error EpochExpired(uint256 epoch);
+    error EpochNotStarted();
+    error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
     error TimestampZero();
     error AddressNotAdmin();
-    error EpochNotExist(uint256 epoch);
-    error EpochNotExpired(uint256 epoch);
+    error EpochNotExist();
+    error EpochNotExpired();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -91,7 +91,7 @@ contract Controller {
         Vault vault = Vault(vaultAddress);
 
         if(vault.idExists(epochEnd) == false)
-            revert EpochNotExist(epochEnd);
+            revert EpochNotExist();
 
         if(
             vault.strikePrice() < getLatestPrice(vault.tokenInsured())
@@ -100,12 +100,12 @@ contract Controller {
 
         if(
             vault.idEpochBegin(epochEnd) > block.timestamp)
-            revert EpochNotStarted(epochEnd);
+            revert EpochNotStarted();
 
         if(
             block.timestamp > epochEnd
             )
-            revert EpochExpired(epochEnd);
+            revert EpochExpired();
         _;
     }
 
@@ -201,7 +201,7 @@ contract Controller {
                 revert MarketDoesNotExist(marketIndex);
         if(
             block.timestamp < epochEnd)
-            revert EpochNotExpired(epochEnd);
+            revert EpochNotExpired();
 
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
 
@@ -209,7 +209,7 @@ contract Controller {
         Vault riskVault = Vault(vaultsAddress[1]);
 
         if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
-            revert EpochNotExist(epochEnd);
+            revert EpochNotExist();
 
         //require this function cannot be called twice in the same epoch for the same vault
         if(insrVault.idFinalTVL(epochEnd) != 0)

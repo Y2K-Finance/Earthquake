@@ -16,7 +16,7 @@ contract RewardsFactory {
 
     error MarketDoesNotExist(uint marketId);
     error AddressNotAdmin();
-    error EpochDoesNotExist(uint epoch);
+    error EpochDoesNotExist();
 
     /*//////////////////////////////////////////////////////////////
                                  MAPPINGS
@@ -94,7 +94,7 @@ contract RewardsFactory {
             revert MarketDoesNotExist(_marketIndex);
 
         if(Vault(_insrToken).idExists(_epochEnd) == false || Vault(_riskToken).idExists(_epochEnd) == false)
-            revert EpochDoesNotExist(_epochEnd);
+            revert EpochDoesNotExist();
 
         StakingRewards insrStake = new StakingRewards(
             admin,

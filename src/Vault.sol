@@ -18,14 +18,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     error AddressZero();
     error AddressNotFactory(address _contract);
     error AddressNotController(address _contract);
-    error MarketEpochDoesNotExist(uint256 _epoch);
-    error EpochAlreadyStarted(uint256 _epoch);
-    error EpochNotFinished(uint256 _epoch);
+    error MarketEpochDoesNotExist();
+    error EpochAlreadyStarted();
+    error EpochNotFinished();
     error FeeMoreThan150(uint256 _fee);
     error ZeroValue();
     error OwnerDidNotAuthorize(address _sender, address _owner);
-    error EpochEndMustBeAfterBegin(uint256 _begin, uint256 _end);
-    error MarketEpochExists(uint256 _epoch);
+    error EpochEndMustBeAfterBegin();
+    error MarketEpochExists();
 
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
@@ -78,7 +78,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
       */
     modifier marketExists(uint256 id) {
         if(idExists[id] != true)
-            revert MarketEpochDoesNotExist(id);
+            revert MarketEpochDoesNotExist();
         _;
     }
 
@@ -86,7 +86,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
       */
     modifier epochHasNotStarted(uint256 id) {
         if(block.timestamp > idEpochBegin[id] - timewindow)
-            revert EpochAlreadyStarted(id);
+            revert EpochAlreadyStarted();
         _;
     }
 
@@ -94,7 +94,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
       */
     modifier epochHasEnded(uint256 id) {
         if((block.timestamp < id) && idDepegged[id] == false)
-            revert EpochNotFinished(id);
+            revert EpochNotFinished();
         _;
     }
 
@@ -312,10 +312,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
             revert FeeMoreThan150(_withdrawalFee);
 
         if(idExists[epochEnd] == true)
-            revert MarketEpochExists(epochEnd);
+            revert MarketEpochExists();
         
         if(epochBegin >= epochEnd)
-            revert EpochEndMustBeAfterBegin(epochBegin, epochEnd);
+            revert EpochEndMustBeAfterBegin();
 
         idExists[epochEnd] = true;
         idEpochBegin[epochEnd] = epochBegin;
