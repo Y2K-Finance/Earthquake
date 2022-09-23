@@ -49,7 +49,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     // @audit uint32 for timestamp is enough for the next 80 years
     mapping(uint256 => uint256) public idEpochBegin;
     // @audit id can be uint32
-    mapping(uint256 => bool) public idDepegged;
+    mapping(uint256 => bool) public idEpochEnded;
     // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
     mapping(uint256 => uint256) public epochFee;
@@ -93,7 +93,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /** @notice You can only call functions that use this modifier after the current epoch has started
       */
     modifier epochHasEnded(uint256 id) {
-        if((block.timestamp < id) && idDepegged[id] == false)
+        if(idEpochEnded[id] == true)
             revert EpochNotFinished();
         _;
     }
@@ -326,12 +326,12 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param depeg Boolean value indicating if the depeg event occurred, or not. Example: If depeg occurred depeg = true
      */
-    function endEpoch(uint256 id, bool depeg)
+    function endEpoch(uint256 id)
         public
         onlyController
         marketExists(id)
     {
-        idDepegged[id] = depeg;
+        idEpochEnded[id] = true;
         idFinalTVL[id] = totalAssets(id);
     }
 
