@@ -28,7 +28,7 @@ contract Controller {
     error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-    error TimestampZero();
+    error TimestampOutdated();
     error EpochNotExist();
     error EpochNotExpired();
 
@@ -230,6 +230,48 @@ contract Controller {
             getLatestPrice(insrVault.tokenInsured())
         );
     }
+    /** @notice Trigger epoch invalid when one vault has 0 TVL
+      * @param marketIndex Target market index
+      * @param epochEnd End of epoch set for market
+      */
+    function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
+        if(
+            vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
+                revert MarketDoesNotExist(marketIndex);
+        if(
+            block.timestamp >= epochEnd)
+            revert EpochExpired();
+
+        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
+
+        Vault insrVault = Vault(vaultsAddress[0]);
+        Vault riskVault = Vault(vaultsAddress[1]);
+
+        if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if(insrVault.idFinalTVL(epochEnd) != 0)
+            revert NotZeroTVL();
+        if(riskVault.idFinalTVL(epochEnd) != 0) 
+            revert NotZeroTVL();
+
+        //set claim TVL to 0 if total assets are 0
+        if(insrVault.totalAssets(epochEnd) == 0){
+            insrVault.endEpoch(epochEnd);
+            riskVault.endEpoch(epochEnd);
+
+            insrVault.setClaimTVL(epochEnd, 0);
+            riskVault.setClaimTVL(epochEnd, riskVault.idFinalTVL(epochEnd));
+        }
+        if(riskVault.totalAssets(epochEnd) == 0){
+            insrVault.endEpoch(epochEnd);
+            riskVault.endEpoch(epochEnd);
+
+            insrVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) );
+            riskVault.setClaimTVL(epochEnd, 0);
+        }
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
@@ -243,6 +285,7 @@ contract Controller {
         view
         returns (int256 nowPrice)
     {
+        uint observationFrequency = 1 hours;
         (
             ,
             /*uint80 roundId*/
@@ -285,8 +328,8 @@ contract Controller {
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
 
-        if(timeStamp == 0)
-            revert TimestampZero();
+        if(timeStamp < block.timestamp - uint256(observationFrequency))
+            revert TimestampOutdated();
 
         return price;
     }

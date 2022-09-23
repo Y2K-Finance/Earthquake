@@ -53,6 +53,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
     mapping(uint256 => uint256) public epochFee;
+    mapping(uint256 => bool) public epochNull;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -188,7 +189,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     /**
-    @notice Withdraw entitled deposited assets, checking if a depeg event //TODO add GOV token rewards
+    @notice Withdraw entitled deposited assets, checking if a depeg event
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
     @param receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
@@ -212,14 +213,19 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
             isApprovedForAll(owner, msg.sender) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
-        uint256 entitledShares = previewWithdraw(id, assets);
+        uint256 entitledShares;
         _burn(owner, id, assets);
 
-        //Taking fee from the amount
-        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
-        entitledShares = entitledShares - feeValue;
-        asset.transfer(treasury, feeValue);
-
+        if(epochNull[id] == false) {
+            //Taking fee from the amount
+            entitledShares = previewWithdraw(id, assets);
+            uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
+            entitledShares = entitledShares - feeValue;
+            asset.transfer(treasury, feeValue);
+        }
+        else{
+            entitledShares = assets;
+        }
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
         asset.transfer(receiver, entitledShares);
 
@@ -355,6 +361,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
     {
         asset.transfer(_counterparty, idFinalTVL[id]);
+    }
+
+    function setEpochNull(uint256 id) public onlyController {
+        epochNull[id] = true;
     }
 
     /*///////////////////////////////////////////////////////////////
