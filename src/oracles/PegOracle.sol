@@ -16,24 +16,30 @@ contract PegOracle {
     AggregatorV3Interface internal priceFeed2;
 
     /** @notice Contract constructor
-      * @param _oracle1 First oracle address
-      * @param _oracle2 Second oracle address
+      * @param _oracleHEDGE Oracle address for the hedging asset
+      * @param _oracleRISK Oracle address for pegged asset
       */
-    constructor(address _oracle1, address _oracle2) {
-        require(_oracle1 != address(0), "oracle1 cannot be the zero address");
-        require(_oracle2 != address(0), "oracle2 cannot be the zero address");
-        require(_oracle1 != _oracle2, "Cannot be same Oracle");
-        priceFeed1 = AggregatorV3Interface(_oracle1);
-        priceFeed2 = AggregatorV3Interface(_oracle2);
+    constructor(address _oracleHEDGE, address _oracleRISK) {
+        require(_oracleHEDGE != address(0), "oracle1 cannot be the zero address");
+        require(_oracleRISK != address(0), "oracle2 cannot be the zero address");
+        require(_oracleHEDGE != _oracleRISK, "Cannot be same Oracle");
+        
+        decimals = priceFeed1.decimals();
+        
+        priceFeed1 = AggregatorV3Interface(_oracleHEDGE);
+        priceFeed2 = AggregatorV3Interface(_oracleRISK);
+
         require(
-            (priceFeed1.decimals() == priceFeed2.decimals()),
+            (decimals == priceFeed2.decimals()),
             "Decimals must be the same"
         );
 
-        oracle1 = _oracle1;
-        oracle2 = _oracle2;
+        require(decimals <= 18, "Decimals must be less than 18");
 
-        decimals = priceFeed1.decimals();
+        oracle1 = _oracleHEDGE;
+        oracle2 = _oracleRISK;
+
+
     }
 
     /** @notice Returns oracle-fed data from the latest round
@@ -61,21 +67,21 @@ contract PegOracle {
             uint256 timeStamp1,
             uint80 answeredInRound1
         ) = priceFeed1.latestRoundData();
+        require(price1 > 0, "Chainlink price <= 0");
+        require(
+            answeredInRound1 >= roundID1,
+            "RoundID from Oracle is outdated!"
+        );
+        require(timeStamp1 != 0, "Timestamp == 0 !");
 
         int256 price2 = getOracle2_Price();
 
-        if (price1 > price2) {
-            nowPrice = (price2 * 10000) / price1;
-        } else {
-            nowPrice = (price1 * 10000) / price2;
-        }
-
-        int256 decimals10 = int256(10**(18 - priceFeed1.decimals()));
-        nowPrice = nowPrice * decimals10;
+        nowPrice = (price1 * 10000) / price2;
+        nowPrice = nowPrice * int256(10**(priceFeed1.decimals())) * 100;
 
         return (
             roundID1,
-            nowPrice / 1000000,
+            nowPrice,
             startedAt1,
             timeStamp1,
             answeredInRound1
