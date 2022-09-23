@@ -143,6 +143,17 @@ contract Controller {
             insrVault.idFinalTVL(epochEnd)
         );
 
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            vaultFactory.tokenToOracle(insrVault.tokenInsured())
+        );
+        (
+            ,  
+            int256 price,
+            ,
+            ,
+            
+        ) = priceFeed.latestRoundData();
+
         emit DepegInsurance(
             keccak256(
                 abi.encodePacked(
@@ -155,7 +166,7 @@ contract Controller {
             true,
             epochEnd,
             block.timestamp,
-            getLatestPrice(insrVault.tokenInsured())
+            price
         );
     }
 
