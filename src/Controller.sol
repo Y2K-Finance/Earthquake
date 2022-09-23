@@ -221,7 +221,7 @@ contract Controller {
         riskVault.endEpoch(epochEnd, false);
 
         insrVault.setClaimTVL(epochEnd, 0);
-        riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd));
+        riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) + riskVault.idFinalTVL(epochEnd));
         insrVault.sendTokens(epochEnd, address(riskVault));
 
         VaultTVL memory tvl = VaultTVL(
