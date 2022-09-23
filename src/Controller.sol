@@ -200,7 +200,7 @@ contract Controller {
             vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
                 revert MarketDoesNotExist(marketIndex);
         if(
-            block.timestamp < epochEnd)
+            block.timestamp <= epochEnd)
             revert EpochNotExpired();
 
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
