@@ -16,8 +16,8 @@ contract PegOracle {
     AggregatorV3Interface internal priceFeed2;
 
     /** @notice Contract constructor
-      * @param _oracleHEDGE Oracle address for the hedging asset
-      * @param _oracleRISK Oracle address for pegged asset
+      * @param _oracleHEDGE Oracle address for the hedging asset ex: stETH / USD
+      * @param _oracleRISK Oracle address for pegged asset       ex: ETH / USD
       */
     constructor(address _oracleHEDGE, address _oracleRISK) {
         require(_oracleHEDGE != address(0), "oracle1 cannot be the zero address");
