@@ -175,13 +175,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     function depositETH(uint256 id, address receiver)
         external
         payable
+        marketExists(id)
+        epochHasNotStarted(id)
+        nonReentrant
     {
         require(msg.value > 0, "ZeroValue");
 
         IWETH(address(asset)).deposit{value: msg.value}();
-        assert(IWETH(address(asset)).transfer(msg.sender, msg.value));
+        _mint(receiver, id, msg.value, EMPTY);
 
-        return deposit(id, msg.value, receiver);
+        emit Deposit(msg.sender, receiver, id, assets, assets);
     }
 
     /**
