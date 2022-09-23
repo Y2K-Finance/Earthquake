@@ -322,7 +322,7 @@ contract AssertTest is Helper {
         vHedge.withdraw(endEpoch, assets, alice, alice);
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_BALANCE);
-        uint256 entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
+        uint256 entitledShares = vHedge.previewWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
 
         vm.stopPrank();
@@ -333,7 +333,7 @@ contract AssertTest is Helper {
         vHedge.withdraw(endEpoch, assets, bob, bob);
         
         assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_BALANCE);
-        entitledShares = vHedge.beforeWithdraw(endEpoch, assets);
+        entitledShares = vHedge.previewWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
@@ -346,7 +346,7 @@ contract AssertTest is Helper {
         vRisk.withdraw(endEpoch, assets, chad, chad);
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_BALANCE);
-        entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
+        entitledShares = vRisk.previewWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
@@ -357,7 +357,7 @@ contract AssertTest is Helper {
         vRisk.withdraw(endEpoch, assets, degen, degen);
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_BALANCE);
-        entitledShares = vRisk.beforeWithdraw(endEpoch, assets);
+        entitledShares = vRisk.previewWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
 
         vm.stopPrank();
