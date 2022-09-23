@@ -184,7 +184,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         IWETH(address(asset)).deposit{value: msg.value}();
         _mint(receiver, id, msg.value, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assets, assets);
+        emit Deposit(msg.sender, receiver, id, msg.value, msg.value);
     }
 
     /**
@@ -324,7 +324,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /**
     @notice Controller can call this function to trigger the end of the epoch, storing the TVL of that epoch and if a depeg event occurred
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
-    @param depeg Boolean value indicating if the depeg event occurred, or not. Example: If depeg occurred depeg = true
      */
     function endEpoch(uint256 id)
         public
