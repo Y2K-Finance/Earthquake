@@ -63,43 +63,6 @@ contract Controller {
     /* solhint-enable  var-name-mixedcase */
 
     /*//////////////////////////////////////////////////////////////
-                                 MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Modifier to ensure market exists, current market epoch time and price are valid 
-      * @param marketIndex Target market index
-      * @param epochEnd End of epoch set for market
-      */
-    modifier isDisaster(uint256 marketIndex, uint256 epochEnd) {
-        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-        if(
-            vaultsAddress.length != VAULTS_LENGTH
-            )
-            revert MarketDoesNotExist(marketIndex);
-
-        address vaultAddress = vaultsAddress[0];
-        Vault vault = Vault(vaultAddress);
-
-        if(vault.idExists(epochEnd) == false)
-            revert EpochNotExist();
-
-        if(
-            vault.strikePrice() < getLatestPrice(vault.tokenInsured())
-            )
-            revert PriceNotAtStrikePrice(getLatestPrice(vault.tokenInsured()));
-
-        if(
-            vault.idEpochBegin(epochEnd) > block.timestamp)
-            revert EpochNotStarted();
-
-        if(
-            block.timestamp > epochEnd
-            )
-            revert EpochExpired();
-        _;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
@@ -131,11 +94,32 @@ contract Controller {
       */
     function triggerDepeg(uint256 marketIndex, uint256 epochEnd)
         public
-        isDisaster(marketIndex, epochEnd)
     {
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
+
+        if(
+            vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0)
+            )
+            revert MarketDoesNotExist(marketIndex);
+
+        if(insrVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
+        if(
+            insrVault.strikePrice() < getLatestPrice(insrVault.tokenInsured())
+            )
+            revert PriceNotAtStrikePrice(getLatestPrice(insrVault.tokenInsured()));
+
+        if(
+            insrVault.idEpochBegin(epochEnd) > block.timestamp)
+            revert EpochNotStarted();
+
+        if(
+            block.timestamp > epochEnd
+            )
+            revert EpochExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
         if(insrVault.idFinalTVL(epochEnd) != 0)
@@ -181,9 +165,6 @@ contract Controller {
       */
     function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) public {
         if(
-            vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
-                revert MarketDoesNotExist(marketIndex);
-        if(
             block.timestamp <= epochEnd)
             revert EpochNotExpired();
 
@@ -191,6 +172,11 @@ contract Controller {
 
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
+        
+        if(
+            vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0)
+            )
+            revert MarketDoesNotExist(marketIndex);
 
         if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
             revert EpochNotExist();

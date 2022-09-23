@@ -128,7 +128,9 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /**@notice Returns total assets for token
      * @param  _id uint256 token id of token
      */
-    function totalAssets(uint256 _id) public view virtual returns (uint256);
+    function totalAssets(uint256 _id) public view virtual returns (uint256){
+        return totalSupply(_id);
+    }
 
     /**
         @notice Shows assets conversion output from withdrawing assets
