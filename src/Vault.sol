@@ -135,7 +135,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         strikePrice = _strikePrice;
         factory = msg.sender;
         controller = _controller;
-        timewindow = 1 days;
+        timewindow = 1;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     {
         if(
             msg.sender != owner &&
-            isApprovedForAll(owner, receiver) == false)
+            isApprovedForAll(owner, msg.sender) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
         shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.

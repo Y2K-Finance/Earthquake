@@ -114,7 +114,7 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         address owner
     ) external virtual returns (uint256 shares) {
         require(
-            msg.sender == owner || isApprovedForAll(owner, receiver),
+            msg.sender == owner || isApprovedForAll(owner, msg.sender),
             "Only owner can withdraw, or owner has approved receiver for all"
         );
 
