@@ -108,7 +108,7 @@ contract Controller {
             revert EpochNotExist();
 
         if(
-            insrVault.strikePrice() < getLatestPrice(insrVault.tokenInsured())
+            insrVault.strikePrice() <= getLatestPrice(insrVault.tokenInsured())
             )
             revert PriceNotAtStrikePrice(getLatestPrice(insrVault.tokenInsured()));
 
