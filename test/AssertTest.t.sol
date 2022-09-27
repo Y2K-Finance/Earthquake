@@ -35,7 +35,18 @@ contract AssertTest is Helper {
             ,
             
         ) = pegOracle.latestRoundData();
-        emit log_named_int("oracle1price1 / oracle1price2", price);
+        emit log_named_int("oracle?price?", price);
+
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, address(pegOracle), "y2kSTETH_99*");
+        vm.stopPrank();
+
+        int256 nowPrice = controller.getLatestPrice(tokenSTETH);
+
+        emit log_named_int("Controller Price: ", nowPrice);
+        emit log_named_int("Token      Price: ", DEPEG_AAA);
+        console2.log("Decimals: ", pegOracle.decimals());
+
     }
     
     function testPegOracleMarketCreation() public {
