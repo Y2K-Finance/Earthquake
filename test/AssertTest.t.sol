@@ -20,7 +20,24 @@ contract AssertTest is Helper {
 	/*///////////////////////////////////////////////////////////////
                            CREATION functions
     //////////////////////////////////////////////////////////////*/
+    function testOraclesShit() public {
+        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        //PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
 
+        int256 oracle1price1 = pegOracle.getOracle1_Price();
+        int256 oracle1price2 = pegOracle.getOracle2_Price();
+        emit log_named_int("oracle1price1", oracle1price1);
+        emit log_named_int("oracle1price2", oracle1price2);
+        (
+            ,
+            int256 price,
+            ,
+            ,
+            
+        ) = pegOracle.latestRoundData();
+        emit log_named_int("oracle1price1 / oracle1price2", price);
+    }
+    
     function testPegOracleMarketCreation() public {
         PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
         PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);

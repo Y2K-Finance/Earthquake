@@ -17,7 +17,7 @@ contract PegOracle {
 
     /** @notice Contract constructor
       * @param _oracleHEDGE Oracle address for the hedging asset
-      * @param _oracleRISK Oracle address for pegged asset
+      * @param _oracleRISK Oracle address for peg asset
       */
     constructor(address _oracleHEDGE, address _oracleRISK) {
         require(_oracleHEDGE != address(0), "oracle1 cannot be the zero address");
