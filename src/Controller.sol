@@ -233,6 +233,9 @@ contract Controller {
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
+        if(block.timestamp <= insrVault.idEpochBegin(epochEnd))
+            revert EpochNotStarted();
+
         if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
             revert EpochNotExist();
 
