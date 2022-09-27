@@ -146,8 +146,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         @notice Deposit function from ERC4626, with payment of a fee to a treasury implemented;
         @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
         @param  assets  uint256 representing how many assets the user wants to deposit, a fee will be taken from this value;
-        @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
-        @return shares how many assets the owner is entitled to, removing the fee from it's shares;
+        @param receiver  address of the receiver of the assets provided by this function, that represent the ownership of the deposited asset;
      */
     function deposit(
         uint256 id,
@@ -159,30 +158,23 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
         epochHasNotStarted(id)
         nonReentrant
-        returns (uint256 shares)
     {
-        // Check for rounding error since we round down in previewDeposit.
-        require((shares = previewDeposit(id, assets)) != 0, "ZeroValue");
 
-        asset.transferFrom(msg.sender, address(this), shares);
+        asset.transferFrom(msg.sender, address(this), assets);
 
-        _mint(receiver, id, shares, EMPTY);
+        _mint(receiver, id, assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, shares, shares);
-
-        return shares;
+        emit Deposit(msg.sender, receiver, id, assets, assets);
     }
 
     /**
         @notice Deposit ETH function
         @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
         @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
-        @return shares how many assets the owner is entitled to, removing the fee from its shares;
      */
     function depositETH(uint256 id, address receiver)
         external
         payable
-        returns (uint256 shares)
     {
         require(msg.value > 0, "ZeroValue");
 
@@ -217,10 +209,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
             isApprovedForAll(owner, msg.sender) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
-        shares = previewWithdraw(id, assets); // No need to check for rounding error, previewWithdraw rounds up.
-
-        uint256 entitledShares = beforeWithdraw(id, shares);
-        _burn(owner, id, shares);
+        uint256 entitledShares = previewWithdraw(id, assets);
+        _burn(owner, id, assets);
 
         //Taking fee from the amount
         uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
@@ -368,61 +358,30 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /*///////////////////////////////////////////////////////////////
                          INTERNAL HOOKS LOGIC
     //////////////////////////////////////////////////////////////*/
-
     /**
-    @notice Calculations of how much the user will receive;
-    @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
-    @param amount uint256 of the amount the user wants to withdraw
-    @return entitledAmount How much amount the user will receive, according to the conditions
-    */
-    function beforeWithdraw(uint256 id, uint256 amount)
+        @notice Shows assets conversion output from withdrawing assets
+        @param  id uint256 token id of token
+        @param assets Total number of assets
+     */
+    function previewWithdraw(uint256 id, uint256 assets)
         public
         view
+        override
         returns (uint256 entitledAmount)
     {
         // in case the risk wins aka no depeg event
         // risk users can withdraw the hedge (that is paid by the hedge buyers) and risk; withdraw = (risk + hedge)
         // hedge pay for each hedge seller = ( risk / tvl before the hedge payouts ) * tvl in hedge pool
         // in case there is a depeg event, the risk users can only withdraw the hedge
-        if (
-            keccak256(abi.encodePacked(symbol)) ==
-            keccak256(abi.encodePacked("rY2K"))
-        ) {
-            if (!idDepegged[id]) {
-                //depeg event did not happen
-                /*
-                entitledAmount =
-                    (amount / idFinalTVL[id]) *
-                    idClaimTVL[id] +
-                    amount;
-                */
-                entitledAmount =
-                    amount.divWadDown(idFinalTVL[id]).mulDivDown(
-                        idClaimTVL[id],
-                        1 ether
-                    ) +
-                    amount;
-            } else {
-                //depeg event did happen
-                entitledAmount = amount.divWadDown(idFinalTVL[id]).mulDivDown(
+        entitledAmount = assets.divWadDown(idFinalTVL[id]).mulDivDown(
                     idClaimTVL[id],
                     1 ether
                 );
-            }
-        }
         // in case the hedge wins aka depegging
         // hedge users pay the hedge to risk users anyway,
         // hedge guy can withdraw risk (that is transfered from the risk pool),
         // withdraw = % tvl that hedge buyer owns
         // otherwise hedge users cannot withdraw any Eth
-        else {
-            entitledAmount = amount.divWadDown(idFinalTVL[id]).mulDivDown(
-                idClaimTVL[id],
-                1 ether
-            );
-        }
-
-        return entitledAmount;
     }
     
     /** @notice Lookup total epochs length
