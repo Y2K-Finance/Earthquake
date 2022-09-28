@@ -287,7 +287,7 @@ contract AssertTest is Helper {
         
         emit log_named_uint("total assets value", vHedge.totalAssets(endEpoch));
         
-        
+
         assertTrue(vHedge.totalAssets(endEpoch) == vHedge.idFinalTVL(endEpoch), "Claim TVL not equal");
         //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
         assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not equal");
@@ -516,11 +516,14 @@ contract AssertTest is Helper {
 
     }
 
-    function testSamePegDecimals() public {
+    function testPegOracleDecimals() public {
         vm.startPrank(admin);
         PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
-        AggregatorV3Interface testPriceFeed2 = AggregatorV3Interface(oracleETH);
-        assertEq(pegOracle.decimals(), testPriceFeed2.decimals());
+        emit log_named_uint("PegOracle decimals", pegOracle.decimals());
+        assertTrue(pegOracle.decimals() == DECIMALS);
+        AggregatorV3Interface testOracle1 = AggregatorV3Interface(oracleSTETH);
+        AggregatorV3Interface testOracle2 = AggregatorV3Interface(oracleETH);
+        assertTrue(testOracle1.decimals() == testOracle2.decimals());
         vm.stopPrank();
     }
 
@@ -528,7 +531,6 @@ contract AssertTest is Helper {
                            AUTHORIZATION functions
     //////////////////////////////////////////////////////////////*/
     
-    //@dev: please assess this case and check if contract logic fault or test logic fault
 
     function testOwnerAuthorize() public {
         vm.deal(alice, 10 ether);
@@ -562,8 +564,6 @@ contract AssertTest is Helper {
         vm.stopPrank();
         
         vm.startPrank(bob);
-        //ERC20(WETH).allowance(address(alice), address(bob));
-        //vm.expectRevert(abi.encodeWithSelector(Vault.OwnerDidNotAuthorize.selector, address(bob), address(alice)));
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
         vm.stopPrank();
     }
