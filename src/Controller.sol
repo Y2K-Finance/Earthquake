@@ -200,7 +200,7 @@ contract Controller {
             vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
                 revert MarketDoesNotExist(marketIndex);
         if(
-            block.timestamp < epochEnd)
+            block.timestamp <= epochEnd)
             revert EpochNotExpired();
 
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
@@ -221,7 +221,7 @@ contract Controller {
         riskVault.endEpoch(epochEnd, false);
 
         insrVault.setClaimTVL(epochEnd, 0);
-        riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd));
+        riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) + riskVault.idFinalTVL(epochEnd));
         insrVault.sendTokens(epochEnd, address(riskVault));
 
         VaultTVL memory tvl = VaultTVL(
@@ -295,9 +295,15 @@ contract Controller {
             uint256 timeStamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
-
-        uint256 decimals = 10**(18-(priceFeed.decimals()));
-        price = price * int256(decimals);
+        
+        if(priceFeed.decimals() != 18){
+            uint256 decimals = 10**(18-(priceFeed.decimals()));
+            price = price * int256(decimals);
+        }
+        else{
+            price = price;
+        }
+        
 
         if(price <= 0)
             revert OraclePriceZero();
