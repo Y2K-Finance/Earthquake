@@ -214,7 +214,7 @@ contract Helper is Test {
 
         controller.triggerEndEpoch(_index, endEpoch);
 
-        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
+        assertTrue(vHedge.totalAssets(endEpoch) == vHedge.idFinalTVL(endEpoch), "Claim TVL not equal");
         //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
