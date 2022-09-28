@@ -287,10 +287,7 @@ contract AssertTest is Helper {
         
         emit log_named_uint("total assets value", vHedge.totalAssets(endEpoch));
         
-
-        assertTrue(vHedge.totalAssets(endEpoch) == vHedge.idFinalTVL(endEpoch), "Claim TVL not equal");
-        //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
-        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not equal");
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 

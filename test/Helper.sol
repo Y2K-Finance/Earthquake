@@ -42,7 +42,6 @@ contract Helper is Test {
 
     address arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
     address admin = address(1);
-    
     address alice = address(2);
     address bob = address(3);
     address chad = address(4);
@@ -214,8 +213,7 @@ contract Helper is Test {
 
         controller.triggerEndEpoch(_index, endEpoch);
 
-        assertTrue(vHedge.totalAssets(endEpoch) == vHedge.idFinalTVL(endEpoch), "Claim TVL not equal");
-        //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 
