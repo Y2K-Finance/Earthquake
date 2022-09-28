@@ -284,9 +284,13 @@ contract AssertTest is Helper {
         emit log_named_int("oracle price", controller.getLatestPrice(tokenFRAX));
 
         controller.triggerEndEpoch(SINGLE_MARKET_INDEX, endEpoch);
-
-        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
+        
+        emit log_named_uint("total assets value", vHedge.totalAssets(endEpoch));
+        
+        
+        assertTrue(vHedge.totalAssets(endEpoch) == vHedge.idFinalTVL(endEpoch), "Claim TVL not equal");
         //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not equal");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 
@@ -512,6 +516,14 @@ contract AssertTest is Helper {
 
     }
 
+    function testSamePegDecimals() public {
+        vm.startPrank(admin);
+        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        AggregatorV3Interface testPriceFeed2 = AggregatorV3Interface(oracleETH);
+        assertEq(pegOracle.decimals(), testPriceFeed2.decimals());
+        vm.stopPrank();
+    }
+
     /*//////////////////////////////////////////////////////////////
                            AUTHORIZATION functions
     //////////////////////////////////////////////////////////////*/
@@ -538,6 +550,7 @@ contract AssertTest is Helper {
 
         vm.startPrank(alice);
         vm.warp(endEpoch + 1 days);
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
         vHedge.setApprovalForAll(bob, true);
         if(vHedge.isApprovedForAll(alice, bob)){
             emit log_named_uint("Can continue", 1);
