@@ -313,7 +313,7 @@ contract Controller {
             uint80 roundID,
             int256 price,
             ,
-            uint256 timeStamp,
+            ,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
         
