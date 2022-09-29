@@ -20,7 +20,35 @@ contract AssertTest is Helper {
 	/*///////////////////////////////////////////////////////////////
                            CREATION functions
     //////////////////////////////////////////////////////////////*/
+    function testOraclesShit() public {
+        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        //PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
 
+        int256 oracle1price1 = pegOracle.getOracle1_Price();
+        int256 oracle1price2 = pegOracle.getOracle2_Price();
+        emit log_named_int("oracle1price1", oracle1price1);
+        emit log_named_int("oracle1price2", oracle1price2);
+        (
+            ,
+            int256 price,
+            ,
+            ,
+            
+        ) = pegOracle.latestRoundData();
+        emit log_named_int("oracle?price?", price);
+
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, address(pegOracle), "y2kSTETH_99*");
+        vm.stopPrank();
+
+        int256 nowPrice = controller.getLatestPrice(tokenSTETH);
+
+        emit log_named_int("Controller Price: ", nowPrice);
+        emit log_named_int("Token      Price: ", DEPEG_AAA);
+        console2.log("Decimals: ", pegOracle.decimals());
+
+    }
+    
     function testPegOracleMarketCreation() public {
         PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
         PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
@@ -256,9 +284,10 @@ contract AssertTest is Helper {
         emit log_named_int("oracle price", controller.getLatestPrice(tokenFRAX));
 
         controller.triggerEndEpoch(SINGLE_MARKET_INDEX, endEpoch);
-
-        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
-        //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
+        
+        emit log_named_uint("total assets value", vHedge.totalAssets(endEpoch));
+        
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 
@@ -484,11 +513,21 @@ contract AssertTest is Helper {
 
     }
 
+    function testPegOracleDecimals() public {
+        vm.startPrank(admin);
+        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        emit log_named_uint("PegOracle decimals", pegOracle.decimals());
+        assertTrue(pegOracle.decimals() == DECIMALS);
+        AggregatorV3Interface testOracle1 = AggregatorV3Interface(oracleSTETH);
+        AggregatorV3Interface testOracle2 = AggregatorV3Interface(oracleETH);
+        assertTrue(testOracle1.decimals() == testOracle2.decimals());
+        vm.stopPrank();
+    }
+
     /*//////////////////////////////////////////////////////////////
                            AUTHORIZATION functions
     //////////////////////////////////////////////////////////////*/
     
-    //@dev: please assess this case and check if contract logic fault or test logic fault
 
     function testOwnerAuthorize() public {
         vm.deal(alice, 10 ether);
@@ -510,6 +549,7 @@ contract AssertTest is Helper {
 
         vm.startPrank(alice);
         vm.warp(endEpoch + 1 days);
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
         vHedge.setApprovalForAll(bob, true);
         if(vHedge.isApprovedForAll(alice, bob)){
             emit log_named_uint("Can continue", 1);
@@ -521,8 +561,6 @@ contract AssertTest is Helper {
         vm.stopPrank();
         
         vm.startPrank(bob);
-        //ERC20(WETH).allowance(address(alice), address(bob));
-        //vm.expectRevert(abi.encodeWithSelector(Vault.OwnerDidNotAuthorize.selector, address(bob), address(alice)));
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
         vm.stopPrank();
     }
