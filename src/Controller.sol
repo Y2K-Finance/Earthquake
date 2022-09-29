@@ -58,7 +58,7 @@ contract Controller {
         uint256 INSR_claimTVL;
         uint256 INSR_finalTVL;
     }
-    
+
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -234,8 +234,7 @@ contract Controller {
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
-
-        if(block.timestamp <= insrVault.idEpochBegin(epochEnd))
+        if(block.timestamp < insrVault.idEpochBegin(epochEnd))
             revert EpochNotStarted();
 
         if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
@@ -324,7 +323,7 @@ contract Controller {
 
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
-            
+
         return price;
     }
 
