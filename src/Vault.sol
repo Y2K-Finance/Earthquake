@@ -94,7 +94,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /** @notice You can only call functions that use this modifier after the current epoch has started
       */
     modifier epochHasEnded(uint256 id) {
-        if(idEpochEnded[id] == true)
+        if(idEpochEnded[id] == false)
             revert EpochNotFinished();
         _;
     }
