@@ -275,6 +275,7 @@ contract RevertTest is Helper {
 
         vm.startPrank(bob);
         vm.warp(endEpoch + 1 days);
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
         vm.expectRevert(abi.encodeWithSelector(Vault.OwnerDidNotAuthorize.selector, address(bob), address(alice)));
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
         vm.stopPrank();
