@@ -229,15 +229,6 @@ contract Controller {
       * @param epochEnd End of epoch set for market
       */
     function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
-        if(
-            vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
-                revert MarketDoesNotExist(marketIndex);
-        if(
-            block.timestamp >= epochEnd)
-            revert EpochExpired();
-
-        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
