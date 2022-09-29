@@ -52,14 +52,12 @@ contract Controller {
         int256 depegPrice
     );
 
-    /* solhint-disable  var-name-mixedcase */
     struct VaultTVL {
         uint256 RISK_claimTVL;
         uint256 RISK_finalTVL;
         uint256 INSR_claimTVL;
         uint256 INSR_finalTVL;
     }
-    /* solhint-enable  var-name-mixedcase */
 
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
@@ -107,7 +105,7 @@ contract Controller {
             revert EpochNotExist();
 
         if(
-            insrVault.strikePrice() < getLatestPrice(insrVault.tokenInsured())
+            insrVault.strikePrice() <= getLatestPrice(insrVault.tokenInsured())
             )
             revert PriceNotAtStrikePrice(getLatestPrice(insrVault.tokenInsured()));
 
@@ -236,6 +234,9 @@ contract Controller {
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
+        if(block.timestamp < insrVault.idEpochBegin(epochEnd))
+            revert EpochNotStarted();
+
         if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
             revert EpochNotExist();
 
@@ -274,6 +275,7 @@ contract Controller {
         view
         returns (int256 nowPrice)
     {
+        uint observationFrequency = 1 hours;
         (
             ,
             /*uint80 roundId*/
