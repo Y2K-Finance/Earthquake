@@ -580,6 +580,7 @@ contract AssertTest is Helper {
         
         vm.startPrank(bob);
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
         vm.stopPrank();
     }
 
