@@ -28,10 +28,6 @@ contract Controller {
     error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-<<<<<<< HEAD
-=======
-    error TimestampZero();
->>>>>>> 33bf036 (46 audit oracle outdated issues (#63))
     error EpochNotExist();
     error EpochNotExpired();
 
@@ -66,8 +62,6 @@ contract Controller {
     /* solhint-enable  var-name-mixedcase */
 
     /*//////////////////////////////////////////////////////////////
-<<<<<<< HEAD
-=======
                                  MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
@@ -105,7 +99,6 @@ contract Controller {
     }
 
     /*//////////////////////////////////////////////////////////////
->>>>>>> 33bf036 (46 audit oracle outdated issues (#63))
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
@@ -282,7 +275,40 @@ contract Controller {
             block.timestamp >= epochEnd)
             revert EpochExpired();
 
-<<<<<<< HEAD
+        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
+
+        Vault insrVault = Vault(vaultsAddress[0]);
+        Vault riskVault = Vault(vaultsAddress[1]);
+
+        if(block.timestamp <= insrVault.idEpochBegin(epochEnd))
+            revert EpochNotStarted();
+
+        if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if(insrVault.idFinalTVL(epochEnd) != 0)
+            revert NotZeroTVL();
+        if(riskVault.idFinalTVL(epochEnd) != 0) 
+            revert NotZeroTVL();
+
+        //set claim TVL to 0 if total assets are 0
+        if(insrVault.totalAssets(epochEnd) == 0){
+            insrVault.endEpoch(epochEnd);
+            riskVault.endEpoch(epochEnd);
+
+            insrVault.setClaimTVL(epochEnd, 0);
+            riskVault.setClaimTVL(epochEnd, riskVault.idFinalTVL(epochEnd));
+        }
+        if(riskVault.totalAssets(epochEnd) == 0){
+            insrVault.endEpoch(epochEnd);
+            riskVault.endEpoch(epochEnd);
+
+            insrVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) );
+            riskVault.setClaimTVL(epochEnd, 0);
+        }
+    }
+
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
 
         Vault insrVault = Vault(vaultsAddress[0]);
@@ -314,8 +340,6 @@ contract Controller {
         }
     }
 
-=======
->>>>>>> 33bf036 (46 audit oracle outdated issues (#63))
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
@@ -375,7 +399,7 @@ contract Controller {
 
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
-        
+
         return price;
     }
 
