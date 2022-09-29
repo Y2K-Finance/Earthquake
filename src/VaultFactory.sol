@@ -184,13 +184,14 @@ contract VaultFactory {
         address _oracle,
         string memory _name
     ) public onlyAdmin returns (address insr, address rsk) {
+
+        if(controller == address(0))
+            revert ControllerNotSet();
+
         if(
             IController(controller).getVaultFactory() != address(this)
             )
             revert AddressFactoryNotInController();
-
-        if(controller == address(0))
-            revert ControllerNotSet();
 
         marketIndex += 1;
 
