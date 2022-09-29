@@ -62,43 +62,6 @@ contract Controller {
     /* solhint-enable  var-name-mixedcase */
 
     /*//////////////////////////////////////////////////////////////
-                                 MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Modifier to ensure market exists, current market epoch time and price are valid 
-      * @param marketIndex Target market index
-      * @param epochEnd End of epoch set for market
-      */
-    modifier isDisaster(uint256 marketIndex, uint256 epochEnd) {
-        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-        if(
-            vaultsAddress.length != VAULTS_LENGTH
-            )
-            revert MarketDoesNotExist(marketIndex);
-
-        address vaultAddress = vaultsAddress[0];
-        Vault vault = Vault(vaultAddress);
-
-        if(vault.idExists(epochEnd) == false)
-            revert EpochNotExist();
-
-        if(
-            vault.strikePrice() < getLatestPrice(vault.tokenInsured())
-            )
-            revert PriceNotAtStrikePrice(getLatestPrice(vault.tokenInsured()));
-
-        if(
-            vault.idEpochBegin(epochEnd) > block.timestamp)
-            revert EpochNotStarted();
-
-        if(
-            block.timestamp > epochEnd
-            )
-            revert EpochExpired();
-        _;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
@@ -268,8 +231,6 @@ contract Controller {
       * @param epochEnd End of epoch set for market
       */
     function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
-        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
