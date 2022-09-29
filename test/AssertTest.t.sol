@@ -293,9 +293,8 @@ contract AssertTest is Helper {
 
     function testCreateController() public {
         vm.startPrank(admin);
-        Controller test_controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        Controller test_controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         assertEq(address(vaultFactory), address(test_controller.vaultFactory()));
-        assertEq(admin, test_controller.admin());
         vm.stopPrank();
     }
 
@@ -305,7 +304,7 @@ contract AssertTest is Helper {
         DepositDepeg();
         vm.startPrank(admin);
         DepegOracle depegOracle = new DepegOracle(address(oracleFRAX), address(admin));
-        Controller controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        Controller controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(depegOracle), "y2kFRAX_99*");
         vaultFactory.setController(address(controller));
         vm.stopPrank();
@@ -320,7 +319,7 @@ contract AssertTest is Helper {
     function testTriggerEndEpoch() public {
         DepositDepeg();
         vm.startPrank(admin);
-        Controller test_controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        Controller test_controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.setController(address(test_controller));
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.warp(endEpoch + 1 days);

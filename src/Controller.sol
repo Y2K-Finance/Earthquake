@@ -8,7 +8,6 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 
 contract Controller {
-    address public immutable admin;
     VaultFactory public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
@@ -30,7 +29,6 @@ contract Controller {
     error OraclePriceZero();
     error RoundIDOutdated();
     error TimestampZero();
-    error AddressNotAdmin();
     error EpochNotExist();
     error EpochNotExpired();
 
@@ -67,14 +65,6 @@ contract Controller {
     /*//////////////////////////////////////////////////////////////
                                  MODIFIERS
     //////////////////////////////////////////////////////////////*/
-
-    /** @notice Only admin addresses can call functions that use this modifier
-      */
-    modifier onlyAdmin() {
-        if(msg.sender != admin)
-            revert AddressNotAdmin();
-        _;
-    }
 
     /** @notice Modifier to ensure market exists, current market epoch time and price are valid 
       * @param marketIndex Target market index
@@ -115,24 +105,18 @@ contract Controller {
 
     /** @notice Contract constructor
       * @param _factory VaultFactory address
-      * @param _admin Admin address
       * @param _l2Sequencer Arbitrum sequencer address
       */ 
     constructor(
         address _factory,
-        address _admin,
         address _l2Sequencer
     ) {
-        if(_admin == address(0))
-            revert ZeroAddress();
-
         if(_factory == address(0)) 
             revert ZeroAddress();
 
         if(_l2Sequencer == address(0))
             revert ZeroAddress();
         
-        admin = _admin;
         vaultFactory = VaultFactory(_factory);
         sequencerUptimeFeed = AggregatorV2V3Interface(_l2Sequencer);
     }
@@ -246,10 +230,6 @@ contract Controller {
             getLatestPrice(insrVault.tokenInsured())
         );
     }
-
-    /*//////////////////////////////////////////////////////////////
-                                ADMIN SETTINGS
-    //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
