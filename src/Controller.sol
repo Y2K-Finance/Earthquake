@@ -328,7 +328,7 @@ contract Controller {
 
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
-
+        
         return price;
     }
 
