@@ -28,7 +28,6 @@ contract Controller {
     error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-    error TimestampOutdated();
     error EpochNotExist();
     error EpochNotExpired();
 
@@ -53,15 +52,13 @@ contract Controller {
         int256 depegPrice
     );
 
-    /* solhint-disable  var-name-mixedcase */
     struct VaultTVL {
         uint256 RISK_claimTVL;
         uint256 RISK_finalTVL;
         uint256 INSR_claimTVL;
         uint256 INSR_finalTVL;
     }
-    /* solhint-enable  var-name-mixedcase */
-
+    
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
