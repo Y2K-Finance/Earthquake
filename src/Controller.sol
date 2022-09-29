@@ -28,7 +28,6 @@ contract Controller {
     error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-    error TimestampOutdated();
     error EpochNotExist();
     error EpochNotExpired();
 
@@ -271,7 +270,6 @@ contract Controller {
         view
         returns (int256 nowPrice)
     {
-        uint observationFrequency = 1 hours;
         (
             ,
             /*uint80 roundId*/
@@ -301,7 +299,7 @@ contract Controller {
             uint80 roundID,
             int256 price,
             ,
-            uint256 timeStamp,
+            ,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
         
@@ -319,10 +317,7 @@ contract Controller {
 
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
-
-        if(timeStamp < block.timestamp - uint256(observationFrequency))
-            revert TimestampOutdated();
-
+        
         return price;
     }
 

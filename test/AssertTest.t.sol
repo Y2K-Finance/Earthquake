@@ -16,25 +16,6 @@ import {IWETH} from "./interfaces/IWETH.sol";
 
 
 contract AssertTest is Helper {
-	
-
-    function testOraclesShit() public {
-        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
-        //PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
-
-        int256 oracle1price1 = pegOracle.getOracle1_Price();
-        int256 oracle1price2 = pegOracle.getOracle2_Price();
-        emit log_named_int("oracle1price1", oracle1price1);
-        emit log_named_int("oracle1price2", oracle1price2);
-        (
-            ,
-            int256 price,
-            ,
-            ,
-            
-        ) = pegOracle.latestRoundData();
-        emit log_named_int("oracle1price1 / oracle1price2", price);
-    }
 
 	/*///////////////////////////////////////////////////////////////
                            CREATION functions
@@ -580,6 +561,7 @@ contract AssertTest is Helper {
         
         vm.startPrank(bob);
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
         vm.stopPrank();
     }
 
