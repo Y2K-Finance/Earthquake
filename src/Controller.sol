@@ -28,7 +28,6 @@ contract Controller {
     error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-    error TimestampOutdated();
     error EpochNotExist();
     error EpochNotExpired();
 
