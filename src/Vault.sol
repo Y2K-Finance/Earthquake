@@ -356,7 +356,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping
      */
-    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController {
+    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController marketExists(id) {
         idClaimTVL[id] = claimTVL;
     }
 
