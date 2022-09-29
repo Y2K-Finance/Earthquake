@@ -231,6 +231,8 @@ contract Controller {
       * @param epochEnd End of epoch set for market
       */
     function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
+        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
+
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
