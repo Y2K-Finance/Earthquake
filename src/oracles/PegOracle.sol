@@ -17,20 +17,18 @@ contract PegOracle {
 
     /** @notice Contract constructor
       * @param _oracleHEDGE Oracle address for the hedging asset
-      * @param _oracleRISK Oracle address for pegged asset
+      * @param _oracleRISK Oracle address for peg asset
       */
     constructor(address _oracleHEDGE, address _oracleRISK) {
         require(_oracleHEDGE != address(0), "oracle1 cannot be the zero address");
         require(_oracleRISK != address(0), "oracle2 cannot be the zero address");
         require(_oracleHEDGE != _oracleRISK, "Cannot be same Oracle");
         
-        decimals = priceFeed1.decimals();
-        
         priceFeed1 = AggregatorV3Interface(_oracleHEDGE);
         priceFeed2 = AggregatorV3Interface(_oracleRISK);
 
         require(
-            (decimals == priceFeed2.decimals()),
+            (priceFeed1.decimals() == priceFeed2.decimals()),
             "Decimals must be the same"
         );
 
@@ -38,7 +36,7 @@ contract PegOracle {
 
         oracle1 = _oracleHEDGE;
         oracle2 = _oracleRISK;
-
+        decimals = 18;
 
     }
 
@@ -76,8 +74,8 @@ contract PegOracle {
 
         int256 price2 = getOracle2_Price();
 
-        nowPrice = (price1 * 10000) / price2;
-        nowPrice = nowPrice * int256(10**(priceFeed1.decimals())) * 100;
+        int256 WAD = 1e18;
+        nowPrice = (price1 * WAD) / price2; //divWadDown() from FixedPointMathLib.sol
 
         return (
             roundID1,

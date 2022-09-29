@@ -41,9 +41,7 @@ contract Helper is Test {
     address btcEthOracle = 0xc5a90A6d7e4Af242dA238FFe279e9f2BA0c64B2e;
 
     address arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
-
     address admin = address(1);
-
     address alice = address(2);
     address bob = address(3);
     address chad = address(4);
@@ -63,6 +61,7 @@ contract Helper is Test {
     uint256 immutable BOB_MULTIPLIER = 2;
     uint256 immutable CHAD_MULTIPLIER = 10;
     uint256 immutable DEGEN_MULTIPLIER = 20;
+    uint256 immutable DECIMALS = 18;
 
     int256 immutable LESS_THAN_100 = 99;
     int256 immutable STRIKE_PRICE_FAKE_ORACLE = 90995265;
@@ -214,8 +213,7 @@ contract Helper is Test {
 
         controller.triggerEndEpoch(_index, endEpoch);
 
-        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
-        //emit log_named_uint("claim tvl", vHedge.idClaimTVL(endEpoch));
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 

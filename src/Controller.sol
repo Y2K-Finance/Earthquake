@@ -159,8 +159,8 @@ contract Controller {
         if(riskVault.idFinalTVL(epochEnd) != 0) 
             revert NotZeroTVL();
 
-        insrVault.endEpoch(epochEnd, true);
-        riskVault.endEpoch(epochEnd, true);
+        insrVault.endEpoch(epochEnd);
+        riskVault.endEpoch(epochEnd);
 
         insrVault.setClaimTVL(epochEnd, riskVault.idFinalTVL(epochEnd));
         riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd));
@@ -217,8 +217,8 @@ contract Controller {
         if(riskVault.idFinalTVL(epochEnd) != 0) 
             revert NotZeroTVL();
 
-        insrVault.endEpoch(epochEnd, false);
-        riskVault.endEpoch(epochEnd, false);
+        insrVault.endEpoch(epochEnd);
+        riskVault.endEpoch(epochEnd);
 
         insrVault.setClaimTVL(epochEnd, 0);
         riskVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) + riskVault.idFinalTVL(epochEnd));
@@ -295,9 +295,15 @@ contract Controller {
             uint256 timeStamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
-
-        uint256 decimals = 10**(18-(priceFeed.decimals()));
-        price = price * int256(decimals);
+        
+        if(priceFeed.decimals() != 18){
+            uint256 decimals = 10**(18-(priceFeed.decimals()));
+            price = price * int256(decimals);
+        }
+        else{
+            price = price;
+        }
+        
 
         if(price <= 0)
             revert OraclePriceZero();

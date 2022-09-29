@@ -300,7 +300,7 @@ contract RevertTest is Helper {
 
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(Vault.AddressNotController.selector, address(alice)));
-        testVault.endEpoch(endEpoch, false);
+        testVault.endEpoch(endEpoch);
         vm.stopPrank();       
     }
 
@@ -451,5 +451,5 @@ contract RevertTest is Helper {
         PegOracle pegOracle = new PegOracle(btcEthOracle, oracleUSDC);
         vm.stopPrank();
     }
-   
+
 }
