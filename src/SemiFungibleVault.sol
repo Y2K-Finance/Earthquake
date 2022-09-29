@@ -27,7 +27,7 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     
     /** @notice Deposit into vault when event is emitted
       * @param caller Address of deposit caller
-      * @param owner Owner of assets
+      * @param owner receiver who will own of the tokens representing this deposit
       * @param id Vault id
       * @param assets Amount of owner assets to deposit into vault
       * @param shares Amount of shares to mint for owner
