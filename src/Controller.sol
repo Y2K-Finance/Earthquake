@@ -142,6 +142,17 @@ contract Controller {
             insrVault.idFinalTVL(epochEnd)
         );
 
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            vaultFactory.tokenToOracle(insrVault.tokenInsured())
+        );
+        (
+            ,  
+            int256 price,
+            ,
+            ,
+            
+        ) = priceFeed.latestRoundData();
+
         emit DepegInsurance(
             keccak256(
                 abi.encodePacked(
@@ -154,7 +165,7 @@ contract Controller {
             true,
             epochEnd,
             block.timestamp,
-            getLatestPrice(insrVault.tokenInsured())
+            price
         );
     }
 
@@ -220,15 +231,6 @@ contract Controller {
       * @param epochEnd End of epoch set for market
       */
     function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
-        if(
-            vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
-                revert MarketDoesNotExist(marketIndex);
-        if(
-            block.timestamp >= epochEnd)
-            revert EpochExpired();
-
-        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
@@ -317,7 +319,7 @@ contract Controller {
 
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
-        
+
         return price;
     }
 
