@@ -315,9 +315,15 @@ contract Controller {
             uint256 timeStamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
-
-        uint256 decimals = 10**(18-(priceFeed.decimals()));
-        price = price * int256(decimals);
+        
+        if(priceFeed.decimals() != 18){
+            uint256 decimals = 10**(18-(priceFeed.decimals()));
+            price = price * int256(decimals);
+        }
+        else{
+            price = price;
+        }
+        
 
         if(price <= 0)
             revert OraclePriceZero();
