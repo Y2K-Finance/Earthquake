@@ -451,5 +451,5 @@ contract RevertTest is Helper {
         PegOracle pegOracle = new PegOracle(btcEthOracle, oracleUSDC);
         vm.stopPrank();
     }
-   
+
 }
