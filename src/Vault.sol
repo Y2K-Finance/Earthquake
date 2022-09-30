@@ -27,6 +27,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     error EpochEndMustBeAfterBegin();
     error MarketEpochExists();
     error TimeLocked();
+    error FeeCannotBe0();
 
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
@@ -321,6 +322,9 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     {
         if(_withdrawalFee > 150)
             revert FeeMoreThan150(_withdrawalFee);
+
+        if(_withdrawalFee == 0)
+            revert FeeCannotBe0();
 
         if(idExists[epochEnd] == true)
             revert MarketEpochExists();
