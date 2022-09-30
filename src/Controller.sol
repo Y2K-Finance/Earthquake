@@ -12,7 +12,6 @@ contract Controller {
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
-    uint256 public constant VAULTS_LENGTH = 2;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -22,7 +21,7 @@ contract Controller {
     error SequencerDown();
     error GracePeriodNotOver();
     error ZeroAddress();
-    error NotZeroTVL();
+    error EpochFinishedAlready();
     error PriceNotAtStrikePrice(int256 price);
     error EpochNotStarted();
     error EpochExpired();
@@ -120,10 +119,10 @@ contract Controller {
             revert EpochExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if(insrVault.idFinalTVL(epochEnd) != 0)
-            revert NotZeroTVL();
-        if(riskVault.idFinalTVL(epochEnd) != 0) 
-            revert NotZeroTVL();
+        if(insrVault.idEpochEnded(epochEnd))
+            revert EpochFinishedAlready();
+        if(riskVault.idEpochEnded(epochEnd)) 
+            revert EpochFinishedAlready();
 
         insrVault.endEpoch(epochEnd);
         riskVault.endEpoch(epochEnd);
@@ -191,10 +190,10 @@ contract Controller {
             revert EpochNotExist();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if(insrVault.idFinalTVL(epochEnd) != 0)
-            revert NotZeroTVL();
-        if(riskVault.idFinalTVL(epochEnd) != 0) 
-            revert NotZeroTVL();
+        if(insrVault.idEpochEnded(epochEnd))
+            revert EpochFinishedAlready();
+        if(riskVault.idEpochEnded(epochEnd)) 
+            revert EpochFinishedAlready();
 
         insrVault.endEpoch(epochEnd);
         riskVault.endEpoch(epochEnd);
@@ -250,10 +249,10 @@ contract Controller {
             revert EpochNotExist();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if(insrVault.idFinalTVL(epochEnd) != 0)
-            revert NotZeroTVL();
-        if(riskVault.idFinalTVL(epochEnd) != 0) 
-            revert NotZeroTVL();
+        if(insrVault.idEpochEnded(epochEnd))
+            revert EpochFinishedAlready();
+        if(riskVault.idEpochEnded(epochEnd)) 
+            revert EpochFinishedAlready();
 
         //set claim TVL to 0 if total assets are 0
         if(insrVault.totalAssets(epochEnd) == 0){

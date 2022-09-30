@@ -53,6 +53,20 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
+    function testFailControllerDoubleTrigger() public {
+        //create fake oracle for price feed
+        vm.startPrank(admin);
+        //FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        Deposit(1);
+        vm.warp(endEpoch + 1);
+        controller.triggerEndEpoch(1, endEpoch);
+
+        controller.triggerEndEpoch(1, endEpoch);
+    }
+
     // function testControllerZeroAddress() public {
 
         
