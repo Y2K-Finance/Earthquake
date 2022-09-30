@@ -236,9 +236,10 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         }
         else{
             entitledShares = assets;
-        }
+        }        
+        if (entitledShares > 0) { asset.transfer(receiver, entitledShares); }
+
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
-        asset.transfer(receiver, entitledShares);
 
         return entitledShares;
     }
