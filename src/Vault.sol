@@ -11,7 +11,6 @@ import {
 
 /// @author MiguelBits
 contract Vault is SemiFungibleVault, ReentrancyGuard {
-    using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -411,10 +410,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         // risk users can withdraw the hedge (that is paid by the hedge buyers) and risk; withdraw = (risk + hedge)
         // hedge pay for each hedge seller = ( risk / tvl before the hedge payouts ) * tvl in hedge pool
         // in case there is a depeg event, the risk users can only withdraw the hedge
-        entitledAmount = assets.divWadDown(idFinalTVL[id]).mulDivDown(
-                    idClaimTVL[id],
-                    1 ether
-                );
+        entitledAmount = (assets * idClaimTVL[id]) / idFinalTVL[id];
         // in case the hedge wins aka depegging
         // hedge users pay the hedge to risk users anyway,
         // hedge guy can withdraw risk (that is transfered from the risk pool),
