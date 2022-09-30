@@ -342,7 +342,6 @@ contract AssertTest is Helper {
         Vault vRisk = Vault(risk);
 
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, AMOUNT);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
         vm.stopPrank();
 

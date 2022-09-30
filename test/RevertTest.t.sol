@@ -460,12 +460,12 @@ contract RevertTest is Helper {
         //all cases revert TimeLocked()
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(oracleFRAX), "y2kFRAX_99*");
-        vm.warp(endEpoch + 10 days);
-        //vm.expectRevert(Vault.TimeLocked.selector);
+        vm.warp(block.timestamp + 6 days);
+        vm.expectRevert(Vault.TimeLocked.selector);
         vaultFactory.changeTreasury(alice, vaultFactory.marketIndex());
-        //vm.expectRevert(Vault.TimeLocked.selector);
+        vm.expectRevert(Vault.TimeLocked.selector);
         vaultFactory.changeController(vaultFactory.marketIndex(), alice);
-        //vm.expectRevert(Vault.TimeLocked.selector);
+        vm.expectRevert(Vault.TimeLocked.selector);
         vaultFactory.changeTimewindow(vaultFactory.marketIndex(), 1);
         vm.stopPrank();
     }
