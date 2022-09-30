@@ -60,6 +60,14 @@ contract FuzzTest is FuzzHelper{
         vm.stopPrank();
     }
 
+    function testFuzzGetHashedIndex(uint256 index) public{
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        bytes32 hashedIndex = rewardsFactory.getHashedIndex(index, beginEpoch);
+        assertEq(hashedIndex, keccak256(abi.encode(index, beginEpoch)));
+        vm.stopPrank();
+    }
+
     /*function testFuzzControllerDepeg(uint256 index) public{
         vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
         vm.startPrank(admin);
