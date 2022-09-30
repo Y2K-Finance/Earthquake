@@ -176,7 +176,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         _mint(receiver, id, assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assets, assets);
+        emit Deposit(msg.sender, receiver, id, assets);
     }
 
     /**
