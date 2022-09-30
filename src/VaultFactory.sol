@@ -310,6 +310,9 @@ contract VaultFactory {
         public
         onlyAdmin
     {
+        if(_treasury == address(0))
+            revert AddressZero();
+
         treasury = _treasury;
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
