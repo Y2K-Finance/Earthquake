@@ -196,7 +196,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         IWETH(address(asset)).deposit{value: msg.value}();
         _mint(receiver, id, msg.value, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, msg.value, msg.value);
+        emit Deposit(msg.sender, receiver, id, msg.value);
     }
 
     /**
