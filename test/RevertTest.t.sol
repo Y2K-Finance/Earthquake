@@ -278,6 +278,14 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
+    function testFeeCannotBeZero() public {
+        vm.startPrank(admin);
+        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        vm.expectRevert(Vault.FeeCannotBe0.selector);
+        testVault.createAssets(beginEpoch, endEpoch, 0);
+        vm.stopPrank();
+    }
+
     function testVaultMarketEpochDoesNotExist() public {
         vm.startPrank(admin);
         Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
