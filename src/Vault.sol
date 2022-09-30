@@ -26,8 +26,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     error OwnerDidNotAuthorize(address _sender, address _owner);
     error EpochEndMustBeAfterBegin();
     error MarketEpochExists();
-    error TimeLocked();
-    error FeeCannotBe0();
 
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
@@ -42,9 +40,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     uint256[] public epochs;
     uint256 public timewindow;
 
-    uint256 public immutable timeLock = 7 days;
-    uint256 public lastLocked;
-
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
     //////////////////////////////////////////////////////////////*/
@@ -58,7 +53,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
     mapping(uint256 => uint256) public epochFee;
-    mapping(uint256 => bool) public epochNull;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -69,13 +63,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     modifier onlyFactory() {
         if(msg.sender != factory)
             revert AddressNotFactory(msg.sender);
-        _;
-    }
-
-    modifier timelocker(){
-        if(block.timestamp < timeLock + lastLocked)
-            revert TimeLocked();
-
         _;
     }
 
@@ -149,7 +136,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         factory = msg.sender;
         controller = _controller;
         timewindow = 1;
-        lastLocked = block.timestamp;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -174,11 +160,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         nonReentrant
     {
 
-        assert(asset.transferFrom(msg.sender, address(this), assets));
+        asset.transferFrom(msg.sender, address(this), assets);
 
         _mint(receiver, id, assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assets);
+        emit Deposit(msg.sender, receiver, id, assets, assets);
     }
 
     /**
@@ -198,11 +184,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         IWETH(address(asset)).deposit{value: msg.value}();
         _mint(receiver, id, msg.value, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, msg.value);
+        emit Deposit(msg.sender, receiver, id, msg.value, msg.value);
     }
 
     /**
-    @notice Withdraw entitled deposited assets, checking if a depeg event
+    @notice Withdraw entitled deposited assets, checking if a depeg event //TODO add GOV token rewards
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
     @param receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
@@ -226,24 +212,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
             isApprovedForAll(owner, msg.sender) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
-        uint256 entitledShares;
+        uint256 entitledShares = previewWithdraw(id, assets);
         _burn(owner, id, assets);
 
-        if(epochNull[id] == false) {
-            //Taking fee from the amount
-            entitledShares = previewWithdraw(id, assets);
-            uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
-            entitledShares = entitledShares - feeValue;
-            assert(asset.transfer(treasury, feeValue));
-        }
-        else{
-            entitledShares = assets;
-        }        
-        if (entitledShares > 0) { 
-            assert(asset.transfer(receiver, entitledShares)); 
-        }
+        //Taking fee from the amount
+        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
+        entitledShares = entitledShares - feeValue;
+        asset.transfer(treasury, feeValue);
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
+        asset.transfer(receiver, entitledShares);
 
         return entitledShares;
     }
@@ -289,7 +267,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes treasury address
     @param _treasury New treasury address
      */
-    function changeTreasury(address _treasury) public onlyFactory timelocker {
+    function changeTreasury(address _treasury) public onlyFactory {
         if(_treasury == address(0))
             revert AddressZero();
         treasury = _treasury;
@@ -299,7 +277,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes vault time window
     @param _timewindow New vault time window
      */
-    function changeTimewindow(uint256 _timewindow) public onlyFactory timelocker{
+    function changeTimewindow(uint256 _timewindow) public onlyFactory {
         timewindow = _timewindow;
     }
 
@@ -307,7 +285,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes controller address
     @param _controller New controller address
      */
-    function changeController(address _controller) public onlyFactory timelocker{
+    function changeController(address _controller) public onlyFactory {
         if(_controller == address(0))
             revert AddressZero();
         controller = _controller;
@@ -325,9 +303,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     {
         if(_withdrawalFee > 150)
             revert FeeMoreThan150(_withdrawalFee);
-
-        if(_withdrawalFee == 0)
-            revert FeeCannotBe0();
 
         if(idExists[epochEnd] == true)
             revert MarketEpochExists();
@@ -364,7 +339,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping
      */
-    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController marketExists(id) {
+    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController {
         idClaimTVL[id] = claimTVL;
     }
 
@@ -379,11 +354,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyController
         marketExists(id)
     {
-        assert(asset.transfer(_counterparty, idFinalTVL[id]));
-    }
-
-    function setEpochNull(uint256 id) public onlyController {
-        epochNull[id] = true;
+        asset.transfer(_counterparty, idFinalTVL[id]);
     }
 
     /*///////////////////////////////////////////////////////////////

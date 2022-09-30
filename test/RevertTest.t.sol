@@ -22,7 +22,7 @@ contract RevertTest is Helper {
     
     function testSequencerDown() public {
         //create invalid controller(w/any address other than arbitrum_sequencer)
-        controller = new Controller(address(vaultFactory), oracleFEI);
+        controller = new Controller(address(vaultFactory),admin, oracleFEI);
 
         //create fake oracle for price feed
         vm.startPrank(admin);
@@ -37,76 +37,55 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
-    function testFailControllerMarketDoesNotExist() public {
-        //create fake oracle for price feed
-        DepositDepeg();
-
-        //expect MarketDoesNotExist
-        emit log_named_uint("Number of markets", vaultFactory.marketIndex());
-        vm.warp(endEpoch - 1 days);
-        //vm.expectRevert(abi.encodeWithSelector(Controller.MarketDoesNotExist.selector, MARKET_OVERFLOW));
-        controller.triggerDepeg(69, endEpoch);
-    }
-
-    function testFailControllerDoubleTrigger() public {
+    function testControllerMarketDoesNotExist() public {
         //create fake oracle for price feed
         vm.startPrank(admin);
         //FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.stopPrank();
 
-        Deposit(1);
-        vm.warp(endEpoch + 1);
-        controller.triggerEndEpoch(1, endEpoch);
-
-        controller.triggerEndEpoch(1, endEpoch);
+        //expect MarketDoesNotExist
+        vm.startPrank(admin);
+        emit log_named_uint("Number of markets", vaultFactory.marketIndex());
+        vm.expectRevert(abi.encodeWithSelector(Controller.MarketDoesNotExist.selector, MARKET_OVERFLOW));
+        controller.triggerEndEpoch(MARKET_OVERFLOW, endEpoch);
+        vm.stopPrank();
     }
 
-    function testFailControllerDoubleTrigger2() public {
-        DepositDepeg();
-        vm.warp(beginEpoch + 5);
-        ControllerDepeg(tokenFRAX, 1);
-        //vm.expectRevert(Controller.EpochFinishedAlready.selector);
-        controller.triggerNullEpoch(1, endEpoch);
-    }
-
-    // function testControllerZeroAddress() public {
+    function testControllerZeroAddress() public {
 
         
-    //     //expect ZeroAddress for admin
-    //     vm.startPrank(admin);
-    //     vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-    //     vm.expectRevert(Controller.ZeroAddress.selector);
-    //     Controller controller = new Controller(address(0), arbitrum_sequencer);
-    //     vm.stopPrank();
+        //expect ZeroAddress for admin
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.expectRevert(Controller.ZeroAddress.selector);
+        Controller controller = new Controller(address(0), address(vaultFactory), arbitrum_sequencer);
+        vm.stopPrank();
 
-    //     //expect ZeroAddress for vaultFactory
-    //     vm.startPrank(admin);  
-    //     vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*"); 
-    //     vm.expectRevert(Controller.ZeroAddress.selector);
-    //     controller = new Controller(address(admin), arbitrum_sequencer);
-    //     vm.stopPrank();
+        //expect ZeroAddress for vaultFactory
+        vm.startPrank(admin);  
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*"); 
+        vm.expectRevert(Controller.ZeroAddress.selector);
+        controller = new Controller(address(admin), address(0), arbitrum_sequencer);
+        vm.stopPrank();
 
-    //     //expected ZeroAddress for arbitrum_sequencer
-    //     vm.startPrank(admin);
-    //     vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-    //     vm.expectRevert(Controller.ZeroAddress.selector);
-    //     controller = new Controller(address(admin), address(0));
-    //     vm.stopPrank();
-    // }
+        //expected ZeroAddress for arbitrum_sequencer
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.expectRevert(Controller.ZeroAddress.selector);
+        controller = new Controller(address(admin), address(vaultFactory), address(0));
+        vm.stopPrank();
+    }
 
     function testFailControllerEpochNotExpired() public {
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
         vm.stopPrank();
 
-        //vm.expectRevert(Controller.EpochNotExpired.selector);
-        //controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
-
-        vm.warp(endEpoch - 1);
-
-        //vm.expectRevert(Controller.EpochNotExpired.selector);
+        vm.startPrank(admin);
         controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
+        vm.stopPrank();
     }
 
 
@@ -114,15 +93,15 @@ contract RevertTest is Helper {
         //testing triggerEndEpoch
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.stopPrank();
-        
         //vm.expectRevert(Controller.EpochNotExist.selector);
-        controller.triggerEndEpoch(vaultFactory.marketIndex(), 2);
-        
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), 0);
+        vm.stopPrank();
 
         //testing isDisaster
+        vm.startPrank(admin);
         //vm.expectRevert(Controller.EpochNotExist.selector);
         //controller.triggerDepeg(vaultFactory.marketIndex(), block.timestamp);
+        vm.stopPrank();
 
     }
 
@@ -185,71 +164,6 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
-    function testFailNullEpochRevEPOCHNOTSTARTED() public {
-        //need to fix triggerNullEpoch
-        vm.startPrank(admin);
-        vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.stopPrank();
-
-        address hedge = vaultFactory.getVaults(1)[0];
-        Vault vHedge = Vault(hedge);
-        address risk = vaultFactory.getVaults(1)[1];
-        Vault vRisk = Vault(risk);
-
-        vm.startPrank(alice);
-        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
-        //vRisk.depositETH{value: AMOUNT}(endEpoch, alice);
-        vm.stopPrank();
-        
-        vm.startPrank(admin);
-        vm.warp(beginEpoch - 1 days);
-
-        //EPOCH NOT STARTED
-        //vm.expectRevert(Controller.EpochNotStarted.selector);
-        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
-        vm.stopPrank();
-    }
-    function testFailNullEpochRevNOTZEROTVL() public {
-        //need to fix triggerNullEpoch
-        vm.startPrank(admin);
-        vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.stopPrank();
-
-        address hedge = vaultFactory.getVaults(1)[0];
-        Vault vHedge = Vault(hedge);
-        address risk = vaultFactory.getVaults(1)[1];
-        Vault vRisk = Vault(risk);
-
-        vm.startPrank(alice);
-        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
-        vRisk.depositETH{value: AMOUNT}(endEpoch, alice);
-        vm.stopPrank();
-        
-        vm.startPrank(admin);
-        vm.warp(beginEpoch + 1);
-        
-        //EPOCH NOT ZERO TVL
-        //vm.expectRevert(Controller.VaultNotZeroTVL.selector);
-        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
-        
-        vm.stopPrank();
-    }
-
-    function testFailNotStrikePrice() public {
-        //revert working as expected but expectRevert not working
-        vm.startPrank(admin);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.warp(endEpoch);
-        address hedge = vaultFactory.getVaults(1)[0];
-        Vault vHedge = Vault(hedge);
-        //vm.expectRevert(abi.encodeWithSelector(Controller.PriceNotAtStrikePrice.selector, controller.getLatestPrice(vHedge.tokenInsured())));
-        controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
-        vm.stopPrank();
-    }
-
-
     /*///////////////////////////////////////////////////////////////
                            VAULTFACTORY reverts
     //////////////////////////////////////////////////////////////*/
@@ -311,14 +225,6 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
-    function testControllerNotSet() public {
-        vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(admin, WETH, admin);
-        vm.expectRevert(VaultFactory.ControllerNotSet.selector);
-        testFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.stopPrank();
-    }
-
 
     /*///////////////////////////////////////////////////////////////
                            VAULT reverts
@@ -329,14 +235,6 @@ contract RevertTest is Helper {
         Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vm.expectRevert(abi.encodeWithSelector(Vault.FeeMoreThan150.selector, 151));
         testVault.createAssets(beginEpoch, endEpoch, 151);
-        vm.stopPrank();
-    }
-
-    function testFeeCannotBeZero() public {
-        vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
-        vm.expectRevert(Vault.FeeCannotBe0.selector);
-        testVault.createAssets(beginEpoch, endEpoch, 0);
         vm.stopPrank();
     }
 
@@ -461,22 +359,21 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
-    // function testVaultAddressZero() public {
-    //     vm.startPrank(admin);
-    //     Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
-    //     vm.stopPrank();
+    function testVaultAddressZero() public {
+        vm.startPrank(admin);
+        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        vm.stopPrank();
 
-    //     vm.startPrank(admin);
-    //     vm.warp(endEpoch);
-    //     //vm.expectRevert(Vault.AddressZero.selector);
-    //     vaultFactory.changeTreasury(address(0));
-    //     vm.stopPrank();
+        vm.startPrank(admin);
+        vm.expectRevert(Vault.AddressZero.selector);
+        testVault.changeTreasury(address(0));
+        vm.stopPrank();
 
-    //     vm.startPrank(admin);
-    //     //vm.expectRevert(Vault.AddressZero.selector);
-    //     testVault.changeController(address(0));
-    //     vm.stopPrank();
-    // }
+        vm.startPrank(admin);
+        vm.expectRevert(Vault.AddressZero.selector);
+        testVault.changeController(address(0));
+        vm.stopPrank();
+    }
 
     function testFailZeroValue() public {
         vm.deal(alice, 20 ether);
@@ -498,22 +395,6 @@ contract RevertTest is Helper {
         //vm.expectRevert(bytes("ZeroValue"));
         vHedge.deposit(endEpoch, 0 ether, alice);
         vm.stopPrank();  
-    }
-
-    function testFailTimelocked() public {
-        //forge can't compare reverts if the function that is called is not on the same contract as the revert)
-        //(can only make internal comparisons)
-        //all cases revert TimeLocked()
-        vm.startPrank(admin);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(oracleFRAX), "y2kFRAX_99*");
-        vm.warp(block.timestamp + 6 days);
-        vm.expectRevert(Vault.TimeLocked.selector);
-        vaultFactory.changeTreasury(alice, vaultFactory.marketIndex());
-        vm.expectRevert(Vault.TimeLocked.selector);
-        vaultFactory.changeController(vaultFactory.marketIndex(), alice);
-        vm.expectRevert(Vault.TimeLocked.selector);
-        vaultFactory.changeTimewindow(vaultFactory.marketIndex(), 1);
-        vm.stopPrank();
     }
 
     /*///////////////////////////////////////////////////////////////
