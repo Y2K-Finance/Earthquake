@@ -47,7 +47,7 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    uint256 immutable FEE = 55;
+    uint256 immutable FEE = 1;
     uint256 immutable SINGLE_MARKET_INDEX = 1;
     uint256 immutable ALL_MARKETS_INDEX = 15;
     uint256 immutable MARKET_OVERFLOW = 3;
@@ -138,6 +138,7 @@ contract Helper is Test {
 
         vRisk.totalAssets(endEpoch);
         emit log_named_uint("vRisk.totalAssets(endEpoch)", vRisk.totalAssets(endEpoch));
+        emit log_named_uint("FEE value", vRisk.calculateWithdrawalFeeValue(AMOUNT, endEpoch));
     }
 
     function DepositDepeg() public {
