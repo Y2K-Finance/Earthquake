@@ -19,6 +19,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "./Owned.sol";
 
 // https://docs.synthetix.io/contracts/source/contracts/stakingrewards
+
 contract StakingRewards is
     IStakingRewards,
     RewardsDistributionRecipient,

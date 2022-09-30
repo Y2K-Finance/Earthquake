@@ -9,6 +9,7 @@ import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+/// @author MiguelBits
 contract Vault is SemiFungibleVault, ReentrancyGuard {
     using FixedPointMathLib for uint256;
 

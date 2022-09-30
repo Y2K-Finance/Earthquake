@@ -3,6 +3,7 @@ pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
+/// @author MiguelBits
 contract PegOracle {
     /***
     @dev  for example: oracle1 would be stETH / USD, while oracle2 would be ETH / USD oracle

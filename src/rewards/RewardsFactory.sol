@@ -5,6 +5,8 @@ import {StakingRewards} from "./StakingRewards.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 import {Vault} from "../Vault.sol";
 
+/// @author MiguelBits
+
 contract RewardsFactory {
     address public admin;
     address public govToken;

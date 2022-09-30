@@ -7,6 +7,8 @@ import "./VaultFactory.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 
+/// @author MiguelBits
+
 contract Controller {
     VaultFactory public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;

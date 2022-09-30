@@ -3,6 +3,8 @@ pragma solidity 0.8.15;
 
 import {Vault} from "./Vault.sol";
 
+/// @author MiguelBits
+
 interface IController {
     function getVaultFactory() external view returns (address);
 }
