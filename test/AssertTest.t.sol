@@ -433,21 +433,36 @@ contract AssertTest is Helper {
         vm.stopPrank();
     }
 
+    /*///////////////////////////////////////////////////////////////
+                           VAULTFACTORY TIMELOCK functions
+    //////////////////////////////////////////////////////////////*/
+    function testTimelocks() public {
+        vm.startPrank(admin);
+        
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.warp(block.timestamp + 7 days + 1);
+        vaultFactory.changeTimewindow(1,5 days);
+        vm.warp(block.timestamp + 7 days + 1);
+        vaultFactory.changeTimewindow(1,5);
+
+        vm.stopPrank();
+    }
+
 
     /*///////////////////////////////////////////////////////////////
                            GOVTOKEN functions
     //////////////////////////////////////////////////////////////*/
 
-    function testMintGovToken() public {
-        vm.startPrank(admin);
-        vaultFactory.createNewMarket(NULL_BALANCE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
-        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
-        govToken.moneyPrinterGoesBrr(alice);
-        uint256 aliceBalance = ERC20(address(govToken)).balanceOf(alice);
-        emit log_named_int("Alice Balance", int256(aliceBalance));
-        assert(aliceBalance != NULL_BALANCE);
-        vm.stopPrank();
-    }
+    // function testMintGovToken() public {
+    //     vm.startPrank(admin);
+    //     vaultFactory.createNewMarket(NULL_BALANCE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
+    //     rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+    //     govToken.moneyPrinterGoesBrr(alice);
+    //     uint256 aliceBalance = ERC20(address(govToken)).balanceOf(alice);
+    //     emit log_named_int("Alice Balance", int256(aliceBalance));
+    //     assert(aliceBalance != NULL_BALANCE);
+    //     vm.stopPrank();
+    // }
 
     /*///////////////////////////////////////////////////////////////
                            REWARDSFACTORY functions

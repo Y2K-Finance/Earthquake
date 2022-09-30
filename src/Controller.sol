@@ -275,7 +275,6 @@ contract Controller {
         view
         returns (int256 nowPrice)
     {
-        uint observationFrequency = 1 hours;
         (
             ,
             /*uint80 roundId*/

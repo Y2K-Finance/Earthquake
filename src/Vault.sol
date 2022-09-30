@@ -73,9 +73,9 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     modifier timelocker(){
-        if(block.timestamp >= timeLock + lastLocked)
+        if(block.timestamp < timeLock + lastLocked)
             revert TimeLocked();
-        lastLocked = block.timestamp;
+
         _;
     }
 
@@ -149,6 +149,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         factory = msg.sender;
         controller = _controller;
         timewindow = 1;
+        lastLocked = block.timestamp;
     }
 
     /*///////////////////////////////////////////////////////////////
