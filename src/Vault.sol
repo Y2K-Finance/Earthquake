@@ -383,7 +383,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         assert(asset.transfer(_counterparty, idFinalTVL[id]));
     }
 
-    function setEpochNull(uint256 id) public onlyController {
+    function setEpochNull(uint256 id) public onlyController marketExists(id) {
         epochNull[id] = true;
     }
 
