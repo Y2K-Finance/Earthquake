@@ -103,12 +103,15 @@ contract RevertTest is Helper {
     function testFailControllerEpochNotExpired() public {
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
         vm.stopPrank();
 
-        vm.startPrank(admin);
+        //vm.expectRevert(Controller.EpochNotExpired.selector);
+        //controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
+
+        vm.warp(endEpoch - 1);
+
+        //vm.expectRevert(Controller.EpochNotExpired.selector);
         controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
-        vm.stopPrank();
     }
 
 
@@ -116,15 +119,15 @@ contract RevertTest is Helper {
         //testing triggerEndEpoch
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        //vm.expectRevert(Controller.EpochNotExist.selector);
-        controller.triggerEndEpoch(vaultFactory.marketIndex(), 0);
         vm.stopPrank();
+        
+        //vm.expectRevert(Controller.EpochNotExist.selector);
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), 2);
+        
 
         //testing isDisaster
-        vm.startPrank(admin);
         //vm.expectRevert(Controller.EpochNotExist.selector);
         //controller.triggerDepeg(vaultFactory.marketIndex(), block.timestamp);
-        vm.stopPrank();
 
     }
 
