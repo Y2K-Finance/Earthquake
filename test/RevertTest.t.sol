@@ -47,8 +47,9 @@ contract RevertTest is Helper {
         //expect MarketDoesNotExist
         vm.startPrank(admin);
         emit log_named_uint("Number of markets", vaultFactory.marketIndex());
+        vm.warp(endEpoch);
         vm.expectRevert(abi.encodeWithSelector(Controller.MarketDoesNotExist.selector, MARKET_OVERFLOW));
-        controller.triggerEndEpoch(MARKET_OVERFLOW, endEpoch);
+        controller.triggerDepeg(1, endEpoch);
         vm.stopPrank();
     }
 
@@ -163,6 +164,45 @@ contract RevertTest is Helper {
         //controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
         vm.stopPrank();
     }
+
+    function testNullEpochRev() public {
+        //need to fix triggerNullEpoch
+        vm.startPrank(admin);
+        vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        Vault vHedge = Vault(hedge);
+        address risk = vaultFactory.getVaults(1)[1];
+        Vault vRisk = Vault(risk);
+
+        vm.startPrank(alice);
+        ERC20(WETH).approve(hedge, AMOUNT);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
+        ERC20(WETH).approve(risk, AMOUNT);
+        vRisk.depositETH{value: AMOUNT}(endEpoch, alice);
+        vm.stopPrank();
+        
+        vm.startPrank(admin);
+        vm.warp(endEpoch + 3 days);
+        //vm.expectRevert(Controller.NotZeroTVL.selector);
+        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        vm.stopPrank();
+    }
+
+    function testFailNotStrikePrice() public {
+        //revert working as expected but expectRevert not working
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.warp(endEpoch);
+        address hedge = vaultFactory.getVaults(1)[0];
+        Vault vHedge = Vault(hedge);
+        //vm.expectRevert(abi.encodeWithSelector(Controller.PriceNotAtStrikePrice.selector, controller.getLatestPrice(vHedge.tokenInsured())));
+        controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
+        vm.stopPrank();
+    }
+
 
     /*///////////////////////////////////////////////////////////////
                            VAULTFACTORY reverts
@@ -365,6 +405,7 @@ contract RevertTest is Helper {
         vm.stopPrank();
 
         vm.startPrank(admin);
+        vm.warp(0);
         vm.expectRevert(Vault.AddressZero.selector);
         testVault.changeTreasury(address(0));
         vm.stopPrank();
@@ -395,6 +436,22 @@ contract RevertTest is Helper {
         //vm.expectRevert(bytes("ZeroValue"));
         vHedge.deposit(endEpoch, 0 ether, alice);
         vm.stopPrank();  
+    }
+
+    function testFailTimelocked() public {
+        //forge can't compare reverts if the function that is called is not on the same contract as the revert)
+        //(can only make internal comparisons)
+        //all cases revert TimeLocked()
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(oracleFRAX), "y2kFRAX_99*");
+        vm.warp(endEpoch + 10 days);
+        //vm.expectRevert(Vault.TimeLocked.selector);
+        vaultFactory.changeTreasury(alice, vaultFactory.marketIndex());
+        //vm.expectRevert(Vault.TimeLocked.selector);
+        vaultFactory.changeController(vaultFactory.marketIndex(), alice);
+        //vm.expectRevert(Vault.TimeLocked.selector);
+        vaultFactory.changeTimewindow(vaultFactory.marketIndex(), 1);
+        vm.stopPrank();
     }
 
     /*///////////////////////////////////////////////////////////////

@@ -329,6 +329,32 @@ contract AssertTest is Helper {
         vm.stopPrank();
     }
 
+    function testNullEpoch() public {
+
+        vm.startPrank(admin);
+        vm.deal(alice, AMOUNT);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        vm.startPrank(alice);
+        ERC20(WETH).approve(hedge, AMOUNT);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
+        vm.stopPrank();
+
+        vm.startPrank(admin);
+        vm.warp(endEpoch);
+        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        assertTrue(vHedge.idClaimTVL(endEpoch) == AMOUNT && vRisk.idClaimTVL(endEpoch) == 0, "Claim TVL not zero");
+        assertTrue(vHedge.idFinalTVL(endEpoch) == AMOUNT && vRisk.idFinalTVL(endEpoch) == 0, "Final TVL not zero");
+        assertTrue(vHedge.totalAssets(endEpoch) == AMOUNT && vRisk.totalAssets(endEpoch) == 0, "Total TVL not zero");
+        vm.stopPrank();
+    }
+
     /*///////////////////////////////////////////////////////////////
                            WITHDRAW functions
     //////////////////////////////////////////////////////////////*/
