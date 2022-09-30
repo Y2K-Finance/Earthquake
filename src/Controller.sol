@@ -323,12 +323,16 @@ contract Controller {
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
         
-        if(priceFeed.decimals() != 18){
+        if(priceFeed.decimals() < 18){
             uint256 decimals = 10**(18-(priceFeed.decimals()));
             price = price * int256(decimals);
         }
-        else{
+        else if (priceFeed.decimals() == 18){
             price = price;
+        }
+        else{
+            uint256 decimals = 10**((priceFeed.decimals()-18));
+            price = price / int256(decimals);
         }
         
 
