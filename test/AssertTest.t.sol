@@ -478,14 +478,6 @@ contract AssertTest is Helper {
     }
 
 
-    function testGetHashedIndex() public{
-        vm.startPrank(admin);
-        bytes32 hashedIndex = rewardsFactory.getHashedIndex(SINGLE_MARKET_INDEX, beginEpoch);
-        assertEq(hashedIndex, keccak256(abi.encode(SINGLE_MARKET_INDEX, beginEpoch)));
-        vm.stopPrank();
-    }
-
-
     /*//////////////////////////////////////////////////////////////
                            PEGORACLE functions
     //////////////////////////////////////////////////////////////*/
