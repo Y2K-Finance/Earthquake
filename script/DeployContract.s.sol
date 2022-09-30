@@ -52,7 +52,7 @@ contract DeployScript is Script {
     
     function setUp() public {
         vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vm.prank(admin);
         vaultFactory.setController(address(controller));

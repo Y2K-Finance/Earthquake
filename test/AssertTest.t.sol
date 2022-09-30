@@ -16,7 +16,7 @@ import {IWETH} from "./interfaces/IWETH.sol";
 
 
 contract AssertTest is Helper {
-	
+
 	/*///////////////////////////////////////////////////////////////
                            CREATION functions
     //////////////////////////////////////////////////////////////*/
@@ -293,9 +293,8 @@ contract AssertTest is Helper {
 
     function testCreateController() public {
         vm.startPrank(admin);
-        Controller test_controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        Controller test_controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         assertEq(address(vaultFactory), address(test_controller.vaultFactory()));
-        assertEq(admin, test_controller.admin());
         vm.stopPrank();
     }
 
@@ -305,7 +304,7 @@ contract AssertTest is Helper {
         DepositDepeg();
         vm.startPrank(admin);
         DepegOracle depegOracle = new DepegOracle(address(oracleFRAX), address(admin));
-        Controller controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        Controller controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(depegOracle), "y2kFRAX_99*");
         vaultFactory.setController(address(controller));
         vm.stopPrank();
@@ -320,7 +319,7 @@ contract AssertTest is Helper {
     function testTriggerEndEpoch() public {
         DepositDepeg();
         vm.startPrank(admin);
-        Controller test_controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        Controller test_controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.setController(address(test_controller));
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.warp(endEpoch + 1 days);
@@ -328,6 +327,72 @@ contract AssertTest is Helper {
         VaultFactory testFactory = controller.vaultFactory();
         assertEq(vaultFactory.getVaults(vaultFactory.marketIndex()), testFactory.getVaults(testFactory.marketIndex()));
         vm.stopPrank();
+    }
+
+    function testNullEpochHedge() public {
+
+        vm.startPrank(admin);
+        vm.deal(degen, AMOUNT);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
+        vm.startPrank(degen);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, degen);
+        vm.stopPrank();
+
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(hedge));
+
+        vm.warp(vHedge.idEpochBegin(endEpoch));
+        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        assertTrue(vHedge.idClaimTVL(endEpoch) == AMOUNT && vRisk.idClaimTVL(endEpoch) == 0, "Claim TVL not zero");
+        assertTrue(vHedge.idFinalTVL(endEpoch) == AMOUNT && vRisk.idFinalTVL(endEpoch) == 0, "Final TVL not zero");
+        assertTrue(vHedge.totalAssets(endEpoch) == AMOUNT && vRisk.totalAssets(endEpoch) == 0, "Total TVL not zero");
+
+        vm.startPrank(degen);
+        vHedge.withdraw(endEpoch, AMOUNT, degen, degen);
+        vm.stopPrank();
+
+        assertTrue(ERC20(WETH).balanceOf(degen) == AMOUNT, "WETH not returned");
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
+    }
+
+    function testNullEpochRisk() public {
+
+        vm.startPrank(admin);
+        vm.deal(degen, AMOUNT);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+        
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
+        vm.startPrank(degen);
+        vRisk.depositETH{value: AMOUNT}(endEpoch, degen);
+        vm.stopPrank();
+
+        vm.warp(vRisk.idEpochBegin(endEpoch));
+        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        assertTrue(vRisk.idClaimTVL(endEpoch) == AMOUNT && vHedge.idClaimTVL(endEpoch) == 0, "Claim TVL not zero");
+        assertTrue(vRisk.idFinalTVL(endEpoch) == AMOUNT && vHedge.idFinalTVL(endEpoch) == 0, "Final TVL not zero");
+        assertTrue(vRisk.totalAssets(endEpoch) == AMOUNT && vHedge.totalAssets(endEpoch) == 0, "Total TVL not zero");
+        
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(risk));
+
+        vm.startPrank(degen);
+        vRisk.withdraw(endEpoch, AMOUNT, degen, degen);
+        vm.stopPrank();
+
+        assertTrue(ERC20(WETH).balanceOf(degen) == AMOUNT, "WETH not returned");
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -408,21 +473,36 @@ contract AssertTest is Helper {
         vm.stopPrank();
     }
 
+    /*///////////////////////////////////////////////////////////////
+                           VAULTFACTORY TIMELOCK functions
+    //////////////////////////////////////////////////////////////*/
+    function testTimelocks() public {
+        vm.startPrank(admin);
+        
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.warp(block.timestamp + 7 days + 1);
+        vaultFactory.changeTimewindow(1,5 days);
+        vm.warp(block.timestamp + 7 days + 1);
+        vaultFactory.changeTimewindow(1,5);
+
+        vm.stopPrank();
+    }
+
 
     /*///////////////////////////////////////////////////////////////
                            GOVTOKEN functions
     //////////////////////////////////////////////////////////////*/
 
-    function testMintGovToken() public {
-        vm.startPrank(admin);
-        vaultFactory.createNewMarket(NULL_BALANCE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
-        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
-        govToken.moneyPrinterGoesBrr(alice);
-        uint256 aliceBalance = ERC20(address(govToken)).balanceOf(alice);
-        emit log_named_int("Alice Balance", int256(aliceBalance));
-        assert(aliceBalance != NULL_BALANCE);
-        vm.stopPrank();
-    }
+    // function testMintGovToken() public {
+    //     vm.startPrank(admin);
+    //     vaultFactory.createNewMarket(NULL_BALANCE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
+    //     rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+    //     govToken.moneyPrinterGoesBrr(alice);
+    //     uint256 aliceBalance = ERC20(address(govToken)).balanceOf(alice);
+    //     emit log_named_int("Alice Balance", int256(aliceBalance));
+    //     assert(aliceBalance != NULL_BALANCE);
+    //     vm.stopPrank();
+    // }
 
     /*///////////////////////////////////////////////////////////////
                            REWARDSFACTORY functions
@@ -476,14 +556,6 @@ contract AssertTest is Helper {
         }
         vm.stopPrank();
     
-    }
-
-
-    function testGetHashedIndex() public{
-        vm.startPrank(admin);
-        bytes32 hashedIndex = rewardsFactory.getHashedIndex(SINGLE_MARKET_INDEX, beginEpoch);
-        assertEq(hashedIndex, keccak256(abi.encode(SINGLE_MARKET_INDEX, beginEpoch)));
-        vm.stopPrank();
     }
 
 
@@ -562,6 +634,7 @@ contract AssertTest is Helper {
         
         vm.startPrank(bob);
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
         vm.stopPrank();
     }
 
