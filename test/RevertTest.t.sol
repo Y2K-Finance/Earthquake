@@ -265,6 +265,14 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
+    function testControllerNotSet() public {
+        vm.startPrank(admin);
+        VaultFactory testFactory = new VaultFactory(admin, WETH, admin);
+        vm.expectRevert(VaultFactory.ControllerNotSet.selector);
+        testFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+    }
+
 
     /*///////////////////////////////////////////////////////////////
                            VAULT reverts
