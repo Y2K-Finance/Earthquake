@@ -174,7 +174,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         epochHasNotStarted(id)
         nonReentrant
     {
-
+        if(receiver == address(0))
+            revert AddressZero();
         assert(asset.transferFrom(msg.sender, address(this), assets));
 
         _mint(receiver, id, assets, EMPTY);
@@ -195,6 +196,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         nonReentrant
     {
         require(msg.value > 0, "ZeroValue");
+        if(receiver == address(0))
+            revert AddressZero();
 
         IWETH(address(asset)).deposit{value: msg.value}();
         _mint(receiver, id, msg.value, EMPTY);
@@ -222,6 +225,9 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
         returns (uint256 shares)
     {
+        if(receiver == address(0))
+            revert AddressZero();
+
         if(
             msg.sender != owner &&
             isApprovedForAll(owner, msg.sender) == false)
