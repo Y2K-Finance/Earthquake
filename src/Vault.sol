@@ -174,7 +174,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         nonReentrant
     {
 
-        asset.transferFrom(msg.sender, address(this), assets);
+        assert(asset.transferFrom(msg.sender, address(this), assets));
 
         _mint(receiver, id, assets, EMPTY);
 
@@ -234,12 +234,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
             entitledShares = previewWithdraw(id, assets);
             uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
             entitledShares = entitledShares - feeValue;
-            asset.transfer(treasury, feeValue);
+            assert(asset.transfer(treasury, feeValue));
         }
         else{
             entitledShares = assets;
         }        
-        if (entitledShares > 0) { asset.transfer(receiver, entitledShares); }
+        if (entitledShares > 0) { 
+            assert(asset.transfer(receiver, entitledShares)); 
+        }
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
 
@@ -377,7 +379,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyController
         marketExists(id)
     {
-        asset.transfer(_counterparty, idFinalTVL[id]);
+        assert(asset.transfer(_counterparty, idFinalTVL[id]));
     }
 
     function setEpochNull(uint256 id) public onlyController {
