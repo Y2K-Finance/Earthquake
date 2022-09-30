@@ -67,6 +67,14 @@ contract RevertTest is Helper {
         controller.triggerEndEpoch(1, endEpoch);
     }
 
+    function testControllerDoubleTrigger2() public {
+        DepositDepeg();
+        vm.warp(beginEpoch + 5);
+        ControllerDepeg(tokenFRAX, 1);
+        //vm.expectRevert(Controller.EpochFinishedAlready.selector);
+        controller.triggerNullEpoch(1, endEpoch);
+    }
+
     // function testControllerZeroAddress() public {
 
         

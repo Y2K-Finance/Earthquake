@@ -109,13 +109,11 @@ contract Helper is Test {
 
         //ALICE hedge DEPOSIT
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, AMOUNT);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
         vm.stopPrank();
 
         //BOB hedge DEPOSIT
         vm.startPrank(bob);
-        ERC20(WETH).approve(hedge, AMOUNT * BOB_MULTIPLIER);
         vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
 
         assertTrue(vHedge.balanceOf(bob,endEpoch) == 20 ether);
@@ -126,7 +124,6 @@ contract Helper is Test {
 
         //CHAD risk DEPOSIT
         vm.startPrank(chad);
-        ERC20(WETH).approve(risk, AMOUNT * CHAD_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
@@ -134,7 +131,6 @@ contract Helper is Test {
 
         //DEGEN risk DEPOSIT
         vm.startPrank(degen);
-        ERC20(WETH).approve(risk, AMOUNT * DEGEN_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
@@ -163,7 +159,6 @@ contract Helper is Test {
 
         //ALICE hedge DEPOSIT
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, AMOUNT);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == (AMOUNT));
@@ -171,7 +166,6 @@ contract Helper is Test {
 
         //BOB hedge DEPOSIT
         vm.startPrank(bob);
-        ERC20(WETH).approve(hedge, AMOUNT * BOB_MULTIPLIER);
         vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
 
         assertTrue(vHedge.balanceOf(bob,endEpoch) == (AMOUNT * BOB_MULTIPLIER));
@@ -179,7 +173,6 @@ contract Helper is Test {
 
         //CHAD risk DEPOSIT
         vm.startPrank(chad);
-        ERC20(WETH).approve(risk, AMOUNT * CHAD_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
@@ -187,7 +180,6 @@ contract Helper is Test {
 
         //DEGEN risk DEPOSIT
         vm.startPrank(degen);
-        ERC20(WETH).approve(risk, AMOUNT * DEGEN_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
@@ -224,8 +216,6 @@ contract Helper is Test {
 
         Vault vHedge = Vault(hedge);
         Vault vRisk = Vault(risk);
-
-        vm.warp(endEpoch + 1 days);
 
         emit log_named_int("strike price", vHedge.strikePrice());
         emit log_named_int("oracle price", controller.getLatestPrice(_token));
