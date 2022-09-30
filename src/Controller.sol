@@ -54,6 +54,13 @@ contract Controller {
         int256 depegPrice
     );
 
+    event NullEpoch(
+        bytes32 epochMarketID,
+        VaultTVL tvl,
+        uint256 epoch,
+        uint256 time
+    );
+
     struct VaultTVL {
         uint256 RISK_claimTVL;
         uint256 RISK_finalTVL;
@@ -137,8 +144,8 @@ contract Controller {
 
         VaultTVL memory tvl = VaultTVL(
             riskVault.idClaimTVL(epochEnd),
-            insrVault.idClaimTVL(epochEnd),
             riskVault.idFinalTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
             insrVault.idFinalTVL(epochEnd)
         );
 
@@ -206,8 +213,8 @@ contract Controller {
 
         VaultTVL memory tvl = VaultTVL(
             riskVault.idClaimTVL(epochEnd),
-            insrVault.idClaimTVL(epochEnd),
             riskVault.idFinalTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
             insrVault.idFinalTVL(epochEnd)
         );
 
@@ -276,6 +283,26 @@ contract Controller {
             insrVault.setEpochNull(epochEnd);
         }
         else revert VaultNotZeroTVL();
+
+        VaultTVL memory tvl = VaultTVL(
+            riskVault.idClaimTVL(epochEnd),
+            riskVault.idFinalTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
+            insrVault.idFinalTVL(epochEnd)
+        );
+
+        emit NullEpoch(
+            keccak256(
+                abi.encodePacked(
+                    marketIndex,
+                    insrVault.idEpochBegin(epochEnd),
+                    epochEnd
+                )
+            ),
+            tvl,
+            epochEnd,
+            block.timestamp
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
