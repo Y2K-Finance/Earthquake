@@ -329,10 +329,10 @@ contract AssertTest is Helper {
         vm.stopPrank();
     }
 
-    function testNullEpoch() public {
+    function testNullEpochHedge() public {
 
         vm.startPrank(admin);
-        vm.deal(alice, AMOUNT);
+        vm.deal(degen, AMOUNT);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.stopPrank();
 
@@ -341,17 +341,58 @@ contract AssertTest is Helper {
         Vault vHedge = Vault(hedge);
         Vault vRisk = Vault(risk);
 
-        vm.startPrank(alice);
-        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
+        vm.startPrank(degen);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, degen);
         vm.stopPrank();
 
-        vm.startPrank(admin);
-        vm.warp(endEpoch);
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(hedge));
+
+        vm.warp(vHedge.idEpochBegin(endEpoch));
         controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
         assertTrue(vHedge.idClaimTVL(endEpoch) == AMOUNT && vRisk.idClaimTVL(endEpoch) == 0, "Claim TVL not zero");
         assertTrue(vHedge.idFinalTVL(endEpoch) == AMOUNT && vRisk.idFinalTVL(endEpoch) == 0, "Final TVL not zero");
         assertTrue(vHedge.totalAssets(endEpoch) == AMOUNT && vRisk.totalAssets(endEpoch) == 0, "Total TVL not zero");
+
+        vm.startPrank(degen);
+        vHedge.withdraw(endEpoch, AMOUNT, degen, degen);
         vm.stopPrank();
+
+        assertTrue(ERC20(WETH).balanceOf(degen) == AMOUNT, "WETH not returned");
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
+    }
+
+    function testNullEpochRisk() public {
+
+        vm.startPrank(admin);
+        vm.deal(degen, AMOUNT);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        address risk = vaultFactory.getVaults(1)[1];
+        Vault vHedge = Vault(hedge);
+        Vault vRisk = Vault(risk);
+        
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
+        vm.startPrank(degen);
+        vRisk.depositETH{value: AMOUNT}(endEpoch, degen);
+        vm.stopPrank();
+
+        vm.warp(vRisk.idEpochBegin(endEpoch));
+        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        assertTrue(vRisk.idClaimTVL(endEpoch) == AMOUNT && vHedge.idClaimTVL(endEpoch) == 0, "Claim TVL not zero");
+        assertTrue(vRisk.idFinalTVL(endEpoch) == AMOUNT && vHedge.idFinalTVL(endEpoch) == 0, "Final TVL not zero");
+        assertTrue(vRisk.totalAssets(endEpoch) == AMOUNT && vHedge.totalAssets(endEpoch) == 0, "Total TVL not zero");
+        
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(risk));
+
+        vm.startPrank(degen);
+        vRisk.withdraw(endEpoch, AMOUNT, degen, degen);
+        vm.stopPrank();
+
+        assertTrue(ERC20(WETH).balanceOf(degen) == AMOUNT, "WETH not returned");
+        emit log_named_uint("WETH balance", ERC20(WETH).balanceOf(degen));
     }
 
     /*///////////////////////////////////////////////////////////////

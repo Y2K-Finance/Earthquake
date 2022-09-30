@@ -30,6 +30,7 @@ contract Controller {
     error RoundIDOutdated();
     error EpochNotExist();
     error EpochNotExpired();
+    error VaultNotZeroTVL();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -234,6 +235,14 @@ contract Controller {
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
+        if(
+            vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0)
+            )
+            revert MarketDoesNotExist(marketIndex);
+
+        if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
         if(block.timestamp < insrVault.idEpochBegin(epochEnd))
             revert EpochNotStarted();
 
@@ -253,14 +262,19 @@ contract Controller {
 
             insrVault.setClaimTVL(epochEnd, 0);
             riskVault.setClaimTVL(epochEnd, riskVault.idFinalTVL(epochEnd));
+
+            riskVault.setEpochNull(epochEnd);
         }
-        if(riskVault.totalAssets(epochEnd) == 0){
+        else if(riskVault.totalAssets(epochEnd) == 0){
             insrVault.endEpoch(epochEnd);
             riskVault.endEpoch(epochEnd);
 
             insrVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) );
             riskVault.setClaimTVL(epochEnd, 0);
+
+            insrVault.setEpochNull(epochEnd);
         }
+        else revert VaultNotZeroTVL();
     }
 
     /*//////////////////////////////////////////////////////////////

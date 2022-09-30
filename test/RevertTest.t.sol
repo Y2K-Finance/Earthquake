@@ -165,7 +165,7 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
-    function testNullEpochRev() public {
+    function testFailNullEpochRevEPOCHNOTSTARTED() public {
         //need to fix triggerNullEpoch
         vm.startPrank(admin);
         vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
@@ -178,16 +178,42 @@ contract RevertTest is Helper {
         Vault vRisk = Vault(risk);
 
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, AMOUNT);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
-        ERC20(WETH).approve(risk, AMOUNT);
+        //vRisk.depositETH{value: AMOUNT}(endEpoch, alice);
+        vm.stopPrank();
+        
+        vm.startPrank(admin);
+        vm.warp(beginEpoch - 1 days);
+
+        //EPOCH NOT STARTED
+        //vm.expectRevert(Controller.EpochNotStarted.selector);
+        controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        vm.stopPrank();
+    }
+    function testFailNullEpochRevNOTZEROTVL() public {
+        //need to fix triggerNullEpoch
+        vm.startPrank(admin);
+        vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.stopPrank();
+
+        address hedge = vaultFactory.getVaults(1)[0];
+        Vault vHedge = Vault(hedge);
+        address risk = vaultFactory.getVaults(1)[1];
+        Vault vRisk = Vault(risk);
+
+        vm.startPrank(alice);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
         vRisk.depositETH{value: AMOUNT}(endEpoch, alice);
         vm.stopPrank();
         
         vm.startPrank(admin);
-        vm.warp(endEpoch + 3 days);
-        //vm.expectRevert(Controller.NotZeroTVL.selector);
+        vm.warp(beginEpoch + 1);
+        
+        //EPOCH NOT ZERO TVL
+        //vm.expectRevert(Controller.VaultNotZeroTVL.selector);
         controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
+        
         vm.stopPrank();
     }
 
