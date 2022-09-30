@@ -422,22 +422,4 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return epochs.length;
     }
 
-    /** @notice Lookup next epochs' end from target
-        @param _epoch Target epoch
-        @return nextEpochEnd Next epoch end
-      */
-    function getNextEpoch(uint256 _epoch)
-        public
-        view
-        returns (uint256 nextEpochEnd)
-    {
-        for (uint256 i = 0; i < epochsLength(); i++) {
-            if (epochs[i] == _epoch) {
-                if (i == epochsLength() - 1) {
-                    return 0;
-                }
-                return epochs[i + 1];
-            }
-        }
-    }
 }
