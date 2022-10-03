@@ -8,10 +8,12 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 /// @author MiguelBits
 contract Vault is SemiFungibleVault, ReentrancyGuard {
 
+    using FixedPointMathLib for uint256;
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -272,7 +274,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         returns (uint256 feeValue)
     {
         // 0.5% = multiply by 1000 then divide by 5
-        return (amount * epochFee[_epoch]) / 1000;
+        return amount.mulDivUp(epochFee[_epoch],1000);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -398,7 +400,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         // risk users can withdraw the hedge (that is paid by the hedge buyers) and risk; withdraw = (risk + hedge)
         // hedge pay for each hedge seller = ( risk / tvl before the hedge payouts ) * tvl in hedge pool
         // in case there is a depeg event, the risk users can only withdraw the hedge
-        entitledAmount = (assets * idClaimTVL[id]) / idFinalTVL[id];
+        entitledAmount = assets.mulDivUp(idClaimTVL[id],idFinalTVL[id]);
         // in case the hedge wins aka depegging
         // hedge users pay the hedge to risk users anyway,
         // hedge guy can withdraw risk (that is transfered from the risk pool),

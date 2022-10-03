@@ -68,6 +68,7 @@ contract FuzzHelper is Test {
     uint256 beginEpoch;
     
     function setUp() public {
+        vm.prank(admin);
         vaultFactory = new VaultFactory(admin,WETH);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
@@ -78,6 +79,7 @@ contract FuzzHelper is Test {
         beginEpoch = block.timestamp + 2 days;
 
         govToken = new GovToken();
+        vm.prank(admin);
         rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
 
     }
