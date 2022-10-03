@@ -53,14 +53,14 @@ contract DeployGoerliScript is Script {
         vm.startBroadcast();
 
         // setUp();
-        vaultFactory = new VaultFactory(admin,WETH,admin);
+        vaultFactory = new VaultFactory(admin,WETH);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vaultFactory.setController(address(controller));
 
         govToken = new GovToken();
 
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
 
         //depegOracle = new DepegOracle(oracleDAI, admin);
                 

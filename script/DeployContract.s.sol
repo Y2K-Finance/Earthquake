@@ -51,7 +51,7 @@ contract DeployScript is Script {
     uint256 rewardRate = 10;
     
     function setUp() public {
-        vaultFactory = new VaultFactory(admin,WETH,admin);
+        vaultFactory = new VaultFactory(admin,WETH);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vm.prank(admin);
@@ -59,7 +59,7 @@ contract DeployScript is Script {
 
         govToken = new GovToken();
 
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
 
         endEpoch = block.timestamp + 30 days;
         beginEpoch = block.timestamp + 2 days;

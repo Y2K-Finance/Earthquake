@@ -77,17 +77,17 @@ contract Helper is Test {
     uint256 beginEpoch;
     
     function setUp() public {
-        vaultFactory = new VaultFactory(admin,WETH,admin);
+        vm.startPrank(admin);
+        vaultFactory = new VaultFactory(admin,WETH);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
-
-        vm.prank(admin);
         vaultFactory.setController(address(controller));
 
         endEpoch = block.timestamp + END_DAYS;
         beginEpoch = block.timestamp + BEGIN_DAYS;
 
         govToken = new GovToken();
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
+        vm.stopPrank();
 
     }
 

@@ -292,13 +292,9 @@ contract AssertTest is Helper {
     }
 
     function testCreateController() public {
-        vm.startPrank(admin);
         Controller test_controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         assertEq(address(vaultFactory), address(test_controller.vaultFactory()));
-        vm.stopPrank();
     }
-
-    
 
     /*function testTriggerDepeg() public {
         DepositDepeg();
@@ -466,10 +462,10 @@ contract AssertTest is Helper {
     
     function testCreateVaultFactory() public {
         vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(address(controller), address(tokenFRAX), address(admin));
+        VaultFactory testFactory = new VaultFactory(address(controller), address(tokenFRAX));
         assertEq(address(controller), testFactory.treasury());
         assertEq(address(tokenFRAX), testFactory.WETH());
-        assertEq(address(admin), testFactory.Admin());
+        assertEq(address(admin), testFactory.owner());
         vm.stopPrank();
     }
 

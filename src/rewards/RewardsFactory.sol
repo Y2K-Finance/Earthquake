@@ -4,11 +4,11 @@ pragma solidity 0.8.15;
 import {StakingRewards} from "./StakingRewards.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 import {Vault} from "../Vault.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @author MiguelBits
 
-contract RewardsFactory {
-    address public admin;
+contract RewardsFactory is Ownable {
     address public govToken;
     address public factory;
 
@@ -17,7 +17,6 @@ contract RewardsFactory {
     //////////////////////////////////////////////////////////////*/
 
     error MarketDoesNotExist(uint marketId);
-    error AddressNotAdmin();
     error EpochDoesNotExist();
 
     /*//////////////////////////////////////////////////////////////
@@ -35,29 +34,14 @@ contract RewardsFactory {
         address[2] indexed addressFarms
     );
 
-    /*//////////////////////////////////////////////////////////////
-                                  MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Only admin addresses can call functions with this modifier
-      */
-    modifier onlyAdmin() {
-        if(msg.sender != admin)
-            revert AddressNotAdmin();
-        _;
-    }
-
     /** @notice Contract constructor
       * @param _govToken Governance token address
       * @param _factory VaultFactory address
-      * @param _admin Admin address
       */
     constructor(
         address _govToken,
-        address _factory,
-        address _admin
+        address _factory
     ) {
-        admin = _admin;
         govToken = _govToken;
         factory = _factory;
     }
@@ -74,7 +58,7 @@ contract RewardsFactory {
       */
     function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd, uint256 _rewardDuration, uint256 _rewardRate)
         external
-        onlyAdmin
+        onlyOwner
         returns (address insr, address risk)
     {
         VaultFactory vaultFactory = VaultFactory(factory);
@@ -89,8 +73,8 @@ contract RewardsFactory {
             revert EpochDoesNotExist();
 
         StakingRewards insrStake = new StakingRewards(
-            admin,
-            admin,
+            owner(),
+            owner(),
             govToken,
             _insrToken,
             _epochEnd,
@@ -98,8 +82,8 @@ contract RewardsFactory {
             _rewardRate
         );
         StakingRewards riskStake = new StakingRewards(
-            admin,
-            admin,
+            owner(),
+            owner(),
             govToken,
             _riskToken,
             _epochEnd,

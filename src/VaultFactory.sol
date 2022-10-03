@@ -2,6 +2,7 @@
 pragma solidity 0.8.15;
 
 import {Vault} from "./Vault.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @author MiguelBits
 
@@ -9,25 +10,13 @@ interface IController {
     function getVaultFactory() external view returns (address);
 }
 
-contract VaultFactory {
-    // solhint-disable var-name-mixedcase
-    address public immutable Admin;
+contract VaultFactory is Ownable {
+
     address public immutable WETH;
     // solhint-enable var-name-mixedcase
     address public treasury;
     address public controller;
     uint256 public marketIndex;
-
-
-    uint256 public immutable timeLock = 10 days;
-    uint256 public lastLocked;
-
-    modifier timelocker(){
-        if(block.timestamp < timeLock + lastLocked)
-            revert TimeLocked();
-
-        _;
-    }
 
     struct MarketVault{
         uint256 index;
@@ -38,11 +27,24 @@ contract VaultFactory {
         uint256 withdrawalFee;
     }
 
+    uint256 public immutable timeLock = 10 days;
+    uint256 public lastLocked;
+
+    /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    modifier timelocker(){
+        if(block.timestamp < timeLock + lastLocked)
+            revert TimeLocked();
+
+        _;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error MarketDoesNotExist(uint256 marketIndex);
-    error AddressNotAdmin(address addr);
     error AddressZero();
     error AddressNotController();
     error AddressFactoryNotInController();
@@ -135,40 +137,24 @@ contract VaultFactory {
     mapping(address => address) public tokenToOracle; //token address to respective oracle smart contract address
 
     /*//////////////////////////////////////////////////////////////
-                                MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Only admin addresses can call functions that use this modifier
-      */
-    modifier onlyAdmin() {
-        if(msg.sender != Admin)
-            revert AddressNotAdmin(msg.sender);
-        _;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Contract constructor
       * @param _treasury Treasury address
       * @param _weth Wrapped Ether token address
-      * @param _admin Admin address
       */ 
     constructor(
         address _treasury,
-        address _weth,
-        address _admin
+        address _weth
     ) {
-        if(_admin == address(0))
-            revert AddressZero();
         if(_weth == address(0))
             revert AddressZero();
 
         if(_treasury == address(0))
             revert AddressZero();
 
-        Admin = _admin;
+        
         WETH = _weth;
         marketIndex = 0;
         treasury = _treasury;
@@ -198,7 +184,7 @@ contract VaultFactory {
         uint256 epochEnd,
         address _oracle,
         string memory _name
-    ) public onlyAdmin returns (address insr, address rsk) {
+    ) public onlyOwner returns (address insr, address rsk) {
 
         if(controller == address(0))
             revert ControllerNotSet();
@@ -266,7 +252,7 @@ contract VaultFactory {
         uint256 epochBegin,
         uint256 epochEnd,
         uint256 _withdrawalFee
-    ) public onlyAdmin {
+    ) public onlyOwner {
         if(controller == address(0))
             revert ControllerNotSet();
 
@@ -308,7 +294,7 @@ contract VaultFactory {
     @notice Admin function, sets the controller address
     @param  _controller Address of the controller smart contract
      */
-    function setController(address _controller) public onlyAdmin {
+    function setController(address _controller) public onlyOwner {
         if(_controller == address(0))
             revert AddressZero();
         controller = _controller;
@@ -323,7 +309,7 @@ contract VaultFactory {
      */
     function changeTreasury(address _treasury, uint256 _marketIndex)
         public
-        onlyAdmin
+        onlyOwner
     {
         if(_treasury == address(0))
             revert AddressZero();
@@ -345,7 +331,7 @@ contract VaultFactory {
      */
     function changeTimewindow(uint256 _marketIndex, uint256 _timewindow)
         public
-        onlyAdmin timelocker
+        onlyOwner timelocker
     {
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
@@ -363,7 +349,7 @@ contract VaultFactory {
      */
     function changeController(uint256 _marketIndex, address _controller)
         public
-        onlyAdmin timelocker
+        onlyOwner timelocker
     {
         if(_controller == address(0))
             revert AddressZero();
@@ -382,7 +368,7 @@ contract VaultFactory {
     @param _token Target token address
     @param  _oracle Oracle address
      */
-    function changeOracle(address _token, address _oracle) public onlyAdmin timelocker {
+    function changeOracle(address _token, address _oracle) public onlyOwner timelocker {
         if(_oracle == address(0))
             revert AddressZero();
         if(_token == address(0))

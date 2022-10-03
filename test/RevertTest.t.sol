@@ -270,7 +270,7 @@ contract RevertTest is Helper {
 
     function testAddressZero() public {
         vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(admin, WETH, admin);
+        VaultFactory testFactory = new VaultFactory(admin, WETH);
         vm.expectRevert(VaultFactory.AddressZero.selector);
         testFactory.setController(address(0));
         vm.stopPrank();
@@ -278,33 +278,28 @@ contract RevertTest is Helper {
         //expect null treasury address
         vm.startPrank(admin);
         vm.expectRevert(VaultFactory.AddressZero.selector);
-        testFactory = new VaultFactory(address(0), address(tokenFRAX), address(admin));
+        testFactory = new VaultFactory(address(0), address(tokenFRAX));
         vm.stopPrank();
 
         //expect null WETH address
         vm.startPrank(admin);
         vm.expectRevert(VaultFactory.AddressZero.selector);
-        testFactory = new VaultFactory(address(controller), address(0), address(admin));
-        vm.stopPrank();
-
-        //expect null admin address
-        vm.startPrank(admin);
-        vm.expectRevert(VaultFactory.AddressZero.selector);
-        testFactory = new VaultFactory(address(controller), address(tokenFRAX), address(0));
+        testFactory = new VaultFactory(address(controller), address(0));
         vm.stopPrank();
     }
 
-    function testAddressNotAdmin() public {
+    function testFailAddressNotAdmin() public {
+        vm.prank(admin);
+        VaultFactory testFactory = new VaultFactory(admin, WETH);
         vm.startPrank(alice);
-        VaultFactory testFactory = new VaultFactory(admin, WETH, admin);
-        vm.expectRevert(abi.encodeWithSelector(VaultFactory.AddressNotAdmin.selector, address(alice)));
+        //vm.expectRevert(abi.encodeWithSelector(VaultFactory.AddressNotAdmin.selector, address(alice)));
         testFactory.setController(address(controller));
         vm.stopPrank();         
     }
 
     function testAddressFactoryNotInController() public {
         vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(admin, WETH, admin);
+        VaultFactory testFactory = new VaultFactory(admin, WETH);
         testFactory.setController(address(controller));
         vm.expectRevert(VaultFactory.AddressFactoryNotInController.selector);
         testFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
@@ -313,7 +308,7 @@ contract RevertTest is Helper {
 
     function testControllerNotSet() public {
         vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(admin, WETH, admin);
+        VaultFactory testFactory = new VaultFactory(admin, WETH);
         vm.expectRevert(VaultFactory.ControllerNotSet.selector);
         testFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.stopPrank();
@@ -520,14 +515,14 @@ contract RevertTest is Helper {
                            REWARDSFACTORY reverts
     //////////////////////////////////////////////////////////////*/
 
-    function testRewardsFactoryAdminMod() public {
+    function testFailRewardsFactoryAdminMod() public {
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
         vm.stopPrank();
 
         //expecting revert
         vm.startPrank(alice);
-        vm.expectRevert(RewardsFactory.AddressNotAdmin.selector);
+        //vm.expectRevert(RewardsFactory.AddressNotAdmin.selector);
         rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
         vm.stopPrank();
     }
