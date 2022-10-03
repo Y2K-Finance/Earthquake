@@ -26,7 +26,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     error OwnerDidNotAuthorize(address _sender, address _owner);
     error EpochEndMustBeAfterBegin();
     error MarketEpochExists();
-    error TimeLocked();
     error FeeCannotBe0();
 
     /*///////////////////////////////////////////////////////////////
@@ -41,9 +40,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
     uint256[] public epochs;
     uint256 public timewindow;
-
-    uint256 public immutable timeLock = 7 days;
-    uint256 public lastLocked;
 
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
@@ -69,13 +65,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     modifier onlyFactory() {
         if(msg.sender != factory)
             revert AddressNotFactory(msg.sender);
-        _;
-    }
-
-    modifier timelocker(){
-        if(block.timestamp < timeLock + lastLocked)
-            revert TimeLocked();
-
         _;
     }
 
@@ -149,7 +138,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         factory = msg.sender;
         controller = _controller;
         timewindow = 1;
-        lastLocked = block.timestamp;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -295,7 +283,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes treasury address
     @param _treasury New treasury address
      */
-    function changeTreasury(address _treasury) public onlyFactory timelocker {
+    function changeTreasury(address _treasury) public onlyFactory {
         if(_treasury == address(0))
             revert AddressZero();
         treasury = _treasury;
@@ -305,7 +293,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes vault time window
     @param _timewindow New vault time window
      */
-    function changeTimewindow(uint256 _timewindow) public onlyFactory timelocker{
+    function changeTimewindow(uint256 _timewindow) public onlyFactory{
         timewindow = _timewindow;
     }
 
@@ -313,7 +301,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes controller address
     @param _controller New controller address
      */
-    function changeController(address _controller) public onlyFactory timelocker{
+    function changeController(address _controller) public onlyFactory{
         if(_controller == address(0))
             revert AddressZero();
         controller = _controller;

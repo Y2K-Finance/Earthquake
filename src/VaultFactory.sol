@@ -18,6 +18,17 @@ contract VaultFactory {
     address public controller;
     uint256 public marketIndex;
 
+
+    uint256 public immutable timeLock = 10 days;
+    uint256 public lastLocked;
+
+    modifier timelocker(){
+        if(block.timestamp < timeLock + lastLocked)
+            revert TimeLocked();
+
+        _;
+    }
+
     struct MarketVault{
         uint256 index;
         uint256 epochBegin;
@@ -36,6 +47,7 @@ contract VaultFactory {
     error AddressNotController();
     error AddressFactoryNotInController();
     error ControllerNotSet();
+    error TimeLocked();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -160,6 +172,7 @@ contract VaultFactory {
         WETH = _weth;
         marketIndex = 0;
         treasury = _treasury;
+        lastLocked = block.timestamp;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -332,7 +345,7 @@ contract VaultFactory {
      */
     function changeTimewindow(uint256 _marketIndex, uint256 _timewindow)
         public
-        onlyAdmin
+        onlyAdmin timelocker
     {
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
@@ -350,7 +363,7 @@ contract VaultFactory {
      */
     function changeController(uint256 _marketIndex, address _controller)
         public
-        onlyAdmin
+        onlyAdmin timelocker
     {
         if(_controller == address(0))
             revert AddressZero();
@@ -369,7 +382,7 @@ contract VaultFactory {
     @param _token Target token address
     @param  _oracle Oracle address
      */
-    function changeOracle(address _token, address _oracle) public onlyAdmin {
+    function changeOracle(address _token, address _oracle) public onlyAdmin timelocker {
         if(_oracle == address(0))
             revert AddressZero();
         if(_token == address(0))

@@ -480,9 +480,9 @@ contract AssertTest is Helper {
         vm.startPrank(admin);
         
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.warp(block.timestamp + 7 days + 1);
+        vm.warp(block.timestamp + vaultFactory.timeLock() + 1);
         vaultFactory.changeTimewindow(1,5 days);
-        vm.warp(block.timestamp + 7 days + 1);
+        vm.warp(block.timestamp + vaultFactory.timeLock() + 1);
         vaultFactory.changeTimewindow(1,5);
 
         vm.stopPrank();
