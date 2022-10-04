@@ -456,22 +456,24 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
 
-    // function testVaultAddressZero() public {
-    //     vm.startPrank(admin);
-    //     Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
-    //     vm.stopPrank();
+     function testFailVaultAddressZero() public {
+        //cant use vm.expectRevert because of Forge limitations
+        //test is throwing AddressZero as it should
+        vm.startPrank(admin);
+        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        vm.stopPrank();
 
-    //     vm.startPrank(admin);
-    //     vm.warp(endEpoch);
-    //     //vm.expectRevert(Vault.AddressZero.selector);
-    //     vaultFactory.changeTreasury(address(0));
-    //     vm.stopPrank();
+        vm.startPrank(admin);
+        vm.warp(endEpoch);
+        //vm.expectRevert(Vault.AddressZero.selector);
+        vaultFactory.changeTreasury(address(0), vaultFactory.marketIndex());
+        vm.stopPrank();
 
-    //     vm.startPrank(admin);
-    //     //vm.expectRevert(Vault.AddressZero.selector);
-    //     testVault.changeController(address(0));
-    //     vm.stopPrank();
-    // }
+        vm.startPrank(admin);
+        //vm.expectRevert(Vault.AddressZero.selector);
+        vaultFactory.changeController(vaultFactory.marketIndex(), address(0));
+        vm.stopPrank();
+     }
 
     function testFailZeroValue() public {
         vm.deal(alice, 20 ether);

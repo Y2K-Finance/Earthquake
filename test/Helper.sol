@@ -47,7 +47,7 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    uint256 immutable FEE = 500;
+    uint256 immutable FEE = 5;
     uint256 immutable SINGLE_MARKET_INDEX = 1;
     uint256 immutable ALL_MARKETS_INDEX = 15;
     uint256 immutable MARKET_OVERFLOW = 3;
@@ -235,7 +235,7 @@ contract Helper is Test {
                            WITHDRAW functions
     //////////////////////////////////////////////////////////////*/
 
-    function Withdraw() public {
+    function WithdrawEndEpoch() public {
 
         address hedge = vaultFactory.getVaults(1)[0];
         address risk = vaultFactory.getVaults(1)[1];
@@ -252,7 +252,6 @@ contract Helper is Test {
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_BALANCE);
         uint256 entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
 
         vm.stopPrank();
 
@@ -262,8 +261,6 @@ contract Helper is Test {
         vHedge.withdraw(endEpoch, assets, bob, bob);
         
         assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_BALANCE);
-        entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
 
@@ -276,7 +273,7 @@ contract Helper is Test {
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -287,7 +284,7 @@ contract Helper is Test {
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(degen));
 
         vm.stopPrank();
 
