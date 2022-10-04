@@ -32,15 +32,15 @@ contract Vester is AccessControl, Pausable {
     }
 
     /**
-        @notice Burns escrowed tokens and mints tokens
-        @param _amount  uint256  token amount to burn and mint
-    */
+     * @notice Burns escrowd tokens and transfers naked tokens to msg.sender
+     * @param  _amount uint256 token amounts to burn and transfer
+     */
     function vest(uint256 _amount) external {
         if (_amount == 0) revert ZeroAmount();
 
         esY2K.safeTransferFrom(msg.sender, address(this), _amount);
         esY2K.burn(_amount);
-        y2k.mint(msg.sender, _amount);
+        y2k.safeTransfer(msg.sender, _amount);
     }
 
     /**
