@@ -18,6 +18,7 @@ abstract contract EscrowedTokenAccessControl is ERC20, AccessControl {
      * @notice Transfer function override with access control
      * @param to     address account to recieve tokens
      * @param amount uint256 amount of tokens
+     * @return s    bool    if transaction is succesful
      */
     function transfer(address to, uint256 amount)
         public
@@ -25,44 +26,23 @@ abstract contract EscrowedTokenAccessControl is ERC20, AccessControl {
         onlyRole(TRANSFER_ROLE)
         returns (bool)
     {
-        balanceOf[msg.sender] -= amount;
-
-        // Cannot overflow because the sum of all user
-        // balances can't exceed the max uint256 value.
-        unchecked {
-            balanceOf[to] += amount;
-        }
-
-        emit Transfer(msg.sender, to, amount);
-
-        return true;
+        bool s = super.transfer(to, amount);
+        return s;
     }
 
     /**
      * @notice transferFrom function override with access control
      * @param to     address account to recieve tokens
      * @param amount uint256 amount of tokens
+     * @return s    bool    if transaction is succesful 
+
      */
     function transferFrom(
         address from,
         address to,
         uint256 amount
     ) public override onlyRole(TRANSFER_ROLE) returns (bool) {
-        uint256 allowed = allowance[from][msg.sender]; // Saves gas for limited approvals.
-
-        if (allowed != type(uint256).max)
-            allowance[from][msg.sender] = allowed - amount;
-
-        balanceOf[from] -= amount;
-
-        // Cannot overflow because the sum of all user
-        // balances can't exceed the max uint256 value.
-        unchecked {
-            balanceOf[to] += amount;
-        }
-
-        emit Transfer(from, to, amount);
-
-        return true;
+        bool s = super.transferFrom(from, to, amount);
+        return s;
     }
 }
