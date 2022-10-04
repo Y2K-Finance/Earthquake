@@ -47,7 +47,7 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    uint256 immutable FEE = 1;
+    uint256 immutable FEE = 500;
     uint256 immutable SINGLE_MARKET_INDEX = 1;
     uint256 immutable ALL_MARKETS_INDEX = 15;
     uint256 immutable MARKET_OVERFLOW = 3;

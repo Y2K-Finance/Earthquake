@@ -226,11 +226,14 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         _burn(owner, id, assets);
 
         if(epochNull[id] == false) {
-            //Taking fee from the amount
             entitledShares = previewWithdraw(id, assets);
-            uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
-            entitledShares = entitledShares - feeValue;
-            assert(asset.transfer(treasury, feeValue));
+            //Taking fee from the premium
+            if(entitledShares > assets) {
+                uint256 premium = entitledShares - assets;
+                uint256 feeValue = calculateWithdrawalFeeValue(premium, id);
+                entitledShares = entitledShares - feeValue;
+                assert(asset.transfer(treasury, feeValue));
+            }
         }
         else{
             entitledShares = assets;
