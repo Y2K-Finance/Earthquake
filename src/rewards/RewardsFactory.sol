@@ -93,12 +93,6 @@ contract RewardsFactory is Ownable {
             _rewardRate
         );
 
-        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, _epochEnd));
-        hashedIndex_StakingRewards[hashedIndex] = [
-            address(insrStake),
-            address(riskStake)
-        ];
-
         emit CreatedStakingReward(
             keccak256(
                 abi.encodePacked(
