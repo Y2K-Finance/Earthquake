@@ -583,7 +583,7 @@ contract AssertTest is Helper {
 
     }
 
-    function testPegOracleDecimals() public {
+    function testOracleDecimals() public {
         vm.startPrank(admin);
         PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
         emit log_named_uint("PegOracle decimals", pegOracle.decimals());
@@ -591,6 +591,33 @@ contract AssertTest is Helper {
         AggregatorV3Interface testOracle1 = AggregatorV3Interface(oracleSTETH);
         AggregatorV3Interface testOracle2 = AggregatorV3Interface(oracleETH);
         assertTrue(testOracle1.decimals() == testOracle2.decimals());
+        vm.stopPrank();
+
+        //testing for 8 decimal pair
+        vm.startPrank(admin);
+        FakeOracle eightDec = new FakeOracle(oracleMIM, 100000000);
+        vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_CCC, beginEpoch, endEpoch, address(eightDec), "y2kMIM_99*");
+        int256 testPriceOne = controller.getLatestPrice(tokenMIM);
+        emit log_named_int("testPrice for 8 decimals", testPriceOne);
+        assertTrue(testPriceOne >= 1000000000000000000 && testPriceOne < 10000000000000000000); 
+        vm.stopPrank();
+
+        //testing for 18 decimal pair
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_CCC, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        int256 testPriceTwo = controller.getLatestPrice(tokenFRAX);
+        emit log_named_int("testPrice for 18 decimals", testPriceTwo);
+        //asserting between 17 and 19 decimals since most stables will not be exactly pegged to the dollar
+        assertTrue(testPriceTwo >= 100000000000000000 && testPriceTwo < 10000000000000000000);    
+        vm.stopPrank();
+
+        //testing for +18 decimal pairs
+        vm.startPrank(admin);
+        FakeOracle plusDecimals = new FakeOracle(oracleUSDC, 100000000000000000000);
+        vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_CCC, beginEpoch, endEpoch, address(plusDecimals), "y2kDAI_99*");
+        int256 testPriceThree = controller.getLatestPrice(tokenUSDC);
+        emit log_named_int("testPrice for +18 decimals", testPriceThree);
+        assertTrue(testPriceThree >= 100000000000000000 && testPriceThree < 10000000000000000000);
         vm.stopPrank();
     }
 
