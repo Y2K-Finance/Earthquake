@@ -34,8 +34,8 @@ contract DeployGoerliScript is Script {
     address public admin = 0xFB0a3A93e9acd461747e7D613eb3722d53B96613;
 
     int256 depegAAA = 990000000000000000;
-    int256 depegBBB = 980000000000000000;
-    int256 depegCCC = 970000000000000000;
+    int256 depegBBB = 970000000000000000;
+    int256 depegCCC = 950000000000000000;
     //int256 depegPrice = 109;
 
     uint256 endEpoch;
