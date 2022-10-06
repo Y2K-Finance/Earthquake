@@ -24,14 +24,16 @@ contract RewardsFactory is Ownable {
     //////////////////////////////////////////////////////////////*/
     
     /** @notice Creates staking rewards when event is emitted
-      * @param marketIndex Current market epoch ID
-      * @param epochdEndId Epoch Id of market
-      * @param addressFarms farms addresss [0] hedge [1] risk
+      * @param marketEpochId Current market epoch ID
+      * @param mIndex Current market index
+      * @param hedgeFarm Hedge farm address
+      * @param riskFarm Risk farm address
       */ 
     event CreatedStakingReward(
-        uint indexed marketIndex,
-        uint256 indexed epochdEndId,
-        address[2] indexed addressFarms
+        bytes32 indexed marketEpochId,
+        uint256 indexed mIndex,
+        address hedgeFarm,
+        address riskFarm
     );
 
     /** @notice Contract constructor
@@ -91,13 +93,23 @@ contract RewardsFactory is Ownable {
             _rewardRate
         );
 
-        address[2] memory Farms;
-        Farms = [address(insrStake),address(riskStake)];
+        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, _epochEnd));
+        hashedIndex_StakingRewards[hashedIndex] = [
+            address(insrStake),
+            address(riskStake)
+        ];
 
         emit CreatedStakingReward(
+            keccak256(
+                abi.encodePacked(
+                    _marketIndex,
+                    Vault(_insrToken).idEpochBegin(_epochEnd),
+                    _epochEnd
+                )
+            ),
             _marketIndex,
-            _epochEnd,
-            Farms
+            address(insrStake),
+            address(riskStake)
         );
 
         return (address(insrStake), address(riskStake));
