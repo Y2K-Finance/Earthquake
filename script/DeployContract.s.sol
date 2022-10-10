@@ -37,7 +37,6 @@ contract DeployScript is Script {
     int256 depegAAA = 995555555555555555;
     int256 depegBBB = 975555555555555555;
     int256 depegCCC = 955555555555555555;
-    //int256 depegPrice = 109;
 
     uint256 FEE = 55;
 

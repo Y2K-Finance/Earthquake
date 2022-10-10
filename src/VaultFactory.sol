@@ -14,7 +14,7 @@ contract TimeLock {
 
     mapping(bytes32 => bool) public queued;
 
-    address public owner;
+    address public policy;
 
     uint256 public constant MIN_DELAY = 7 days;
     uint256 public constant MAX_DELAY = 30 days;
@@ -65,8 +65,8 @@ contract TimeLock {
         _;
     }
 
-    constructor(address _owner) {
-        owner = _owner;
+    constructor(address _policy) {
+        policy = _policy;
     }
 
     /**
@@ -379,9 +379,9 @@ contract VaultFactory is Ownable {
     constructor(
         address _treasury,
         address _weth,
-        address _owner
+        address _policy
     ) {
-        timelocker = new TimeLock(_owner);
+        timelocker = new TimeLock(_policy);
 
         if(_weth == address(0))
             revert AddressZero();
