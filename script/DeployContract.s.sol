@@ -51,7 +51,7 @@ contract DeployScript is Script {
     uint256 rewardRate = 10;
     
     function setUp() public {
-        vaultFactory = new VaultFactory(admin,WETH);
+        vaultFactory = new VaultFactory(admin,WETH, admin);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vm.prank(admin);

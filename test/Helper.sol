@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
 import {Vault} from "../src/Vault.sol";
-import {VaultFactory} from "../src/VaultFactory.sol";
+import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol"; 
 import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
@@ -21,6 +21,7 @@ contract Helper is Test {
     Controller controller;
     GovToken govToken;
     RewardsFactory rewardsFactory;
+    TimeLock timelocker;
 
     address WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
@@ -78,9 +79,10 @@ contract Helper is Test {
     
     function setUp() public {
         vm.startPrank(admin);
-        vaultFactory = new VaultFactory(admin,WETH);
+        vaultFactory = new VaultFactory(admin,WETH, admin);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.setController(address(controller));
+        timelocker = vaultFactory.timelocker();
 
         endEpoch = block.timestamp + END_DAYS;
         beginEpoch = block.timestamp + BEGIN_DAYS;

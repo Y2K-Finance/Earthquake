@@ -69,7 +69,7 @@ contract FuzzHelper is Test {
     
     function setUp() public {
         vm.prank(admin);
-        vaultFactory = new VaultFactory(admin,WETH);
+        vaultFactory = new VaultFactory(admin,WETH, admin);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vm.prank(admin);

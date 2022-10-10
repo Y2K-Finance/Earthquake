@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
 import {Vault} from "../src/Vault.sol";
-import {VaultFactory} from "../src/VaultFactory.sol";
+import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol";
 import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
@@ -468,7 +468,7 @@ contract AssertTest is Helper {
     
     function testCreateVaultFactory() public {
         vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(address(controller), address(tokenFRAX));
+        VaultFactory testFactory = new VaultFactory(address(controller), address(tokenFRAX), admin);
         assertEq(address(controller), testFactory.treasury());
         assertEq(address(tokenFRAX), testFactory.WETH());
         assertEq(address(admin), testFactory.owner());
@@ -482,10 +482,45 @@ contract AssertTest is Helper {
         vm.startPrank(admin);
         
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        vm.warp(block.timestamp + vaultFactory.timeLock() + 1);
-        vaultFactory.changeTimewindow(1,5 days);
-        vm.warp(block.timestamp + vaultFactory.timeLock() + 1);
-        vaultFactory.changeTimewindow(1,5);
+        
+        uint timestamper = block.timestamp + timelocker.MIN_DELAY() + 1;
+        uint index = 1;
+        address newValue = address(1);
+        address tokenValue = tokenUSDC;
+        address factory = address(vaultFactory);
+        address[] memory vaults = vaultFactory.getVaults(1);
+
+        // test queue treasury
+        timelocker.queue(factory,"changeTreasury",index,0,newValue,address(0), timestamper);
+        // test change timewindow
+        timelocker.queue(factory,"changeTimewindow",index,0,address(0),address(0), timestamper);
+        // test change controller
+        timelocker.queue(factory,"changeController",index,0,newValue,address(0), timestamper);
+        // test change oracle
+        timelocker.queue(factory,"changeOracle",0,0,newValue,tokenValue, timestamper);
+
+
+        vm.warp(timestamper + 1);
+
+        // test execute treasury
+        timelocker.execute(factory,"changeTreasury",index,0,newValue,address(0), timestamper);
+        assertTrue(Vault(vaults[0]).treasury() == newValue);
+        assertTrue(Vault(vaults[1]).treasury() == newValue);
+
+        // test execute timewindow
+        timelocker.execute(factory,"changeTimewindow",index,0,address(0),address(0), timestamper);
+        assertTrue(Vault(vaults[0]).timewindow() == 0);
+        assertTrue(Vault(vaults[1]).timewindow() == 0);
+
+        // test execute controller
+        timelocker.execute(factory,"changeController",index,0,newValue,address(0), timestamper);
+        assertTrue(Vault(vaults[0]).controller() == newValue);
+        assertTrue(Vault(vaults[1]).controller() == newValue);
+
+        // test execute oracle
+        timelocker.execute(factory,"changeOracle",0,0,newValue,tokenValue, timestamper);
+        assertTrue(vaultFactory.tokenToOracle(tokenValue) == newValue);
+
 
         vm.stopPrank();
     }

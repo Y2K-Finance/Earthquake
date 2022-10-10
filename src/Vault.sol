@@ -35,9 +35,9 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     address public immutable tokenInsured;
-    address private treasury;
+    address public treasury;
     int256 public immutable strikePrice;
-    address private immutable factory;
+    address public immutable factory;
     address public controller;
 
     uint256[] public epochs;
