@@ -1,0 +1,36 @@
+{
+    "1":{
+        "whenDeploy": "out 11 2022 00:00:00",
+        "name":"y2kFRAX_99",
+        "strikePrice": 995555555555555555, // 0.995555555555555555
+        "epochBegin":1665543223, //begin insurance date
+        "epochEnd":1665802423, //end insurance date
+        "epochFee":55, // 5.5%
+        "token": "0x0000000000000000000000000000000000000000", //token address (can be anything)
+        "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8" //oracle address
+    },
+
+    "2":{
+        "whenDeploy": "out 11 2022 00:00:00",
+        "name":"y2kFRAX_97",
+        "strikePrice": 975555555555555555, // 0.975555555555555555
+        "epochBegin":1665543223, //begin insurance date
+        "epochEnd":1665802423, //end insurance date
+        "epochFee":55, // 5.5%
+        "token": "0x0000000000000000000000000000000000000000", //token address (can be anything)
+        "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8" //oracle address
+    },
+
+    "3":{
+        "whenDeploy": "out 11 2022 00:00:00",
+        "name":"y2kFRAX_95",
+        "strikePrice": 955555555555555555, // 0.955555555555555555
+        "epochBegin":1665543223, //begin insurance date
+        "epochEnd":1665802423, //end insurance date
+        "epochFee":55, // 5.5%
+        "token": "0x0000000000000000000000000000000000000000", //token address (can be anything)
+        "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8" //oracle address
+    }
+
+}
+
