@@ -54,8 +54,6 @@ contract Helper is Test {
     uint256 immutable MARKET_OVERFLOW = 3;
     uint256 immutable NULL_VALUE = 0;
     uint256 immutable NULL_BALANCE = 0;
-    uint256 immutable REWARDS_DURATION = 10 days;
-    uint256 immutable REWARD_RATE = 10;
     uint256 immutable AMOUNT = 10 ether;
     uint256 immutable BEGIN_DAYS = 2 days;
     uint256 immutable END_DAYS = 30 days;

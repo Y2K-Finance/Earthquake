@@ -46,9 +46,6 @@ contract DeployGoerliScript is Script {
 
     uint256 FEE = 55;
 
-    uint256 rewardsDuration = 10 days;
-    uint256 rewardRate = 10;
-
     function run() public {
         vm.startBroadcast();
 

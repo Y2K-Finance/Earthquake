@@ -46,8 +46,6 @@ contract DeployScript is Script {
     uint256 beginEpoch;
     uint256 nextBegin;
 
-    uint256 rewardsDuration = 10 days;
-    uint256 rewardRate = 10;
     
     function setUp() public {
         vaultFactory = new VaultFactory(admin,WETH, admin);

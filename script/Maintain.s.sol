@@ -30,8 +30,6 @@ contract MaintainScript is Script {
     uint256 nextEpochEnd = epochEnd + 30 minutes;
     uint256 nextEpochBegin = epochBegin + 20 minutes;
 
-    uint256 rewardsDuration = 10 days;
-    uint256 rewardRate = 10;
 
     // address tokenUSDC = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
     // address tokenDAI = 0x4dCf5ac4509888714dd43A5cCc46d7ab389D9c23;
