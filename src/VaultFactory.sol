@@ -60,7 +60,7 @@ contract TimeLock {
 
 
     modifier onlyOwner(){
-        if(msg.sender != owner)
+        if(msg.sender != policy)
             revert NotOwner(msg.sender);
         _;
     }
@@ -240,7 +240,7 @@ contract TimeLock {
     }
 
     function changeOwner(address _newOwner) external onlyOwner {
-        owner = _newOwner;
+        policy = _newOwner;
     }
 }
 
