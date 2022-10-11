@@ -14,6 +14,8 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author NexusFlip
+
 contract FuzzHelper is Test {
     VaultFactory vaultFactory;
     Controller controller;

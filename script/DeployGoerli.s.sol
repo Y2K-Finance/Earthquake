@@ -9,6 +9,8 @@ import "../test/GovToken.sol";
 import "../test/oracles/DepegOracle.sol";
 import "../src/rewards/StakingRewards.sol";
 
+/// @author MiguelBits
+
 /*
 forge script script/DeployGoerli.s.sol:DeployGoerliScript --rpc-url $ARBITRUM_GOERLI_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
 */

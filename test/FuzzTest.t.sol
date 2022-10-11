@@ -12,6 +12,8 @@ import {FuzzHelper} from "./FuzzHelper.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author NexusFlip
+
 contract FuzzTest is FuzzHelper{
 
     function testFuzzDeposit(uint256 ethValue) public {

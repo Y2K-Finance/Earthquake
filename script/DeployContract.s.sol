@@ -6,6 +6,7 @@ import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
 import "../src/rewards/RewardsFactory.sol";
 import "../test/GovToken.sol";
+/// @author MiguelBits
 
 //forge script script/DeployContract.s.sol:ContractScript --rpc-url $ARBITRUM_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
 contract DeployScript is Script {

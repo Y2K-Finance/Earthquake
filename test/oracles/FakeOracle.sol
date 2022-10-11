@@ -3,6 +3,9 @@ pragma solidity 0.8.15;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
+/// @author MiguelBits
+/// @author NexusFlip
+
 contract FakeOracle {
 
     address public oracle;

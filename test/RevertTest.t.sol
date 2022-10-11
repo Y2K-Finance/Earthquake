@@ -14,6 +14,9 @@ import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author MiguelBits
+/// @author NexusFlip
+
 contract RevertTest is Helper {
 
     /*///////////////////////////////////////////////////////////////

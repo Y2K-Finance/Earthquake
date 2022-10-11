@@ -8,6 +8,8 @@ import "../src/rewards/RewardsFactory.sol";
 import "../test/GovToken.sol";
 import "../test/oracles/DepegOracle.sol";
 
+/// @author MiguelBits
+
 /*
 forge script script/Maintain.s.sol:MaintainScript --rpc-url $ARBITRUM_RINKEBY_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
 
