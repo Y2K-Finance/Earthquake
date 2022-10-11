@@ -9,6 +9,8 @@ import "../test/GovToken.sol";
 import "../test/oracles/DepegOracle.sol";
 import "../src/rewards/StakingRewards.sol";
 
+/// @author MiguelBits
+
 /*
 forge script script/DeployGoerli.s.sol:DeployGoerliScript --rpc-url $ARBITRUM_GOERLI_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
 */
@@ -34,8 +36,8 @@ contract DeployGoerliScript is Script {
     address public admin = 0xFB0a3A93e9acd461747e7D613eb3722d53B96613;
 
     int256 depegAAA = 990000000000000000;
-    int256 depegBBB = 980000000000000000;
-    int256 depegCCC = 970000000000000000;
+    int256 depegBBB = 970000000000000000;
+    int256 depegCCC = 950000000000000000;
     //int256 depegPrice = 109;
 
     uint256 endEpoch;
@@ -46,21 +48,18 @@ contract DeployGoerliScript is Script {
 
     uint256 FEE = 55;
 
-    uint256 rewardsDuration = 10 days;
-    uint256 rewardRate = 10;
-
     function run() public {
         vm.startBroadcast();
 
         // setUp();
-        vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        vaultFactory = new VaultFactory(admin,WETH, admin);
+        controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vaultFactory.setController(address(controller));
 
         govToken = new GovToken();
 
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
 
         //depegOracle = new DepegOracle(oracleDAI, admin);
                 
@@ -80,7 +79,7 @@ contract DeployGoerliScript is Script {
         // Create USDC market
         //index 1
         vaultFactory.createNewMarket(FEE, tokenUSDC, depegAAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*");
-        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch, rewardsDuration, rewardRate);
+        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
         //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -89,7 +88,7 @@ contract DeployGoerliScript is Script {
 
         //index 2
         vaultFactory.createNewMarket(FEE, tokenUSDC, depegBBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*");
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(2, endEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(2, endEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -98,7 +97,7 @@ contract DeployGoerliScript is Script {
 
         //index 3
         vaultFactory.createNewMarket(FEE, tokenUSDC, depegCCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*");
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(3, endEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(3, endEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -108,7 +107,7 @@ contract DeployGoerliScript is Script {
         // Create DAI market
         //index 4
         vaultFactory.createNewMarket(FEE, tokenDAI, depegAAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*");
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(4, endEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(4, endEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -117,7 +116,7 @@ contract DeployGoerliScript is Script {
 
         //index 5
         vaultFactory.createNewMarket(FEE, tokenDAI, depegBBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*");
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(5, endEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(5, endEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -126,7 +125,7 @@ contract DeployGoerliScript is Script {
 
         //index 6
         vaultFactory.createNewMarket(FEE, tokenDAI, depegCCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*");
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(6, endEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(6, endEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -137,7 +136,7 @@ contract DeployGoerliScript is Script {
         // Deploy more USDC market
 
         vaultFactory.deployMoreAssets(1, nextBegin, nextEpoch, FEE);
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(1, nextEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(1, nextEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -146,7 +145,7 @@ contract DeployGoerliScript is Script {
 
 
         vaultFactory.deployMoreAssets(2, nextBegin, nextEpoch, FEE);
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(2, nextEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(2, nextEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -154,7 +153,7 @@ contract DeployGoerliScript is Script {
         StakingRewards(rRisk).notifyRewardAmount(govToken.balanceOf(rRisk));
         
         vaultFactory.deployMoreAssets(3, nextBegin, nextEpoch, FEE);
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(3, nextEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(3, nextEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -163,7 +162,7 @@ contract DeployGoerliScript is Script {
 
         // Deploy more DAI market
         vaultFactory.deployMoreAssets(4, nextBegin, nextEpoch, FEE);
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(4, nextEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(4, nextEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -171,7 +170,7 @@ contract DeployGoerliScript is Script {
         StakingRewards(rRisk).notifyRewardAmount(govToken.balanceOf(rRisk));
 
         vaultFactory.deployMoreAssets(5, nextBegin, nextEpoch, FEE);
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(5, nextEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(5, nextEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);
@@ -179,7 +178,7 @@ contract DeployGoerliScript is Script {
         StakingRewards(rRisk).notifyRewardAmount(govToken.balanceOf(rRisk));
 
         vaultFactory.deployMoreAssets(6, nextBegin, nextEpoch, FEE);
-        (rHedge, rRisk) = rewardsFactory.createStakingRewards(6, nextEpoch, rewardsDuration, rewardRate);
+        (rHedge, rRisk) = rewardsFactory.createStakingRewards(6, nextEpoch);
                 //sending gov tokens to farms
         govToken.moneyPrinterGoesBrr(rHedge);
         govToken.moneyPrinterGoesBrr(rRisk);

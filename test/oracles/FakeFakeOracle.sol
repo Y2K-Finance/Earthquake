@@ -6,21 +6,22 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 /// @author MiguelBits
 /// @author NexusFlip
 
-contract DepegOracle {
+contract FakeFakeOracle {
 
     address public oracle;
     AggregatorV3Interface public priceFeed;
 
-    uint8 public decimals = 18;
+    uint8 public decimals;
     int256 public priceSimulation;
-    address public admin;
 
-    constructor (address _oracle, address _admin) {
+    constructor (address _oracle, int256 _priceSimulation, uint8 _decimals) {
         require(_oracle != address(0), "oracle cannot be the zero address");
-
         oracle = _oracle;
         priceFeed = AggregatorV3Interface(_oracle);
-        admin = _admin;
+
+        priceSimulation = _priceSimulation;
+        decimals = _decimals;
+
     }
 
     function latestRoundData()
@@ -37,21 +38,11 @@ contract DepegOracle {
         (
             uint80 roundID,
             ,
-            ,
+            uint256 startedAt,
             uint256 timeStamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        nowPrice1 = priceSimulation * int256(10e16);
-
-        if(priceSimulation == 0)
-            return (roundID, nowPrice1, 0, timeStamp, answeredInRound);
-        else
-            return (roundID, priceSimulation, 0, timeStamp, answeredInRound);
-    }
-
-    function setPriceSimulation(int256 _priceSimulation) public {
-        require(msg.sender == admin, "only admin can set price simulation");
-        priceSimulation = _priceSimulation;
+        return (roundID, priceSimulation, startedAt, timeStamp, answeredInRound);
     }
 }

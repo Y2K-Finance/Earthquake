@@ -14,6 +14,8 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author NexusFlip
+
 contract FuzzHelper is Test {
     VaultFactory vaultFactory;
     Controller controller;
@@ -68,8 +70,9 @@ contract FuzzHelper is Test {
     uint256 beginEpoch;
     
     function setUp() public {
-        vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
+        vm.prank(admin);
+        vaultFactory = new VaultFactory(admin,WETH, admin);
+        controller = new Controller(address(vaultFactory), arbitrum_sequencer);
 
         vm.prank(admin);
         vaultFactory.setController(address(controller));
@@ -78,7 +81,8 @@ contract FuzzHelper is Test {
         beginEpoch = block.timestamp + 2 days;
 
         govToken = new GovToken();
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        vm.prank(admin);
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
 
     }
 

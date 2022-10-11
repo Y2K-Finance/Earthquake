@@ -8,10 +8,12 @@ import {IWETH} from "./interfaces/IWETH.sol";
 import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
+/// @author MiguelBits
 contract Vault is SemiFungibleVault, ReentrancyGuard {
-    using FixedPointMathLib for uint256;
 
+    using FixedPointMathLib for uint256;
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -26,15 +28,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     error OwnerDidNotAuthorize(address _sender, address _owner);
     error EpochEndMustBeAfterBegin();
     error MarketEpochExists();
+    error FeeCannotBe0();
 
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
     //////////////////////////////////////////////////////////////*/
 
     address public immutable tokenInsured;
-    address private treasury;
+    address public treasury;
     int256 public immutable strikePrice;
-    address private immutable factory;
+    address public immutable factory;
     address public controller;
 
     uint256[] public epochs;
@@ -53,6 +56,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     // @audit id can be uint32
     mapping(uint256 => bool) public idExists;
     mapping(uint256 => uint256) public epochFee;
+    mapping(uint256 => bool) public epochNull;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -159,12 +163,13 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         epochHasNotStarted(id)
         nonReentrant
     {
-
-        asset.transferFrom(msg.sender, address(this), assets);
+        if(receiver == address(0))
+            revert AddressZero();
+        assert(asset.transferFrom(msg.sender, address(this), assets));
 
         _mint(receiver, id, assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assets, assets);
+        emit Deposit(msg.sender, receiver, id, assets);
     }
 
     /**
@@ -180,15 +185,17 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         nonReentrant
     {
         require(msg.value > 0, "ZeroValue");
+        if(receiver == address(0))
+            revert AddressZero();
 
         IWETH(address(asset)).deposit{value: msg.value}();
         _mint(receiver, id, msg.value, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, msg.value, msg.value);
+        emit Deposit(msg.sender, receiver, id, msg.value);
     }
 
     /**
-    @notice Withdraw entitled deposited assets, checking if a depeg event //TODO add GOV token rewards
+    @notice Withdraw entitled deposited assets, checking if a depeg event
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
     @param assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
     @param receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
@@ -207,21 +214,35 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
         returns (uint256 shares)
     {
+        if(receiver == address(0))
+            revert AddressZero();
+
         if(
             msg.sender != owner &&
             isApprovedForAll(owner, msg.sender) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
-        uint256 entitledShares = previewWithdraw(id, assets);
+        uint256 entitledShares;
         _burn(owner, id, assets);
 
-        //Taking fee from the amount
-        uint256 feeValue = calculateWithdrawalFeeValue(entitledShares, id);
-        entitledShares = entitledShares - feeValue;
-        asset.transfer(treasury, feeValue);
+        if(epochNull[id] == false) {
+            entitledShares = previewWithdraw(id, assets);
+            //Taking fee from the premium
+            if(entitledShares > assets) {
+                uint256 premium = entitledShares - assets;
+                uint256 feeValue = calculateWithdrawalFeeValue(premium, id);
+                entitledShares = entitledShares - feeValue;
+                assert(asset.transfer(treasury, feeValue));
+            }
+        }
+        else{
+            entitledShares = assets;
+        }        
+        if (entitledShares > 0) { 
+            assert(asset.transfer(receiver, entitledShares)); 
+        }
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
-        asset.transfer(receiver, entitledShares);
 
         return entitledShares;
     }
@@ -256,7 +277,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         returns (uint256 feeValue)
     {
         // 0.5% = multiply by 1000 then divide by 5
-        return (amount * epochFee[_epoch]) / 1000;
+        return amount.mulDivUp(epochFee[_epoch],1000);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -277,7 +298,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes vault time window
     @param _timewindow New vault time window
      */
-    function changeTimewindow(uint256 _timewindow) public onlyFactory {
+    function changeTimewindow(uint256 _timewindow) public onlyFactory{
         timewindow = _timewindow;
     }
 
@@ -285,7 +306,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes controller address
     @param _controller New controller address
      */
-    function changeController(address _controller) public onlyFactory {
+    function changeController(address _controller) public onlyFactory{
         if(_controller == address(0))
             revert AddressZero();
         controller = _controller;
@@ -303,6 +324,9 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     {
         if(_withdrawalFee > 150)
             revert FeeMoreThan150(_withdrawalFee);
+
+        if(_withdrawalFee == 0)
+            revert FeeCannotBe0();
 
         if(idExists[epochEnd] == true)
             revert MarketEpochExists();
@@ -339,7 +363,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping
      */
-    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController {
+    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController marketExists(id) {
         idClaimTVL[id] = claimTVL;
     }
 
@@ -354,7 +378,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyController
         marketExists(id)
     {
-        asset.transfer(_counterparty, idFinalTVL[id]);
+        assert(asset.transfer(_counterparty, idFinalTVL[id]));
+    }
+
+    function setEpochNull(uint256 id) public onlyController marketExists(id) {
+        epochNull[id] = true;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -375,10 +403,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         // risk users can withdraw the hedge (that is paid by the hedge buyers) and risk; withdraw = (risk + hedge)
         // hedge pay for each hedge seller = ( risk / tvl before the hedge payouts ) * tvl in hedge pool
         // in case there is a depeg event, the risk users can only withdraw the hedge
-        entitledAmount = assets.divWadDown(idFinalTVL[id]).mulDivDown(
-                    idClaimTVL[id],
-                    1 ether
-                );
+        entitledAmount = assets.mulDivUp(idClaimTVL[id],idFinalTVL[id]);
         // in case the hedge wins aka depegging
         // hedge users pay the hedge to risk users anyway,
         // hedge guy can withdraw risk (that is transfered from the risk pool),
@@ -392,22 +417,4 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         return epochs.length;
     }
 
-    /** @notice Lookup next epochs' end from target
-        @param _epoch Target epoch
-        @return nextEpochEnd Next epoch end
-      */
-    function getNextEpoch(uint256 _epoch)
-        public
-        view
-        returns (uint256 nextEpochEnd)
-    {
-        for (uint256 i = 0; i < epochsLength(); i++) {
-            if (epochs[i] == _epoch) {
-                if (i == epochsLength() - 1) {
-                    return 0;
-                }
-                return epochs[i + 1];
-            }
-        }
-    }
 }

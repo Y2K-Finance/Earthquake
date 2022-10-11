@@ -7,13 +7,13 @@ import "./VaultFactory.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 
+/// @author MiguelBits
+
 contract Controller {
-    address public immutable admin;
     VaultFactory public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
-    uint256 public constant VAULTS_LENGTH = 2;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -23,16 +23,15 @@ contract Controller {
     error SequencerDown();
     error GracePeriodNotOver();
     error ZeroAddress();
-    error NotZeroTVL();
+    error EpochFinishedAlready();
     error PriceNotAtStrikePrice(int256 price);
     error EpochNotStarted();
     error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-    error TimestampZero();
-    error AddressNotAdmin();
     error EpochNotExist();
     error EpochNotExpired();
+    error VaultNotZeroTVL();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -55,58 +54,18 @@ contract Controller {
         int256 depegPrice
     );
 
-    /* solhint-disable  var-name-mixedcase */
+    event NullEpoch(
+        bytes32 epochMarketID,
+        VaultTVL tvl,
+        uint256 epoch,
+        uint256 time
+    );
+
     struct VaultTVL {
         uint256 RISK_claimTVL;
         uint256 RISK_finalTVL;
         uint256 INSR_claimTVL;
         uint256 INSR_finalTVL;
-    }
-    /* solhint-enable  var-name-mixedcase */
-
-    /*//////////////////////////////////////////////////////////////
-                                 MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Only admin addresses can call functions that use this modifier
-      */
-    modifier onlyAdmin() {
-        if(msg.sender != admin)
-            revert AddressNotAdmin();
-        _;
-    }
-
-    /** @notice Modifier to ensure market exists, current market epoch time and price are valid 
-      * @param marketIndex Target market index
-      * @param epochEnd End of epoch set for market
-      */
-    modifier isDisaster(uint256 marketIndex, uint256 epochEnd) {
-        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
-        if(
-            vaultsAddress.length != VAULTS_LENGTH
-            )
-            revert MarketDoesNotExist(marketIndex);
-
-        address vaultAddress = vaultsAddress[0];
-        Vault vault = Vault(vaultAddress);
-
-        if(vault.idExists(epochEnd) == false)
-            revert EpochNotExist();
-
-        if(
-            vault.strikePrice() < getLatestPrice(vault.tokenInsured())
-            )
-            revert PriceNotAtStrikePrice(getLatestPrice(vault.tokenInsured()));
-
-        if(
-            vault.idEpochBegin(epochEnd) > block.timestamp)
-            revert EpochNotStarted();
-
-        if(
-            block.timestamp > epochEnd
-            )
-            revert EpochExpired();
-        _;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -115,24 +74,18 @@ contract Controller {
 
     /** @notice Contract constructor
       * @param _factory VaultFactory address
-      * @param _admin Admin address
       * @param _l2Sequencer Arbitrum sequencer address
       */ 
     constructor(
         address _factory,
-        address _admin,
         address _l2Sequencer
     ) {
-        if(_admin == address(0))
-            revert ZeroAddress();
-
         if(_factory == address(0)) 
             revert ZeroAddress();
 
         if(_l2Sequencer == address(0))
             revert ZeroAddress();
         
-        admin = _admin;
         vaultFactory = VaultFactory(_factory);
         sequencerUptimeFeed = AggregatorV2V3Interface(_l2Sequencer);
     }
@@ -147,17 +100,38 @@ contract Controller {
       */
     function triggerDepeg(uint256 marketIndex, uint256 epochEnd)
         public
-        isDisaster(marketIndex, epochEnd)
     {
         address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
 
+        if(
+            vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0)
+            )
+            revert MarketDoesNotExist(marketIndex);
+
+        if(insrVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
+        if(
+            insrVault.strikePrice() <= getLatestPrice(insrVault.tokenInsured())
+            )
+            revert PriceNotAtStrikePrice(getLatestPrice(insrVault.tokenInsured()));
+
+        if(
+            insrVault.idEpochBegin(epochEnd) > block.timestamp)
+            revert EpochNotStarted();
+
+        if(
+            block.timestamp > epochEnd
+            )
+            revert EpochExpired();
+
         //require this function cannot be called twice in the same epoch for the same vault
-        if(insrVault.idFinalTVL(epochEnd) != 0)
-            revert NotZeroTVL();
-        if(riskVault.idFinalTVL(epochEnd) != 0) 
-            revert NotZeroTVL();
+        if(insrVault.idEpochEnded(epochEnd))
+            revert EpochFinishedAlready();
+        if(riskVault.idEpochEnded(epochEnd)) 
+            revert EpochFinishedAlready();
 
         insrVault.endEpoch(epochEnd);
         riskVault.endEpoch(epochEnd);
@@ -170,10 +144,21 @@ contract Controller {
 
         VaultTVL memory tvl = VaultTVL(
             riskVault.idClaimTVL(epochEnd),
-            insrVault.idClaimTVL(epochEnd),
             riskVault.idFinalTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
             insrVault.idFinalTVL(epochEnd)
         );
+
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            vaultFactory.tokenToOracle(insrVault.tokenInsured())
+        );
+        (
+            ,  
+            int256 price,
+            ,
+            ,
+            
+        ) = priceFeed.latestRoundData();
 
         emit DepegInsurance(
             keccak256(
@@ -187,7 +172,7 @@ contract Controller {
             true,
             epochEnd,
             block.timestamp,
-            getLatestPrice(insrVault.tokenInsured())
+            price
         );
     }
 
@@ -197,9 +182,6 @@ contract Controller {
       */
     function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) public {
         if(
-            vaultFactory.getVaults(marketIndex).length != VAULTS_LENGTH)
-                revert MarketDoesNotExist(marketIndex);
-        if(
             block.timestamp <= epochEnd)
             revert EpochNotExpired();
 
@@ -207,15 +189,20 @@ contract Controller {
 
         Vault insrVault = Vault(vaultsAddress[0]);
         Vault riskVault = Vault(vaultsAddress[1]);
+        
+        if(
+            vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0)
+            )
+            revert MarketDoesNotExist(marketIndex);
 
         if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
             revert EpochNotExist();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if(insrVault.idFinalTVL(epochEnd) != 0)
-            revert NotZeroTVL();
-        if(riskVault.idFinalTVL(epochEnd) != 0) 
-            revert NotZeroTVL();
+        if(insrVault.idEpochEnded(epochEnd))
+            revert EpochFinishedAlready();
+        if(riskVault.idEpochEnded(epochEnd)) 
+            revert EpochFinishedAlready();
 
         insrVault.endEpoch(epochEnd);
         riskVault.endEpoch(epochEnd);
@@ -226,8 +213,8 @@ contract Controller {
 
         VaultTVL memory tvl = VaultTVL(
             riskVault.idClaimTVL(epochEnd),
-            insrVault.idClaimTVL(epochEnd),
             riskVault.idFinalTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
             insrVault.idFinalTVL(epochEnd)
         );
 
@@ -246,10 +233,77 @@ contract Controller {
             getLatestPrice(insrVault.tokenInsured())
         );
     }
+    /** @notice Trigger epoch invalid when one vault has 0 TVL
+      * @param marketIndex Target market index
+      * @param epochEnd End of epoch set for market
+      */
+    function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
+        address[] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
 
-    /*//////////////////////////////////////////////////////////////
-                                ADMIN SETTINGS
-    //////////////////////////////////////////////////////////////*/
+        Vault insrVault = Vault(vaultsAddress[0]);
+        Vault riskVault = Vault(vaultsAddress[1]);
+
+        if(
+            vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0)
+            )
+            revert MarketDoesNotExist(marketIndex);
+
+        if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
+        if(block.timestamp < insrVault.idEpochBegin(epochEnd))
+            revert EpochNotStarted();
+
+        if(insrVault.idExists(epochEnd) == false || riskVault.idExists(epochEnd) == false)
+            revert EpochNotExist();
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if(insrVault.idEpochEnded(epochEnd))
+            revert EpochFinishedAlready();
+        if(riskVault.idEpochEnded(epochEnd)) 
+            revert EpochFinishedAlready();
+
+        //set claim TVL to 0 if total assets are 0
+        if(insrVault.totalAssets(epochEnd) == 0){
+            insrVault.endEpoch(epochEnd);
+            riskVault.endEpoch(epochEnd);
+
+            insrVault.setClaimTVL(epochEnd, 0);
+            riskVault.setClaimTVL(epochEnd, riskVault.idFinalTVL(epochEnd));
+
+            riskVault.setEpochNull(epochEnd);
+        }
+        else if(riskVault.totalAssets(epochEnd) == 0){
+            insrVault.endEpoch(epochEnd);
+            riskVault.endEpoch(epochEnd);
+
+            insrVault.setClaimTVL(epochEnd, insrVault.idFinalTVL(epochEnd) );
+            riskVault.setClaimTVL(epochEnd, 0);
+
+            insrVault.setEpochNull(epochEnd);
+        }
+        else revert VaultNotZeroTVL();
+
+        VaultTVL memory tvl = VaultTVL(
+            riskVault.idClaimTVL(epochEnd),
+            riskVault.idFinalTVL(epochEnd),
+            insrVault.idClaimTVL(epochEnd),
+            insrVault.idFinalTVL(epochEnd)
+        );
+
+        emit NullEpoch(
+            keccak256(
+                abi.encodePacked(
+                    marketIndex,
+                    insrVault.idEpochBegin(epochEnd),
+                    epochEnd
+                )
+            ),
+            tvl,
+            epochEnd,
+            block.timestamp
+        );
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
@@ -292,16 +346,20 @@ contract Controller {
             uint80 roundID,
             int256 price,
             ,
-            uint256 timeStamp,
+            ,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
         
-        if(priceFeed.decimals() != 18){
+        if(priceFeed.decimals() < 18){
             uint256 decimals = 10**(18-(priceFeed.decimals()));
             price = price * int256(decimals);
         }
-        else{
+        else if (priceFeed.decimals() == 18){
             price = price;
+        }
+        else{
+            uint256 decimals = 10**((priceFeed.decimals()-18));
+            price = price / int256(decimals);
         }
         
 
@@ -310,9 +368,6 @@ contract Controller {
 
         if(answeredInRound < roundID)
             revert RoundIDOutdated();
-
-        if(timeStamp == 0)
-            revert TimestampZero();
 
         return price;
     }

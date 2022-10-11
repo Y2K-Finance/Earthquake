@@ -12,6 +12,8 @@ import {FuzzHelper} from "./FuzzHelper.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author NexusFlip
+
 contract FuzzTest is FuzzHelper{
 
     function testFuzzDeposit(uint256 ethValue) public {
@@ -57,14 +59,6 @@ contract FuzzTest is FuzzHelper{
         vRisk.depositETH{value: ethValue * DEGEN_MULTIPLIER}(endEpoch, degen);
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == (ethValue * DEGEN_MULTIPLIER));
-        vm.stopPrank();
-    }
-
-    function testFuzzGetHashedIndex(uint256 index) public{
-        vm.startPrank(admin);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        bytes32 hashedIndex = rewardsFactory.getHashedIndex(index, beginEpoch);
-        assertEq(hashedIndex, keccak256(abi.encode(index, beginEpoch)));
         vm.stopPrank();
     }
 
@@ -115,7 +109,7 @@ contract FuzzTest is FuzzHelper{
         for (uint256 i = 1; i <= index; i++){
             vaultFactory.createNewMarket(DEFAULT_TEST_FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         }
-        rewardsFactory.createStakingRewards(index, endEpoch, REWARDS_DURATION, REWARD_RATE);
+        rewardsFactory.createStakingRewards(index, endEpoch);
         assertEq(vaultFactory.marketIndex(), index);
         vm.stopPrank();   
     }

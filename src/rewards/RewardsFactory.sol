@@ -4,9 +4,11 @@ pragma solidity 0.8.15;
 import {StakingRewards} from "./StakingRewards.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 import {Vault} from "../Vault.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RewardsFactory {
-    address public admin;
+/// @author MiguelBits
+
+contract RewardsFactory is Ownable {
     address public govToken;
     address public factory;
 
@@ -15,16 +17,7 @@ contract RewardsFactory {
     //////////////////////////////////////////////////////////////*/
 
     error MarketDoesNotExist(uint marketId);
-    error AddressNotAdmin();
     error EpochDoesNotExist();
-
-    /*//////////////////////////////////////////////////////////////
-                                 MAPPINGS
-    //////////////////////////////////////////////////////////////*/
-
-    //mapping(uint => mapping(uint => address[])) public marketIndex_epoch_StakingRewards; //Market Index, Epoch, Staking Rewards [0] = insrance, [1] = risk
-    // solhint-disable-next-line var-name-mixedcase
-    mapping(bytes32 => address[]) public hashedIndex_StakingRewards; //Hashed Index, Staking Rewards [0] = insrance, [1] = risk
 
     /*//////////////////////////////////////////////////////////////
                                   EVENTS
@@ -43,29 +36,14 @@ contract RewardsFactory {
         address riskFarm
     );
 
-    /*//////////////////////////////////////////////////////////////
-                                  MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Only admin addresses can call functions with this modifier
-      */
-    modifier onlyAdmin() {
-        if(msg.sender != admin)
-            revert AddressNotAdmin();
-        _;
-    }
-
     /** @notice Contract constructor
       * @param _govToken Governance token address
       * @param _factory VaultFactory address
-      * @param _admin Admin address
       */
     constructor(
         address _govToken,
-        address _factory,
-        address _admin
+        address _factory
     ) {
-        admin = _admin;
         govToken = _govToken;
         factory = _factory;
     }
@@ -80,9 +58,9 @@ contract RewardsFactory {
       * @return insr Insurance rewards address, first tuple address entry 
       * @return risk Risk rewards address, second tuple address entry 
       */
-    function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd, uint256 _rewardDuration, uint256 _rewardRate)
+    function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd)
         external
-        onlyAdmin
+        onlyOwner
         returns (address insr, address risk)
     {
         VaultFactory vaultFactory = VaultFactory(factory);
@@ -97,29 +75,19 @@ contract RewardsFactory {
             revert EpochDoesNotExist();
 
         StakingRewards insrStake = new StakingRewards(
-            admin,
-            admin,
+            owner(),
+            owner(),
             govToken,
             _insrToken,
-            _epochEnd,
-            _rewardDuration,
-            _rewardRate
+            _epochEnd
         );
         StakingRewards riskStake = new StakingRewards(
-            admin,
-            admin,
+            owner(),
+            owner(),
             govToken,
             _riskToken,
-            _epochEnd,
-            _rewardDuration,
-            _rewardRate
+            _epochEnd
         );
-
-        bytes32 hashedIndex = keccak256(abi.encode(_marketIndex, _epochEnd));
-        hashedIndex_StakingRewards[hashedIndex] = [
-            address(insrStake),
-            address(riskStake)
-        ];
 
         emit CreatedStakingReward(
             keccak256(
@@ -135,18 +103,5 @@ contract RewardsFactory {
         );
 
         return (address(insrStake), address(riskStake));
-    }
-
-    /** @notice Lookup hashed indexes
-      * @param _index Target index
-      * @param _epoch Target epoch
-      * @return hashedIndex hashed index
-      */
-    function getHashedIndex(uint256 _index, uint256 _epoch)
-        public
-        pure
-        returns (bytes32 hashedIndex)
-    {
-        return keccak256(abi.encode(_index, _epoch));
     }
 }

@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
 import {Vault} from "../src/Vault.sol";
-import {VaultFactory} from "../src/VaultFactory.sol";
+import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol"; 
 import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
@@ -14,6 +14,8 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author MiguelBits
+/// @author NexusFlip
 
 contract Helper is Test {
 
@@ -21,6 +23,7 @@ contract Helper is Test {
     Controller controller;
     GovToken govToken;
     RewardsFactory rewardsFactory;
+    TimeLock timelocker;
 
     address WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
@@ -47,14 +50,12 @@ contract Helper is Test {
     address chad = address(4);
     address degen = address(5);
 
-    uint256 immutable FEE = 55;
+    uint256 immutable FEE = 5;
     uint256 immutable SINGLE_MARKET_INDEX = 1;
     uint256 immutable ALL_MARKETS_INDEX = 15;
     uint256 immutable MARKET_OVERFLOW = 3;
     uint256 immutable NULL_VALUE = 0;
     uint256 immutable NULL_BALANCE = 0;
-    uint256 immutable REWARDS_DURATION = 10 days;
-    uint256 immutable REWARD_RATE = 10;
     uint256 immutable AMOUNT = 10 ether;
     uint256 immutable BEGIN_DAYS = 2 days;
     uint256 immutable END_DAYS = 30 days;
@@ -77,17 +78,18 @@ contract Helper is Test {
     uint256 beginEpoch;
     
     function setUp() public {
-        vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory),admin, arbitrum_sequencer);
-
-        vm.prank(admin);
+        vm.startPrank(admin);
+        vaultFactory = new VaultFactory(admin,WETH, admin);
+        controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.setController(address(controller));
+        timelocker = vaultFactory.timelocker();
 
         endEpoch = block.timestamp + END_DAYS;
         beginEpoch = block.timestamp + BEGIN_DAYS;
 
         govToken = new GovToken();
-        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory), admin);
+        rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
+        vm.stopPrank();
 
     }
 
@@ -109,13 +111,11 @@ contract Helper is Test {
 
         //ALICE hedge DEPOSIT
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, AMOUNT);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
         vm.stopPrank();
 
         //BOB hedge DEPOSIT
         vm.startPrank(bob);
-        ERC20(WETH).approve(hedge, AMOUNT * BOB_MULTIPLIER);
         vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
 
         assertTrue(vHedge.balanceOf(bob,endEpoch) == 20 ether);
@@ -126,7 +126,6 @@ contract Helper is Test {
 
         //CHAD risk DEPOSIT
         vm.startPrank(chad);
-        ERC20(WETH).approve(risk, AMOUNT * CHAD_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
@@ -134,7 +133,6 @@ contract Helper is Test {
 
         //DEGEN risk DEPOSIT
         vm.startPrank(degen);
-        ERC20(WETH).approve(risk, AMOUNT * DEGEN_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
@@ -142,6 +140,7 @@ contract Helper is Test {
 
         vRisk.totalAssets(endEpoch);
         emit log_named_uint("vRisk.totalAssets(endEpoch)", vRisk.totalAssets(endEpoch));
+        emit log_named_uint("FEE value", vRisk.calculateWithdrawalFeeValue(AMOUNT, endEpoch));
     }
 
     function DepositDepeg() public {
@@ -163,7 +162,6 @@ contract Helper is Test {
 
         //ALICE hedge DEPOSIT
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, AMOUNT);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == (AMOUNT));
@@ -171,7 +169,6 @@ contract Helper is Test {
 
         //BOB hedge DEPOSIT
         vm.startPrank(bob);
-        ERC20(WETH).approve(hedge, AMOUNT * BOB_MULTIPLIER);
         vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
 
         assertTrue(vHedge.balanceOf(bob,endEpoch) == (AMOUNT * BOB_MULTIPLIER));
@@ -179,7 +176,6 @@ contract Helper is Test {
 
         //CHAD risk DEPOSIT
         vm.startPrank(chad);
-        ERC20(WETH).approve(risk, AMOUNT * CHAD_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
@@ -187,7 +183,6 @@ contract Helper is Test {
 
         //DEGEN risk DEPOSIT
         vm.startPrank(degen);
-        ERC20(WETH).approve(risk, AMOUNT * DEGEN_MULTIPLIER);
         vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
@@ -213,6 +208,9 @@ contract Helper is Test {
 
         controller.triggerEndEpoch(_index, endEpoch);
 
+        emit log_named_uint("vHedge.idFinalTVL(endEpoch)", vHedge.idFinalTVL(endEpoch));
+        emit log_named_uint("vRisk.idFinalTVL(endEpoch) ", vRisk.idFinalTVL(endEpoch));
+        emit log_named_uint("vRisk.idClaimTVL(endEpoch) ", vRisk.idClaimTVL(endEpoch));
         assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
@@ -224,8 +222,6 @@ contract Helper is Test {
 
         Vault vHedge = Vault(hedge);
         Vault vRisk = Vault(risk);
-
-        vm.warp(endEpoch + 1 days);
 
         emit log_named_int("strike price", vHedge.strikePrice());
         emit log_named_int("oracle price", controller.getLatestPrice(_token));
@@ -241,7 +237,7 @@ contract Helper is Test {
                            WITHDRAW functions
     //////////////////////////////////////////////////////////////*/
 
-    function Withdraw() public {
+    function WithdrawEndEpoch() public {
 
         address hedge = vaultFactory.getVaults(1)[0];
         address risk = vaultFactory.getVaults(1)[1];
@@ -258,7 +254,6 @@ contract Helper is Test {
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_BALANCE);
         uint256 entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
 
         vm.stopPrank();
 
@@ -268,8 +263,6 @@ contract Helper is Test {
         vHedge.withdraw(endEpoch, assets, bob, bob);
         
         assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_BALANCE);
-        entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
 
@@ -282,7 +275,7 @@ contract Helper is Test {
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -293,7 +286,7 @@ contract Helper is Test {
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(degen));
 
         vm.stopPrank();
 

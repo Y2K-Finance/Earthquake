@@ -19,6 +19,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "./Owned.sol";
 
 // https://docs.synthetix.io/contracts/source/contracts/stakingrewards
+
 contract StakingRewards is
     IStakingRewards,
     RewardsDistributionRecipient,
@@ -74,16 +75,13 @@ contract StakingRewards is
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _epochEnd,
-        uint256 _rewardsDuration,
-        uint256 _rewardRate
+        uint256 _epochEnd
     ) Owned(_owner) {
         rewardsToken = ERC20(_rewardsToken);
         stakingToken = IERC1155(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
         id = _epochEnd;
-        rewardsDuration = _rewardsDuration;
-        rewardRate = _rewardRate;
+        rewardsDuration = _epochEnd - block.timestamp;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */

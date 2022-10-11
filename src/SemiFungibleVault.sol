@@ -9,6 +9,9 @@ import {
 } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
+/// @author MiguelBits
+/// @author SlumDog
+
 abstract contract SemiFungibleVault is ERC1155Supply {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -30,14 +33,12 @@ abstract contract SemiFungibleVault is ERC1155Supply {
       * @param owner receiver who will own of the tokens representing this deposit
       * @param id Vault id
       * @param assets Amount of owner assets to deposit into vault
-      * @param shares Amount of shares to mint for owner
       */
     event Deposit(
         address caller,
         address indexed owner,
         uint256 indexed id,
-        uint256 assets,
-        uint256 shares
+        uint256 assets
     );
 
     /** @notice Withdraw from vault when event is emitted
@@ -92,7 +93,7 @@ abstract contract SemiFungibleVault is ERC1155Supply {
 
         _mint(receiver, id, assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assets, assets);
+        emit Deposit(msg.sender, receiver, id, assets);
     }
 
     /** @notice Triggers withdraw from vault and burns receivers' shares
@@ -128,7 +129,9 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /**@notice Returns total assets for token
      * @param  _id uint256 token id of token
      */
-    function totalAssets(uint256 _id) public view virtual returns (uint256);
+    function totalAssets(uint256 _id) public view virtual returns (uint256){
+        return totalSupply(_id);
+    }
 
     /**
         @notice Shows assets conversion output from withdrawing assets
