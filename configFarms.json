@@ -1,22 +1,18 @@
 {
-    "1":{
-        "whenDeploy": "out 11 2022 00:00:00",
-        "epochEnd":1665802423, //end insurance date      
-        "rewardsAmount": "10 ether"  
+    "1":[{
+        "epochEnd":1665802423,
+        "rewardsAmount": 10000000000000000000  
 
-    },
+    }],
     
-    "2":{
-        "whenDeploy": "out 11 2022 00:00:00",
-        "epochEnd":1665802423, //end insurance date
-        "rewardsAmount": "10 ether"  
-    },
+    "2":[{
+        "epochEnd":1665802423,
+        "rewardsAmount": 10000000000000000000  
+    }],
 
-    "3":{
-        "whenDeploy": "out 11 2022 00:00:00",
-        "epochEnd":1665802423, //end insurance date
-        "rewardsAmount": "10 ether"  
-    }
-
+    "3":[{
+        "epochEnd":1665802423,
+        "rewardsAmount": 10000000000000000000  
+        }]
 }
 
