@@ -61,23 +61,23 @@ contract MaintainScript is Script {
 
         //USDC
         vaultFactory.deployMoreAssets(1, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(1, epochEnd, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(1, epochEnd);
 
         vaultFactory.deployMoreAssets(2, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(2, epochEnd, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(2, epochEnd);
 
         vaultFactory.deployMoreAssets(3, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(3, epochEnd, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(3, epochEnd);
 
         //DAI
         vaultFactory.deployMoreAssets(4, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(4, epochEnd, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(4, epochEnd);
 
         vaultFactory.deployMoreAssets(5, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(5, epochEnd, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(5, epochEnd);
 
         vaultFactory.deployMoreAssets(6, epochBegin, epochEnd, FEE);
-        rewardsFactory.createStakingRewards(6, epochEnd, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(6, epochEnd);
     }
 
 }

@@ -107,7 +107,7 @@ contract FuzzTest is FuzzHelper{
         for (uint256 i = 1; i <= index; i++){
             vaultFactory.createNewMarket(DEFAULT_TEST_FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         }
-        rewardsFactory.createStakingRewards(index, endEpoch, REWARDS_DURATION, REWARD_RATE);
+        rewardsFactory.createStakingRewards(index, endEpoch);
         assertEq(vaultFactory.marketIndex(), index);
         vm.stopPrank();   
     }

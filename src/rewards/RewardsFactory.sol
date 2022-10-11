@@ -58,7 +58,7 @@ contract RewardsFactory is Ownable {
       * @return insr Insurance rewards address, first tuple address entry 
       * @return risk Risk rewards address, second tuple address entry 
       */
-    function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd, uint256 _rewardDuration, uint256 _rewardRate)
+    function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd)
         external
         onlyOwner
         returns (address insr, address risk)
@@ -79,18 +79,14 @@ contract RewardsFactory is Ownable {
             owner(),
             govToken,
             _insrToken,
-            _epochEnd,
-            _rewardDuration,
-            _rewardRate
+            _epochEnd
         );
         StakingRewards riskStake = new StakingRewards(
             owner(),
             owner(),
             govToken,
             _riskToken,
-            _epochEnd,
-            _rewardDuration,
-            _rewardRate
+            _epochEnd
         );
 
         emit CreatedStakingReward(

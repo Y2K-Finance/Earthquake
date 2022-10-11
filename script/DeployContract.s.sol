@@ -79,119 +79,119 @@ contract DeployScript is Script {
         // Create FRAX market
         //index 1
         vaultFactory.createNewMarket(FEE, tokenFRAX, depegAAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        rewardsFactory.createStakingRewards(1, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(1, endEpoch);
 
         //index 2
         vaultFactory.createNewMarket(FEE, tokenFRAX, depegBBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*");
-        rewardsFactory.createStakingRewards(2, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(2, endEpoch);
 
         //index 3
         vaultFactory.createNewMarket(FEE, tokenFRAX, depegCCC, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_95*");
-        rewardsFactory.createStakingRewards(3, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(3, endEpoch);
 
         // Create MIM market
         //index 4
         vaultFactory.createNewMarket(FEE, tokenMIM, depegAAA, beginEpoch, endEpoch, oracleMIM, "y2kMIM_99*");
-        rewardsFactory.createStakingRewards(4, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(4, endEpoch);
 
         //index 5
         vaultFactory.createNewMarket(FEE, tokenMIM, depegBBB, beginEpoch, endEpoch, oracleMIM, "y2kMIM_97*");
-        rewardsFactory.createStakingRewards(5, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(5, endEpoch);
 
         //index 6
         vaultFactory.createNewMarket(FEE, tokenMIM, depegCCC, beginEpoch, endEpoch, oracleMIM, "y2kMIM_95*");
-        rewardsFactory.createStakingRewards(6, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(6, endEpoch);
 
         // Create FEI market
         //index 7
         vaultFactory.createNewMarket(FEE, tokenFEI, depegAAA, beginEpoch, endEpoch, oracleFEI, "y2kFEI_99*");
-        rewardsFactory.createStakingRewards(7, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(7, endEpoch);
 
         //index 8
         vaultFactory.createNewMarket(FEE, tokenFEI, depegBBB, beginEpoch, endEpoch, oracleFEI, "y2kFEI_97*");
-        rewardsFactory.createStakingRewards(8, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(8, endEpoch);
 
         //index 9
         vaultFactory.createNewMarket(FEE, tokenFEI, depegCCC, beginEpoch, endEpoch, oracleFEI, "y2kFEI_95*");
-        rewardsFactory.createStakingRewards(9, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(9, endEpoch);
 
         // Create USDC market
         //index 10
         vaultFactory.createNewMarket(FEE, tokenUSDC, depegAAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*");
-        rewardsFactory.createStakingRewards(10, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(10, endEpoch);
 
         //index 11
         vaultFactory.createNewMarket(FEE, tokenUSDC, depegBBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*");
-        rewardsFactory.createStakingRewards(11, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(11, endEpoch);
 
         //index 12
         vaultFactory.createNewMarket(FEE, tokenUSDC, depegCCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*");
-        rewardsFactory.createStakingRewards(12, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(12, endEpoch);
 
         // Create DAI market
         //index 13
         vaultFactory.createNewMarket(FEE, tokenDAI, depegAAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*");
-        rewardsFactory.createStakingRewards(13, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(13, endEpoch);
 
         //index 14
         vaultFactory.createNewMarket(FEE, tokenDAI, depegBBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*");
-        rewardsFactory.createStakingRewards(14, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(14, endEpoch);
 
         //index 15
         vaultFactory.createNewMarket(FEE, tokenDAI, depegCCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*");
-        rewardsFactory.createStakingRewards(15, endEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(15, endEpoch);
 
         //deploy More Assets
 
         // Deploy more FRAX market
         vaultFactory.deployMoreAssets(1, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(1, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(1, nextEpoch);
 
         vaultFactory.deployMoreAssets(2, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(2, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(2, nextEpoch);
 
         vaultFactory.deployMoreAssets(3, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(3, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(3, nextEpoch);
 
         // Deploy more MIM market
         vaultFactory.deployMoreAssets(4, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(4, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(4, nextEpoch);
 
         vaultFactory.deployMoreAssets(5, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(5, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(5, nextEpoch);
 
         vaultFactory.deployMoreAssets(6, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(6, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(6, nextEpoch);
 
         // Deploy more FEI market
         vaultFactory.deployMoreAssets(7, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(7, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(7, nextEpoch);
 
         vaultFactory.deployMoreAssets(8, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(8, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(8, nextEpoch);
 
         vaultFactory.deployMoreAssets(9, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(9, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(9, nextEpoch);
 
         // Deploy more USDC market
         vaultFactory.deployMoreAssets(10, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(10, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(10, nextEpoch);
 
         vaultFactory.deployMoreAssets(11, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(11, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(11, nextEpoch);
         
         vaultFactory.deployMoreAssets(12, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(12, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(12, nextEpoch);
 
         // Deploy more DAI market
         vaultFactory.deployMoreAssets(13, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(13, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(13, nextEpoch);
 
         vaultFactory.deployMoreAssets(14, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(14, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(14, nextEpoch);
 
         vaultFactory.deployMoreAssets(15, nextBegin, nextEpoch, FEE);
-        rewardsFactory.createStakingRewards(15, nextEpoch, rewardsDuration, rewardRate);
+        rewardsFactory.createStakingRewards(15, nextEpoch);
 
         vm.stopBroadcast();
     }

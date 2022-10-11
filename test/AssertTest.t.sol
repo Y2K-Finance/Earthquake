@@ -533,7 +533,7 @@ contract AssertTest is Helper {
     // function testMintGovToken() public {
     //     vm.startPrank(admin);
     //     vaultFactory.createNewMarket(NULL_BALANCE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
-    //     rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+    //     rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
     //     govToken.moneyPrinterGoesBrr(alice);
     //     uint256 aliceBalance = ERC20(address(govToken)).balanceOf(alice);
     //     emit log_named_int("Alice Balance", int256(aliceBalance));
@@ -550,10 +550,10 @@ contract AssertTest is Helper {
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
         //to-do:expect emit CreatedStakingReward
-        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
         //to-do: assert if rewards exist and != 0
-        (,address firstAdd) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
-        (address secondAdd,) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+        (,address firstAdd) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
+        (address secondAdd,) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
         assert((firstAdd != address(0)) && (secondAdd != address(0)));
         vm.stopPrank();
 
@@ -586,9 +586,9 @@ contract AssertTest is Helper {
 
         //to-do:change counter to non static variable
         for (uint256 i = SINGLE_MARKET_INDEX; i <= ALL_MARKETS_INDEX; i++){
-            rewardsFactory.createStakingRewards(i, endEpoch, REWARDS_DURATION, REWARD_RATE);
-            (,address firstAddLoop) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
-            (address secondAddLoop,) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+            rewardsFactory.createStakingRewards(i, endEpoch);
+            (,address firstAddLoop) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
+            (address secondAddLoop,) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
             assert(((firstAddLoop != address(0))) && (secondAddLoop != address(0)));
         }
         vm.stopPrank();

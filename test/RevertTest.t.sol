@@ -518,7 +518,7 @@ contract RevertTest is Helper {
         //expecting revert
         vm.startPrank(alice);
         //vm.expectRevert(RewardsFactory.AddressNotAdmin.selector);
-        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch, REWARDS_DURATION, REWARD_RATE);
+        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
         vm.stopPrank();
     }
 
@@ -530,7 +530,7 @@ contract RevertTest is Helper {
         //expecting revert
         vm.startPrank(admin);
         vm.expectRevert(RewardsFactory.EpochDoesNotExist.selector);
-        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch + 2 days, REWARDS_DURATION, REWARD_RATE);
+        rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch + 2 days);
         vm.stopPrank();
     }
 
