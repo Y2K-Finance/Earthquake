@@ -116,7 +116,7 @@ contract ConfigScript is Script {
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
         // create market 
-        vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, "y2kUSDC_99*");
+        vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, farms.epochEnd);
         //sending gov tokens to farms
         y2k.approve(address(rHedge), farms.rewardsAmount);
@@ -130,7 +130,6 @@ contract ConfigScript is Script {
 
         vm.stopBroadcast();
     }
-
     function getConfigAddresses() public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configAddresses.json");
@@ -162,5 +161,4 @@ contract ConfigScript is Script {
         //console2.log("ConfigFarms ", rawConstants.rewardsAmount);
         return rawConstants;
     }
-
 }
