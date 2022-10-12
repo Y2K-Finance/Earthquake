@@ -7,6 +7,7 @@ import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
 import "../src/rewards/RewardsFactory.sol";
 import "../test/Y2Ktest.sol";
+import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author MiguelBits
@@ -78,11 +79,14 @@ contract ConfigScript is Script {
         console2.log("\n");
 
         vm.startBroadcast();
+        WETH fakeWeth = new WETH();
+
+        console2.log("Address fakeWeth", address(fakeWeth));
         console2.log("Broadcast sender", msg.sender);
         console2.log("Broadcast admin ", addresses.admin);
         console2.log("Broadcast policy", addresses.policy);
         //start setUp();
-        vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
+        vaultFactory = new VaultFactory(addresses.treasury, address(fakeWeth), addresses.policy);
         controller = new Controller(address(vaultFactory), addresses.arbitrum_sequencer);
 
         vaultFactory.setController(address(controller));
