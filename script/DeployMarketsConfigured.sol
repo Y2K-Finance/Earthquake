@@ -11,10 +11,9 @@ import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author MiguelBits
-
-//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
-contract ConfigScript is Script {
-    using stdJson for string;
+//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --verify --etherscan-api-key $arbiscanApiKey --slow -vv
+contract ConfigMarketsScript is Script {
+ using stdJson for string;
 
     struct ConfigAddresses {
         address admin;
@@ -51,62 +50,22 @@ contract ConfigScript is Script {
         uint256 rewardsAmount;
     }
 
-    VaultFactory vaultFactory;
-    Controller controller;
-    RewardsFactory rewardsFactory;
-    Y2K y2k;
+    VaultFactory vaultFactory = VaultFactory(0x3DcF49D27388E4BCF7AE74D75AFA987034Bd7ce0);
+    Controller controller = Controller(0x77fe110716E6B5D1904C7E3d1C49aB3C58Ef678B);
+    RewardsFactory rewardsFactory = RewardsFactory(0x9dC6821AE74FaAE71Dfd1016f14eAdcA7823Faf4);
+    Y2K y2k = Y2K(0x4070a276F99A4A38E0b3046183fEc8F33923716e);
+
+    uint index = 2;
 
     function run() public {
+        vm.startBroadcast();
 
         ConfigAddresses memory addresses = getConfigAddresses();
-        console2.log("Address admin", addresses.admin);
-        console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
-        console2.log("Address oracleDAI", addresses.oracleDAI);
-        console2.log("Address oracleFEI", addresses.oracleFEI);
-        console2.log("Address oracleFRAX", addresses.oracleFRAX);
-        console2.log("Address oracleMIM", addresses.oracleMIM);
-        console2.log("Address oracleUSDC", addresses.oracleUSDC);
-        console2.log("Address oracleUSDT", addresses.oracleUSDT);
-        console2.log("Address policy", addresses.policy);
-        console2.log("Address tokenDAI", addresses.tokenDAI);
-        console2.log("Address tokenFEI", addresses.tokenFEI);
-        console2.log("Address tokenFRAX", addresses.tokenFRAX);
-        console2.log("Address tokenMIM", addresses.tokenMIM);
-        console2.log("Address tokenUSDC", addresses.tokenUSDC);
-        console2.log("Address tokenUSDT", addresses.tokenUSDT);
-        console2.log("Address treasury", addresses.treasury);
-        console2.log("Address weth", addresses.weth);
-        console2.log("\n");
-
-        vm.startBroadcast();
-        WETH fakeWeth = new WETH();
-        fakeWeth.mint(msg.sender);
-
-        console2.log("Address fakeWeth", address(fakeWeth));
-        console2.log("Broadcast sender", msg.sender);
-        console2.log("Broadcast admin ", addresses.admin);
-        console2.log("Broadcast policy", addresses.policy);
-        //start setUp();
-        vaultFactory = new VaultFactory(addresses.treasury, address(fakeWeth), addresses.policy);
-        controller = new Controller(address(vaultFactory), addresses.arbitrum_sequencer);
-
-        vaultFactory.setController(address(controller));
-
-        y2k = new Y2K(5000 ether, msg.sender);
-
-        rewardsFactory = new RewardsFactory(address(y2k), address(vaultFactory));
-        //stop setUp();
-                        
-        console2.log("Controller address", address(controller));
-        console2.log("Vault Factory address", address(vaultFactory));
-        console2.log("Rewards Factory address", address(rewardsFactory));
-        console2.log("Y2K token address", address(y2k));
-        console2.log("\n");
-        //INDEX 1
-        //get markets config
-        uint index = 1;
         ConfigMarket memory markets = getConfigMarket(index);
         ConfigFarm memory farms = getConfigFarm(index);
+
+        //INDEX
+        //get markets config
         console2.log("Market name", markets.name);
         console2.log("Adress token", addresses.tokenFRAX);
         console2.log("Market token", markets.token);
@@ -133,7 +92,8 @@ contract ConfigScript is Script {
 
         vm.stopBroadcast();
     }
-    function getConfigAddresses() public returns (ConfigAddresses memory) {
+
+     function getConfigAddresses() public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configAddresses.json");
         string memory json = vm.readFile(path);
