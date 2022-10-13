@@ -126,7 +126,13 @@ contract ConfigScript is Script {
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
+        //pause getRewards
+        StakingRewards(rHedge).pause();
+        StakingRewards(rRisk).pause();
         // stop create market
+
+        //transfer ownership
+        vaultFactory.transferOwnership(addresses.admin);
 
         vm.stopBroadcast();
     }
