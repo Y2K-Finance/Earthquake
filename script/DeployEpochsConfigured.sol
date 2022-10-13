@@ -46,7 +46,6 @@ contract ConfigEpochsScript is Script {
     }
 
     struct ConfigFarm {
-        uint256 epochEnd;
         uint256 rewardsAmount;
     }
 
@@ -81,7 +80,7 @@ contract ConfigEpochsScript is Script {
         console2.log("\n");
         // create market 
         vaultFactory.deployMoreAssets(index, markets.epochBegin, markets.epochEnd, markets.epochFee);
-        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, farms.epochEnd);
+        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
         y2k.transfer(rHedge, farms.rewardsAmount);
         y2k.transfer(rRisk, farms.rewardsAmount);
