@@ -88,7 +88,6 @@ contract StakingRewards is
     function stake(uint256 amount)
         external
         nonReentrant
-        whenNotPaused
         updateReward(msg.sender)
     {
         require(amount != 0, "Cannot stake 0");
@@ -127,7 +126,7 @@ contract StakingRewards is
         emit Withdrawn(msg.sender, id, amount);
     }
 
-    function getReward() public nonReentrant updateReward(msg.sender) {
+    function getReward() public nonReentrant whenNotPaused updateReward(msg.sender) {
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
@@ -227,5 +226,13 @@ contract StakingRewards is
         );
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(rewardsDuration);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }
