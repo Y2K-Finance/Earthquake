@@ -599,11 +599,14 @@ contract AssertTest is Helper {
 
     function testPauseRewards() public {
         vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
-        rewardsFactory.PauseRewards(rHedge, rRisk);
 
-        assert(StakingRewards(rHedge).paused() == true);
-        assert(StakingRewards(rRisk).paused() == true);
+        StakingRewards(rHedge).pause();
+        StakingRewards(rRisk).pause();
+        
+        assertTrue(StakingRewards(rHedge).paused() == true);
+        assertTrue(StakingRewards(rRisk).paused() == true);
         vm.stopPrank();
     }
 
@@ -738,6 +741,7 @@ contract AssertTest is Helper {
     function testChangeOwnerFactory() public {
         vm.startPrank(admin);
         vaultFactory.transferOwnership(bob);
+        assertTrue(vaultFactory.owner() == bob);
     }
 
     
