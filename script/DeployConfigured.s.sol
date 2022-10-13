@@ -80,6 +80,7 @@ contract ConfigScript is Script {
 
         vm.startBroadcast();
         WETH fakeWeth = new WETH();
+        fakeWeth.mint(msg.sender);
 
         console2.log("Address fakeWeth", address(fakeWeth));
         console2.log("Broadcast sender", msg.sender);
