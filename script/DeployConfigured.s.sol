@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author MiguelBits
 
-//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
+//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL  --private-key $PRIVATE_KEY --etherscan-api-key $arbiscanApiKey --verify --broadcast -vv
 contract ConfigScript is Script {
     using stdJson for string;
 

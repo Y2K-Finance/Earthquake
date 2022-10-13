@@ -104,4 +104,9 @@ contract RewardsFactory is Ownable {
 
         return (address(insrStake), address(riskStake));
     }
+
+    function PauseRewards(address _rHedge, address _rRisk) external onlyOwner {
+        StakingRewards(_rHedge).pause();
+        StakingRewards(_rRisk).pause();
+    }
 }

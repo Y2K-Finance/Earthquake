@@ -6,6 +6,7 @@ import {Vault} from "../src/Vault.sol";
 import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol";
 import {PegOracle} from "../src/oracles/PegOracle.sol";
+import {StakingRewards} from "../src/rewards/StakingRewards.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {Helper} from "./Helper.sol";
@@ -596,11 +597,10 @@ contract AssertTest is Helper {
     
     }
 
-    function testPause() public {
+    function testPauseRewards() public {
         vm.startPrank(admin);
-        (address rHedge, rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
-        StakingRewards(rHedge).pause();
-        StakingRewards(rRisk).pause();
+        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
+        rewardsFactory.PauseRewards(rHedge, rRisk);
 
         assert(StakingRewards(rHedge).paused() == true);
         assert(StakingRewards(rRisk).paused() == true);
@@ -733,6 +733,11 @@ contract AssertTest is Helper {
         vHedge.withdraw(endEpoch, 10 ether, bob, alice);
         assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
         vm.stopPrank();
+    }
+
+    function testChangeOwnerFactory() public {
+        vm.startPrank(admin);
+        vaultFactory.transferOwnership(bob);
     }
 
     
