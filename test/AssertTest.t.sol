@@ -596,6 +596,16 @@ contract AssertTest is Helper {
     
     }
 
+    function testPause() public {
+        vm.startPrank(admin);
+        (address rHedge, rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
+        StakingRewards(rHedge).pause();
+        StakingRewards(rRisk).pause();
+
+        assert(StakingRewards(rHedge).paused() == true);
+        assert(StakingRewards(rRisk).paused() == true);
+        vm.stopPrank();
+    }
 
     /*//////////////////////////////////////////////////////////////
                            PEGORACLE functions
