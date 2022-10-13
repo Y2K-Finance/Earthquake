@@ -104,22 +104,22 @@ contract ConfigMarketsScript is Script {
         return rawConstants;
     }
 
-    function getConfigMarket(uint256 index) public returns (ConfigMarket memory) {
+    function getConfigMarket(uint256 _index) public returns (ConfigMarket memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configMarkets.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".",Strings.toString(_index), "[0]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
         //console2.log("ConfigMarkets ", rawConstants.name);
         return rawConstants;
     }
 
-    function getConfigFarm(uint256 index) public returns (ConfigFarm memory) {
+    function getConfigFarm(uint256 _index) public returns (ConfigFarm memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configFarms.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".",Strings.toString(_index), "[0]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigFarm memory rawConstants = abi.decode(transactionDetails, (ConfigFarm));
         //console2.log("ConfigFarms ", rawConstants.rewardsAmount);
