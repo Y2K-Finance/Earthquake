@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author MiguelBits
 //forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --verify --etherscan-api-key $arbiscanApiKey --slow -vv
-contract ConfigMarketsScript is Script {
+contract ConfigEpochsScript is Script {
  using stdJson for string;
 
     struct ConfigAddresses {
@@ -55,7 +55,7 @@ contract ConfigMarketsScript is Script {
     RewardsFactory rewardsFactory = RewardsFactory(0x9dC6821AE74FaAE71Dfd1016f14eAdcA7823Faf4);
     Y2K y2k = Y2K(0x4070a276F99A4A38E0b3046183fEc8F33923716e);
 
-    uint index = 3;
+    uint index = 2;
 
     function run() public {
         vm.startBroadcast();
@@ -66,7 +66,6 @@ contract ConfigMarketsScript is Script {
 
         //INDEX
         //get markets config
-        console2.log("Market index", index);
         console2.log("Market name", markets.name);
         console2.log("Adress token", addresses.tokenFRAX);
         console2.log("Market token", markets.token);
@@ -81,7 +80,7 @@ contract ConfigMarketsScript is Script {
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
         // create market 
-        vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
+        vaultFactory.deployMoreAssets(index, markets.epochBegin, markets.epochEnd, markets.epochFee);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, farms.epochEnd);
         //sending gov tokens to farms
         y2k.transfer(rHedge, farms.rewardsAmount);
