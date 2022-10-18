@@ -11,7 +11,7 @@ import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author MiguelBits
-//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --verify --etherscan-api-key $arbiscanApiKey --slow -vv
+//forge script ConfigEpochsScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 contract ConfigEpochsScript is Script {
  using stdJson for string;
 
