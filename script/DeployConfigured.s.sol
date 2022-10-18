@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
-import "../src/rewards/RewardsFactory.sol";
+import "../src/rewards/PausableRewardsFactory.sol";
 import "../test/Y2Ktest.sol";
 import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
