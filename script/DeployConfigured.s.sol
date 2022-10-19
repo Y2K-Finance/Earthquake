@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
+//TODO change this after deploy  y2k token
 import "../src/rewards/PausableRewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -15,6 +16,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract ConfigScript is Script {
     using stdJson for string;
+
+    uint totalSupplied = 1000000000000000000000000000;
 
     struct ConfigAddresses {
         address admin;
@@ -89,7 +92,7 @@ contract ConfigScript is Script {
 
         vaultFactory.setController(address(controller));
 
-        y2k = new Y2K(5000 ether, msg.sender);
+        y2k = new Y2K(totalSupplied, msg.sender);
 
         rewardsFactory = new RewardsFactory(address(y2k), address(vaultFactory));
         //stop setUp();
@@ -113,7 +116,6 @@ contract ConfigScript is Script {
         console2.log("Market epoch begin", markets.epochBegin);
         console2.log("Market epoch   end", markets.epochEnd);
         console2.log("Market epoch fee", markets.epochFee);
-        console2.log("Farm epoch end", farms.epochEnd);
         console2.log("Farm rewards amount", farms.rewardsAmount);
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
@@ -126,12 +128,6 @@ contract ConfigScript is Script {
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
-
-        // stop create market
-
-        //pause getRewards
-        StakingRewards(rHedge).pause();
-        StakingRewards(rRisk).pause();
         // stop create market
 
         //transfer ownership

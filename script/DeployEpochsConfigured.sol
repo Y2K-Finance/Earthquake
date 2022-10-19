@@ -74,7 +74,6 @@ contract ConfigEpochsScript is Script {
         console2.log("Market epoch begin", markets.epochBegin);
         console2.log("Market epoch   end", markets.epochEnd);
         console2.log("Market epoch fee", markets.epochFee);
-        console2.log("Farm epoch end", farms.epochEnd);
         console2.log("Farm rewards amount", farms.rewardsAmount);
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
