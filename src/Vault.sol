@@ -41,7 +41,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     address public controller;
 
     uint256[] public epochs;
-    uint256 public timewindow;
 
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
@@ -89,7 +88,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /** @notice You can only call functions that use this modifier before the current epoch has started
       */
     modifier epochHasNotStarted(uint256 id) {
-        if(block.timestamp > idEpochBegin[id] - timewindow)
+        if(block.timestamp > idEpochBegin[id])
             revert EpochAlreadyStarted();
         _;
     }
@@ -139,7 +138,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         strikePrice = _strikePrice;
         factory = msg.sender;
         controller = _controller;
-        timewindow = 1;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -294,13 +292,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         treasury = _treasury;
     }
 
-    /**
-    @notice Factory function, changes vault time window
-    @param _timewindow New vault time window
-     */
-    function changeTimewindow(uint256 _timewindow) public onlyFactory{
-        timewindow = _timewindow;
-    }
 
     /**
     @notice Factory function, changes controller address

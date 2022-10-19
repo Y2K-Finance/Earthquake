@@ -157,10 +157,6 @@ contract TimeLock {
         if(compareStringsbyBytes(_func, "changeTreasury")){
             VaultFactory(_target).changeTreasury(_to, _index);
         }
-
-        else if(compareStringsbyBytes(_func, "changeTimewindow")){
-            VaultFactory(_target).changeTimewindow(_index, _data);
-        }
         
         else if(compareStringsbyBytes(_func, "changeController")){
             VaultFactory(_target).changeController(_index, _to);
@@ -344,12 +340,6 @@ contract VaultFactory is Ownable {
       */ 
     event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
 
-    /** @notice Vault time window is changed when event is emitted
-      * @param _marketIndex Target market index
-      * @param _timeWindow Target time window
-      */ 
-    event changedTimeWindow(uint256 indexed _marketIndex, uint256 _timeWindow);
-    
     /** @notice Controller is changed when event is emitted
       * @param _marketIndex Target market index
       * @param controller Target controller address
@@ -557,23 +547,6 @@ contract VaultFactory is Ownable {
         emit changedTreasury(_treasury, _marketIndex);
     }
 
-    /**
-    @notice Admin function, changes vault time window
-    @param _marketIndex Target market index
-    @param  _timewindow New time window
-     */
-    function changeTimewindow(uint256 _marketIndex, uint256 _timewindow)
-        public
-        onlyTimeLocker
-    {
-        address[] memory vaults = indexVaults[_marketIndex];
-        Vault insr = Vault(vaults[0]);
-        Vault risk = Vault(vaults[1]);
-        insr.changeTimewindow(_timewindow);
-        risk.changeTimewindow(_timewindow);
-
-        emit changedTimeWindow(_marketIndex, _timewindow);
-    }
 
     /**
     @notice Admin function, changes controller address

@@ -494,8 +494,6 @@ contract AssertTest is Helper {
 
         // test queue treasury
         timelocker.queue(factory,"changeTreasury",index,0,newValue,address(0), timestamper);
-        // test change timewindow
-        timelocker.queue(factory,"changeTimewindow",index,0,address(0),address(0), timestamper);
         // test change controller
         timelocker.queue(factory,"changeController",index,0,newValue,address(0), timestamper);
         // test change oracle
@@ -508,11 +506,6 @@ contract AssertTest is Helper {
         timelocker.execute(factory,"changeTreasury",index,0,newValue,address(0), timestamper);
         assertTrue(Vault(vaults[0]).treasury() == newValue);
         assertTrue(Vault(vaults[1]).treasury() == newValue);
-
-        // test execute timewindow
-        timelocker.execute(factory,"changeTimewindow",index,0,address(0),address(0), timestamper);
-        assertTrue(Vault(vaults[0]).timewindow() == 0);
-        assertTrue(Vault(vaults[1]).timewindow() == 0);
 
         // test execute controller
         timelocker.execute(factory,"changeController",index,0,newValue,address(0), timestamper);
