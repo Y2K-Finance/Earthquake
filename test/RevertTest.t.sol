@@ -19,6 +19,9 @@ import {StakingRewards} from "../src/rewards/StakingRewards.sol";
 /// @author MiguelBits
 /// @author NexusFlip
 
+/// @author MiguelBits
+/// @author NexusFlip
+
 contract RevertTest is Helper {
 
     /*///////////////////////////////////////////////////////////////

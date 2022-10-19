@@ -1,8 +1,9 @@
 {"configAddresses":
   [{
-        "treasury": "0xFB0a3A93e9acd461747e7D613eb3722d53B96613",
-        "admin": "0xFB0a3A93e9acd461747e7D613eb3722d53B96613",
-        "policy": "0xFB0a3A93e9acd461747e7D613eb3722d53B96613",
+        "treasury": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
+        "admin": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
+        "policy": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
+
         "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
         "arbitrum_sequencer": "0xFdB631F5EE196F0ed6FAa767959853A9F217697D",
 

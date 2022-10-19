@@ -597,6 +597,7 @@ contract AssertTest is Helper {
     
     }
 
+
     function testPauseRewards() public {
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
@@ -609,6 +610,7 @@ contract AssertTest is Helper {
         assertTrue(StakingRewards(rRisk).paused() == true);
         vm.stopPrank();
     }
+
 
     /*//////////////////////////////////////////////////////////////
                            PEGORACLE functions

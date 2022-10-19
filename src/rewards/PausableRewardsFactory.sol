@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import {StakingRewards} from "./StakingRewards.sol";
+import {StakingRewards} from "./PausableStakingRewards.sol";
 import {VaultFactory} from "../VaultFactory.sol";
 import {Vault} from "../Vault.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
