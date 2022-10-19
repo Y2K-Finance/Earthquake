@@ -6,13 +6,13 @@ import "forge-std/StdJson.sol";
 import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
 import "../src/rewards/PausableRewardsFactory.sol";
-import "../test/Y2Ktest.sol";
-import "../test/fakeWeth.sol";
+import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @author MiguelBits
 
 //forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --etherscan-api-key $arbiscanApiKey --verify --skip-simulation --gas-estimate-multiplier 200 --slow -vv
+
 contract ConfigScript is Script {
     using stdJson for string;
 
@@ -78,15 +78,13 @@ contract ConfigScript is Script {
         console2.log("\n");
 
         vm.startBroadcast();
-        WETH fakeWeth = new WETH();
-        fakeWeth.mint(msg.sender);
 
-        console2.log("Address fakeWeth", address(fakeWeth));
         console2.log("Broadcast sender", msg.sender);
         console2.log("Broadcast admin ", addresses.admin);
         console2.log("Broadcast policy", addresses.policy);
         //start setUp();
-        vaultFactory = new VaultFactory(addresses.treasury, address(fakeWeth), addresses.policy);
+
+        vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
         controller = new Controller(address(vaultFactory), addresses.arbitrum_sequencer);
 
         vaultFactory.setController(address(controller));
@@ -128,7 +126,16 @@ contract ConfigScript is Script {
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
+
         // stop create market
+
+        //pause getRewards
+        StakingRewards(rHedge).pause();
+        StakingRewards(rRisk).pause();
+        // stop create market
+
+        //transfer ownership
+        vaultFactory.transferOwnership(addresses.admin);
 
         vm.stopBroadcast();
     }

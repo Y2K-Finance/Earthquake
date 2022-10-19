@@ -13,6 +13,11 @@ import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
 
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
+import {Owned} from "../src/rewards/Owned.sol";
+import {StakingRewards} from "../src/rewards/StakingRewards.sol";
+
+/// @author MiguelBits
+/// @author NexusFlip
 
 /// @author MiguelBits
 /// @author NexusFlip
@@ -564,5 +569,54 @@ contract RevertTest is Helper {
         PegOracle pegOracle = new PegOracle(btcEthOracle, oracleUSDC);
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           OWNER functions
+    //////////////////////////////////////////////////////////////*/
+
+    function testOwnerAddressZero() public {
+        vm.expectRevert(bytes("Owner address cannot be 0"));
+        Owned owned = new Owned(address(0));
+    }
+
+    function testNominatorNotAdmin() public {
+        Owned owned = new Owned(admin);
+
+        vm.startPrank(alice);
+        vm.expectRevert(bytes("Only the contract owner may perform this action"));
+        owned.nominateNewOwner(alice);
+        vm.stopPrank();
+    }
+
+    function testNominateBeforeOwner() public {
+        Owned owned = new Owned(admin);
+
+        vm.startPrank(admin);
+        vm.expectRevert(bytes("You must be nominated before you can accept ownership"));
+        owned.acceptOwnership();
+        vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           PAUSE functions
+    //////////////////////////////////////////////////////////////*/
+
+    function testWhenNotPaused() public {
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
+        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
+
+        StakingRewards(rHedge).pause();
+        StakingRewards(rRisk).pause();
+        emit log_named_uint("Paused", 1);
+        
+        vm.expectRevert(bytes("Pausable: paused"));
+        StakingRewards(rHedge).getReward();
+        vm.stopPrank();
+    }
+    
+
+
+
 
 }
