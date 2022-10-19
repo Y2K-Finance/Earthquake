@@ -9,6 +9,7 @@ import "../src/Controller.sol";
 import "../src/rewards/PausableRewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./keepers/Keeper.sol";
 
 /// @author MiguelBits
 
@@ -129,6 +130,14 @@ contract ConfigScript is Script {
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
+
+        //keeper creation
+        KeeperGelato keeper = new Keeper(payable(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F), 
+        payable(0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A), 
+        address(controller));
+
+        //keeper start task
+        keeper.startTask(_marketIndex, _epochID);
 
         //transfer ownership
         vaultFactory.transferOwnership(addresses.admin);
