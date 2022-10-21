@@ -7,7 +7,8 @@ import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
 //TODO change this after deploy  y2k token
 import "../src/rewards/PausableRewardsFactory.sol";
-import "../src/tokens/Y2K.sol";
+import "../test/Y2Ktest.sol";
+import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./keepers/Keeper.sol";
 
@@ -17,8 +18,6 @@ import "./keepers/Keeper.sol";
 
 contract ConfigScript is Script {
     using stdJson for string;
-
-    uint totalSupplied = 1000000000000000000000000000;
 
     struct ConfigAddresses {
         address admin;
@@ -58,6 +57,7 @@ contract ConfigScript is Script {
     Controller controller;
     RewardsFactory rewardsFactory;
     Y2K y2k;
+    WETH fakeWeth;
 
     function run() public {
 
@@ -87,60 +87,33 @@ contract ConfigScript is Script {
         console2.log("Broadcast admin ", addresses.admin);
         console2.log("Broadcast policy", addresses.policy);
         //start setUp();
-
-        vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
+        fakeWeth = new WETH();
+        vaultFactory = new VaultFactory(addresses.treasury, address(fakeWeth), addresses.policy);
         controller = new Controller(address(vaultFactory), addresses.arbitrum_sequencer);
 
         vaultFactory.setController(address(controller));
 
-        y2k = new Y2K(totalSupplied, msg.sender);
+        y2k = new Y2K(5000 ether, msg.sender);
 
         rewardsFactory = new RewardsFactory(address(y2k), address(vaultFactory));
+        //keeper creation
+        KeeperGelato keeper = new KeeperGelato(payable(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F), 
+        payable(0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A), 
+        address(controller));
+
         //stop setUp();
                         
         console2.log("Controller address", address(controller));
         console2.log("Vault Factory address", address(vaultFactory));
         console2.log("Rewards Factory address", address(rewardsFactory));
         console2.log("Y2K token address", address(y2k));
+        console2.log("Keeper address", address(keeper));
+        console2.log("WETH address", address(fakeWeth));
         console2.log("\n");
-        //INDEX 1
-        //get markets config
-        uint index = 1;
-        ConfigMarket memory markets = getConfigMarket(index);
-        ConfigFarm memory farms = getConfigFarm(index);
-        console2.log("Market name", markets.name);
-        console2.log("Adress token", addresses.tokenFRAX);
-        console2.log("Market token", markets.token);
-        console2.log("Adress oracle", addresses.oracleFRAX);
-        console2.log("Market oracle", markets.oracle);
-        console2.log("Market strike price", uint256(markets.strikePrice));
-        console2.log("Market epoch begin", markets.epochBegin);
-        console2.log("Market epoch   end", markets.epochEnd);
-        console2.log("Market epoch fee", markets.epochFee);
-        console2.log("Farm rewards amount", farms.rewardsAmount);
-        //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
-        console2.log("\n");
-        // create market 
-        vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
-        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
-        //sending gov tokens to farms
-        y2k.transfer(rHedge, farms.rewardsAmount);
-        y2k.transfer(rRisk, farms.rewardsAmount);
-        //start rewards for farms
-        StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
-        StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
-        // stop create market
-
-        //keeper creation
-        KeeperGelato keeper = new Keeper(payable(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F), 
-        payable(0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A), 
-        address(controller));
-
-        //keeper start task
-        keeper.startTask(_marketIndex, _epochID);
 
         //transfer ownership
-        vaultFactory.transferOwnership(addresses.admin);
+        //vaultFactory.transferOwnership(addresses.admin);
+        y2k.transfer(0x16cBaDA408F7523452fF91c8387b1784d00d10D8, 50 ether);
 
         vm.stopBroadcast();
     }

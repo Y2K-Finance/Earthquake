@@ -2,8 +2,8 @@
     "1":[{
             "name":"y2kFRAX_99*",
             "strikePrice": 995555555555555555,
-            "epochBegin":1665543223,
-            "epochEnd":1665802423,
+            "epochBegin":1666396800,
+            "epochEnd":1666454400,
             "epochFee":55,
             "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
             "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8"

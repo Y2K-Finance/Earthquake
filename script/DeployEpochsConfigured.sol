@@ -9,6 +9,7 @@ import "../src/rewards/RewardsFactory.sol";
 import "../test/Y2Ktest.sol";
 import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./keepers/Keeper.sol";
 
 /// @author MiguelBits
 //forge script ConfigEpochsScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
@@ -49,12 +50,13 @@ contract ConfigEpochsScript is Script {
         uint256 rewardsAmount;
     }
 
-    VaultFactory vaultFactory = VaultFactory(0x3DcF49D27388E4BCF7AE74D75AFA987034Bd7ce0);
-    Controller controller = Controller(0x77fe110716E6B5D1904C7E3d1C49aB3C58Ef678B);
-    RewardsFactory rewardsFactory = RewardsFactory(0x9dC6821AE74FaAE71Dfd1016f14eAdcA7823Faf4);
-    Y2K y2k = Y2K(0x4070a276F99A4A38E0b3046183fEc8F33923716e);
+    VaultFactory vaultFactory = VaultFactory(0x31ACe507b092DE55A042e973c1FF28aC4F2Aff58);
+    Controller controller = Controller(0x6F1fA226903A3a92Fe7463A4e1252F78D4F6d5CC);
+    RewardsFactory rewardsFactory = RewardsFactory(0xb5BCf9EE7a09A955204172DB0C277287bf795A60);
+    Y2K y2k = Y2K(0xb86C821f38A8E90249B8c6D485aF9D0b300fC978);
+    KeeperGelato keeper = KeeperGelato(0x3F3d7e4152249eD0f2A600546e11a198794d6B6b);
 
-    uint index = 2;
+    uint index = 1;
 
     function run() public {
         vm.startBroadcast();
@@ -87,6 +89,9 @@ contract ConfigEpochsScript is Script {
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
+
+        //keeper start task
+        keeper.startTask(index, markets.epochEnd);
 
         vm.stopBroadcast();
     }
