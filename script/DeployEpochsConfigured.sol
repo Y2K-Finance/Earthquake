@@ -44,6 +44,11 @@ contract ConfigEpochsScript is Script, HelperConfig {
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
 
+        console2.log("Farm Hedge", rHedge);
+        console2.log("Farm Risk", rRisk);
+
+        console.log("ConfigEpochsScript done");
+
         vm.stopBroadcast();
     }
 }
