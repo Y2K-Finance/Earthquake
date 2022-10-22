@@ -3,26 +3,22 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
-import "../src/rewards/RewardsFactory.sol";
-import "../test/Y2Ktest.sol";
+//TODO change this after deploy  y2k token
+import "../src/rewards/PausableRewardsFactory.sol";
+import "../src/tokens/Y2K.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 /// @author MiguelBits
 
-//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL  --private-key $PRIVATE_KEY --broadcast -vv
-contract Helper is Script {
+contract HelperConfig is Script {
     using stdJson for string;
-
-    VaultFactory vaultFactory;
-    Controller controller;
-    RewardsFactory rewardsFactory;
-    Y2K y2k;
-
 
     struct ConfigAddresses {
         address admin;
         address arbitrum_sequencer;
+        address controller;
         address oracleDAI;
         address oracleFEI;
         address oracleFRAX;
@@ -30,6 +26,7 @@ contract Helper is Script {
         address oracleUSDC;
         address oracleUSDT;
         address policy;
+        address rewardsFactory;
         address tokenDAI;
         address tokenFEI;
         address tokenFRAX;
@@ -37,7 +34,9 @@ contract Helper is Script {
         address tokenUSDC;
         address tokenUSDT;
         address treasury;
+        address vaultFactory;
         address weth;
+        address y2k;
     }
 
     struct ConfigMarket {
@@ -51,8 +50,19 @@ contract Helper is Script {
     }
 
     struct ConfigFarm {
-        uint256 epochEnd;
         uint256 rewardsAmount;
+    }
+
+    VaultFactory vaultFactory;
+    Controller controller;
+    RewardsFactory rewardsFactory;
+    Y2K y2k;
+
+    function contractToAddresses(ConfigAddresses memory configAddresses) public {
+        vaultFactory = VaultFactory(configAddresses.vaultFactory);
+        controller = Controller(configAddresses.controller);
+        rewardsFactory = RewardsFactory(configAddresses.rewardsFactory);
+        y2k = Y2K(configAddresses.y2k);
     }
 
     function getConfigAddresses() public returns (ConfigAddresses memory) {
