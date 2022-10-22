@@ -1,6 +1,6 @@
 {"configAddresses":
   [{
-        "y2k": "",    
+        "y2k": "0xb86C821f38A8E90249B8c6D485aF9D0b300fC978",    
         "treasury": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
         "admin": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
         "policy": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
@@ -26,9 +26,9 @@
         "tokenUSDT": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
         "oracleUSDT": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
 
-        "vaultFactory": "0x8a8cBbC9c711e38BcB20a6eCD604a1b7d9d722F0",
-        "controller": "0x3E9BC21C9b189C09dF3eF1B824798658d5011937",
-        "rewardsFactory": "0x3E9BC21C9b189C09dF3eF1B824798658d5011937"
+        "vaultFactory": "0x31ACe507b092DE55A042e973c1FF28aC4F2Aff58",
+        "controller": "0x6F1fA226903A3a92Fe7463A4e1252F78D4F6d5CC",
+        "rewardsFactory": "0xb5BCf9EE7a09A955204172DB0C277287bf795A60"
     }]
 }
 
