@@ -68,7 +68,11 @@ contract KeeperGelato is OpsReady, Ownable {
         
     }
 
-    function withdrawFunds(address payable _receiver, address _token, uint256 _amount) external onlyOwner {
-        _withdrawFunds(_receiver, _token, _amount);
+    function deposit(uint256 _amount) external payable {
+        treasury.depositFunds{value: _amount}(address(this), ETH, _amount);
+    }
+
+    function withdraw(uint256 _amount) external onlyOwner{
+        treasury.withdrawFunds(owner, ETH, _amount);
     }
 }
