@@ -35,6 +35,7 @@ interface ITaskTreasury {
 abstract contract OpsReady {
     address public immutable ops;
     address public immutable treasuryTask;
+    ITaskTreasury public treasury;
     address payable public immutable gelato;
     address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -46,6 +47,7 @@ abstract contract OpsReady {
     constructor(address _ops, address _treasuryTask) {
         ops = _ops;
         treasuryTask = _treasuryTask;
+        treasury = ITaskTreasury(_treasuryTask);
         gelato = IOps(_ops).gelato();
     }
 }
