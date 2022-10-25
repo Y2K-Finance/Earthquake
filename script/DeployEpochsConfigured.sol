@@ -54,7 +54,7 @@ contract ConfigEpochsScript is Script {
     Controller controller = Controller(0x6F1fA226903A3a92Fe7463A4e1252F78D4F6d5CC);
     RewardsFactory rewardsFactory = RewardsFactory(0xb5BCf9EE7a09A955204172DB0C277287bf795A60);
     Y2K y2k = Y2K(0xb86C821f38A8E90249B8c6D485aF9D0b300fC978);
-    KeeperGelato keeper = KeeperGelato(0x3F3d7e4152249eD0f2A600546e11a198794d6B6b);
+    KeeperGelato keeper = KeeperGelato(0x410f611991cF361964A128C4b149224614769d39);
 
     uint index = 1;
 
