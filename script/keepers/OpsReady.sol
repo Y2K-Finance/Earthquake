@@ -20,23 +20,24 @@ interface IOps {
 
 interface ITaskTreasury {
     function depositFunds(
-        address _receiver,
-        address _token,
-        uint256 _amount
+        address receiver,
+        address token,
+        uint256 amount
     ) external payable;
 
     function withdrawFunds(
-        address payable _receiver,
-        address _token,
-        uint256 _amount
+        address payable receiver,
+        address token,
+        uint256 amount
     ) external;
 }
 
 abstract contract OpsReady {
     address public immutable ops;
     address public immutable treasuryTask;
+    ITaskTreasury public treasury;
     address payable public immutable gelato;
-    address public constant ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     modifier onlyOps() {
         require(msg.sender == ops, "OpsReady: onlyOps");
@@ -46,20 +47,7 @@ abstract contract OpsReady {
     constructor(address _ops, address _treasuryTask) {
         ops = _ops;
         treasuryTask = _treasuryTask;
+        treasury = ITaskTreasury(_treasuryTask);
         gelato = IOps(_ops).gelato();
-    }
-
-    function depositFunds(
-        address _token,
-        uint256 _amount) external payable {
-        ITaskTreasury(ops).depositFunds{value: msg.value}(address(this), _token, _amount);
-    }
-
-    function _withdrawFunds(
-        address payable _receiver,
-        address _token,
-        uint256 _amount
-    ) internal {
-        ITaskTreasury(ops).withdrawFunds(_receiver, _token, _amount);
     }
 }

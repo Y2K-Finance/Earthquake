@@ -41,16 +41,16 @@ contract KeeperGelato is OpsReady, Ownable {
     {
         //check if task can be executed
         (bool canExecDepeg,) = controller.staticcall(
-            abi.encodeWithSelector(IController.triggerDepeg.selector, 
+            abi.encodeWithSelector(bytes4(keccak256("triggerDepeg(uint256,uint256)")), 
             _marketIndex, _epochID));
 
         (bool canExecEnd,) = controller.staticcall(
-            abi.encodeWithSelector(IController.triggerEndEpoch.selector, 
+            abi.encodeWithSelector(bytes4(keccak256("triggerEndEpoch(uint256,uint256)")), 
             _marketIndex, _epochID));
 
         //execute task payload
         if(canExecDepeg) {
-            execPayload = abi.encodeWithSelector(IController.triggerDepeg.selector, 
+            execPayload = abi.encodeWithSelector(bytes4(keccak256("triggerDepeg(uint256,uint256)")), 
             _marketIndex, _epochID);
 
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
@@ -58,7 +58,7 @@ contract KeeperGelato is OpsReady, Ownable {
 
         if(canExecEnd){
             execPayload = abi.encodeWithSelector(
-            IController.triggerEndEpoch.selector,
+            bytes4(keccak256("triggerEndEpoch(uint256,uint256)")),
             _marketIndex, _epochID
             );
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
@@ -68,7 +68,11 @@ contract KeeperGelato is OpsReady, Ownable {
         
     }
 
-    function withdrawFunds(address payable _receiver, address _token, uint256 _amount) external onlyOwner {
-        _withdrawFunds(_receiver, _token, _amount);
+    function deposit(uint256 _amount) external payable {
+        treasury.depositFunds{value: _amount}(address(this), ETH, _amount);
+    }
+
+    function withdraw(uint256 _amount) external onlyOwner{
+        treasury.withdrawFunds(payable(msg.sender), ETH, _amount);
     }
 }

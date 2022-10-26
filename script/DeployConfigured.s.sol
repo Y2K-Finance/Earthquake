@@ -1,7 +1,6 @@
 // SPDX-License-Identifier;
 pragma solidity ^0.8.13;
 
-
 import "./Helper.sol";
 
 /// @author MiguelBits
@@ -57,6 +56,5 @@ contract ConfigScript is Script, HelperConfig {
         //transfer ownership
         //vaultFactory.transferOwnership(addresses.admin);
 
-        vm.stopBroadcast();
     }
 }
