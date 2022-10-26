@@ -37,7 +37,7 @@ contract KeeperGelatoDepeg is OpsReady, Ownable {
         view
         returns (bool canExec, bytes memory execPayload)
     {
-        canExec = _epochID <= block.timestamp;
+        canExec = _epochID > block.timestamp;
 
         execPayload = abi.encodeWithSelector(
         this.execute.selector,

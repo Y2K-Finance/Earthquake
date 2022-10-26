@@ -56,7 +56,8 @@ contract HelperConfig is Script {
     }
 
     struct ConfigFarm {
-        uint256 rewardsAmount;
+        uint256 rewardsAmountHEDGE;
+        uint256 rewardsAmountRISK;
     }
 
     VaultFactory vaultFactory;
