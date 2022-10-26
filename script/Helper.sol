@@ -9,6 +9,8 @@ import "../src/Controller.sol";
 import "../src/rewards/PausableRewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./keepers/KeeperDepeg.sol";
+import "./keepers/KeeperEndEpoch.sol";
 
 /// @author MiguelBits
 
@@ -19,6 +21,8 @@ contract HelperConfig is Script {
         address admin;
         address arbitrum_sequencer;
         address controller;
+        address keeperDepeg;
+        address keeperEndEpoch;
         address oracleDAI;
         address oracleFEI;
         address oracleFRAX;
@@ -57,13 +61,20 @@ contract HelperConfig is Script {
     Controller controller;
     RewardsFactory rewardsFactory;
     Y2K y2k;
+    KeeperGelatoDepeg keeperDepeg;
+    KeeperGelatoEndEpoch keeperEndEpoch;
 
     function contractToAddresses(ConfigAddresses memory configAddresses) public {
         vaultFactory = VaultFactory(configAddresses.vaultFactory);
         controller = Controller(configAddresses.controller);
         rewardsFactory = RewardsFactory(configAddresses.rewardsFactory);
         y2k = Y2K(configAddresses.y2k);
+        keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
+        keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
+        
     }
+
+    
 
     function getConfigAddresses() public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();
