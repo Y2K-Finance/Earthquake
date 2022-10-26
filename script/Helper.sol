@@ -21,6 +21,8 @@ contract HelperConfig is Script {
         address admin;
         address arbitrum_sequencer;
         address controller;
+        address gelatoOpsV2;
+        address gelatoTaskTreasury;
         address keeperDepeg;
         address keeperEndEpoch;
         address oracleDAI;
@@ -71,10 +73,12 @@ contract HelperConfig is Script {
         y2k = Y2K(configAddresses.y2k);
         keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
-        
     }
 
-    
+    function startKeepers(uint _marketIndex, uint _epochEnd) public {
+        keeperDepeg.startTask(_marketIndex, _epochEnd);
+        keeperEndEpoch.startTask(_marketIndex, _epochEnd);
+    }
 
     function getConfigAddresses() public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();

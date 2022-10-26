@@ -45,6 +45,8 @@ contract ConfigScript is Script, HelperConfig {
         vaultFactory.setController(address(controller));
 
         rewardsFactory = new RewardsFactory(addresses.y2k, address(vaultFactory));
+        keeperDepeg = new KeeperGelatoDepeg(payable(addresses.gelatoOpsV2), payable(addresses.gelatoTaskTreasury), address(controller));
+        keeperEndEpoch = new KeeperGelatoEndEpoch(payable(addresses.gelatoOpsV2), payable(addresses.gelatoTaskTreasury), address(controller));
         //stop setUp();
                         
         console2.log("Controller address", address(controller));

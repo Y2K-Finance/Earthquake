@@ -47,6 +47,8 @@ contract ConfigMarketsScript is Script, HelperConfig {
         console2.log("Farm Hedge", rHedge);
         console2.log("Farm Risk", rRisk);
         
+        startKeepers(index, markets.epochEnd);
+
         console.log("ConfigMarketsScript done");
 
         vm.stopBroadcast();
