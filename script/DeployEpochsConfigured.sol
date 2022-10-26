@@ -9,7 +9,8 @@ import "../src/rewards/RewardsFactory.sol";
 import "../test/Y2Ktest.sol";
 import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./keepers/Keeper.sol";
+import "./keepers/KeeperDepeg.sol";
+import "./keepers/KeeperEndEpoch.sol";
 
 /// @author MiguelBits
 //forge script ConfigEpochsScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
@@ -91,7 +92,8 @@ contract ConfigEpochsScript is Script {
         // stop create market
 
         //keeper start task
-        keeper.startTask(index, markets.epochEnd);
+        keeperDepeg.startTask(index, markets.epochEnd);
+        keeperEndEpoch.startTask(index, markets.epochEnd);
 
         vm.stopBroadcast();
     }

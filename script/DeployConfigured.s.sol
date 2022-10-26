@@ -10,7 +10,9 @@ import "../src/rewards/PausableRewardsFactory.sol";
 import "../test/Y2Ktest.sol";
 import "../test/fakeWeth.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./keepers/Keeper.sol";
+import "./keepers/KeeperDepeg.sol";
+import "./keepers/KeeperEndEpoch.sol";
+
 
 /// @author MiguelBits
 
@@ -97,17 +99,21 @@ contract ConfigScript is Script {
 
         rewardsFactory = new RewardsFactory(address(y2k), address(vaultFactory));
         //keeper creation
-        KeeperGelato keeper = new KeeperGelato(payable(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F), 
+        KeeperGelatoDepeg keeperDepeg = new KeeperGelato(payable(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F), 
         payable(0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A), 
         address(controller));
 
+        KeeperGelatoEndEpoch keeperEndEpoch = new KeeperGelato(payable(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F), 
+        payable(0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A), 
+        address(controller));
         //stop setUp();
                         
         console2.log("Controller address", address(controller));
         console2.log("Vault Factory address", address(vaultFactory));
         console2.log("Rewards Factory address", address(rewardsFactory));
         console2.log("Y2K token address", address(y2k));
-        console2.log("Keeper address", address(keeper));
+        console2.log("KeeperDepeg address", address(keeperDepeg));
+        console2.log("KeeperEndEpoch address", address(keeperEndEpoch));
         console2.log("WETH address", address(fakeWeth));
         console2.log("\n");
 
