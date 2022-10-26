@@ -3,12 +3,9 @@ pragma solidity 0.8.15;
 
 import {Vault} from "./Vault.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IController} from "./interfaces/IController.sol";
 
 /// @author MiguelBits
-
-interface IController {
-    function getVaultFactory() external view returns (address);
-}
 
 contract TimeLock {
 
