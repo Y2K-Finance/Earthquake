@@ -7,7 +7,7 @@ import "./Helper.sol";
 //forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 contract ConfigMarketsScript is Script, HelperConfig {
 
-    uint index = 5;
+    uint index = 7;
 
     function run() public {
         vm.startBroadcast();
@@ -38,8 +38,8 @@ contract ConfigMarketsScript is Script, HelperConfig {
         vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        // y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
-        // y2k.transfer(rRisk, farms.rewardsAmountRISK);
+        y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
+        y2k.transfer(rRisk, farms.rewardsAmountRISK);
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(farms.rewardsAmountHEDGE);
         StakingRewards(rRisk).notifyRewardAmount(farms.rewardsAmountRISK);

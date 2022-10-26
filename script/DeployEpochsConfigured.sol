@@ -8,7 +8,7 @@ import "./Helper.sol";
 contract ConfigEpochsScript is Script, HelperConfig {
 
 
-    uint index = 2;
+    uint index = 5;
 
     function run() public {
         vm.startBroadcast();
@@ -38,8 +38,8 @@ contract ConfigEpochsScript is Script, HelperConfig {
         vaultFactory.deployMoreAssets(index, markets.epochBegin, markets.epochEnd, markets.epochFee);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        // y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
-        // y2k.transfer(rRisk, farms.rewardsAmountRISK);
+        y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
+        y2k.transfer(rRisk, farms.rewardsAmountRISK);
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(farms.rewardsAmountHEDGE);
         StakingRewards(rRisk).notifyRewardAmount(farms.rewardsAmountRISK);

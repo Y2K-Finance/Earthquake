@@ -110,7 +110,8 @@ contract HelperConfig is Script {
         string memory indexString = string.concat(".",Strings.toString(index), "[0]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigFarm memory rawConstants = abi.decode(transactionDetails, (ConfigFarm));
-        //console2.log("ConfigFarms ", rawConstants.rewardsAmount);
+        // console2.log("ConfigFarms ", rawConstants.rewardsAmountHEDGE);
+        // console2.log("ConfigFarms ", rawConstants.rewardsAmountRISK);
         return rawConstants;
     }
 }
