@@ -1,63 +1,13 @@
 // SPDX-License-Identifier;
 pragma solidity ^0.8.13;
 
-import "forge-std/Script.sol";
-import "forge-std/StdJson.sol";
-import "../src/VaultFactory.sol";
-import "../src/Controller.sol";
-import "../src/rewards/RewardsFactory.sol";
-import "../test/Y2Ktest.sol";
-import "../test/fakeWeth.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "./keepers/KeeperDepeg.sol";
-import "./keepers/KeeperEndEpoch.sol";
+import "./Helper.sol";
 
 /// @author MiguelBits
 //forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
-contract ConfigMarketsScript is Script {
- using stdJson for string;
+contract ConfigMarketsScript is Script, HelperConfig {
 
-    struct ConfigAddresses {
-        address admin;
-        address arbitrum_sequencer;
-        address oracleDAI;
-        address oracleFEI;
-        address oracleFRAX;
-        address oracleMIM;
-        address oracleUSDC;
-        address oracleUSDT;
-        address policy;
-        address tokenDAI;
-        address tokenFEI;
-        address tokenFRAX;
-        address tokenMIM;
-        address tokenUSDC;
-        address tokenUSDT;
-        address treasury;
-        address weth;
-    }
-
-    struct ConfigMarket {
-        uint256 epochBegin;
-        uint256 epochEnd;
-        uint256 epochFee;
-        string name;
-        address oracle;
-        int256 strikePrice;
-        address token;
-    }
-
-    struct ConfigFarm {
-        uint256 rewardsAmount;
-    }
-
-    VaultFactory vaultFactory = VaultFactory(0x31ACe507b092DE55A042e973c1FF28aC4F2Aff58);
-    Controller controller = Controller(0x6F1fA226903A3a92Fe7463A4e1252F78D4F6d5CC);
-    RewardsFactory rewardsFactory = RewardsFactory(0xb5BCf9EE7a09A955204172DB0C277287bf795A60);
-    Y2K y2k = Y2K(0xb86C821f38A8E90249B8c6D485aF9D0b300fC978);
-    KeeperGelato keeper = KeeperGelato(0x3F3d7e4152249eD0f2A600546e11a198794d6B6b);
-
-    uint index = 1;
+    uint index = 3;
 
     function run() public {
         vm.startBroadcast();
@@ -65,6 +15,8 @@ contract ConfigMarketsScript is Script {
         ConfigAddresses memory addresses = getConfigAddresses();
         ConfigMarket memory markets = getConfigMarket(index);
         ConfigFarm memory farms = getConfigFarm(index);
+
+        contractToAddresses(addresses);
 
         //INDEX
         //get markets config
@@ -92,42 +44,12 @@ contract ConfigMarketsScript is Script {
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
 
-        //keeper start task
-        keeperDepeg.startTask(index, markets.epochEnd);
-        keeperEndEpoch.startTask(index, markets.epochEnd);
+        console2.log("Farm Hedge", rHedge);
+        console2.log("Farm Risk", rRisk);
+        
+        console.log("ConfigMarketsScript done");
 
         vm.stopBroadcast();
     }
 
-     function getConfigAddresses() public returns (ConfigAddresses memory) {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configAddresses.json");
-        string memory json = vm.readFile(path);
-        bytes memory transactionDetails = json.parseRaw(".configAddresses[0]");
-        ConfigAddresses memory rawConstants = abi.decode(transactionDetails, (ConfigAddresses));
-        //console2.log("ConfigAddresses ", rawConstants.weth);
-        return rawConstants;
-    }
-
-    function getConfigMarket(uint256 _index) public returns (ConfigMarket memory) {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configMarkets.json");
-        string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(_index), "[0]");
-        bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
-        //console2.log("ConfigMarkets ", rawConstants.name);
-        return rawConstants;
-    }
-
-    function getConfigFarm(uint256 _index) public returns (ConfigFarm memory) {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configFarms.json");
-        string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(_index), "[0]");
-        bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigFarm memory rawConstants = abi.decode(transactionDetails, (ConfigFarm));
-        //console2.log("ConfigFarms ", rawConstants.rewardsAmount);
-        return rawConstants;
-    }
 }

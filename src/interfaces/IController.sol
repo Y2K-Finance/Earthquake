@@ -7,4 +7,6 @@ interface IController {
     function triggerDepeg(uint256 marketIndex, uint256 epochEnd) external;
 
     function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) external;
+
+    function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) external;
 }
