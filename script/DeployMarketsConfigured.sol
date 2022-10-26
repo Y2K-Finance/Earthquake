@@ -7,7 +7,7 @@ import "./Helper.sol";
 //forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 contract ConfigMarketsScript is Script, HelperConfig {
 
-    uint index = 3;
+    uint index = 5;
 
     function run() public {
         vm.startBroadcast();
@@ -30,18 +30,19 @@ contract ConfigMarketsScript is Script, HelperConfig {
         console2.log("Market epoch begin", markets.epochBegin);
         console2.log("Market epoch   end", markets.epochEnd);
         console2.log("Market epoch fee", markets.epochFee);
-        console2.log("Farm rewards amount", farms.rewardsAmount);
+        console2.log("Farm rewards amount HEDGE", farms.rewardsAmountHEDGE);
+        console2.log("Farm rewards amount RISK", farms.rewardsAmountRISK);
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
         // create market 
         vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
-        y2k.transfer(rRisk, farms.rewardsAmountRISK);
+        // y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
+        // y2k.transfer(rRisk, farms.rewardsAmountRISK);
         //start rewards for farms
-        StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
-        StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
+        StakingRewards(rHedge).notifyRewardAmount(farms.rewardsAmountHEDGE);
+        StakingRewards(rRisk).notifyRewardAmount(farms.rewardsAmountRISK);
         // stop create market
 
         console2.log("Farm Hedge", rHedge);

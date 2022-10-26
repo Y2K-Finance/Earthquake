@@ -30,18 +30,19 @@ contract ConfigEpochsScript is Script, HelperConfig {
         console2.log("Market epoch begin", markets.epochBegin);
         console2.log("Market epoch   end", markets.epochEnd);
         console2.log("Market epoch fee", markets.epochFee);
-        console2.log("Farm rewards amount", farms.rewardsAmount);
+        console2.log("Farm rewards amount HEDGE", farms.rewardsAmountHEDGE);
+        console2.log("Farm rewards amount RISK", farms.rewardsAmountRISK);
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
         // create market 
         vaultFactory.deployMoreAssets(index, markets.epochBegin, markets.epochEnd, markets.epochFee);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
-        y2k.transfer(rRisk, farms.rewardsAmountRISK);
+        // y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
+        // y2k.transfer(rRisk, farms.rewardsAmountRISK);
         //start rewards for farms
-        StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
-        StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
+        StakingRewards(rHedge).notifyRewardAmount(farms.rewardsAmountHEDGE);
+        StakingRewards(rRisk).notifyRewardAmount(farms.rewardsAmountRISK);
         // stop create market
 
         console2.log("Farm Hedge", rHedge);

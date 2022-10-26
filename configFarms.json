@@ -1,7 +1,21 @@
 {
     "1":[{
-        "rewardsAmountHEDGE": 10000000000000000000,
-        "rewardsAmountRISK":  20000000000000000000
+        "epochEnd":1668384000,
+        "rewardsAmountHEDGE": 44380000000000000000000,
+        "rewardsAmountRISK":22200000000000000000000
+
+    }],
+    
+    "2":[{
+        "epochEnd":1668384000,
+        "rewardsAmountHEDGE": 44380000000000000000000,
+        "rewardsAmountRISK":22200000000000000000000
+    }],
+
+    "3":[{
+        "epochEnd":1668384000,
+        "rewardsAmountHEDGE": 44380000000000000000000,
+        "rewardsAmountRISK":22200000000000000000000  
         }]
 }
 
