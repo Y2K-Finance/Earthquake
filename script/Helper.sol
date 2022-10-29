@@ -57,8 +57,8 @@ contract HelperConfig is Script {
 
     struct ConfigFarm {
         uint256 epochEnd;
-        uint256 rewardsAmountHEDGE;
-        uint256 rewardsAmountRISK;
+        string rewardsAmountHEDGE;
+        string rewardsAmountRISK;
     }
 
     VaultFactory vaultFactory;
@@ -110,8 +110,20 @@ contract HelperConfig is Script {
         string memory indexString = string.concat(".",Strings.toString(index), "[0]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigFarm memory rawConstants = abi.decode(transactionDetails, (ConfigFarm));
-        // console2.log("ConfigFarms ", rawConstants.rewardsAmountHEDGE);
-        // console2.log("ConfigFarms ", rawConstants.rewardsAmountRISK);
+        console2.log("ConfigFarms ", rawConstants.rewardsAmountHEDGE);
+        console2.log("ConfigFarms ", rawConstants.rewardsAmountRISK);
         return rawConstants;
+    }
+
+    function stringToUint(string memory s) public pure returns (uint) {
+        bytes memory b = bytes(s);
+        uint result = 0;
+        for (uint256 i = 0; i < b.length; i++) {
+            uint256 c = uint256(uint8(b[i]));
+            if (c >= 48 && c <= 57) {
+                result = result * 10 + (c - 48);
+            }
+        }
+        return result;
     }
 }

@@ -1,8 +1,8 @@
 {
     "4":[{
         "epochEnd": 1666818030,
-        "rewardsAmountHEDGE": 10000000000000000000,
-        "rewardsAmountRISK": 10000000000000000000
+        "rewardsAmountHEDGE": "10000000000000000000",
+        "rewardsAmountRISK": "10000000000000000000"
         }],
         
     "5":[{

@@ -38,11 +38,11 @@ contract ConfigMarketsScript is Script, HelperConfig {
         vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        y2k.transfer(rHedge, farms.rewardsAmountHEDGE);
-        y2k.transfer(rRisk, farms.rewardsAmountRISK);
+        y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
+        y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
         //start rewards for farms
-        StakingRewards(rHedge).notifyRewardAmount(farms.rewardsAmountHEDGE);
-        StakingRewards(rRisk).notifyRewardAmount(farms.rewardsAmountRISK);
+        StakingRewards(rHedge).notifyRewardAmount(stringToUint(farms.rewardsAmountHEDGE));
+        StakingRewards(rRisk).notifyRewardAmount(stringToUint(farms.rewardsAmountRISK));
         // stop create market
 
         console2.log("Farm Hedge", rHedge);
