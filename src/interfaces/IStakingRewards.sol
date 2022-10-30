@@ -23,4 +23,8 @@ interface IStakingRewards {
     function rewardPerToken() external view returns (uint256);
 
     function totalSupply() external view returns (uint256);
+
+    function nominateNewOwner(address _owner) external;
+
+    function acceptOwnership() external;
 }
