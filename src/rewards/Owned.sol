@@ -22,6 +22,10 @@ contract Owned {
     function nominateNewOwner(address _owner) external onlyOwner {
         nominatedOwner = _owner;
         emit OwnerNominated(_owner);
+
+        emit OwnerChanged(owner, nominatedOwner);
+        owner = nominatedOwner;
+        nominatedOwner = address(0);
     }
 
     function acceptOwnership() external {

@@ -275,6 +275,7 @@ contract VaultFactory is Ownable {
     error AddressFactoryNotInController();
     error ControllerNotSet();
     error NotTimeLocker();
+    error ControllerAlreadySet();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -511,15 +512,20 @@ contract VaultFactory is Ownable {
     }
 
     /**
-    @notice Admin function, sets the controller address
+    @notice Admin function, sets the controller address one time use function only
     @param  _controller Address of the controller smart contract
      */
     function setController(address _controller) public onlyOwner {
-        if(_controller == address(0))
-            revert AddressZero();
-        controller = _controller;
+        if(controller == address(0)){
+            if(_controller == address(0))
+                revert AddressZero();
+            controller = _controller;
 
-        emit controllerSet(_controller);
+            emit controllerSet(_controller);  
+        }
+        else{
+            revert ControllerAlreadySet();
+        }
     }
 
     /**

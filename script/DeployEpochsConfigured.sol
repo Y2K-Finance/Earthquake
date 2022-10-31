@@ -8,7 +8,7 @@ import "./Helper.sol";
 contract ConfigEpochsScript is Script, HelperConfig {
 
 
-    uint index = 4;
+    uint index = 3;
 
     function run() public {
         vm.startBroadcast();
@@ -38,12 +38,18 @@ contract ConfigEpochsScript is Script, HelperConfig {
         vaultFactory.deployMoreAssets(index, markets.epochBegin, markets.epochEnd, markets.epochFee);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
-        y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
-        //start rewards for farms
-        StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
-        StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
+        // y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
+        // y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
+        // //start rewards for farms
+        // StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
+        // StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
+        
+        //transfer onwership of farms
+        StakingRewards(rHedge).setRewardsDistribution(addresses.policy);
+        StakingRewards(rRisk).setRewardsDistribution(addresses.policy);
+        StakingRewards(rHedge).nominateNewOwner(addresses.policy);
+        StakingRewards(rRisk).nominateNewOwner(addresses.policy);
 
         console2.log("Farm Hedge", rHedge);
         console2.log("Farm Risk", rRisk);

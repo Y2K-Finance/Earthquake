@@ -1,9 +1,9 @@
 {"configAddresses":
   [{
-        "y2k": "0xb86C821f38A8E90249B8c6D485aF9D0b300fC978",    
-        "treasury": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
-        "admin": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
-        "policy": "0xaC0D2cF77a8F8869069fc45821483701A264933B",
+        "y2k": "0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f",    
+        "treasury": "0x5c84cf4d91dc0acde638363ec804792bb2108258",
+        "admin": "0x16cBaDA408F7523452fF91c8387b1784d00d10D8",
+        "policy": "0x16cBaDA408F7523452fF91c8387b1784d00d10D8",
 
         "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
         "arbitrum_sequencer": "0xFdB631F5EE196F0ed6FAa767959853A9F217697D",
@@ -28,11 +28,11 @@
         "tokenUSDT": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
         "oracleUSDT": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
 
-        "vaultFactory": "0x31ACe507b092DE55A042e973c1FF28aC4F2Aff58",
-        "controller": "0x6F1fA226903A3a92Fe7463A4e1252F78D4F6d5CC",
-        "rewardsFactory": "0xb5BCf9EE7a09A955204172DB0C277287bf795A60",
-        "keeperDepeg": "0xdF79789C6dA23B581FfDae737D5F80c8a68c4D4d",
-        "keeperEndEpoch": "0x83eECDd87358E9FCee00302aB8bE01Be0DF6cD53"
+        "vaultFactory": "0x984E0EB8fB687aFa53fc8B33E12E04967560E092",
+        "controller": "0x225aCF1D32f0928A96E49E6110abA1fdf777C85f",
+        "rewardsFactory": "0x9889Fca1d9A5D131F5d4306a2BC2F293cAfAd2F3",
+        "keeperDepeg": "0xE4E34f988E060e9C072F13F82A9C16DFEe112F10",
+        "keeperEndEpoch": "0x439Ca11DEd780ddcEbB94089884751Cf1CD0BE5d"
     }]
 }
 
