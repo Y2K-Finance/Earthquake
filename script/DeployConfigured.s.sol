@@ -7,6 +7,9 @@ import "./Helper.sol";
 
 //forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --etherscan-api-key $arbiscanApiKey --verify --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 
+// forge verify-contract --chain-id 42161 --num-of-optimizations 1000000 --watch --constructor-args \ 
+//     $(cast abi-encode "constructor(address,address,address,uint256)" 0xaC0D2cF77a8F8869069fc45821483701A264933B 0xaC0D2cF77a8F8869069fc45821483701A264933B 0x447deddf312ad609e2f85fd23130acd6ba48e8b7 1668384000) \
+//     --compiler-version v0.8.15+commit.e14f2714 0x69b614f03554c7e0da34645c65852cc55400d0f9 src/rewards/StakingRewards.sol:StakingRewards $arbiscanApiKey
 contract ConfigScript is Script, HelperConfig {
     using stdJson for string;
 

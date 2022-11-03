@@ -2,7 +2,7 @@
 pragma solidity 0.8.15;
 
 /// @author MiguelBits
-contract Vault {
+contract IVault {
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
