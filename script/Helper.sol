@@ -103,6 +103,17 @@ contract HelperConfig is Script {
         return rawConstants;
     }
 
+    function getConfigEpochs(uint256 index) public returns (ConfigMarket memory) {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/configEpochs.json");
+        string memory json = vm.readFile(path);
+        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        bytes memory transactionDetails = json.parseRaw(indexString);
+        ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
+        //console2.log("ConfigMarkets ", rawConstants.name);
+        return rawConstants;
+    }
+
     function getConfigFarm(uint256 index) public returns (ConfigFarm memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configFarms.json");

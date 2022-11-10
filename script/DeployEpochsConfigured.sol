@@ -8,13 +8,13 @@ import "./Helper.sol";
 contract ConfigEpochsScript is Script, HelperConfig {
 
 
-    uint index = 3;
+    uint index = 1;
 
     function run() public {
         vm.startBroadcast();
 
         ConfigAddresses memory addresses = getConfigAddresses();
-        ConfigMarket memory markets = getConfigMarket(index);
+        ConfigMarket memory markets = getConfigEpochs(index);
         ConfigFarm memory farms = getConfigFarm(index);
 
         contractToAddresses(addresses);
