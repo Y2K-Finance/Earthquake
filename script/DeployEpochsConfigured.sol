@@ -42,7 +42,7 @@ contract ConfigEpochsScript is Script, HelperConfig {
         y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
-        // StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
+        StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
         
         //transfer onwership of farms

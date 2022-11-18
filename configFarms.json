@@ -1,20 +1,26 @@
 {
     "1":[{
-        "epochEnd":1668384000,
-        "rewardsAmountHEDGE": "44380000000000000000000",
-        "rewardsAmountRISK":"22200000000000000000000"
+        "epochEnd":1669593600,
+        "rewardsAmountHEDGE": "26640000000000000000000",
+        "rewardsAmountRISK":"13320000000000000000000"
 
     }],
     
     "2":[{
-        "epochEnd":1668384000,
-        "rewardsAmountHEDGE": "44380000000000000000000",
-        "rewardsAmountRISK":"22200000000000000000000"
+        "epochEnd":1669593600,
+        "rewardsAmountHEDGE": "26640000000000000000000",
+        "rewardsAmountRISK":"13320000000000000000000"
     }],
 
     "3":[{
-        "epochEnd":1668384000,
-        "rewardsAmountHEDGE": "44380000000000000000000",
-        "rewardsAmountRISK":"22200000000000000000000"  
+        "epochEnd":1669593600,
+        "rewardsAmountHEDGE": "26640000000000000000000",
+        "rewardsAmountRISK":"13320000000000000000000"
+      
+        }],
+    "4" : [{
+        "epochEnd":1669593600,
+        "rewardsAmountHEDGE": "26640000000000000000000",
+        "rewardsAmountRISK":"13320000000000000000000"
         }]
 }
