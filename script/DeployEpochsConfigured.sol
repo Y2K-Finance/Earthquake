@@ -38,10 +38,10 @@ contract ConfigEpochsScript is Script, HelperConfig {
         vaultFactory.deployMoreAssets(index, markets.epochBegin, markets.epochEnd, markets.epochFee);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         //sending gov tokens to farms
-        // y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
-        // y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
-        // //start rewards for farms
-        // StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
+        y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
+        y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
+        //start rewards for farms
+        StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         // StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));
         // stop create market
         
