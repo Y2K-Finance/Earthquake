@@ -46,10 +46,10 @@ contract ConfigMarketsScript is Script, HelperConfig {
         // // stop create market
 
         //transfer onwership of farms
-        StakingRewards(rHedge).setRewardsDistribution(addresses.policy);
-        StakingRewards(rRisk).setRewardsDistribution(addresses.policy);
-        StakingRewards(rHedge).nominateNewOwner(addresses.policy);
-        StakingRewards(rRisk).nominateNewOwner(addresses.policy);
+        // StakingRewards(rHedge).setRewardsDistribution(addresses.policy);
+        // StakingRewards(rRisk).setRewardsDistribution(addresses.policy);
+        // StakingRewards(rHedge).nominateNewOwner(addresses.policy);
+        // StakingRewards(rRisk).nominateNewOwner(addresses.policy);
 
         console2.log("Farm Hedge", rHedge);
         console2.log("Farm Risk", rRisk);
