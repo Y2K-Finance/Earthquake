@@ -8,7 +8,7 @@ import "./Helper.sol";
 contract ConfigEpochsScript is Script, HelperConfig {
 
 
-    uint index = 1;
+    uint index = 6;
 
     function run() public {
         vm.startBroadcast();
