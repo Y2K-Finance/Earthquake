@@ -7,7 +7,7 @@ import "./Helper.sol";
 //forge script ConfigMarketsScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 contract ConfigMarketsScript is Script, HelperConfig {
 
-    uint index = 4;
+    uint index = 12;
 
     function run() public {
         vm.startBroadcast();
@@ -38,18 +38,18 @@ contract ConfigMarketsScript is Script, HelperConfig {
         vaultFactory.createNewMarket(markets.epochFee, markets.token, markets.strikePrice, markets.epochBegin, markets.epochEnd, markets.oracle, markets.name);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, markets.epochEnd);
         // //sending gov tokens to farms
-        // y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
-        // y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
-        // //start rewards for farms
-        // StakingRewards(rHedge).notifyRewardAmount(stringToUint(farms.rewardsAmountHEDGE));
-        // StakingRewards(rRisk).notifyRewardAmount(stringToUint(farms.rewardsAmountRISK));
+        y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
+        y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
+        //start rewards for farms
+        StakingRewards(rHedge).notifyRewardAmount(stringToUint(farms.rewardsAmountHEDGE));
+        StakingRewards(rRisk).notifyRewardAmount(stringToUint(farms.rewardsAmountRISK));
         // // stop create market
 
         //transfer onwership of farms
-        StakingRewards(rHedge).setRewardsDistribution(addresses.policy);
-        StakingRewards(rRisk).setRewardsDistribution(addresses.policy);
-        StakingRewards(rHedge).nominateNewOwner(addresses.policy);
-        StakingRewards(rRisk).nominateNewOwner(addresses.policy);
+        // StakingRewards(rHedge).setRewardsDistribution(addresses.policy);
+        // StakingRewards(rRisk).setRewardsDistribution(addresses.policy);
+        // StakingRewards(rHedge).nominateNewOwner(addresses.policy);
+        // StakingRewards(rRisk).nominateNewOwner(addresses.policy);
 
         console2.log("Farm Hedge", rHedge);
         console2.log("Farm Risk", rRisk);
