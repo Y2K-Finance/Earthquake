@@ -61,6 +61,12 @@ contract HelperConfig is Script {
         string rewardsAmountRISK;
     }
 
+    struct ConfigEpochs {
+        uint256 epochBegin;
+        uint256 epochEnd;
+        uint256 epochFee;
+    }
+
     VaultFactory vaultFactory;
     Controller controller;
     RewardsFactory rewardsFactory;
@@ -103,14 +109,14 @@ contract HelperConfig is Script {
         return rawConstants;
     }
 
-    function getConfigEpochs(uint256 index) public returns (ConfigMarket memory) {
+    function getConfigEpochs(uint256 index) public returns (ConfigEpochs memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configEpochs.json");
         string memory json = vm.readFile(path);
         string memory indexString = string.concat(".",Strings.toString(index), "[0]");
         bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
-        //console2.log("ConfigMarkets ", rawConstants.name);
+        ConfigEpochs memory rawConstants = abi.decode(transactionDetails, (ConfigEpochs));
+        //console2.log("ConfigEpochs ", rawConstants.name);
         return rawConstants;
     }
 
