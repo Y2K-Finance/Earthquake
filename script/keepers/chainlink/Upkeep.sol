@@ -16,6 +16,7 @@ contract UpkeepController is Ownable, AutomationCompatibleInterface {
 
     IController controller;
     uint256 public biggestMarketIndex;
+    uint256 public lowestMarketIndex;
 
     mapping(uint256 => uint256) public marketIndexToCurrentEpochId;
 
@@ -31,13 +32,16 @@ contract UpkeepController is Ownable, AutomationCompatibleInterface {
         if(biggestMarketIndex < _marketIndex) {
             biggestMarketIndex = _marketIndex;
         }
+        else if(lowestMarketIndex > _marketIndex) {
+            lowestMarketIndex = _marketIndex;
+        }
 
         marketIndexToCurrentEpochId[_marketIndex] = _epochId;
     }
 
     function checkUpkeep(bytes calldata /* checkData */) external override returns (bool upkeepNeeded, bytes memory performData) {
         upkeepNeeded = false;
-        for (uint256 i=1; i<=3; i++) {
+        for (uint256 i=lowestMarketIndex; i<=biggestMarketIndex; i++) {
             (bool success, ) = address(controller).call(abi.encodeWithSignature("triggerDepeg(uint256,uint256)", i, marketIndexToCurrentEpochId[i]));
             upkeepNeeded = upkeepNeeded || success;
         }
@@ -45,14 +49,10 @@ contract UpkeepController is Ownable, AutomationCompatibleInterface {
 
     function performUpkeep(bytes calldata /* performData */) external override {
         bool upkeepNeeded = false;
-        for (uint256 i = 1; i <= 3; i++) {
+        for (uint256 i = lowestMarketIndex; i <= biggestMarketIndex; i++) {
             (bool success, ) = address(controller).call(abi.encodeWithSignature("triggerDepeg(uint256,uint256)", i, marketIndexToCurrentEpochId[i]));
             upkeepNeeded = upkeepNeeded || success;
         }
         require(upkeepNeeded, "At least 1 market");
-    }
-
-    function depeg() external {
-        controller.triggerDepeg(1, marketIndexToCurrentEpochId[1]);
     }
 }
