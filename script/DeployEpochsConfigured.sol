@@ -14,26 +14,27 @@ contract ConfigEpochsScript is Script, HelperConfig {
         vm.startBroadcast();
 
         ConfigAddresses memory addresses = getConfigAddresses();
+        ConfigMarket memory markets = getConfigMarket(index);
         ConfigEpochs memory epochs = getConfigEpochs(index);
-        ConfigFarm memory farms = getConfigFarm(index);
 
         contractToAddresses(addresses);
+        verifyConfig(markets, epochs);
 
         //INDEX
         //get epochs config
         console2.log("Epoch epoch begin", epochs.epochBegin);
         console2.log("Epoch epoch   end", epochs.epochEnd);
         console2.log("Epoch epoch fee", epochs.epochFee);
-        console2.log("Farm rewards amount HEDGE", farms.rewardsAmountHEDGE);
-        console2.log("Farm rewards amount RISK", farms.rewardsAmountRISK);
+        console2.log("Farm rewards amount HEDGE", epochs.farmRewardsHEDGE);
+        console2.log("Farm rewards amount RISK", epochs.farmRewardsRISK);
         //console2.log("Sender balance amnt", y2k.balanceOf(msg.sender));
         console2.log("\n");
         // create Epoch 
         vaultFactory.deployMoreAssets(index, epochs.epochBegin, epochs.epochEnd, epochs.epochFee);
         (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(index, epochs.epochEnd);
         //sending gov tokens to farms
-        y2k.transfer(rHedge, stringToUint(farms.rewardsAmountHEDGE));
-        y2k.transfer(rRisk, stringToUint(farms.rewardsAmountRISK));
+        y2k.transfer(rHedge, stringToUint(epochs.farmRewardsHEDGE));
+        y2k.transfer(rRisk, stringToUint(epochs.farmRewardsRISK));
         //start rewards for farms
         StakingRewards(rHedge).notifyRewardAmount(y2k.balanceOf(rHedge));
         StakingRewards(rRisk).notifyRewardAmount(y2k.balanceOf(rRisk));

@@ -49,22 +49,22 @@ contract HelperConfig is Script {
         uint256 epochBegin;
         uint256 epochEnd;
         uint256 epochFee;
+        string farmRewardsHEDGE;
+        string farmRewardsRISK;
+        uint256 index;
         string name;
         address oracle;
         int256 strikePrice;
         address token;
     }
 
-    struct ConfigFarm {
-        uint256 epochEnd;
-        string rewardsAmountHEDGE;
-        string rewardsAmountRISK;
-    }
-
     struct ConfigEpochs {
         uint256 epochBegin;
         uint256 epochEnd;
         uint256 epochFee;
+        string farmRewardsHEDGE;
+        string farmRewardsRISK;
+        uint256 index;
     }
 
     VaultFactory vaultFactory;
@@ -100,9 +100,11 @@ contract HelperConfig is Script {
 
     function getConfigMarket(uint256 index) public returns (ConfigMarket memory) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configMarkets.json");
+        string memory path = string.concat(root, "/configY2K.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".",
+          "markets",
+         "[", Strings.toString(index - 1), "]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
         //console2.log("ConfigMarkets ", rawConstants.name);
@@ -111,25 +113,31 @@ contract HelperConfig is Script {
 
     function getConfigEpochs(uint256 index) public returns (ConfigEpochs memory) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configEpochs.json");
+        string memory path = string.concat(root, "/configY2K.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".",
+          "epochs",
+         "[", Strings.toString(index - 1), "]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigEpochs memory rawConstants = abi.decode(transactionDetails, (ConfigEpochs));
         //console2.log("ConfigEpochs ", rawConstants.name);
         return rawConstants;
     }
 
-    function getConfigFarm(uint256 index) public returns (ConfigFarm memory) {
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configFarms.json");
-        string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
-        bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigFarm memory rawConstants = abi.decode(transactionDetails, (ConfigFarm));
-        console2.log("ConfigFarms ", rawConstants.rewardsAmountHEDGE);
-        console2.log("ConfigFarms ", rawConstants.rewardsAmountRISK);
-        return rawConstants;
+    function verifyConfig(ConfigMarket memory marketConstants) public view {
+        require(marketConstants.epochBegin < marketConstants.epochEnd, "epochBegin is not < epochEnd");
+        require(marketConstants.epochEnd > block.timestamp, "epochEnd in the past");
+        require(marketConstants.strikePrice > 900000000000000000, "strikePrice is not above 0.90");
+        require(marketConstants.strikePrice < 1000000000000000000, "strikePrice is not below 1.00");
+        //TODO add more checks
+    }
+
+    function verifyConfig(ConfigMarket memory marketConstants, ConfigEpochs memory epochConstants) public view {
+        require(epochConstants.epochBegin > marketConstants.epochEnd, "epochBegin is not > marketEnd");
+        require(epochConstants.epochBegin < epochConstants.epochEnd, "epochBegin is not < epochEnd");
+        require(epochConstants.epochEnd > block.timestamp, "epochEnd in the past");
+        //TODO add more checks
+
     }
 
     function stringToUint(string memory s) public pure returns (uint) {
@@ -143,4 +151,5 @@ contract HelperConfig is Script {
         }
         return result;
     }
+
 }
