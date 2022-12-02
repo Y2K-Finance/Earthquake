@@ -92,23 +92,23 @@ contract HelperConfig is Script {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configAddresses.json");
         string memory json = vm.readFile(path);
-        bytes memory transactionDetails = json.parseRaw(".configAddresses[0]");
-        ConfigAddresses memory rawConstants = abi.decode(transactionDetails, (ConfigAddresses));
+        bytes memory parseJsonByteCode = json.parseRaw(".configAddresses[0]");
+        ConfigAddresses memory rawConstants = abi.decode(parseJsonByteCode, (ConfigAddresses));
         //console2.log("ConfigAddresses ", rawConstants.weth);
         return rawConstants;
     }
 
     function getConfigMarket(uint256 index) public returns (ConfigMarket memory) {
+        index = index - 1;
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configY2K.json");
         string memory json = vm.readFile(path);
         string memory indexString = string.concat(".",
-          "markets",
-         "[", Strings.toString(index - 1), "]");
-        bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
-        //console2.log("ConfigMarkets ", rawConstants.name);
-        return rawConstants;
+          "markets");
+        bytes memory parseJsonByteCode = json.parseRaw(".markets");
+        ConfigMarket[] memory rawConstants = abi.decode(parseJsonByteCode, (ConfigMarket[]));
+        console2.log("ConfigMarkets ", rawConstants[0].name);
+        return rawConstants[0];
     }
 
     function getConfigEpochs(uint256 index) public returns (ConfigEpochs memory) {
@@ -118,8 +118,8 @@ contract HelperConfig is Script {
         string memory indexString = string.concat(".",
           "epochs",
          "[", Strings.toString(index - 1), "]");
-        bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigEpochs memory rawConstants = abi.decode(transactionDetails, (ConfigEpochs));
+        bytes memory parseJsonByteCode = json.parseRaw(indexString);
+        ConfigEpochs memory rawConstants = abi.decode(parseJsonByteCode, (ConfigEpochs));
         //console2.log("ConfigEpochs ", rawConstants.name);
         return rawConstants;
     }
