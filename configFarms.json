@@ -1,54 +1,32 @@
 {
-    "6": [
-      {
-        "epochEnd": 1668384000,
-        "rewardsAmountHEDGE": "10143000000000000000000",
-        "rewardsAmountRISK": "5071000000000000000000"
-      }
-    ],
+
+  "6":[{
+      "epochEnd":1670803200,
+      "rewardsAmountHEDGE": "88800000000000000000000",
+      "rewardsAmountRISK":"44670000000000000000000"   
+  }],
+
+  "7":[{
+      "epochEnd":1670803200,
+      "rewardsAmountHEDGE": "88800000000000000000000",
+      "rewardsAmountRISK":"44670000000000000000000" 
+
+  }],
   
-    "7": [
-      {
-        "epochEnd": 1668384000,
-        "rewardsAmountHEDGE": "10143000000000000000000",
-        "rewardsAmountRISK": "5071000000000000000000"
-      }
-    ],
-  
-    "8": [
-      {
-        "epochEnd": 1668384000,
-        "rewardsAmountHEDGE": "10143000000000000000000",
-        "rewardsAmountRISK": "5071000000000000000000"
-      }
-    ],
-    "9": [
-      {
-        "epochEnd": 1668384000,
-        "rewardsAmountHEDGE": "10143000000000000000000",
-        "rewardsAmountRISK": "5071000000000000000000"
-      }
-    ],
-    "10": [
-      {
-        "epochEnd": 1668384000,
-        "rewardsAmountHEDGE": "10143000000000000000000",
-        "rewardsAmountRISK": "5071000000000000000000"
-      }
-    ],
-    "11": [
-      {
-        "epochEnd": 1672617600,
-        "rewardsAmountHEDGE": "42588000000000000000000",
-        "rewardsAmountRISK": "20284000000000000000000"
-      }
-    ],
-    "12": [
-      {
-        "epochEnd": 1672617600,
-        "rewardsAmountHEDGE": "40574000000000000000000",
-        "rewardsAmountRISK": "20284000000000000000000"
-      }
-    ]
-  }
-  
+  "8":[{
+      "epochEnd":1670803200,
+      "rewardsAmountHEDGE": "88800000000000000000000",
+      "rewardsAmountRISK":"44670000000000000000000" 
+   }],
+ "13":[{
+      "epochEnd":1670803200,
+      "rewardsAmountHEDGE": "88800000000000000000000",
+      "rewardsAmountRISK":"44670000000000000000000"  
+  }],
+ 
+ "14":[{
+      "epochEnd":1670803200,
+      "rewardsAmountHEDGE": "88800000000000000000000",
+      "rewardsAmountRISK":"44670000000000000000000" 
+      }]
+}
