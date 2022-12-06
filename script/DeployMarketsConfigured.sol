@@ -7,7 +7,7 @@ import "./Helper.sol";
 //forge script ConfigMarketsScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 contract ConfigMarketsScript is Script, HelperConfig {
 
-    uint index = 12;
+    uint index = 14;
 
     function run() public {
         vm.startBroadcast();
