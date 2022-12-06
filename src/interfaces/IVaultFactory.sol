@@ -16,33 +16,36 @@ contract TimeLock {
 
     event Queue(
         bytes32 indexed txId,
-        address indexed target, 
+        address indexed target,
         string func,
-        uint index,
-        uint data,
+        uint256 index,
+        uint256 data,
         address to,
         address token,
-        uint timestamp);
+        uint256 timestamp
+    );
 
     event Execute(
         bytes32 indexed txId,
-        address indexed target, 
+        address indexed target,
         string func,
-        uint index,
-        uint data,
+        uint256 index,
+        uint256 data,
         address to,
         address token,
-        uint timestamp);
+        uint256 timestamp
+    );
 
     event Delete(
         bytes32 indexed txId,
-        address indexed target, 
+        address indexed target,
         string func,
-        uint index,
-        uint data,
+        uint256 index,
+        uint256 data,
         address to,
         address token,
-        uint timestamp);
+        uint256 timestamp
+    );
 
     /**
      * @dev leave params zero if not using them
@@ -56,13 +59,14 @@ contract TimeLock {
      * @param _timestamp The timestamp to execute the transaction
      */
     function queue(
-        address _target, 
+        address _target,
         string calldata _func,
         uint256 _index,
         uint256 _data,
         address _to,
         address _token,
-        uint256 _timestamp) external{}
+        uint256 _timestamp
+    ) external {}
 
     /**
      * @dev leave params zero if not using them
@@ -76,40 +80,45 @@ contract TimeLock {
      * @param _timestamp The timestamp after which to execute the transaction
      */
     function execute(
-        address _target, 
+        address _target,
         string calldata _func,
         uint256 _index,
         uint256 _data,
         address _to,
         address _token,
-        uint256 _timestamp) external {}
+        uint256 _timestamp
+    ) external {}
 
     function cancel(
-        address _target, 
+        address _target,
         string calldata _func,
         uint256 _index,
         uint256 _data,
         address _to,
         address _token,
-        uint256 _timestamp) external {}
+        uint256 _timestamp
+    ) external {}
 
-    function getTxId(address _target, 
+    function getTxId(
+        address _target,
         string calldata _func,
-        uint _index,
-        uint _data,
+        uint256 _index,
+        uint256 _data,
         address _to,
         address _token,
-        uint _timestamp
-    ) public pure returns (bytes32 txId){}
+        uint256 _timestamp
+    ) public pure returns (bytes32 txId) {}
 
-    function compareStringsbyBytes(string memory s1, string memory s2) external pure returns(bool){}
+    function compareStringsbyBytes(string memory s1, string memory s2)
+        external
+        pure
+        returns (bool)
+    {}
 
-    function changeOwner(address _newOwner) external{}
+    function changeOwner(address _newOwner) external {}
 }
 
-
 contract IVaultFactory {
-
     /*//////////////////////////////////////////////////////////////
                                 MAPPINGS
     //////////////////////////////////////////////////////////////*/
@@ -141,8 +150,7 @@ contract IVaultFactory {
         uint256 epochEnd,
         address _oracle,
         string memory _name
-    ) public returns (address insr, address rsk) {
-    }
+    ) public returns (address insr, address rsk) {}
 
     /**    
     @notice Function to deploy hedge assets for given epochs, after the creation of this vault, where the Index is the date of the end of epoch
@@ -156,29 +164,20 @@ contract IVaultFactory {
         uint256 epochBegin,
         uint256 epochEnd,
         uint256 _withdrawalFee
-    ) public {
-        
-    }
+    ) public {}
 
     /**
     @notice Admin function, sets the controller address
     @param  _controller Address of the controller smart contract
      */
-    function setController(address _controller) public  {
-
-    }
+    function setController(address _controller) public {}
 
     /**
     @notice Admin function, changes the assigned treasury address
     @param _treasury Treasury address
     @param  _marketIndex Target market index
      */
-    function changeTreasury(address _treasury, uint256 _marketIndex)
-        public
-        
-    {
-    
-    }
+    function changeTreasury(address _treasury, uint256 _marketIndex) public {}
 
     /**
     @notice Admin function, changes vault time window
@@ -187,10 +186,7 @@ contract IVaultFactory {
      */
     function changeTimewindow(uint256 _marketIndex, uint256 _timewindow)
         public
-        
-    {
-        
-    }
+    {}
 
     /**
     @notice Admin function, changes controller address
@@ -199,18 +195,14 @@ contract IVaultFactory {
      */
     function changeController(uint256 _marketIndex, address _controller)
         public
-    {
-        
-    }
+    {}
 
     /**
     @notice Admin function, changes oracle address for a given token
     @param _token Target token address
     @param  _oracle Oracle address
      */
-    function changeOracle(address _token, address _oracle) public {
-
-    }
+    function changeOracle(address _token, address _oracle) public {}
 
     /*//////////////////////////////////////////////////////////////
                                 GETTERS
@@ -225,6 +217,5 @@ contract IVaultFactory {
         public
         view
         returns (address[] memory vaults)
-    {
-    }
+    {}
 }

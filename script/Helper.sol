@@ -58,6 +58,14 @@ contract HelperConfig is Script {
         address token;
     }
 
+        struct ConfigMarket1 {
+        uint256 index;
+        string name;
+        address oracle;
+        int256 strikePrice;
+        address token;
+        }
+
     struct ConfigEpochs {
         uint256 epochBegin;
         uint256 epochEnd;
@@ -99,6 +107,40 @@ contract HelperConfig is Script {
         //console2.log("ConfigAddresses ", rawConstants.weth);
         return rawConstants;
     }
+
+      function getConfigMarket() public returns (bool newMarkets, uint256 amount,uint256[] memory  marketIds) {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/configJSON.json");
+        string memory json = vm.readFile(path);
+        bytes memory parseJsonByteCode = json.parseRaw(".newMarkets");
+        newMarkets = abi.decode(parseJsonByteCode, (bool));
+        if(newMarkets) {
+                bytes memory parseJsonByteCode2 = json.parseRaw(".amountOfNewMarkets");
+                amount = abi.decode(parseJsonByteCode2, (uint256));
+                bytes memory parseJsonByteCode3 = json.parseRaw(".marketIds");
+                marketIds = abi.decode(parseJsonByteCode3, (uint256[amount]));
+        }
+
+        //console2.log("ConfigAddresses ", rawConstants.weth);
+        // return rawConstants;
+    }
+
+
+      function getMarketfromJson(uint256 index, uint256 marketId) public returns (ConfigMarket1 memory marketStruct) {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/configJSON.json");
+        string memory json = vm.readFile(path);
+        
+        string memory pathString = string.concat(
+          ".markets",
+         "[", Strings.toString(index), "]")
+        bytes memory parseJsonByteCode = json.parseRaw(pathString);
+        marketStruct = abi.decode(parseJsonByteCode, (ConfigMarket1));
+        console2.log("ConfigMarkets ",ConfigMarket1.name);
+        //console2.log("ConfigAddresses ", rawConstants.weth);
+        // return rawConstants;
+    }
+    
 
     function getConfigMarket(uint256 index) public returns (ConfigMarket memory) {
         index = index - 1;

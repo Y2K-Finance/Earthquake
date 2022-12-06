@@ -27,13 +27,13 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /*///////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-    
+
     /** @notice Deposit into vault when event is emitted
-      * @param caller Address of deposit caller
-      * @param owner receiver who will own of the tokens representing this deposit
-      * @param id Vault id
-      * @param assets Amount of owner assets to deposit into vault
-      */
+     * @param caller Address of deposit caller
+     * @param owner receiver who will own of the tokens representing this deposit
+     * @param id Vault id
+     * @param assets Amount of owner assets to deposit into vault
+     */
     event Deposit(
         address caller,
         address indexed owner,
@@ -42,13 +42,13 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     );
 
     /** @notice Withdraw from vault when event is emitted
-      * @param caller Address of withdraw caller
-      * @param receiver Address of receiver of assets
-      * @param owner Owner of shares
-      * @param id Vault id
-      * @param assets Amount of owner assets to withdraw from vault
-      * @param shares Amount of owner shares to burn
-      */ 
+     * @param caller Address of withdraw caller
+     * @param receiver Address of receiver of assets
+     * @param owner Owner of shares
+     * @param id Vault id
+     * @param assets Amount of owner assets to withdraw from vault
+     * @param shares Amount of owner shares to burn
+     */
     event Withdraw(
         address caller,
         address receiver,
@@ -59,10 +59,10 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     );
 
     /** @notice Contract constructor
-      * @param _asset ERC20 token
-      * @param _name Token name
-      * @param _symbol Token symbol 
-      */
+     * @param _asset ERC20 token
+     * @param _name Token name
+     * @param _symbol Token symbol
+     */
     constructor(
         ERC20 _asset,
         string memory _name,
@@ -78,16 +78,15 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Triggers deposit into vault and mints shares for receiver
-      * @param id Vault id
-      * @param assets Amount of tokens to deposit
-      * @param receiver Receiver of shares
-      */ 
+     * @param id Vault id
+     * @param assets Amount of tokens to deposit
+     * @param receiver Receiver of shares
+     */
     function deposit(
         uint256 id,
         uint256 assets,
         address receiver
     ) public virtual {
-
         // Need to transfer before minting or ERC777s could reenter.
         asset.safeTransferFrom(msg.sender, address(this), assets);
 
@@ -97,12 +96,12 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     }
 
     /** @notice Triggers withdraw from vault and burns receivers' shares
-      * @param id Vault id
-      * @param assets Amount of tokens to withdraw
-      * @param receiver Receiver of assets
-      * @param owner Owner of shares
-      * @return shares Amount of shares burned
-      */ 
+     * @param id Vault id
+     * @param assets Amount of tokens to withdraw
+     * @param receiver Receiver of assets
+     * @param owner Owner of shares
+     * @return shares Amount of shares burned
+     */
     function withdraw(
         uint256 id,
         uint256 assets,
@@ -129,7 +128,7 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     /**@notice Returns total assets for token
      * @param  _id uint256 token id of token
      */
-    function totalAssets(uint256 _id) public view virtual returns (uint256){
+    function totalAssets(uint256 _id) public view virtual returns (uint256) {
         return totalSupply(_id);
     }
 
@@ -143,6 +142,5 @@ abstract contract SemiFungibleVault is ERC1155Supply {
         view
         virtual
         returns (uint256)
-    {
-    }
+    {}
 }

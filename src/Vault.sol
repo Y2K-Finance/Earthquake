@@ -12,7 +12,6 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 /// @author MiguelBits
 contract Vault is SemiFungibleVault, ReentrancyGuard {
-
     using FixedPointMathLib for uint256;
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -62,42 +61,37 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Only factory addresses can call functions that use this modifier
-      */
+     */
     modifier onlyFactory() {
-        if(msg.sender != factory)
-            revert AddressNotFactory(msg.sender);
+        if (msg.sender != factory) revert AddressNotFactory(msg.sender);
         _;
     }
 
     /** @notice Only controller addresses can call functions that use this modifier
-      */
+     */
     modifier onlyController() {
-        if(msg.sender != controller)
-            revert AddressNotController(msg.sender);
+        if (msg.sender != controller) revert AddressNotController(msg.sender);
         _;
     }
 
     /** @notice Only market addresses can call functions that use this modifier
-      */
+     */
     modifier marketExists(uint256 id) {
-        if(idExists[id] != true)
-            revert MarketEpochDoesNotExist();
+        if (idExists[id] != true) revert MarketEpochDoesNotExist();
         _;
     }
 
     /** @notice You can only call functions that use this modifier before the current epoch has started
-      */
+     */
     modifier epochHasNotStarted(uint256 id) {
-        if(block.timestamp > idEpochBegin[id])
-            revert EpochAlreadyStarted();
+        if (block.timestamp > idEpochBegin[id]) revert EpochAlreadyStarted();
         _;
     }
 
     /** @notice You can only call functions that use this modifier after the current epoch has started
-      */
+     */
     modifier epochHasEnded(uint256 id) {
-        if(idEpochEnded[id] == false)
-            revert EpochNotFinished();
+        if (idEpochEnded[id] == false) revert EpochNotFinished();
         _;
     }
 
@@ -123,15 +117,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         int256 _strikePrice,
         address _controller
     ) SemiFungibleVault(ERC20(_assetAddress), _name, _symbol) {
+        if (_treasury == address(0)) revert AddressZero();
 
-        if(_treasury == address(0))
-            revert AddressZero();
+        if (_controller == address(0)) revert AddressZero();
 
-        if(_controller == address(0))
-            revert AddressZero();
-
-        if(_token == address(0))
-            revert AddressZero();
+        if (_token == address(0)) revert AddressZero();
 
         tokenInsured = _token;
         treasury = _treasury;
@@ -154,15 +144,8 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         uint256 id,
         uint256 assets,
         address receiver
-    )
-        public
-        override
-        marketExists(id)
-        epochHasNotStarted(id)
-        nonReentrant
-    {
-        if(receiver == address(0))
-            revert AddressZero();
+    ) public override marketExists(id) epochHasNotStarted(id) nonReentrant {
+        if (receiver == address(0)) revert AddressZero();
         assert(asset.transferFrom(msg.sender, address(this), assets));
 
         _mint(receiver, id, assets, EMPTY);
@@ -183,8 +166,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         nonReentrant
     {
         require(msg.value > 0, "ZeroValue");
-        if(receiver == address(0))
-            revert AddressZero();
+        if (receiver == address(0)) revert AddressZero();
 
         IWETH(address(asset)).deposit{value: msg.value}();
         _mint(receiver, id, msg.value, EMPTY);
@@ -212,32 +194,28 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
         returns (uint256 shares)
     {
-        if(receiver == address(0))
-            revert AddressZero();
+        if (receiver == address(0)) revert AddressZero();
 
-        if(
-            msg.sender != owner &&
-            isApprovedForAll(owner, msg.sender) == false)
+        if (msg.sender != owner && isApprovedForAll(owner, msg.sender) == false)
             revert OwnerDidNotAuthorize(msg.sender, owner);
 
         uint256 entitledShares;
         _burn(owner, id, assets);
 
-        if(epochNull[id] == false) {
+        if (epochNull[id] == false) {
             entitledShares = previewWithdraw(id, assets);
             //Taking fee from the premium
-            if(entitledShares > assets) {
+            if (entitledShares > assets) {
                 uint256 premium = entitledShares - assets;
                 uint256 feeValue = calculateWithdrawalFeeValue(premium, id);
                 entitledShares = entitledShares - feeValue;
                 assert(asset.transfer(treasury, feeValue));
             }
-        }
-        else{
+        } else {
             entitledShares = assets;
-        }        
-        if (entitledShares > 0) { 
-            assert(asset.transfer(receiver, entitledShares)); 
+        }
+        if (entitledShares > 0) {
+            assert(asset.transfer(receiver, entitledShares));
         }
 
         emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
@@ -275,7 +253,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         returns (uint256 feeValue)
     {
         // 0.5% = multiply by 1000 then divide by 5
-        return amount.mulDivUp(epochFee[_epoch],1000);
+        return amount.mulDivUp(epochFee[_epoch], 1000);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -287,19 +265,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param _treasury New treasury address
      */
     function changeTreasury(address _treasury) public onlyFactory {
-        if(_treasury == address(0))
-            revert AddressZero();
+        if (_treasury == address(0)) revert AddressZero();
         treasury = _treasury;
     }
-
 
     /**
     @notice Factory function, changes controller address
     @param _controller New controller address
      */
-    function changeController(address _controller) public onlyFactory{
-        if(_controller == address(0))
-            revert AddressZero();
+    function changeController(address _controller) public onlyFactory {
+        if (_controller == address(0)) revert AddressZero();
         controller = _controller;
     }
 
@@ -309,21 +284,18 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000
     @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5
      */
-    function createAssets(uint256 epochBegin, uint256 epochEnd, uint256 _withdrawalFee)
-        public
-        onlyFactory
-    {
-        if(_withdrawalFee > 150)
-            revert FeeMoreThan150(_withdrawalFee);
+    function createAssets(
+        uint256 epochBegin,
+        uint256 epochEnd,
+        uint256 _withdrawalFee
+    ) public onlyFactory {
+        if (_withdrawalFee > 150) revert FeeMoreThan150(_withdrawalFee);
 
-        if(_withdrawalFee == 0)
-            revert FeeCannotBe0();
+        if (_withdrawalFee == 0) revert FeeCannotBe0();
 
-        if(idExists[epochEnd] == true)
-            revert MarketEpochExists();
-        
-        if(epochBegin >= epochEnd)
-            revert EpochEndMustBeAfterBegin();
+        if (idExists[epochEnd] == true) revert MarketEpochExists();
+
+        if (epochBegin >= epochEnd) revert EpochEndMustBeAfterBegin();
 
         idExists[epochEnd] = true;
         idEpochBegin[epochEnd] = epochBegin;
@@ -340,11 +312,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @notice Controller can call this function to trigger the end of the epoch, storing the TVL of that epoch and if a depeg event occurred
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
      */
-    function endEpoch(uint256 id)
-        public
-        onlyController
-        marketExists(id)
-    {
+    function endEpoch(uint256 id) public onlyController marketExists(id) {
         idEpochEnded[id] = true;
         idFinalTVL[id] = totalAssets(id);
     }
@@ -354,7 +322,11 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping
      */
-    function setClaimTVL(uint256 id, uint256 claimTVL) public onlyController marketExists(id) {
+    function setClaimTVL(uint256 id, uint256 claimTVL)
+        public
+        onlyController
+        marketExists(id)
+    {
         idClaimTVL[id] = claimTVL;
     }
 
@@ -394,18 +366,17 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         // risk users can withdraw the hedge (that is paid by the hedge buyers) and risk; withdraw = (risk + hedge)
         // hedge pay for each hedge seller = ( risk / tvl before the hedge payouts ) * tvl in hedge pool
         // in case there is a depeg event, the risk users can only withdraw the hedge
-        entitledAmount = assets.mulDivUp(idClaimTVL[id],idFinalTVL[id]);
+        entitledAmount = assets.mulDivUp(idClaimTVL[id], idFinalTVL[id]);
         // in case the hedge wins aka depegging
         // hedge users pay the hedge to risk users anyway,
         // hedge guy can withdraw risk (that is transfered from the risk pool),
         // withdraw = % tvl that hedge buyer owns
         // otherwise hedge users cannot withdraw any Eth
     }
-    
+
     /** @notice Lookup total epochs length
-      */
+     */
     function epochsLength() public view returns (uint256) {
         return epochs.length;
     }
-
 }

@@ -21,6 +21,10 @@ contract ConfigScript is Script, HelperConfig {
     }
 
     function deployMarkets() public {
+       (bool newMarkets, uint256 amount, uint256[] memory  marketIds)=  getConfigMarket();
+        if(newMarkets) {
+            console2.log('newMarkets', newMarkets)
+        }
         // vaultFactory.createNewMarket(_withdrawalFee, _token, _strikePrice, epochBegin, epochEnd, _oracle, _name);
     }
 
