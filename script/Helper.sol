@@ -67,6 +67,8 @@ contract HelperConfig is Script {
         uint256 index;
     }
 
+    bool newMarkets;
+
     VaultFactory vaultFactory;
     Controller controller;
     RewardsFactory rewardsFactory;
