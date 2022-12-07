@@ -35,7 +35,7 @@ interface ILockRewards {
     event ChangeERC20Whiltelist(address token, bool tokenState);
     event ChangeEnforceTime(uint256 indexed currentTime, bool flag);
     event ChangeMaxLockEpochs(uint256 indexed currentTime, uint256 oldEpochs, uint256 newEpochs);
-    
+    event UpdatedEpoch(uint currentId);
     // Errors
     error InsufficientAmount();
     error InsufficientBalance();

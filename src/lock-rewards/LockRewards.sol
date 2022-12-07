@@ -215,6 +215,11 @@ contract LockRewards is ILockRewards, ReentrancyGuard, Ownable, Pausable {
         return _getAccount(msg.sender);
     }
 
+    function updateEpochs() external whenNotPaused updateEpoch {
+        // nothing to do
+        emit UpdatedEpoch(currentEpoch);
+    }
+
     /**
      *  @notice Deposit tokens to receive rewards.
      * In case of a relock, it will increase the total locked epochs
@@ -234,7 +239,7 @@ contract LockRewards is ILockRewards, ReentrancyGuard, Ownable, Pausable {
     ) external nonReentrant whenNotPaused updateEpoch updateReward(msg.sender) {
         if (lockEpochs > maxEpochs) revert LockEpochsMax(maxEpochs);
         if (lockEpochs < minEpochs && lockEpochs != 0) revert LockEpochsMin(minEpochs);
-        if( lockEpochs == 0 && accounts[msg.sender].lockEpochs < minEpochs) revert IncreaseLockEpochsNotGTZero();
+        if( lockEpochs == 0 && accounts[msg.sender].lockEpochs == 0) revert IncreaseLockEpochsNotGTZero();
 
         IERC20 lToken = IERC20(lockToken);
 
@@ -258,7 +263,10 @@ contract LockRewards is ILockRewards, ReentrancyGuard, Ownable, Pausable {
         // Then, set the deposit for the upcoming ones
         uint256 _currEpoch = currentEpoch; 
         uint256 next = epochs[_currEpoch].isSet ? _currEpoch + 1 : _currEpoch;
-        
+        // if(_currEpoch == 1 && epochs[1].start > block.timestamp ) {
+        //     next = 1;
+        // }
+
         // Since all funds will be locked for the same period
         // Update all future lock epochs for this new value
         uint256 lockBoundary;
