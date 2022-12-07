@@ -234,7 +234,7 @@ contract LockRewards is ILockRewards, ReentrancyGuard, Ownable, Pausable {
     ) external nonReentrant whenNotPaused updateEpoch updateReward(msg.sender) {
         if (lockEpochs > maxEpochs) revert LockEpochsMax(maxEpochs);
         if (lockEpochs < minEpochs && lockEpochs != 0) revert LockEpochsMin(minEpochs);
-        if( lockEpochs == 0 && accounts[msg.sender].lockEpochs <= 0) revert IncreaseLockEpochsNotGTZero();
+        if( lockEpochs == 0 && accounts[msg.sender].lockEpochs < minEpochs) revert IncreaseLockEpochsNotGTZero();
 
         IERC20 lToken = IERC20(lockToken);
 
