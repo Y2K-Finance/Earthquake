@@ -107,16 +107,16 @@ contract LockTest is Test {
     function testDeposit() public {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
-        assert(lockRewards16.balanceOf(USER) == amountDeposit);
-        assert(lockRewards32.balanceOf(USER) == amountDeposit);
+        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");
+        assertTrue(lockRewards32.balanceOf(USER) == amountDeposit, "balance of lockRewards32");
     }
 
     function testReDeposit() public {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
         compoundDeposit();
-        assert(lockRewards16.balanceOf(USER) == amountDeposit * 2);
-        assert(lockRewards32.balanceOf(USER) == amountDeposit * 2);
+        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
+        assertTrue(lockRewards32.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards32");
     }
 
     function testFailReDeposit() public {
@@ -130,8 +130,8 @@ contract LockTest is Test {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
         lockDeposit(0,0);
-        assert(lockRewards16.balanceOf(USER) == amountDeposit * 2);
-        assert(lockRewards32.balanceOf(USER) == amountDeposit * 2);
+        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
+        assertTrue(lockRewards32.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards32");
     }
 
     //******************************************************************************/
@@ -199,15 +199,12 @@ contract LockTest is Test {
     }
 
     function testMultipleEpochs(uint any) public {
-        vm.assume(any > 0 && any < 33);
+        vm.assume(any > 0 && any < 32);
         setupDeploy();
-        SkipMultipleEpochs(any);
-    }
-
-    function SkipMultipleEpochs(uint any) public {
+        transitionNextEpoch();
         for(uint i = 0; i <= any; i++) {
             viewCurrentEpoch();
-            transitionNextEpoch();
+            startNextEpoch(block.timestamp +  1 days + 2);
             console.log("Warp to next epoch");
             console2.log("i current epoch", i);
         }
@@ -342,11 +339,10 @@ contract LockTest is Test {
             claimRewards();
         }
     }
-
-    function testFailFuzzCompoundRewards(uint any) public {
-        vm.assume(any < minEpochs && any > 0);
+    // test for IncreaseLockEpochsNotGTZero()
+    function testFailCompoundRewards() public {
         testClaimRewards();
-        for(uint i = 0; i <= any; i++){
+        for(uint i = 0; i <= minEpochs; i++){
             lockDeposit(0,0);
             console.log("Compound rewards");
             startNextEpoch(block.timestamp + 1 days + 2);
@@ -355,6 +351,7 @@ contract LockTest is Test {
 
             claimRewards();
         }
+        // vm.expectRevert(LockRewards.selector.IncreaseLockEpochsNotGTZero());
     }
 
     //******************************************************************************/
