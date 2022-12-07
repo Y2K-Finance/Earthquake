@@ -263,9 +263,9 @@ contract LockRewards is ILockRewards, ReentrancyGuard, Ownable, Pausable {
         // Then, set the deposit for the upcoming ones
         uint256 _currEpoch = currentEpoch; 
         uint256 next = epochs[_currEpoch].isSet ? _currEpoch + 1 : _currEpoch;
-        // if(_currEpoch == 1 && epochs[1].start > block.timestamp ) {
-        //     next = 1;
-        // }
+        if(_currEpoch == 1 && epochs[1].start > block.timestamp ) {
+            next = 1;
+        }
 
         // Since all funds will be locked for the same period
         // Update all future lock epochs for this new value
