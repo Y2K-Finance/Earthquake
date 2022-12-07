@@ -269,25 +269,7 @@ contract LockTest is Test {
     /*                                      CLAIM
     ////////// ///////////////////////////////////////////////////////////////////*/
 
-    function testClaimRewards() public {
-
-        setupDeploy();
-        lockDeposit(minEpochs, maxEpochs);
-        console.log("Claim Rewards");
-
-        //skip 1 epoch
-        vm.warp(epochStart + 1 days);
-        (uint y2k_rewards16, uint weth_rewards16) = viewAccount16();
-        (uint y2k_rewards32, uint weth_rewards32) = viewAccount32();
-        // //skip another 1 epoch
-        // vm.warp(block.timestamp + 1 days + 1);
-        // (uint y2k2_rewards16, uint weth2_rewards16) = viewAccount16();
-        // (uint y2k2_rewards32, uint weth2_rewards32) = viewAccount32();
-        // assertTrue(y2k_rewards16 < y2k2_rewards16, "y2k_rewards16 < y2k2_rewards16");
-        // assertTrue(weth_rewards16 < weth2_rewards16, "weth_rewards16 < weth2_rewards16");
-        // assertTrue(y2k_rewards32 < y2k2_rewards32, "y2k_rewards32 < y2k2_rewards32");
-        // assertTrue(weth_rewards32 < weth2_rewards32, "weth_rewards32 < weth2_rewards32");
-        
+    function claimRewards() public {
         uint oldBalanceY2k = ERC20(y2k).balanceOf(USER);
         uint oldBalanceWeth = ERC20(weth).balanceOf(USER);
         
@@ -320,11 +302,60 @@ contract LockTest is Test {
         assertTrue(newBalanceWeth > oldBalanceWeth, "newBalanceWeth > oldBalanceWeth");
     }
 
-    // function testCompoundRewards() public {
-    //     testClaimRewards();
-    //     lockDeposit(0,0);
-    //     console.log("Compound rewards");
-    // }
+    function testClaimRewards() public {
+
+        setupDeploy();
+        lockDeposit(minEpochs, maxEpochs);
+        console.log("Claim Rewards");
+
+        //skip 1st epoch
+        vm.warp(epochStart + 1 days);
+        // (uint y2k_rewards16, uint weth_rewards16) = viewAccount16();
+        // (uint y2k_rewards32, uint weth_rewards32) = viewAccount32();
+        viewAccount16();
+        viewAccount32();
+
+        claimRewards();        
+    }
+
+    function testCompoundRewards() public {
+        testClaimRewards();
+        lockDeposit(0,0);
+        console.log("Compound rewards");
+        vm.warp(block.timestamp + 1 days + 2);
+        viewAccount16();
+        viewAccount32();
+
+        claimRewards();
+    }
+
+    function testFuzzCompoundRewards(uint any) public {
+        vm.assume(any < minEpochs - 1 && any > 0);
+        testClaimRewards();
+        for(uint i = 0; i <= any; i++){
+            lockDeposit(0,0);
+            console.log("Compound rewards");
+            startNextEpoch(block.timestamp + 1 days + 2);
+            viewAccount16();
+            viewAccount32();
+
+            claimRewards();
+        }
+    }
+
+    function testFailFuzzCompoundRewards(uint any) public {
+        vm.assume(any < minEpochs && any > 0);
+        testClaimRewards();
+        for(uint i = 0; i <= any; i++){
+            lockDeposit(0,0);
+            console.log("Compound rewards");
+            startNextEpoch(block.timestamp + 1 days + 2);
+            viewAccount16();
+            viewAccount32();
+
+            claimRewards();
+        }
+    }
 
     //******************************************************************************/
     /*                                      VIEW
