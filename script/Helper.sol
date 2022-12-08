@@ -55,7 +55,7 @@ contract HelperConfig is Script {
     }
 
     struct ConfigMarket {
-        uint256 index;
+        uint256 marketId;
         string name;
         address oracle;
         int256 strikePrice;
@@ -66,13 +66,13 @@ contract HelperConfig is Script {
         uint256 epochBegin;
         uint256 epochEnd;
         uint256 epochFee;
-        uint256 index;
+        uint256 marketId;
     }
 
     struct ConfigFarms {
         string farmRewardsHEDGE;
         string farmRewardsRISK;
-        uint index;
+        uint marketId;
     }
 
     VaultFactory vaultFactory;
@@ -82,11 +82,12 @@ contract HelperConfig is Script {
     KeeperGelatoDepeg keeperDepeg;
     KeeperGelatoEndEpoch keeperEndEpoch;
     ConfigVariables configVariables;
+
     function setVariables() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON.json");
         string memory json = vm.readFile(path);
-        bytes memory parseJsonByteCode = json.parseRaw(".variables[0]");
+        bytes memory parseJsonByteCode = json.parseRaw(".variables");
         configVariables = abi.decode(parseJsonByteCode, (ConfigVariables));
         // console2.log("ConfigVariables ", rawConstants.amountOfNewMarkets);
     }
@@ -114,6 +115,7 @@ contract HelperConfig is Script {
         //console2.log("ConfigAddresses ", rawConstants.weth);
         return rawConstants;
     }
+    
     function getConfigMarket(uint256 index) public returns (ConfigMarket memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON.json");

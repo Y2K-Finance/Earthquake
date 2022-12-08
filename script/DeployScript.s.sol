@@ -29,14 +29,22 @@ contract DeployScript is Script, HelperConfig {
     function deploy() public {
         if(configVariables.newMarkets) {
             //deploy new markets
-            for(uint i = 0; i < configVariables.amountOfNewMarkets;++i){
-                uint index = configVariables.marketsIds[i];
-                ConfigMarket memory markets = getConfigMarket(index);
-                ConfigEpochs memory epochs = getConfigEpochs(index);
+            deployMarkets();
+        }
+        else if(configVariables.newEpochs){
+            //deploy new epochs
+            deployEpochs();
+        }
+    }
 
+    function deployMarkets() public {
+        for(uint i = 0; i < configVariables.amountOfNewMarkets;++i){
+                uint marketId = configVariables.marketsIds[i];
+                ConfigMarket memory markets = getConfigMarket(marketId);
+                ConfigEpochs memory epochs = getConfigEpochs(marketId);
                 //TODO verify
-                require(markets.index == epochs.index, "index of markets and epochs are not the same");
-                require(markets.index == index, "index of markets and loop are not the same");
+                require(markets.marketId == epochs.marketId, "marketId of markets and epochs are not the same");
+                require(markets.marketId == marketId, "marketId of markets and loop are not the same");
     
                 vaultFactory.createNewMarket(
                     epochs.epochFee, 
@@ -47,49 +55,48 @@ contract DeployScript is Script, HelperConfig {
                     markets.oracle, 
                     markets.name);
 
-                isIndexDeployed[index] = true;
+                isIndexDeployed[marketId] = true;
 
                 if(configVariables.newFarms){
-                    ConfigFarms memory farms = getConfigFarms(index);
-                    require(farms.index == index, "index of farms and loop are not the same");
+                    ConfigFarms memory farms = getConfigFarms(marketId);
+                    require(farms.marketId == marketId, "marketId of farms and loop are not the same");
                     (address _rHedge, 
                     address _rRisk) = rewardsFactory.createStakingRewards(
-                        index, epochs.epochEnd);
+                        marketId, epochs.epochEnd);
                     fundFarms(_rHedge, _rRisk, 
                     farms.farmRewardsHEDGE, farms.farmRewardsRISK);
                 }
             }
-        }
-        else if(configVariables.newEpochs){
-            //deploy new markets
-            for(uint i = 0; i < configVariables.amountOfNewEpochs;++i){
-                uint index = configVariables.epochsIds[i];
-                ConfigEpochs memory epochs = getConfigEpochs(index);
+    }
+
+    function deployEpochs() public {
+        for(uint i = 0; i < configVariables.amountOfNewEpochs;++i){
+                uint marketId = configVariables.epochsIds[i];
+                ConfigEpochs memory epochs = getConfigEpochs(marketId);
 
                 //TODO verify
-                require(epochs.index == index, "index of epochs and loop are not the same");
+                require(epochs.marketId == marketId, "marketId of epochs and loop are not the same");
     
-                if(!isIndexDeployed[index]){
+                if(!isIndexDeployed[marketId]){
                     vaultFactory.deployMoreAssets(
-                        index,
+                        marketId,
                         epochs.epochBegin, 
                         epochs.epochEnd, 
                         epochs.epochFee);
 
-                    isIndexDeployed[index] = true;
+                    isIndexDeployed[marketId] = true;
 
                     if(configVariables.newFarms){
-                        ConfigFarms memory farms = getConfigFarms(index);
-                        require(farms.index == index, "index of farms and loop are not the same");
+                        ConfigFarms memory farms = getConfigFarms(marketId);
+                        require(farms.marketId == marketId, "marketId of farms and loop are not the same");
                         (address _rHedge, 
                         address _rRisk) = rewardsFactory.createStakingRewards(
-                            index, epochs.epochEnd);
+                            marketId, epochs.epochEnd);
                         fundFarms(_rHedge, _rRisk, 
                         farms.farmRewardsHEDGE, farms.farmRewardsRISK);
                     }
                 }
             }
-        }
     }
 
     function fundFarms(address _rHedge, address _rRisk, string memory _rewardsAmountHEDGE, string memory _rewardsAmountRISK) public {
