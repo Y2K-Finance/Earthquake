@@ -1,6 +1,97 @@
 {
     "markets":[
         {
+            "index": 0,
+            "name": "y2kASSET_STRIKEPRICE*",
+            "strikePrice": 999999999990909090,
+            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+            "oracle": "0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b",
+          },
+        {
+            "index": 1,
+            "name": "y2kMIM_975*",
+            "strikePrice": 975999999999999999,
+            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+            "oracle": "0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b",
+          },
+          {
+            "index": 2,
+            "name": "y2kUSDC_997*",
+            "strikePrice": 997999999999999999,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
+          },
+          {
+            "index": 3,
+            "name": "y2kUSDT_991*",
+            "strikePrice": 991999999999999999,
+            "token": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+            "oracle": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
+          },
+          {
+            "index": 4,
+            "name": "y2kFRAX_991*", 
+            "strikePrice": 991999999999999999,
+            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
+            "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8",
+          },
+          {
+            "index": 5,
+            "name": "y2kDAI_991*",
+            "strikePrice": 991000000000000000,
+            "token": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+            "oracle": "0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB",
+          },
+          {
+            "index": 6,
+            "name": "y2kMIM_975*",
+            "strikePrice": 975000000000000000,
+            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+            "oracle": "0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b",
+          },
+          {
+            "index": 7,
+            "name": "y2kUSDC_997*",
+            "strikePrice": 997000000000000000,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
+          },
+          {
+            "index": 8,
+            "name": "y2kUSDT_991*",
+            "strikePrice": 991000000000000000,
+            "token": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+            "oracle": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
+          },
+          {
+            "index": 9,
+            "name": "y2kFRAX_991*",
+            "strikePrice": 991000000000000000,
+            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
+            "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8",
+          },
+          {
+            "index": 10,
+            "name": "y2kDAI_991*",
+            "strikePrice": 991000000000000000,
+            "token": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+            "oracle": "0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB",
+          },
+          {
+            "index": 11,
+            "name": "y2kUSDC_980*",
+            "strikePrice": 980000000000000000,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
+          },
+          {
+            "index": 12,
+            "name": "y2kUSDT_980*",
+            "strikePrice": 980000000000000000,
+            "token": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+            "oracle": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
+          },
+        {
             "index": 13,
             "name":"y2kFRAX_990*",
             "strikePrice": 990000000000000000,
@@ -19,8 +110,44 @@
 
     "newMarkets": true,
     "amountOfNewMarkets": 2,
-    "marketIds": [13, 14],
+    "marketsIds": [13, 14],
     "epochs":[
+        {
+            "index": 0,
+            "epochBegin":   0,
+            "epochEnd":     0,
+            "epochFee":     150
+        },
+        {
+            "index": 1,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 2,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 3,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 4,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 5,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
         {
             "index": 6,
             "epochBegin":1670371200,
@@ -35,6 +162,30 @@
         },
         {
             "index": 8,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 9,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 10,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 11,
+            "epochBegin":1670371200,
+            "epochEnd":1670803200,
+            "epochFee":50
+        },
+        {
+            "index": 12,
             "epochBegin":1670371200,
             "epochEnd":1670803200,
             "epochFee":50
@@ -58,6 +209,36 @@
 
     "farms":[
         {
+            "index": 0,
+            "farmRewardsHEDGE": "00000000000000000000000",
+            "farmRewardsRISK" : "000000000000000000"
+        },
+        {
+            "index": 1,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 2,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 3,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 4,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 5,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
             "index": 6,
             "farmRewardsHEDGE": "10143000000000000000000",
             "farmRewardsRISK" : "5071000000000000000000"
@@ -73,6 +254,26 @@
             "farmRewardsRISK" : "5071000000000000000000"
         },
         {
+            "index": 9,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 10,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 11,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
+            "index": 12,
+            "farmRewardsHEDGE": "10143000000000000000000",
+            "farmRewardsRISK" : "5071000000000000000000"
+        },
+        {
             "index": 13,
             "farmRewardsHEDGE": "10143000000000000000000",
             "farmRewardsRISK" : "5071000000000000000000"
@@ -83,7 +284,5 @@
             "farmRewardsRISK" : "5071000000000000000000"
         }
     ],
-    "newFarms": true,
-    "amountOfNewFarms": 5,
-    "farmsIds": [6, 7, 8, 13, 14]
+    "newFarms": true
 }
