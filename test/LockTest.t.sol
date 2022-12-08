@@ -89,20 +89,6 @@ contract LockTest is Test {
         // viewAccount16();
         // viewAccount32();
     }
-
-    function compoundDeposit() public {
-        vm.startPrank(USER);
-        vm.warp(epochDurationInDays * 1 days);
-
-        lockRewards16.claimReward();
-        lockRewards32.claimReward();
-
-        ERC20(lp).approve(address(lockRewards16), amountDeposit);
-        lockRewards16.deposit(amountDeposit, minEpochs);
-        ERC20(lp).approve(address(lockRewards32), amountDeposit);
-        lockRewards32.deposit(amountDeposit, maxEpochs);
-        vm.stopPrank();
-    }
     
     function testDeposit() public {
         setupDeploy();
@@ -114,9 +100,10 @@ contract LockTest is Test {
     function testReDeposit() public {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
-        compoundDeposit();
+        lockDeposit(0, 0);
         assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
         assertTrue(lockRewards32.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards32");
+
     }
 
     function testFailReDeposit() public {
@@ -125,7 +112,6 @@ contract LockTest is Test {
         lockDeposit(1,1);
     }
 
-    // write test for compound lock check if rewards are accrued
     function testIncreaseAmount() public {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
@@ -315,13 +301,22 @@ contract LockTest is Test {
         claimRewards();        
     }
 
+    // write test for compound lock check if rewards are accrued
     function testCompoundRewards() public {
         testClaimRewards();
+        (uint lockEpochs16_old, uint y2kBal16_old, uint wethBal16_old) = viewAccount16();
+        (uint lockEpochs32_old, uint y2kBal32_old, uint wethBal32_old) = viewAccount32();
         lockDeposit(0,0);
         console.log("Compound rewards");
-        vm.warp(block.timestamp + 1 days + 2);
-        viewAccount16();
-        viewAccount32();
+        startNextEpoch(block.timestamp + 1 days + 2);
+        (uint lockEpochs16_new, uint y2kBal16_new, uint wethBal16_new) = viewAccount16();
+        (uint lockEpochs32_new, uint y2kBal32_new, uint wethBal32_new) = viewAccount32();
+
+        assertTrue(y2kBal16_new > y2kBal16_old, "y2kBal16_new > y2kBal16_old");
+        assertTrue(wethBal16_new > wethBal16_old, "wethBal16_new > wethBal16_old");
+        assertTrue(lockEpochs16_new == lockEpochs16_old - 1, "lockEpochs16_new == lockEpochs16_old");
+        emit log_named_uint("lockEpochs16_new", lockEpochs16_new);
+        emit log_named_uint("lockEpochs16_old", lockEpochs16_old);
 
         claimRewards();
     }
@@ -330,11 +325,19 @@ contract LockTest is Test {
         vm.assume(any < minEpochs - 1 && any > 0);
         testClaimRewards();
         for(uint i = 0; i <= any; i++){
+            (uint lockEpochs16_old, uint y2kBal16_old, uint wethBal16_old) = viewAccount16();
+            (uint lockEpochs32_old, uint y2kBal32_old, uint wethBal32_old) = viewAccount32();
             lockDeposit(0,0);
             console.log("Compound rewards");
             startNextEpoch(block.timestamp + 1 days + 2);
-            viewAccount16();
-            viewAccount32();
+            (uint lockEpochs16_new, uint y2kBal16_new, uint wethBal16_new) = viewAccount16();
+            (uint lockEpochs32_new, uint y2kBal32_new, uint wethBal32_new) = viewAccount32();
+
+            assertTrue(y2kBal16_new > y2kBal16_old, "y2kBal16_new > y2kBal16_old");
+            assertTrue(wethBal16_new > wethBal16_old, "wethBal16_new > wethBal16_old");
+            assertTrue(lockEpochs16_new == lockEpochs16_old - 1, "lockEpochs16_new == lockEpochs16_old");
+            emit log_named_uint("lockEpochs16_new", lockEpochs16_new);
+            emit log_named_uint("lockEpochs16_old", lockEpochs16_old);
 
             claimRewards();
         }
@@ -358,7 +361,7 @@ contract LockTest is Test {
     /*                                      VIEW
     ////////// ///////////////////////////////////////////////////////////////////*/
 
-    function viewAccount16() public returns(uint, uint){
+    function viewAccount16() public returns(uint, uint, uint){
         console.log("View account 16");
         vm.startPrank(USER);
         (uint256 balance, uint256 lockEpochs, uint256 lastEpochPaid, 
@@ -372,9 +375,9 @@ contract LockTest is Test {
 
         uint y2kBal = rewards1;
         uint wethBal = rewards2;
-        return (y2kBal, wethBal);
+        return (lockEpochs, y2kBal, wethBal);
     }
-    function viewAccount32() public returns(uint, uint){
+    function viewAccount32() public returns(uint, uint, uint){
         console.log("View account 32");
         vm.startPrank(USER);
         (uint256 balance, uint256 lockEpochs, uint256 lastEpochPaid, 
@@ -388,7 +391,7 @@ contract LockTest is Test {
 
         uint y2kBal = rewards1;
         uint wethBal = rewards2;
-        return (y2kBal, wethBal);
+        return (lockEpochs, y2kBal, wethBal);
     }
 
     function viewCurrentEpoch() public {
