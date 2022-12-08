@@ -8,7 +8,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 contract LockTest is Test {
 
     LockRewards lockRewards16;
-    LockRewards lockRewards32;
     address y2k = 0x5D59e5837F7e5d0F710178Eda34d9eCF069B36D2;
     address weth = 0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1;
     address lp = 0xE3d9514f1485e3A26789B4a0a2A874D270EFE37e;
@@ -29,21 +28,15 @@ contract LockTest is Test {
         vm.startPrank(USER);
         console.log("Setup");
         lockRewards16 = new LockRewards(lp, y2k, weth, maxEpochs, minEpochs);
-        lockRewards32 = new LockRewards(lp, y2k, weth, maxEpochs, maxEpochs);
         ERC20(y2k).transfer(address(lockRewards16), rewardsY2k);
         ERC20(y2k).transfer(address(lockRewards16), rewardsY2k);
         // emit log_named_uint("balance of y2k", ERC20(y2k).balanceOf(USER));
         ERC20(weth).transfer(address(lockRewards16), rewardsWeth);
         ERC20(weth).transfer(address(lockRewards16), rewardsWeth);
         // emit log_named_uint("balance of weth", ERC20(weth).balanceOf(USER));
-        ERC20(y2k).transfer(address(lockRewards32), rewardsY2k * 2);
-        ERC20(y2k).transfer(address(lockRewards32), rewardsY2k * 2);
-        ERC20(weth).transfer(address(lockRewards32), rewardsWeth * 2);
-        ERC20(weth).transfer(address(lockRewards32), rewardsWeth * 2);
+
         // emit log_named_uint("balance of y2k16 ", ERC20(y2k).balanceOf(address(lockRewards16)));
-        // emit log_named_uint("balance of y2k32 ", ERC20(y2k).balanceOf(address(lockRewards32)));
         // emit log_named_uint("balance of weth16", ERC20(weth).balanceOf(address(lockRewards16)));
-        // emit log_named_uint("balance of weth32", ERC20(weth).balanceOf(address(lockRewards32)));
 
         lockRewards16.setNextEpoch_start(rewardsY2k, rewardsWeth, epochDurationInDays,
          epochStart);
@@ -51,18 +44,11 @@ contract LockTest is Test {
         lockRewards16.setNextEpoch(rewardsY2k, rewardsWeth,
          epochDurationInDays);
 
-        lockRewards32.setNextEpoch_start(rewardsY2k * 2,
-         rewardsWeth * 2, epochDurationInDays, epochStart);
-
-        lockRewards32.setNextEpoch(rewardsY2k * 2,
-         rewardsWeth * 2, epochDurationInDays);
-
         vm.stopPrank();
     }
 
     function setupFork() public {
         lockRewards16 = LockRewards(0x25002Bc9266ac29D10eb655FE959902D650f9Fe0);
-        lockRewards32 = LockRewards(0x045D4cBC009C87FAb4d08AcfF7cF6e36ec5491f6);
         emit log_named_uint("balance of lp", ERC20(lp).balanceOf(USER));
     }
 
@@ -70,47 +56,37 @@ contract LockTest is Test {
     /*                                      DEPOSIT
     ////////// ///////////////////////////////////////////////////////////////////*/
 
-    function lockDeposit(uint epochs16, uint epochs32) public {
+    function lockDeposit(uint _minEpoch, uint _maxEpoch) public {
         //setupDeploy();
         //setupFork();
         console.log("Deposit");
         vm.startPrank(USER);
         ERC20(lp).approve(address(lockRewards16), amountDeposit);
-        lockRewards16.deposit(amountDeposit, epochs16);
-        ERC20(lp).approve(address(lockRewards32), amountDeposit);
-        lockRewards32.deposit(amountDeposit, epochs32);
+        lockRewards16.deposit(amountDeposit, _minEpoch);
         vm.stopPrank();
 
         emit log_named_uint("balance of lp", ERC20(lp).balanceOf(USER));
         //balance of lockRewards16
         emit log_named_uint("balance of lockRewards16", lockRewards16.balanceOf(USER));
-        //balance of lockRewards32
-        emit log_named_uint("balance of lockRewards32", lockRewards32.balanceOf(USER));
         // viewAccount16();
-        // viewAccount32();
     }
 
     // function testFuzzDeposit(uint epochs, uint amount) public {
     //     setupDeploy();
     //     lockDeposit(epochs, epochs);
     //     assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");
-    //     assertTrue(lockRewards32.balanceOf(USER) == amountDeposit, "balance of lockRewards32");
     // }
     
     function testDeposit() public {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
-        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");
-        assertTrue(lockRewards32.balanceOf(USER) == amountDeposit, "balance of lockRewards32");
-    }
+        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");    }
 
     function testReDeposit() public {
         setupDeploy();
         lockDeposit(minEpochs, maxEpochs);
         lockDeposit(0, 0);
         assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
-        assertTrue(lockRewards32.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards32");
-
     }
 
     function testFailReDeposit() public {
@@ -124,7 +100,6 @@ contract LockTest is Test {
         lockDeposit(minEpochs, maxEpochs);
         lockDeposit(0,0);
         assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
-        assertTrue(lockRewards32.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards32");
     }
 
     //******************************************************************************/
@@ -140,21 +115,11 @@ contract LockTest is Test {
         // emit log_named_uint("balance of y2k", ERC20(y2k).balanceOf(USER));
         ERC20(weth).transfer(address(lockRewards16), rewardsWeth);
         ERC20(weth).transfer(address(lockRewards16), rewardsWeth);
-        // emit log_named_uint("balance of weth", ERC20(weth).balanceOf(USER));
-        ERC20(y2k).transfer(address(lockRewards32), rewardsY2k * 2);
-        ERC20(y2k).transfer(address(lockRewards32), rewardsY2k * 2);
-        ERC20(weth).transfer(address(lockRewards32), rewardsWeth * 2);
-        ERC20(weth).transfer(address(lockRewards32), rewardsWeth * 2);
+
         // emit log_named_uint("balance of y2k16 ", ERC20(y2k).balanceOf(address(lockRewards16)));
-        // emit log_named_uint("balance of y2k32 ", ERC20(y2k).balanceOf(address(lockRewards32)));
         // emit log_named_uint("balance of weth16", ERC20(weth).balanceOf(address(lockRewards16)));
-        // emit log_named_uint("balance of weth32", ERC20(weth).balanceOf(address(lockRewards32)));
 
         lockRewards16.setNextEpoch(rewardsY2k, rewardsWeth, epochDurationInDays);
-
-        lockRewards32.setNextEpoch(rewardsY2k * 2,
-         rewardsWeth * 2, epochDurationInDays);
-
         vm.stopPrank();
 
         (uint start, uint finish, uint locked, uint rewards1, uint rewards2, ) = lockRewards16.getNextEpoch();
@@ -177,7 +142,6 @@ contract LockTest is Test {
         //epoch 2
         vm.warp(epochStart + 1 days);
         lockRewards16.updateEpochs();
-        lockRewards32.updateEpochs();
         console.log("Warp to next epoch");
         console2.log("block.timestamp", block.timestamp);
         viewCurrentEpoch();
@@ -185,14 +149,13 @@ contract LockTest is Test {
         //epoch 3
         vm.warp(block.timestamp + (epochDurationInDays * 200 * 1 days));
         lockRewards16.updateEpochs();
-        lockRewards32.updateEpochs();
         console.log("Warp to next epoch");
         console2.log("block.timestamp", block.timestamp);
         viewCurrentEpoch();
     }
 
     function testMultipleEpochs(uint any) public {
-        vm.assume(any > 0 && any < 32);
+        vm.assume(any > 0 && any < maxEpochs - 1);
         setupDeploy();
         transitionNextEpoch();
         for(uint i = 0; i <= any; i++) {
@@ -202,11 +165,6 @@ contract LockTest is Test {
             console2.log("i current epoch", i);
         }
     }
-    
-    // TODO
-    // relock your already locked tokens (need to be min epochs)
-    // increase your position when already locked
-    // lock for min epochs amount
 
     function transitionNextEpoch() public {
         (uint256 start,
@@ -269,11 +227,6 @@ contract LockTest is Test {
         emit log_named_uint("rewarded weth", rewarded2);
         assertTrue(rewarded1 > 0, "rewarded1_16 > 0");
         assertTrue(rewarded2 > 0, "rewarded2_16 > 0");
-        (rewarded1, rewarded2) = lockRewards32.claimReward();
-        emit log_named_uint("rewarded y2k ", rewarded1);
-        emit log_named_uint("rewarded weth", rewarded2);
-        assertTrue(rewarded1 > 0, "rewarded1_32 > 0");
-        assertTrue(rewarded2 > 0, "rewarded2_32 > 0");
         vm.stopPrank();
 
         uint newBalanceY2k = ERC20(y2k).balanceOf(USER);
@@ -301,13 +254,10 @@ contract LockTest is Test {
         //skip 1st epoch
         vm.warp(epochStart + 1 days);
         (, uint y2k_rewards16_old, uint weth_rewards16_old) = viewAccount16();
-        (, uint y2k_rewards32_old, uint weth_rewards32_old) = viewAccount32();
         viewAccount16();
-        viewAccount32();
 
         claimRewards();        
         (, uint y2k_rewards16_new, uint weth_rewards16_new) = viewAccount16();
-        (, uint y2k_rewards32_new, uint weth_rewards32_new) = viewAccount32();
 
         assertTrue(y2k_rewards16_new < y2k_rewards16_old, "y2k_rewards16_new < y2k_rewards16_old");
         assertTrue(weth_rewards16_new < weth_rewards16_old, "weth_rewards16_new < weth_rewards16_old");
@@ -318,12 +268,10 @@ contract LockTest is Test {
     function testCompoundRewards() public {
         testClaimRewards();
         (uint lockEpochs16_old, uint y2kBal16_old, uint wethBal16_old) = viewAccount16();
-        (uint lockEpochs32_old, uint y2kBal32_old, uint wethBal32_old) = viewAccount32();
         lockDeposit(0,0);
         console.log("Compound rewards");
         startNextEpoch(block.timestamp + 1 days + 2);
         (uint lockEpochs16_new, uint y2kBal16_new, uint wethBal16_new) = viewAccount16();
-        (uint lockEpochs32_new, uint y2kBal32_new, uint wethBal32_new) = viewAccount32();
 
         assertTrue(y2kBal16_new > y2kBal16_old, "y2kBal16_new > y2kBal16_old");
         assertTrue(wethBal16_new > wethBal16_old, "wethBal16_new > wethBal16_old");
@@ -339,12 +287,10 @@ contract LockTest is Test {
         testClaimRewards();
         for(uint i = 0; i <= any; i++){
             (uint lockEpochs16_old, uint y2kBal16_old, uint wethBal16_old) = viewAccount16();
-            (uint lockEpochs32_old, uint y2kBal32_old, uint wethBal32_old) = viewAccount32();
             lockDeposit(0,0);
             console.log("Compound rewards");
             startNextEpoch(block.timestamp + 1 days + 2);
             (uint lockEpochs16_new, uint y2kBal16_new, uint wethBal16_new) = viewAccount16();
-            (uint lockEpochs32_new, uint y2kBal32_new, uint wethBal32_new) = viewAccount32();
 
             assertTrue(y2kBal16_new > y2kBal16_old, "y2kBal16_new > y2kBal16_old");
             assertTrue(wethBal16_new > wethBal16_old, "wethBal16_new > wethBal16_old");
@@ -363,7 +309,6 @@ contract LockTest is Test {
             console.log("Compound rewards");
             startNextEpoch(block.timestamp + 1 days + 2);
             viewAccount16();
-            viewAccount32();
 
             claimRewards();
         }
@@ -390,29 +335,10 @@ contract LockTest is Test {
         uint wethBal = rewards2;
         return (lockEpochs, y2kBal, wethBal);
     }
-    function viewAccount32() public returns(uint, uint, uint){
-        console.log("View account 32");
-        vm.startPrank(USER);
-        (uint256 balance, uint256 lockEpochs, uint256 lastEpochPaid, 
-        uint256 rewards1, uint256 rewards2) = lockRewards32.updateAccount();
-        emit log_named_uint("balance", balance);
-        emit log_named_uint("epochs locked", lockEpochs);
-        emit log_named_uint("last epoch paid", lastEpochPaid);
-        emit log_named_uint("y2k rewards1", rewards1);
-        emit log_named_uint("weth rewards2", rewards2);
-        vm.stopPrank();
-
-        uint y2kBal = rewards1;
-        uint wethBal = rewards2;
-        return (lockEpochs, y2kBal, wethBal);
-    }
 
     function viewCurrentEpoch() public {
         //lockrewards16 current epoch
         uint epoch16 = lockRewards16.currentEpoch();
-        //lockrewards32 current epoch
-        uint epoch32 = lockRewards32.currentEpoch();
         emit log_named_uint("current epoch16", epoch16);
-        emit log_named_uint("current epoch32", epoch32);
     }
 }
