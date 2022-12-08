@@ -83,55 +83,14 @@ contract HelperConfig is Script {
     KeeperGelatoEndEpoch keeperEndEpoch;
     ConfigVariables configVariables;
     function setVariables() public {
-
-        uint256[] memory _marketsIds;
-        uint256 _amountOfNewMarkets;
-
-        uint256 _amountOfNewEpochs;
-        uint256[] memory _epochsIds;
-
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON.json");
         string memory json = vm.readFile(path);
-        bytes memory parseJsonByteCode = json.parseRaw(".newMarkets");
-        bool _newMarkets = abi.decode(parseJsonByteCode, (bool));
-        if(_newMarkets) {
-            parseJsonByteCode = json.parseRaw(".amountOfNewMarkets");
-            _amountOfNewMarkets = abi.decode(parseJsonByteCode, (uint256));
-            parseJsonByteCode = json.parseRaw(".marketsIds");
-            _marketsIds = abi.decode(parseJsonByteCode, (uint256[]));
-            console2.log("newMarkets", _newMarkets);
-            console2.log("amountOfNewMarkets", _amountOfNewMarkets);
-            for(uint i = 0; i < _amountOfNewMarkets; i++) {
-                console2.log("marketsIds", _marketsIds[i]);
-            }
-        }
-
-        parseJsonByteCode = json.parseRaw(".newEpochs");
-        bool _newEpochs = abi.decode(parseJsonByteCode, (bool));
-        if(_newEpochs) {
-            parseJsonByteCode = json.parseRaw(".amountOfNewEpochs");
-            _amountOfNewEpochs = abi.decode(parseJsonByteCode, (uint256));
-            parseJsonByteCode = json.parseRaw(".epochsIds");
-            _epochsIds = abi.decode(parseJsonByteCode, (uint256[]));
-            console2.log("newEpochs", _newEpochs);
-            console2.log("amountOfNewEpochs", _amountOfNewEpochs);
-            for(uint i = 0; i < _amountOfNewEpochs; i++) {
-                console2.log("epochsIds", _epochsIds[i]);
-            }
-        }
-        bool _newFarms = abi.decode(json.parseRaw(".newFarms"), (bool));
-
-        configVariables = ConfigVariables({
-            amountOfNewEpochs: _amountOfNewEpochs,
-            amountOfNewMarkets: _amountOfNewMarkets,
-            epochsIds: _epochsIds,
-            marketsIds: _marketsIds,
-            newEpochs: _newEpochs,
-            newFarms: _newFarms,
-            newMarkets: _newMarkets
-        });
+        bytes memory parseJsonByteCode = json.parseRaw(".variables[0]");
+        configVariables = abi.decode(parseJsonByteCode, (ConfigVariables));
+        // console2.log("ConfigVariables ", rawConstants.amountOfNewMarkets);
     }
+
     function contractToAddresses(ConfigAddresses memory configAddresses) public {
         vaultFactory = VaultFactory(configAddresses.vaultFactory);
         controller = Controller(configAddresses.controller);

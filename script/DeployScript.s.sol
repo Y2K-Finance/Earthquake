@@ -4,8 +4,8 @@ pragma solidity ^0.8.13;
 import "./Helper.sol";
 
 /// @author MiguelBits
-//forge script ConfigScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
-contract ConfigScript is Script, HelperConfig {
+//forge script DeployScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
+contract DeployScript is Script, HelperConfig {
 
     mapping (uint => bool) isIndexDeployed;
 
@@ -20,6 +20,13 @@ contract ConfigScript is Script, HelperConfig {
         setupY2K();
         //if true deploy new markets
         vm.startBroadcast();
+        
+        deploy();
+
+        vm.stopBroadcast();
+    }
+
+    function deploy() public {
         if(configVariables.newMarkets) {
             //deploy new markets
             for(uint i = 0; i < configVariables.amountOfNewMarkets;++i){
@@ -83,8 +90,6 @@ contract ConfigScript is Script, HelperConfig {
                 }
             }
         }
-
-        vm.stopBroadcast();
     }
 
     function fundFarms(address _rHedge, address _rRisk, string memory _rewardsAmountHEDGE, string memory _rewardsAmountRISK) public {
