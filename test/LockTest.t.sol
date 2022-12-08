@@ -89,6 +89,13 @@ contract LockTest is Test {
         // viewAccount16();
         // viewAccount32();
     }
+
+    // function testFuzzDeposit(uint epochs, uint amount) public {
+    //     setupDeploy();
+    //     lockDeposit(epochs, epochs);
+    //     assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");
+    //     assertTrue(lockRewards32.balanceOf(USER) == amountDeposit, "balance of lockRewards32");
+    // }
     
     function testDeposit() public {
         setupDeploy();
@@ -293,12 +300,18 @@ contract LockTest is Test {
 
         //skip 1st epoch
         vm.warp(epochStart + 1 days);
-        // (uint y2k_rewards16, uint weth_rewards16) = viewAccount16();
-        // (uint y2k_rewards32, uint weth_rewards32) = viewAccount32();
+        (, uint y2k_rewards16_old, uint weth_rewards16_old) = viewAccount16();
+        (, uint y2k_rewards32_old, uint weth_rewards32_old) = viewAccount32();
         viewAccount16();
         viewAccount32();
 
         claimRewards();        
+        (, uint y2k_rewards16_new, uint weth_rewards16_new) = viewAccount16();
+        (, uint y2k_rewards32_new, uint weth_rewards32_new) = viewAccount32();
+
+        assertTrue(y2k_rewards16_new < y2k_rewards16_old, "y2k_rewards16_new < y2k_rewards16_old");
+        assertTrue(weth_rewards16_new < weth_rewards16_old, "weth_rewards16_new < weth_rewards16_old");
+
     }
 
     // write test for compound lock check if rewards are accrued
