@@ -4,10 +4,12 @@
         "newMarkets": true,
         "amountOfNewMarkets": 2,
         "marketsIds": [13, 14],
-        "newFarms": true,
         "newEpochs": true,
         "amountOfNewEpochs": 5,
-        "epochsIds": [6, 7, 8, 13, 14]
+        "epochsIds": [6, 7, 8, 13, 14],
+        "amountOfNewFarms": 5,
+        "newFarms": true,
+        "farmsIds" : [6, 7, 8, 13, 14]
     },
 
     "markets":[

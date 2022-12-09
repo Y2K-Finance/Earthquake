@@ -19,8 +19,10 @@ contract HelperConfig is Script {
 
     struct ConfigVariables{
         uint256 amountOfNewEpochs;
+        uint256 amountOfNewFarms;
         uint256 amountOfNewMarkets;
         uint256[] epochsIds;
+        uint256[] farmsIds;
         uint256[] marketsIds;
         bool newEpochs;
         bool newFarms;
