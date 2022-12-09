@@ -72,6 +72,7 @@ contract HelperConfig is Script {
     }
 
     struct ConfigFarms {
+        uint256 epochEnd;
         string farmRewardsHEDGE;
         string farmRewardsRISK;
         uint marketId;
