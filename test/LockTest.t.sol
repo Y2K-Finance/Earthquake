@@ -56,7 +56,7 @@ contract LockTest is Test {
     /*                                      DEPOSIT
     ////////// ///////////////////////////////////////////////////////////////////*/
 
-    function lockDeposit(uint _minEpoch, uint _maxEpoch) public {
+    function lockDeposit(uint _minEpoch) public {
         //setupDeploy();
         //setupFork();
         console.log("Deposit");
@@ -71,7 +71,7 @@ contract LockTest is Test {
         // viewAccount16();
     }
 
-    function lockDepositAmount(uint _minEpoch, uint _maxEpoch, uint amount) public {
+    function lockDepositAmount(uint _minEpoch, uint amount) public {
         //setupDeploy();
         //setupFork();
         console.log("Deposit");
@@ -90,33 +90,82 @@ contract LockTest is Test {
         vm.assume(amount >= 0 && amount <= ERC20(lp).balanceOf(USER));
         vm.assume(epochs >= minEpochs && epochs <= maxEpochs);
         setupDeploy();
-        lockDepositAmount(epochs, epochs, amount);
+        lockDepositAmount(epochs, amount);
         assertTrue(lockRewards16.balanceOf(USER) == amount, "balance of lockRewards16");
     }
     
     function testDeposit() public {
         setupDeploy();
-        lockDeposit(minEpochs, maxEpochs);
+        lockDeposit(minEpochs);
         assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");    }
 
     function testReDeposit() public {
         setupDeploy();
-        lockDeposit(minEpochs, maxEpochs);
-        lockDeposit(0, 0);
+        lockDeposit(minEpochs);
+        lockDeposit(0);
         assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
     }
 
     function testFailReDeposit() public {
         setupDeploy();
-        lockDeposit(minEpochs, maxEpochs);
-        lockDeposit(1,1);
+        lockDeposit(minEpochs);
+        lockDeposit(1);
     }
 
     function testIncreaseAmount() public {
         setupDeploy();
-        lockDeposit(minEpochs, maxEpochs);
-        lockDeposit(0,0);
+        lockDeposit(minEpochs);
+        lockDeposit(0);
         assertTrue(lockRewards16.balanceOf(USER) == amountDeposit * 2, "balance of lockRewards16");
+    }
+
+    //Deposits after the first epoch starts, cant claim on 2nd epoch, can claim on 3rd epoch
+    function testDepositAfter1Epoch() public{
+        setupDeploy();
+        vm.warp(epochStart + 1);
+        console.log("Epoch 1");
+        lockDeposit(minEpochs);
+        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");
+        (uint lockedEpochs, uint rewardedY2k, uint rewardedWeth) = viewAccount16();
+        assertTrue(rewardedY2k == 0, "rewardedY2k");
+        assertTrue(rewardedWeth == 0, "rewardedWeth");
+        assertTrue(lockedEpochs == minEpochs, "lockedEpochs");
+
+        startNextEpoch(block.timestamp + epochDurationInDays * 1 days);
+        console.log("Epoch 2");
+        (lockedEpochs, rewardedY2k, rewardedWeth) = viewAccount16();
+        assertTrue(rewardedY2k == 0, "rewardedY2k");
+        assertTrue(rewardedWeth == 0, "rewardedWeth");
+        assertTrue(lockedEpochs == minEpochs, "lockedEpochs");
+
+        startNextEpoch(block.timestamp + epochDurationInDays * 1 days);
+        console.log("Epoch 3");
+
+        claimRewards();
+    }
+
+    //Deposits before the first epoch starts, can claim on 2nd epoch
+    function testDepositBefore1Epoch() public{
+        setupDeploy();
+        lockDeposit(minEpochs);
+        assertTrue(lockRewards16.balanceOf(USER) == amountDeposit, "balance of lockRewards16");
+        (uint lockedEpochs, uint rewardedY2k, uint rewardedWeth) = viewAccount16();
+        assertTrue(rewardedY2k == 0, "rewardedY2k");
+        assertTrue(rewardedWeth == 0, "rewardedWeth");
+        assertTrue(lockedEpochs == minEpochs, "lockedEpochs");
+
+        vm.warp(epochStart + 1);
+        // console.log("Epoch 2");
+        startNextEpoch(block.timestamp + epochDurationInDays * 1 days);
+        (uint lockedEpochs_new, uint rewardedY2k_new, uint rewardedWeth_new) = viewAccount16();
+        emit log_named_uint("lockedEpochs_new", lockedEpochs_new);
+        emit log_named_uint("rewardedY2k_new", rewardedY2k_new);
+        emit log_named_uint("rewardedWeth_new", rewardedWeth_new);
+        assertTrue(rewardedY2k_new >= rewardedY2k, "rewardedY2k");
+        assertTrue(rewardedWeth_new >= rewardedWeth, "rewardedWeth");
+        assertTrue(lockedEpochs_new == minEpochs - 1, "lockedEpochs");
+
+        claimRewards();
     }
 
     //******************************************************************************/
@@ -264,7 +313,7 @@ contract LockTest is Test {
     function testClaimRewards() public {
 
         setupDeploy();
-        lockDeposit(minEpochs, maxEpochs);
+        lockDeposit(minEpochs);
         console.log("Claim Rewards");
 
         //skip 1st epoch
@@ -284,7 +333,7 @@ contract LockTest is Test {
     function testCompoundRewards() public {
         testClaimRewards();
         (uint lockEpochs16_old, uint y2kBal16_old, uint wethBal16_old) = viewAccount16();
-        lockDeposit(0,0);
+        lockDeposit(0);
         console.log("Compound rewards");
         startNextEpoch(block.timestamp + 1 days + 2);
         (uint lockEpochs16_new, uint y2kBal16_new, uint wethBal16_new) = viewAccount16();
@@ -303,7 +352,7 @@ contract LockTest is Test {
         testClaimRewards();
         for(uint i = 0; i <= any; i++){
             (uint lockEpochs16_old, uint y2kBal16_old, uint wethBal16_old) = viewAccount16();
-            lockDeposit(0,0);
+            lockDeposit(0);
             console.log("Compound rewards");
             startNextEpoch(block.timestamp + 1 days + 2);
             (uint lockEpochs16_new, uint y2kBal16_new, uint wethBal16_new) = viewAccount16();
@@ -321,7 +370,7 @@ contract LockTest is Test {
     function testFailCompoundRewards() public {
         testClaimRewards();
         for(uint i = 0; i <= minEpochs; i++){
-            lockDeposit(0,0);
+            lockDeposit(0);
             console.log("Compound rewards");
             startNextEpoch(block.timestamp + 1 days + 2);
             viewAccount16();
