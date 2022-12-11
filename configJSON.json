@@ -3,7 +3,7 @@
     "variables":{
         "newMarkets": false,
         "amountOfNewMarkets": 0,
-        "marketsIds": [13, 14],
+        "marketsIds": [],
         "newEpochs": true,
         "amountOfNewEpochs": 5,
         "epochsIds": [6, 7, 8, 13, 14],
