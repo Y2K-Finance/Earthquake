@@ -8,7 +8,6 @@ import {IController} from "./interfaces/IController.sol";
 /// @author MiguelBits
 
 contract TimeLock {
-
     mapping(bytes32 => bool) public queued;
 
     address public policy;
@@ -27,38 +26,39 @@ contract TimeLock {
 
     event Queue(
         bytes32 indexed txId,
-        address indexed target, 
+        address indexed target,
         string func,
-        uint index,
-        uint data,
+        uint256 index,
+        uint256 data,
         address to,
         address token,
-        uint timestamp);
+        uint256 timestamp
+    );
 
     event Execute(
         bytes32 indexed txId,
-        address indexed target, 
+        address indexed target,
         string func,
-        uint index,
-        uint data,
+        uint256 index,
+        uint256 data,
         address to,
         address token,
-        uint timestamp);
+        uint256 timestamp
+    );
 
     event Delete(
         bytes32 indexed txId,
-        address indexed target, 
+        address indexed target,
         string func,
-        uint index,
-        uint data,
+        uint256 index,
+        uint256 data,
         address to,
         address token,
-        uint timestamp);
+        uint256 timestamp
+    );
 
-
-    modifier onlyOwner(){
-        if(msg.sender != policy)
-            revert NotOwner(msg.sender);
+    modifier onlyOwner() {
+        if (msg.sender != policy) revert NotOwner(msg.sender);
         _;
     }
 
@@ -78,40 +78,53 @@ contract TimeLock {
      * @param _timestamp The timestamp to execute the transaction
      */
     function queue(
-        address _target, 
+        address _target,
         string calldata _func,
         uint256 _index,
         uint256 _data,
         address _to,
         address _token,
-        uint256 _timestamp) external onlyOwner 
-    {
+        uint256 _timestamp
+    ) external onlyOwner {
         //create tx id
-        bytes32 txId = getTxId(_target, _func, _index, _data, _to, _token, _timestamp);
-    
+        bytes32 txId = getTxId(
+            _target,
+            _func,
+            _index,
+            _data,
+            _to,
+            _token,
+            _timestamp
+        );
+
         //check tx id unique
-        if(queued[txId]){
+        if (queued[txId]) {
             revert AlreadyQueuedError(txId);
         }
 
         //check timestamp
-        if(_timestamp < block.timestamp + MIN_DELAY ||
-            _timestamp > block.timestamp + MAX_DELAY){
+        if (
+            _timestamp < block.timestamp + MIN_DELAY ||
+            _timestamp > block.timestamp + MAX_DELAY
+        ) {
             revert TimestampNotInRangeError(block.timestamp, _timestamp);
         }
 
         //queue tx
         queued[txId] = true;
 
-        emit Queue(txId, _target, 
-         _func,
-         _index,
-         _data,
-         _to,
-         _token,
-         _timestamp);
-
+        emit Queue(
+            txId,
+            _target,
+            _func,
+            _index,
+            _data,
+            _to,
+            _token,
+            _timestamp
+        );
     }
+
     /**
      * @dev leave params zero if not using them
      * @notice Execute a Queued a transaction
@@ -124,74 +137,87 @@ contract TimeLock {
      * @param _timestamp The timestamp after which to execute the transaction
      */
     function execute(
-        address _target, 
+        address _target,
         string calldata _func,
         uint256 _index,
         uint256 _data,
         address _to,
         address _token,
-        uint256 _timestamp) external onlyOwner
-    {
-        bytes32 txId = getTxId(_target, _func, _index, _data, _to, _token, _timestamp);
+        uint256 _timestamp
+    ) external onlyOwner {
+        bytes32 txId = getTxId(
+            _target,
+            _func,
+            _index,
+            _data,
+            _to,
+            _token,
+            _timestamp
+        );
 
         //check tx id queued
-        if(!queued[txId]){
+        if (!queued[txId]) {
             revert NotQueuedError(txId);
         }
 
         //check block.timestamp > timestamp
-        if(block.timestamp < _timestamp){
+        if (block.timestamp < _timestamp) {
             revert TimestampNotPassedError(block.timestamp, _timestamp);
         }
-        if(block.timestamp > _timestamp + GRACE_PERIOD){
-            revert TimestampExpiredError(block.timestamp, _timestamp + GRACE_PERIOD);
+        if (block.timestamp > _timestamp + GRACE_PERIOD) {
+            revert TimestampExpiredError(
+                block.timestamp,
+                _timestamp + GRACE_PERIOD
+            );
         }
 
         //delete tx from queue
         queued[txId] = false;
 
         //execute tx
-        if(compareStringsbyBytes(_func, "changeTreasury")){
+        if (compareStringsbyBytes(_func, "changeTreasury")) {
             VaultFactory(_target).changeTreasury(_to, _index);
-        }
-        
-        else if(compareStringsbyBytes(_func, "changeController")){
+        } else if (compareStringsbyBytes(_func, "changeController")) {
             VaultFactory(_target).changeController(_index, _to);
-        }
-
-        else if(compareStringsbyBytes(_func, "changeOracle")){
+        } else if (compareStringsbyBytes(_func, "changeOracle")) {
             VaultFactory(_target).changeOracle(_token, _to);
-        }
-
-        else{
+        } else {
             revert TxFailedError(_func);
         }
 
         emit Execute(
-        txId,
-        _target, 
-        _func,
-        _index,
-        _data,
-        _to,
-        _token,
-        _timestamp);
-        
+            txId,
+            _target,
+            _func,
+            _index,
+            _data,
+            _to,
+            _token,
+            _timestamp
+        );
     }
 
     function cancel(
-        address _target, 
+        address _target,
         string calldata _func,
         uint256 _index,
         uint256 _data,
         address _to,
         address _token,
-        uint256 _timestamp) external onlyOwner
-    {
-        bytes32 txId = getTxId(_target, _func, _index, _data, _to, _token, _timestamp);
+        uint256 _timestamp
+    ) external onlyOwner {
+        bytes32 txId = getTxId(
+            _target,
+            _func,
+            _index,
+            _data,
+            _to,
+            _token,
+            _timestamp
+        );
 
         //check tx id queued
-        if(!queued[txId]){
+        if (!queued[txId]) {
             revert NotQueuedError(txId);
         }
 
@@ -199,37 +225,47 @@ contract TimeLock {
         queued[txId] = false;
 
         emit Delete(
-        txId,
-        _target, 
-        _func,
-        _index,
-        _data,
-        _to,
-        _token,
-        _timestamp);
-    }
-
-    function getTxId(address _target, 
-        string calldata _func,
-        uint _index,
-        uint _data,
-        address _to,
-        address _token,
-        uint _timestamp
-    ) public pure returns (bytes32 txId){
-        return keccak256(abi.encode(
-            _target, 
+            txId,
+            _target,
             _func,
             _index,
             _data,
             _to,
             _token,
             _timestamp
-        ));
+        );
     }
 
-    function compareStringsbyBytes(string memory s1, string memory s2) public pure returns(bool){
-        return keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
+    function getTxId(
+        address _target,
+        string calldata _func,
+        uint256 _index,
+        uint256 _data,
+        address _to,
+        address _token,
+        uint256 _timestamp
+    ) public pure returns (bytes32 txId) {
+        return
+            keccak256(
+                abi.encode(
+                    _target,
+                    _func,
+                    _index,
+                    _data,
+                    _to,
+                    _token,
+                    _timestamp
+                )
+            );
+    }
+
+    function compareStringsbyBytes(string memory s1, string memory s2)
+        public
+        pure
+        returns (bool)
+    {
+        return
+            keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
     }
 
     function changeOwner(address _newOwner) external onlyOwner {
@@ -238,7 +274,6 @@ contract TimeLock {
 }
 
 contract VaultFactory is Ownable {
-
     address public immutable WETH;
     // solhint-enable var-name-mixedcase
     address public treasury;
@@ -247,7 +282,7 @@ contract VaultFactory is Ownable {
 
     TimeLock public timelocker;
 
-    struct MarketVault{
+    struct MarketVault {
         uint256 index;
         uint256 epochBegin;
         uint256 epochEnd;
@@ -255,14 +290,13 @@ contract VaultFactory is Ownable {
         Vault risk;
         uint256 withdrawalFee;
     }
-    
+
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    modifier onlyTimeLocker(){
-        if(msg.sender != address(timelocker))
-            revert NotTimeLocker();
+    modifier onlyTimeLocker() {
+        if (msg.sender != address(timelocker)) revert NotTimeLocker();
         _;
     }
 
@@ -280,14 +314,14 @@ contract VaultFactory is Ownable {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-    
+
     /** @notice Market is created when event is emitted
-      * @param mIndex Current market index
-      * @param hedge Hedge vault address
-      * @param risk Risk vault address
-      * @param token Token address
-      * @param name Market name
-      */ 
+     * @param mIndex Current market index
+     * @param hedge Hedge vault address
+     * @param risk Risk vault address
+     * @param token Token address
+     * @param name Market name
+     */
     event MarketCreated(
         uint256 indexed mIndex,
         address hedge,
@@ -298,16 +332,16 @@ contract VaultFactory is Ownable {
     );
 
     /** @notice Epoch is created when event is emitted
-      * @param marketEpochId Current market epoch id
-      * @param mIndex Current market index
-      * @param startEpoch Epoch start time
-      * @param endEpoch Epoch end time
-      * @param hedge Hedge vault address
-      * @param risk Risk vault address
-      * @param token Token address
-      * @param name Market name
-      * @param strikePrice Vault strike price
-      */
+     * @param marketEpochId Current market epoch id
+     * @param mIndex Current market index
+     * @param startEpoch Epoch start time
+     * @param endEpoch Epoch end time
+     * @param hedge Hedge vault address
+     * @param risk Risk vault address
+     * @param token Token address
+     * @param name Market name
+     * @param strikePrice Vault strike price
+     */
     event EpochCreated(
         bytes32 indexed marketEpochId,
         uint256 indexed mIndex,
@@ -322,26 +356,26 @@ contract VaultFactory is Ownable {
     );
 
     /** @notice Controller is set when event is emitted
-      * @param newController Address for new controller
-      */ 
+     * @param newController Address for new controller
+     */
     event controllerSet(address indexed newController);
 
     /** @notice Treasury is changed when event is emitted
-      * @param _treasury Treasury address
-      * @param _marketIndex Target market index
-      */ 
+     * @param _treasury Treasury address
+     * @param _marketIndex Target market index
+     */
     event changedTreasury(address _treasury, uint256 indexed _marketIndex);
 
     /** @notice Vault fee is changed when event is emitted
-      * @param _marketIndex Target market index
-      * @param _feeRate Target fee rate
-      */ 
+     * @param _marketIndex Target market index
+     * @param _feeRate Target fee rate
+     */
     event changedVaultFee(uint256 indexed _marketIndex, uint256 _feeRate);
 
     /** @notice Controller is changed when event is emitted
-      * @param _marketIndex Target market index
-      * @param controller Target controller address
-      */ 
+     * @param _marketIndex Target market index
+     * @param controller Target controller address
+     */
     event changedController(
         uint256 indexed _marketIndex,
         address indexed controller
@@ -361,9 +395,9 @@ contract VaultFactory is Ownable {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Contract constructor
-      * @param _treasury Treasury address
-      * @param _weth Wrapped Ether token address
-      */ 
+     * @param _treasury Treasury address
+     * @param _weth Wrapped Ether token address
+     */
     constructor(
         address _treasury,
         address _weth,
@@ -371,11 +405,9 @@ contract VaultFactory is Ownable {
     ) {
         timelocker = new TimeLock(_policy);
 
-        if(_weth == address(0))
-            revert AddressZero();
+        if (_weth == address(0)) revert AddressZero();
 
-        if(_treasury == address(0))
-            revert AddressZero();
+        if (_treasury == address(0)) revert AddressZero();
 
         WETH = _weth;
         marketIndex = 0;
@@ -406,13 +438,9 @@ contract VaultFactory is Ownable {
         address _oracle,
         string memory _name
     ) public onlyOwner returns (address insr, address rsk) {
+        if (controller == address(0)) revert ControllerNotSet();
 
-        if(controller == address(0))
-            revert ControllerNotSet();
-
-        if(
-            IController(controller).getVaultFactory() != address(this)
-            )
+        if (IController(controller).getVaultFactory() != address(this))
             revert AddressFactoryNotInController();
 
         marketIndex += 1;
@@ -421,7 +449,7 @@ contract VaultFactory is Ownable {
 
         Vault hedge = new Vault(
             WETH,
-            string(abi.encodePacked(_name,"HEDGE")),
+            string(abi.encodePacked(_name, "HEDGE")),
             "hY2K",
             treasury,
             _token,
@@ -431,7 +459,7 @@ contract VaultFactory is Ownable {
 
         Vault risk = new Vault(
             WETH,
-            string(abi.encodePacked(_name,"RISK")),
+            string(abi.encodePacked(_name, "RISK")),
             "rY2K",
             treasury,
             _token,
@@ -454,7 +482,14 @@ contract VaultFactory is Ownable {
             _strikePrice
         );
 
-        MarketVault memory marketVault = MarketVault(marketIndex, epochBegin, epochEnd, hedge, risk, _withdrawalFee);
+        MarketVault memory marketVault = MarketVault(
+            marketIndex,
+            epochBegin,
+            epochEnd,
+            hedge,
+            risk,
+            _withdrawalFee
+        );
 
         _createEpoch(marketVault);
 
@@ -474,8 +509,7 @@ contract VaultFactory is Ownable {
         uint256 epochEnd,
         uint256 _withdrawalFee
     ) public onlyOwner {
-        if(controller == address(0))
-            revert ControllerNotSet();
+        if (controller == address(0)) revert ControllerNotSet();
 
         if (index > marketIndex) {
             revert MarketDoesNotExist(index);
@@ -483,22 +517,40 @@ contract VaultFactory is Ownable {
         address hedge = indexVaults[index][0];
         address risk = indexVaults[index][1];
 
-        MarketVault memory marketVault = MarketVault(index, epochBegin, epochEnd, Vault(hedge), Vault(risk), _withdrawalFee);
+        MarketVault memory marketVault = MarketVault(
+            index,
+            epochBegin,
+            epochEnd,
+            Vault(hedge),
+            Vault(risk),
+            _withdrawalFee
+        );
 
         _createEpoch(marketVault);
     }
 
-    function _createEpoch(
-        MarketVault memory _marketVault
-    ) internal {
-        
-        _marketVault.hedge.createAssets(_marketVault.epochBegin, _marketVault.epochEnd, _marketVault.withdrawalFee);
-        _marketVault.risk.createAssets(_marketVault.epochBegin, _marketVault.epochEnd, _marketVault.withdrawalFee);
+    function _createEpoch(MarketVault memory _marketVault) internal {
+        _marketVault.hedge.createAssets(
+            _marketVault.epochBegin,
+            _marketVault.epochEnd,
+            _marketVault.withdrawalFee
+        );
+        _marketVault.risk.createAssets(
+            _marketVault.epochBegin,
+            _marketVault.epochEnd,
+            _marketVault.withdrawalFee
+        );
 
         indexEpochs[_marketVault.index].push(_marketVault.epochEnd);
 
         emit EpochCreated(
-            keccak256(abi.encodePacked(_marketVault.index, _marketVault.epochBegin, _marketVault.epochEnd)),
+            keccak256(
+                abi.encodePacked(
+                    _marketVault.index,
+                    _marketVault.epochBegin,
+                    _marketVault.epochEnd
+                )
+            ),
             _marketVault.index,
             _marketVault.epochBegin,
             _marketVault.epochEnd,
@@ -516,14 +568,12 @@ contract VaultFactory is Ownable {
     @param  _controller Address of the controller smart contract
      */
     function setController(address _controller) public onlyOwner {
-        if(controller == address(0)){
-            if(_controller == address(0))
-                revert AddressZero();
+        if (controller == address(0)) {
+            if (_controller == address(0)) revert AddressZero();
             controller = _controller;
 
-            emit controllerSet(_controller);  
-        }
-        else{
+            emit controllerSet(_controller);
+        } else {
             revert ControllerAlreadySet();
         }
     }
@@ -537,8 +587,7 @@ contract VaultFactory is Ownable {
         public
         onlyTimeLocker
     {
-        if(_treasury == address(0))
-            revert AddressZero();
+        if (_treasury == address(0)) revert AddressZero();
 
         treasury = _treasury;
         address[] memory vaults = indexVaults[_marketIndex];
@@ -550,7 +599,6 @@ contract VaultFactory is Ownable {
         emit changedTreasury(_treasury, _marketIndex);
     }
 
-
     /**
     @notice Admin function, changes controller address
     @param _marketIndex Target market index
@@ -560,8 +608,7 @@ contract VaultFactory is Ownable {
         public
         onlyTimeLocker
     {
-        if(_controller == address(0))
-            revert AddressZero();
+        if (_controller == address(0)) revert AddressZero();
 
         address[] memory vaults = indexVaults[_marketIndex];
         Vault insr = Vault(vaults[0]);
@@ -577,12 +624,13 @@ contract VaultFactory is Ownable {
     @param _token Target token address
     @param  _oracle Oracle address
      */
-    function changeOracle(address _token, address _oracle) public onlyTimeLocker {
-        if(_oracle == address(0))
-            revert AddressZero();
-        if(_token == address(0))
-            revert AddressZero();
-            
+    function changeOracle(address _token, address _oracle)
+        public
+        onlyTimeLocker
+    {
+        if (_oracle == address(0)) revert AddressZero();
+        if (_token == address(0)) revert AddressZero();
+
         tokenToOracle[_token] = _oracle;
         emit changedOracle(_token, _oracle);
     }
