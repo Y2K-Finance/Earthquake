@@ -73,7 +73,9 @@ contract DeployScript is Script, HelperConfig {
                     marketId,
                     epochs.epochBegin, 
                     epochs.epochEnd, 
-                    epochs.epochFee);                
+                    epochs.epochFee);
+
+                startKeepers(marketId, epochs.epochEnd);                
             }
     }
 
