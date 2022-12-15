@@ -17,6 +17,17 @@ import "./keepers/KeeperEndEpoch.sol";
 contract HelperConfig is Script {
     using stdJson for string;
 
+    struct ConfigVariables{
+        uint256 amountOfNewEpochs;
+        uint256 amountOfNewFarms;
+        uint256 amountOfNewMarkets;
+        uint256[] epochsIds;
+        uint256[] farmsIds;
+        uint256[] marketsIds;
+        bool newEpochs;
+        bool newFarms;
+        bool newMarkets;
+    }
     struct ConfigAddresses {
         address admin;
         address arbitrum_sequencer;
@@ -46,25 +57,25 @@ contract HelperConfig is Script {
     }
 
     struct ConfigMarket {
-        uint256 epochBegin;
-        uint256 epochEnd;
-        uint256 epochFee;
+        uint256 marketId;
         string name;
         address oracle;
         int256 strikePrice;
         address token;
     }
 
-    struct ConfigFarm {
-        uint256 epochEnd;
-        string rewardsAmountHEDGE;
-        string rewardsAmountRISK;
-    }
-
     struct ConfigEpochs {
         uint256 epochBegin;
         uint256 epochEnd;
         uint256 epochFee;
+        uint256 marketId;
+    }
+
+    struct ConfigFarms {
+        uint256 epochEnd;
+        string farmRewardsHEDGE;
+        string farmRewardsRISK;
+        uint marketId;
     }
 
     VaultFactory vaultFactory;
@@ -73,6 +84,16 @@ contract HelperConfig is Script {
     Y2K y2k;
     KeeperGelatoDepeg keeperDepeg;
     KeeperGelatoEndEpoch keeperEndEpoch;
+    ConfigVariables configVariables;
+
+    function setVariables() public {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/configJSON.json");
+        string memory json = vm.readFile(path);
+        bytes memory parseJsonByteCode = json.parseRaw(".variables");
+        configVariables = abi.decode(parseJsonByteCode, (ConfigVariables));
+        // console2.log("ConfigVariables ", rawConstants.amountOfNewMarkets);
+    }
 
     function contractToAddresses(ConfigAddresses memory configAddresses) public {
         vaultFactory = VaultFactory(configAddresses.vaultFactory);
@@ -92,17 +113,17 @@ contract HelperConfig is Script {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configAddresses.json");
         string memory json = vm.readFile(path);
-        bytes memory transactionDetails = json.parseRaw(".configAddresses[0]");
-        ConfigAddresses memory rawConstants = abi.decode(transactionDetails, (ConfigAddresses));
+        bytes memory parseJsonByteCode = json.parseRaw(".configAddresses[0]");
+        ConfigAddresses memory rawConstants = abi.decode(parseJsonByteCode, (ConfigAddresses));
         //console2.log("ConfigAddresses ", rawConstants.weth);
         return rawConstants;
     }
-
+    
     function getConfigMarket(uint256 index) public returns (ConfigMarket memory) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configMarkets.json");
+        string memory path = string.concat(root, "/configJSON.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".markets", "[", Strings.toString(index), "]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigMarket memory rawConstants = abi.decode(transactionDetails, (ConfigMarket));
         //console2.log("ConfigMarkets ", rawConstants.name);
@@ -111,25 +132,40 @@ contract HelperConfig is Script {
 
     function getConfigEpochs(uint256 index) public returns (ConfigEpochs memory) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configEpochs.json");
+        string memory path = string.concat(root, "/configJSON.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".epochs", "[", Strings.toString(index), "]");
         bytes memory transactionDetails = json.parseRaw(indexString);
         ConfigEpochs memory rawConstants = abi.decode(transactionDetails, (ConfigEpochs));
         //console2.log("ConfigEpochs ", rawConstants.name);
         return rawConstants;
     }
 
-    function getConfigFarm(uint256 index) public returns (ConfigFarm memory) {
+    function getConfigFarms(uint256 index) public returns (ConfigFarms memory) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configFarms.json");
+        string memory path = string.concat(root, "/configJSON.json");
         string memory json = vm.readFile(path);
-        string memory indexString = string.concat(".",Strings.toString(index), "[0]");
+        string memory indexString = string.concat(".farms", "[", Strings.toString(index), "]");
         bytes memory transactionDetails = json.parseRaw(indexString);
-        ConfigFarm memory rawConstants = abi.decode(transactionDetails, (ConfigFarm));
-        console2.log("ConfigFarms ", rawConstants.rewardsAmountHEDGE);
-        console2.log("ConfigFarms ", rawConstants.rewardsAmountRISK);
+        ConfigFarms memory rawConstants = abi.decode(transactionDetails, (ConfigFarms));
+        //console2.log("ConfigEpochs ", rawConstants.name);
         return rawConstants;
+    }
+
+    function verifyConfig(ConfigMarket memory marketConstants) public view {
+        // require(marketConstants.epochBegin < marketConstants.epochEnd, "epochBegin is not < epochEnd");
+        // require(marketConstants.epochEnd > block.timestamp, "epochEnd in the past");
+        // require(marketConstants.strikePrice > 900000000000000000, "strikePrice is not above 0.90");
+        // require(marketConstants.strikePrice < 1000000000000000000, "strikePrice is not below 1.00");
+        // //TODO add more checks
+    }
+
+    function verifyConfig(ConfigMarket memory marketConstants, ConfigEpochs memory epochConstants) public view {
+        // require(epochConstants.epochBegin > marketConstants.epochEnd, "epochBegin is not > marketEnd");
+        // require(epochConstants.epochBegin < epochConstants.epochEnd, "epochBegin is not < epochEnd");
+        // require(epochConstants.epochEnd > block.timestamp, "epochEnd in the past");
+        // //TODO add more checks
+
     }
 
     function stringToUint(string memory s) public pure returns (uint) {
@@ -143,4 +179,5 @@ contract HelperConfig is Script {
         }
         return result;
     }
+
 }

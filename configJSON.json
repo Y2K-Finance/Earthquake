@@ -1,0 +1,83 @@
+{
+
+    "variables":{
+        "newMarkets": false,
+        "amountOfNewMarkets": 0,
+        "marketsIds": [],
+        "newEpochs": true,
+        "amountOfNewEpochs": 5,
+        "epochsIds": [6, 7, 8, 13, 14],
+        "amountOfNewFarms": 5,
+        "newFarms": true,
+        "farmsIds" : [6, 7, 8, 13, 14]
+    },
+
+    "markets":[
+    ],
+
+    "epochs":[
+        {
+            "marketId": 6,
+            "epochBegin":1670976000,
+            "epochEnd":1671408000,
+            "epochFee":50
+        },
+        {
+            "marketId": 7,
+            "epochBegin":1670976000,
+            "epochEnd":1671408000,
+            "epochFee":50
+        },
+        {
+            "marketId": 8,
+            "epochBegin":1670976000,
+            "epochEnd":1671408000,
+            "epochFee":50
+        },
+        {
+            "marketId": 13,
+            "epochBegin":1670976000,
+            "epochEnd":1671408000,
+            "epochFee":50
+        },
+        {
+            "marketId": 14,
+            "epochBegin":1670976000,
+            "epochEnd":1671408000,
+            "epochFee":50
+        }
+    ],
+
+    "farms":[
+        {
+            "marketId": 6,
+            "epochEnd":1671408000,
+            "farmRewardsHEDGE": "8880000000000000000000",
+            "farmRewardsRISK" : "4467000000000000000000"
+        },
+        {
+            "marketId": 7,
+            "epochEnd":1671408000,
+            "farmRewardsHEDGE": "8880000000000000000000",
+            "farmRewardsRISK" : "4467000000000000000000"
+        },
+        {
+            "marketId": 8,
+            "epochEnd":1671408000,
+            "farmRewardsHEDGE": "8880000000000000000000",
+            "farmRewardsRISK" : "4467000000000000000000"
+        },
+        {
+            "marketId": 13,
+            "epochEnd":1671408000,
+            "farmRewardsHEDGE": "8880000000000000000000",
+            "farmRewardsRISK" : "4467000000000000000000"
+        },
+        {
+            "marketId": 14,
+            "epochEnd":1671408000,
+            "farmRewardsHEDGE": "8880000000000000000000",
+            "farmRewardsRISK" : "4467000000000000000000"
+        }
+    ]
+}

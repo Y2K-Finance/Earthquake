@@ -3,7 +3,6 @@ pragma solidity 0.8.15;
 
 /// @author MiguelBits
 contract IVault {
-
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -62,24 +61,14 @@ contract IVault {
         uint256 id,
         uint256 assets,
         address receiver
-    )
-        public
-    {
-
-    }
+    ) public {}
 
     /**
         @notice Deposit ETH function
         @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
         @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */
-    function depositETH(uint256 id, address receiver)
-        external
-        payable
-       
-    {
-        
-    }
+    function depositETH(uint256 id, address receiver) external payable {}
 
     /**
     @notice Withdraw entitled deposited assets, checking if a depeg event
@@ -94,11 +83,7 @@ contract IVault {
         uint256 assets,
         address receiver,
         address owner
-    )
-        external
-        returns (uint256 shares)
-    {
-    }
+    ) external returns (uint256 shares) {}
 
     /*///////////////////////////////////////////////////////////////
                            ACCOUNTING LOGIC
@@ -108,12 +93,7 @@ contract IVault {
         @notice returns total assets for the id of given epoch
         @param  _id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
      */
-    function totalAssets(uint256 _id)
-        public
-        view
-        returns (uint256)
-    {
-    }
+    function totalAssets(uint256 _id) public view returns (uint256) {}
 
     /**
     @notice Calculates how much ether the %fee is taking from @param amount
@@ -125,9 +105,7 @@ contract IVault {
         public
         view
         returns (uint256 feeValue)
-    {
-
-    }
+    {}
 
     /*///////////////////////////////////////////////////////////////
                            Factory FUNCTIONS
@@ -137,23 +115,19 @@ contract IVault {
     @notice Factory function, changes treasury address
     @param _treasury New treasury address
      */
-    function changeTreasury(address _treasury) public  {
-    }
+    function changeTreasury(address _treasury) public {}
 
     /**
     @notice Factory function, changes vault time window
     @param _timewindow New vault time window
      */
-    function changeTimewindow(uint256 _timewindow) public {
-    }
+    function changeTimewindow(uint256 _timewindow) public {}
 
     /**
     @notice Factory function, changes controller address
     @param _controller New controller address
      */
-    function changeController(address _controller) public {
-
-    }
+    function changeController(address _controller) public {}
 
     /**
     @notice Function to deploy hedge assets for given epochs, after the creation of this vault
@@ -161,12 +135,11 @@ contract IVault {
     @param  epochEnd uint256 in UNIX timestamp, representing the end date of the epoch and also the ID for the minting functions. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1656630000
     @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5
      */
-    function createAssets(uint256 epochBegin, uint256 epochEnd, uint256 _withdrawalFee)
-        public
-        
-    {
-    }
-
+    function createAssets(
+        uint256 epochBegin,
+        uint256 epochEnd,
+        uint256 _withdrawalFee
+    ) public {}
 
     /*///////////////////////////////////////////////////////////////
                          INTERNAL HOOKS LOGIC
@@ -191,11 +164,10 @@ contract IVault {
         // withdraw = % tvl that hedge buyer owns
         // otherwise hedge users cannot withdraw any Eth
     }
-    
+
     /** @notice Lookup total epochs length
-      */
+     */
     function epochsLength() public view returns (uint256) {
         return epochs.length;
     }
-
 }

@@ -16,19 +16,19 @@ contract RewardsFactory is Ownable {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    error MarketDoesNotExist(uint marketId);
+    error MarketDoesNotExist(uint256 marketId);
     error EpochDoesNotExist();
 
     /*//////////////////////////////////////////////////////////////
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
-    
+
     /** @notice Creates staking rewards when event is emitted
-      * @param marketEpochId Current market epoch ID
-      * @param mIndex Current market index
-      * @param hedgeFarm Hedge farm address
-      * @param riskFarm Risk farm address
-      */ 
+     * @param marketEpochId Current market epoch ID
+     * @param mIndex Current market index
+     * @param hedgeFarm Hedge farm address
+     * @param riskFarm Risk farm address
+     */
     event CreatedStakingReward(
         bytes32 indexed marketEpochId,
         uint256 indexed mIndex,
@@ -37,13 +37,10 @@ contract RewardsFactory is Ownable {
     );
 
     /** @notice Contract constructor
-      * @param _govToken Governance token address
-      * @param _factory VaultFactory address
-      */
-    constructor(
-        address _govToken,
-        address _factory
-    ) {
+     * @param _govToken Governance token address
+     * @param _factory VaultFactory address
+     */
+    constructor(address _govToken, address _factory) {
         govToken = _govToken;
         factory = _factory;
     }
@@ -51,13 +48,13 @@ contract RewardsFactory is Ownable {
     /*//////////////////////////////////////////////////////////////
                                   METHODS
     //////////////////////////////////////////////////////////////*/
-    
+
     /** @notice Trigger staking rewards event
-      * @param _marketIndex Target market index
-      * @param _epochEnd End of epoch set for market
-      * @return insr Insurance rewards address, first tuple address entry 
-      * @return risk Risk rewards address, second tuple address entry 
-      */
+     * @param _marketIndex Target market index
+     * @param _epochEnd End of epoch set for market
+     * @return insr Insurance rewards address, first tuple address entry
+     * @return risk Risk rewards address, second tuple address entry
+     */
     function createStakingRewards(uint256 _marketIndex, uint256 _epochEnd)
         external
         onlyOwner
@@ -68,11 +65,13 @@ contract RewardsFactory is Ownable {
         address _insrToken = vaultFactory.getVaults(_marketIndex)[0];
         address _riskToken = vaultFactory.getVaults(_marketIndex)[1];
 
-        if(_insrToken == address(0) || _riskToken == address(0))
+        if (_insrToken == address(0) || _riskToken == address(0))
             revert MarketDoesNotExist(_marketIndex);
 
-        if(Vault(_insrToken).idExists(_epochEnd) == false || Vault(_riskToken).idExists(_epochEnd) == false)
-            revert EpochDoesNotExist();
+        if (
+            Vault(_insrToken).idExists(_epochEnd) == false ||
+            Vault(_riskToken).idExists(_epochEnd) == false
+        ) revert EpochDoesNotExist();
 
         StakingRewards insrStake = new StakingRewards(
             owner(),
