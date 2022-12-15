@@ -51,26 +51,31 @@
     "farms":[
         {
             "marketId": 6,
+            "epochEnd":1671408000,
             "farmRewardsHEDGE": "8880000000000000000000",
             "farmRewardsRISK" : "4467000000000000000000"
         },
         {
             "marketId": 7,
+            "epochEnd":1671408000,
             "farmRewardsHEDGE": "8880000000000000000000",
             "farmRewardsRISK" : "4467000000000000000000"
         },
         {
             "marketId": 8,
+            "epochEnd":1671408000,
             "farmRewardsHEDGE": "8880000000000000000000",
             "farmRewardsRISK" : "4467000000000000000000"
         },
         {
             "marketId": 13,
+            "epochEnd":1671408000,
             "farmRewardsHEDGE": "8880000000000000000000",
             "farmRewardsRISK" : "4467000000000000000000"
         },
         {
             "marketId": 14,
+            "epochEnd":1671408000,
             "farmRewardsHEDGE": "8880000000000000000000",
             "farmRewardsRISK" : "4467000000000000000000"
         }

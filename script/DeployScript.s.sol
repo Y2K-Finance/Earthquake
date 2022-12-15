@@ -82,7 +82,7 @@ contract DeployScript is Script, HelperConfig {
     function deployFarms() public {
         for(uint i = 0; i < configVariables.amountOfNewFarms;++i){
             uint marketId = configVariables.farmsIds[i];
-            ConfigFarms memory farms = getConfigFarms(marketId);
+            ConfigFarms memory farms = getConfigFarms(i);
             
             require(farms.marketId == marketId, "marketId of farms and loop are not the same");
             
