@@ -31,7 +31,6 @@ contract ControllerHelper is Test {
 
     uint256 constant FEE = 5;
     uint256 constant SINGLE_MARKET_INDEX = 1;
-    uint256 constant ALL_MARKETS_INDEX = 15;
     uint256 constant NULL_BALANCE = 0;
     uint256 constant AMOUNT = 10 ether;
     uint256 constant BEGIN_DAYS = 2 days;

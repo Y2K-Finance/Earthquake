@@ -19,7 +19,7 @@ contract OwnerTest is OwnerHelper{
     //////////////////////////////////////////////////////////////*/
 
     function testOwnerAuthorize() public {
-        vm.deal(alice, 10 ether);
+        vm.deal(alice, AMOUNT);
         
         vm.startPrank(admin);
         fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
@@ -30,10 +30,10 @@ contract OwnerTest is OwnerHelper{
         vHedge = Vault(hedge);
 
         vm.startPrank(alice);
-        ERC20(WETH).approve(hedge, 10 ether);
-        vHedge.depositETH{value: 10 ether}(endEpoch, alice);
+        ERC20(WETH).approve(hedge, AMOUNT);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (10 ether));
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == (AMOUNT));
         vm.stopPrank();
 
         vm.startPrank(alice);
@@ -50,7 +50,7 @@ contract OwnerTest is OwnerHelper{
         vm.stopPrank();
         
         vm.startPrank(bob);
-        vHedge.withdraw(endEpoch, 10 ether, bob, alice);
+        vHedge.withdraw(endEpoch, AMOUNT, bob, alice);
         assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
         vm.stopPrank();
     }

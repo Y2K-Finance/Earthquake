@@ -21,7 +21,6 @@ contract OracleHelper is Test {
     address constant tokenFRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
     address constant tokenMIM = 0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A;
     address constant tokenUSDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
-
     address constant oracleFRAX = 0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8;
     address constant oracleMIM = 0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b;
     address constant oracleUSDC = 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
@@ -33,13 +32,11 @@ contract OracleHelper is Test {
     address constant bob = address(3);
 
     uint256 constant FEE = 5;
-    uint256 constant SINGLE_MARKET_INDEX = 1;
     uint256 constant BEGIN_DAYS = 2 days;
     uint256 constant END_DAYS = 30 days;
     int256 constant DEPEG_AAA = 995555555555555555;
     int256 constant DEPEG_BBB = 975555555555555555;
     int256 constant DEPEG_CCC = 955555555555555555;
-    int256 constant STRIKE_PRICE_FAKE_ORACLE = 90995265;
     uint256 constant DECIMALS = 18;
 
     uint256 endEpoch;
