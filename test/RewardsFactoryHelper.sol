@@ -8,8 +8,7 @@ import {Controller} from "../src/Controller.sol";
 import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
 import {GovToken} from "./GovToken.sol";
 
-/// @author MiguelBits
-/// @author NexusFlip
+/// @author nexusflip
 
 contract RewardsFactoryHelper is Test {
 

@@ -12,6 +12,9 @@ import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {FakeFakeOracle} from "../test/oracles/FakeFakeOracle.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
+/// @author nexusflip
+/// @author MiguelBits
+
 contract OracleTest is OracleHelper {
    /*//////////////////////////////////////////////////////////////
                            ASSERT cases

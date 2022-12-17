@@ -1,6 +1,8 @@
 pragma solidity 0.8.15;
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
+/// @author MiguelBits
+
 contract GovToken is ERC20 {
     constructor() ERC20("Dumb", "Dumb", 18) {}
 

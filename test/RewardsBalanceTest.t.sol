@@ -10,6 +10,9 @@ import {RewardsBalanceHelper} from "./RewardsBalanceHelper.sol";
 import {RewardBalances} from "../src/rewards/RewardBalances.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
+/// @author nexusflip
+/// @author definedNever
+
 contract RewardsBalanceTest is RewardsBalanceHelper {
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases

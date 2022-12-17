@@ -9,6 +9,9 @@ import {VaultHelper} from "./VaultHelper.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
+/// @author nexusflip
+/// @author MiguelBits
+
 contract VaultTest is VaultHelper {
     /*///////////////////////////////////////////////////////////////
                            REVERT cases

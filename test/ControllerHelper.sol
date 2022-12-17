@@ -9,8 +9,7 @@ import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 
-/// @author MiguelBits
-/// @author NexusFlip
+/// @author nexusflip
 
 contract ControllerHelper is Test {
 

@@ -6,9 +6,7 @@ import {Vault} from "../src/Vault.sol";
 import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol"; 
 
-
-/// @author MiguelBits
-/// @author NexusFlip
+/// @author nexusflip
 
 contract OracleHelper is Test {
 

@@ -15,8 +15,8 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
+/// @author nexusflip
 /// @author MiguelBits
-/// @author NexusFlip
 
 contract Helper is Test {
 
@@ -74,8 +74,6 @@ contract Helper is Test {
     int256 immutable DEPEG_BBB = 975555555555555555;
     int256 immutable DEPEG_CCC = 955555555555555555;
 
-    
-
     uint256 endEpoch;
     uint256 beginEpoch;
 
@@ -94,11 +92,8 @@ contract Helper is Test {
         govToken = new GovToken();
         rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
         
-    
-
         farms.push(0x05f318Ed71F42848E5a3f249805e51520D77c654);
         farms.push(0x07EDb0ed167CDF787e0C7Cb212cF2b60CEbc4a70);
-
         rewardBalances = new RewardBalances(farms);
 
         vm.stopPrank();

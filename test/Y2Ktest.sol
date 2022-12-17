@@ -3,6 +3,8 @@ pragma solidity 0.8.15;
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
+/// @author MiguelBits
+
 contract Y2K is ERC20("Y2K", "Y2K", 18) {
     error ZeroAddress();
     error ZeroAmount();

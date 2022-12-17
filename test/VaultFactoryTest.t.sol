@@ -8,6 +8,9 @@ import {Controller} from "../src/Controller.sol";
 import {VaultFactoryHelper} from "./VaultFactoryHelper.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 
+/// @author nexusflip
+/// @author MiguelBits
+
 contract VaultFactoryTest is VaultFactoryHelper {
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases

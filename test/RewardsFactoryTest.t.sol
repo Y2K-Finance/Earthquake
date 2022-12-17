@@ -10,6 +10,8 @@ import {RewardsFactoryHelper} from "./RewardsFactoryHelper.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {StakingRewards} from "../src/rewards/StakingRewards.sol";
 
+/// @author nexusflip
+
 contract RewardsFactoryTest is RewardsFactoryHelper {
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases

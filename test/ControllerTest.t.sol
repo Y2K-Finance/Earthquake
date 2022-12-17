@@ -11,6 +11,9 @@ import {ControllerHelper} from "./ControllerHelper.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {DepegOracle} from "./oracles/DepegOracle.sol";
 
+/// @author nexusflip
+/// @author MiguelBits
+
 contract ControllerTest is ControllerHelper {
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases

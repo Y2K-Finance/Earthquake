@@ -8,8 +8,7 @@ import {Controller} from "../src/Controller.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {Owned} from "../src/rewards/Owned.sol";
 
-/// @author MiguelBits
-/// @author NexusFlip
+/// @author nexusflip
 
 contract OwnerHelper is Test {
 

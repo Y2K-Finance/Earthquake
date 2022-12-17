@@ -10,6 +10,9 @@ import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Owned} from "../src/rewards/Owned.sol"; 
 
+/// @author nexusflip
+/// @author MiguelBits
+
 contract OwnerTest is OwnerHelper{
     /*//////////////////////////////////////////////////////////////
                            ASSERT cases
