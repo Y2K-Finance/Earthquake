@@ -324,8 +324,6 @@ contract AssertTest is Helper {
     function testTriggerEndEpoch() public {
         DepositDepeg();
         vm.startPrank(admin);
-        Controller testController = new Controller(address(vaultFactory), arbitrum_sequencer);
-        vaultFactory.setController(address(testController));
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.warp(endEpoch + 1 days);
         controller.triggerEndEpoch(SINGLE_MARKET_INDEX, endEpoch);
