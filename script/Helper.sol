@@ -109,9 +109,15 @@ contract HelperConfig is Script {
         keeperEndEpoch.startTask(_marketIndex, _epochEnd);
     }
 
-    function getConfigAddresses() public returns (ConfigAddresses memory) {
+    function getConfigAddresses(bool isTestEnv) public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/configAddresses.json");
+        string memory path;
+        if(isTestEnv){
+            path = string.concat(root, "/configTestEnv.json");
+        }
+        else{
+            path = string.concat(root, "/configAddresses.json");
+        }
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".configAddresses[0]");
         ConfigAddresses memory rawConstants = abi.decode(parseJsonByteCode, (ConfigAddresses));
