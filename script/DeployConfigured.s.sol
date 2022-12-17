@@ -60,6 +60,7 @@ contract ConfigScript is Script, HelperConfig {
         
         //transfer ownership
         //vaultFactory.transferOwnership(addresses.admin);
+        vm.stopBroadcast();
 
     }
 }

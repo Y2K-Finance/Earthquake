@@ -7,4 +7,12 @@ contract GovToken is ERC20 {
     function moneyPrinterGoesBrr(address _sender) public {
         _mint(_sender, 100 ether);
     }
+    
+    function mint(address _sender) public {
+        _mint(_sender, 100 ether);
+    }
+
+    function mint(address _sender, uint256 _amount) public {
+        _mint(_sender, _amount * 1 ether);
+    }
 }
