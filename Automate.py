@@ -17,7 +17,7 @@ now = datetime.now()
 
 def checkIfMidnight():
     now = datetime.now()
-    strike_time = now.replace(day=2, hour=0, minute=0)
+    strike_time = now.replace(hour=0, minute=0)
     print("Current time: ", now)
     print("Strike time: ", strike_time)
     return strike_time == now
