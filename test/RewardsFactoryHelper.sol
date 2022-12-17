@@ -46,7 +46,6 @@ contract RewardsFactoryHelper is Test {
     int256 constant DEPEG_AAA = 995555555555555555;
     int256 constant DEPEG_BBB = 975555555555555555;
     int256 constant DEPEG_CCC = 955555555555555555;
-    int256 constant STRIKE_PRICE_FAKE_ORACLE = 90995265;
 
     uint256 endEpoch;
     uint256 beginEpoch;

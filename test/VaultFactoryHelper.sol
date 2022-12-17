@@ -28,7 +28,6 @@ contract VaultFactoryHelper is Test {
     uint256 constant FEE = 5;
     uint256 constant SINGLE_MARKET_INDEX = 1;
     uint256 constant MARKET_OVERFLOW = 3;
-    uint256 constant AMOUNT = 10 ether;
     uint256 constant BEGIN_DAYS = 2 days;
     uint256 constant END_DAYS = 30 days;
     int256 constant DEPEG_AAA = 995555555555555555;

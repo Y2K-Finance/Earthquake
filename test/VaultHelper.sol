@@ -12,7 +12,6 @@ import {Controller} from "../src/Controller.sol";
 contract VaultHelper is Test {
 
     VaultFactory vaultFactory;
-    VaultFactory testFactory;
     Controller controller;
     TimeLock timelocker;
     Vault vHedge;

@@ -106,23 +106,23 @@ contract OracleTest is OracleHelper {
     function testPegOracleSameOracle() public {
         vm.startPrank(admin);
         vm.expectRevert(bytes("Cannot be same Oracle"));
-        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleSTETH);
+        new PegOracle(oracleSTETH, oracleSTETH);
         vm.stopPrank();
     }
 
     function testPegOracleZeroAddress() public {
         vm.startPrank(admin);
         vm.expectRevert(bytes("oracle1 cannot be the zero address"));
-        PegOracle pegOracle = new PegOracle(address(0), oracleSTETH);
+        new PegOracle(address(0), oracleSTETH);
         vm.expectRevert(bytes("oracle2 cannot be the zero address"));
-        PegOracle pegOracle2 = new PegOracle(oracleSTETH, address(0));
+        new PegOracle(oracleSTETH, address(0));
         vm.stopPrank();
     }
 
     function testPegOracleDifDecimals() public {
         vm.startPrank(admin);
         vm.expectRevert(bytes("Decimals must be the same"));
-        PegOracle pegOracle = new PegOracle(btcEthOracle, oracleUSDC);
+        new PegOracle(btcEthOracle, oracleUSDC);
         vm.stopPrank();
     }
 
