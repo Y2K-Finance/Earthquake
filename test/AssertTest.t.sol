@@ -522,22 +522,6 @@ contract AssertTest is Helper {
         vm.stopPrank();
     }
 
-
-    /*///////////////////////////////////////////////////////////////
-                           GOVTOKEN functions
-    //////////////////////////////////////////////////////////////*/
-
-    // function testMintGovToken() public {
-    //     vm.startPrank(admin);
-    //     vaultFactory.createNewMarket(NULL_BALANCE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
-    //     rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-    //     govToken.moneyPrinterGoesBrr(alice);
-    //     uint256 aliceBalance = ERC20(address(govToken)).balanceOf(alice);
-    //     emit log_named_int("Alice Balance", int256(aliceBalance));
-    //     assert(aliceBalance != NULL_BALANCE);
-    //     vm.stopPrank();
-    // }
-
     /*///////////////////////////////////////////////////////////////
                            REWARDSFACTORY functions
     //////////////////////////////////////////////////////////////*/
