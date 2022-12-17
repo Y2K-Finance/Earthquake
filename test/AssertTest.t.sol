@@ -10,11 +10,13 @@ import {StakingRewards} from "../src/rewards/StakingRewards.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import {Helper} from "./Helper.sol";
+import {RewardBalances} from "../src/rewards/RewardBalances.sol";
 
 import {FakeOracle} from "./oracles/FakeOracle.sol";
 import {FakeFakeOracle} from "./oracles/FakeFakeOracle.sol";
 import {DepegOracle} from "./oracles/DepegOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 /// @author MiguelBits
 /// @author NexusFlip
@@ -299,8 +301,8 @@ contract AssertTest is Helper {
     }
 
     function testCreateController() public {
-        Controller test_controller = new Controller(address(vaultFactory), arbitrum_sequencer);
-        assertEq(address(vaultFactory), address(test_controller.vaultFactory()));
+        Controller testController = new Controller(address(vaultFactory), arbitrum_sequencer);
+        assertEq(address(vaultFactory), address(testController.vaultFactory()));
     }
 
     /*function testTriggerDepeg() public {
@@ -737,5 +739,89 @@ contract AssertTest is Helper {
         assertTrue(vaultFactory.owner() == bob);
     }
 
-    
+
+    /*///////////////////////////////////////////////////////////////
+                           Balances functions
+    //////////////////////////////////////////////////////////////*/
+
+    function testAppendStakingContractAddress() public {
+        // Test adding staking contract to the list of staking contracts.
+        vm.startPrank(admin);
+        rewardBalances.appendStakingContractAddress(address(10));
+        assertTrue(rewardBalances.stakingRewardsContracts(2) == address(10));
+        vm.stopPrank();
+    }
+
+    function testAppendStakingContractAddressLoop() public {
+        //Test adding looping staking contract set to the list of staking contracts.
+        vm.startPrank(admin);
+
+        address[] memory addresses = new address[](2);
+        addresses[0] = address(11);
+        addresses[1] = address(12);
+
+        rewardBalances.appendStakingContractAddressesLoop(addresses);
+        
+        assertTrue(rewardBalances.stakingRewardsContracts(2) == address(11) 
+        && rewardBalances.stakingRewardsContracts(3) == address(12));
+    }
+
+
+    function testRemoveStakingContractAddress() public {
+        // Test removing staking contract to the list of staking contracts.
+        vm.startPrank(admin);
+        rewardBalances.removeStakingContractAddress(1);
+        assertTrue(rewardBalances.stakingRewardsContracts(1) == address(0));
+        vm.stopPrank();
+    }
+
+    function testBalanceOfRewards() public {
+        //Test checking reward balance of an address that has rewards to claim
+        vm.startPrank(admin);
+
+        uint256 rewardsBal = 193333333333332096000;
+
+        (address hedge, address risk) = vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_AAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_991*");
+        (address firstAdd, address secondAdd) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
+        
+        govToken.moneyPrinterGoesBrr(firstAdd);
+        govToken.moneyPrinterGoesBrr(secondAdd);
+        
+        vm.deal(admin, AMOUNT * 2);
+        vm.warp(beginEpoch - 1 days);
+        
+        StakingRewards(firstAdd).notifyRewardAmount(AMOUNT);
+        StakingRewards(secondAdd).notifyRewardAmount(AMOUNT);
+
+        Vault(hedge).depositETH{value: AMOUNT}(endEpoch, admin);
+        Vault(risk).depositETH{value: AMOUNT}(endEpoch, admin);
+
+        IERC1155(hedge).setApprovalForAll(firstAdd, true);
+        IERC1155(risk).setApprovalForAll(secondAdd, true);
+        StakingRewards(firstAdd).stake(AMOUNT);
+        StakingRewards(secondAdd).stake(AMOUNT);
+
+        uint256 rewardDuration = endEpoch - block.timestamp;
+        uint256 periodFinish = block.timestamp + rewardDuration;
+
+        vm.warp(periodFinish);
+
+        StakingRewards(firstAdd).notifyRewardAmount(0);
+        StakingRewards(secondAdd).notifyRewardAmount(0);
+
+        address[] memory addresses = new address[](2);
+        addresses[0] = firstAdd;
+        addresses[1] = secondAdd;
+        RewardBalances initBalance = new RewardBalances(addresses);
+
+        uint256 balOfAdmin = initBalance.balanceOf(admin);
+        emit log_named_uint("balOfAdmin", balOfAdmin);
+        
+        assertTrue(balOfAdmin == rewardsBal);
+
+        vm.stopPrank();
+    }
+
+
+
 }
