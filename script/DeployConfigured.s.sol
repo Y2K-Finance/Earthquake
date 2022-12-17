@@ -13,7 +13,7 @@ contract ConfigScript is Script, HelperConfig {
 
     function run() public {
 
-        ConfigAddresses memory addresses = getConfigAddresses();
+        ConfigAddresses memory addresses = getConfigAddresses(false);
         console2.log("Address admin", addresses.admin);
         console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
         console2.log("Address oracleDAI", addresses.oracleDAI);
