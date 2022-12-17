@@ -505,15 +505,6 @@ contract RevertTest is Helper {
         vm.stopPrank();  
     }
 
-    function testFailTimelocked() public {
-        //forge can't compare reverts if the function that is called is not on the same contract as the revert)
-        //(can only make internal comparisons)
-        //all cases revert TimeLocked()
-        vm.startPrank(admin);
-
-        vm.stopPrank();
-    }
-
     /*///////////////////////////////////////////////////////////////
                            REWARDSFACTORY reverts
     //////////////////////////////////////////////////////////////*/
@@ -614,27 +605,5 @@ contract RevertTest is Helper {
         StakingRewards(rHedge).getReward();
         vm.stopPrank();
     }
-    
-    /*//////////////////////////////////////////////////////////////
-                           Rewards Balances
-    //////////////////////////////////////////////////////////////*/
-    function testStakingContractAddresses() public {
-        vm.startPrank(alice);
-        vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));
-        rewardBalances.appendStakingContractAddress(address(1));
-        vm.stopPrank();
-
-        vm.startPrank(alice);
-        vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));
-        rewardBalances.removeStakingContractAddress(1);
-        vm.stopPrank();
-
-        vm.startPrank(admin);
-        vm.expectRevert(bytes("RewardBalances: OUT_OF_BOUNDS"));
-        rewardBalances.removeStakingContractAddress(10);
-        vm.stopPrank();
-    }
-
-
 
 }

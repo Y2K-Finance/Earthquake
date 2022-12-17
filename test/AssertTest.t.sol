@@ -305,27 +305,23 @@ contract AssertTest is Helper {
         assertEq(address(vaultFactory), address(testController.vaultFactory()));
     }
 
-    /*function testTriggerDepeg() public {
+    function testTriggerDepeg() public {
         DepositDepeg();
         vm.startPrank(admin);
         DepegOracle depegOracle = new DepegOracle(address(oracleFRAX), address(admin));
-        Controller controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(depegOracle), "y2kFRAX_99*");
-        vaultFactory.setController(address(controller));
         vm.stopPrank();
 
         vm.warp(beginEpoch + 1 days);
         controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
         VaultFactory testFactory = controller.vaultFactory();
         assertEq(vaultFactory.getVaults(vaultFactory.marketIndex()), testFactory.getVaults(testFactory.marketIndex()));
-
-    }*/
+    }
 
     function testTriggerEndEpoch() public {
         DepositDepeg();
         vm.startPrank(admin);
-        Controller testController = new Controller(address(vaultFactory), arbitrum_sequencer);
-        vaultFactory.setController(address(testController));
+        
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.warp(endEpoch + 1 days);
         controller.triggerEndEpoch(SINGLE_MARKET_INDEX, endEpoch);
@@ -724,90 +720,5 @@ contract AssertTest is Helper {
         vaultFactory.transferOwnership(bob);
         assertTrue(vaultFactory.owner() == bob);
     }
-
-
-    /*///////////////////////////////////////////////////////////////
-                           Balances functions
-    //////////////////////////////////////////////////////////////*/
-
-    function testAppendStakingContractAddress() public {
-        // Test adding staking contract to the list of staking contracts.
-        vm.startPrank(admin);
-        rewardBalances.appendStakingContractAddress(address(10));
-        assertTrue(rewardBalances.stakingRewardsContracts(2) == address(10));
-        vm.stopPrank();
-    }
-
-    function testAppendStakingContractAddressLoop() public {
-        //Test adding looping staking contract set to the list of staking contracts.
-        vm.startPrank(admin);
-
-        address[] memory addresses = new address[](2);
-        addresses[0] = address(11);
-        addresses[1] = address(12);
-
-        rewardBalances.appendStakingContractAddressesLoop(addresses);
-        
-        assertTrue(rewardBalances.stakingRewardsContracts(2) == address(11) 
-        && rewardBalances.stakingRewardsContracts(3) == address(12));
-    }
-
-
-    function testRemoveStakingContractAddress() public {
-        // Test removing staking contract to the list of staking contracts.
-        vm.startPrank(admin);
-        rewardBalances.removeStakingContractAddress(1);
-        assertTrue(rewardBalances.stakingRewardsContracts(1) == address(0));
-        vm.stopPrank();
-    }
-
-    function testBalanceOfRewards() public {
-        //Test checking reward balance of an address that has rewards to claim
-        vm.startPrank(admin);
-
-        uint256 rewardsBal = 193333333333332096000;
-
-        (address hedge, address risk) = vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_AAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_991*");
-        (address firstAdd, address secondAdd) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-        
-        govToken.moneyPrinterGoesBrr(firstAdd);
-        govToken.moneyPrinterGoesBrr(secondAdd);
-        
-        vm.deal(admin, AMOUNT * 2);
-        vm.warp(beginEpoch - 1 days);
-        
-        StakingRewards(firstAdd).notifyRewardAmount(AMOUNT);
-        StakingRewards(secondAdd).notifyRewardAmount(AMOUNT);
-
-        Vault(hedge).depositETH{value: AMOUNT}(endEpoch, admin);
-        Vault(risk).depositETH{value: AMOUNT}(endEpoch, admin);
-
-        IERC1155(hedge).setApprovalForAll(firstAdd, true);
-        IERC1155(risk).setApprovalForAll(secondAdd, true);
-        StakingRewards(firstAdd).stake(AMOUNT);
-        StakingRewards(secondAdd).stake(AMOUNT);
-
-        uint256 rewardDuration = endEpoch - block.timestamp;
-        uint256 periodFinish = block.timestamp + rewardDuration;
-
-        vm.warp(periodFinish);
-
-        StakingRewards(firstAdd).notifyRewardAmount(0);
-        StakingRewards(secondAdd).notifyRewardAmount(0);
-
-        address[] memory addresses = new address[](2);
-        addresses[0] = firstAdd;
-        addresses[1] = secondAdd;
-        RewardBalances initBalance = new RewardBalances(addresses);
-
-        uint256 balOfAdmin = initBalance.balanceOf(admin);
-        emit log_named_uint("balOfAdmin", balOfAdmin);
-        
-        assertTrue(balOfAdmin == rewardsBal);
-
-        vm.stopPrank();
-    }
-
-
 
 }
