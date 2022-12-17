@@ -127,7 +127,12 @@ contract StakingRewards is
         emit Withdrawn(msg.sender, id, amount);
     }
 
-    function getReward() public nonReentrant whenNotPaused updateReward(msg.sender) {
+    function getReward()
+        public
+        nonReentrant
+        whenNotPaused
+        updateReward(msg.sender)
+    {
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
