@@ -7,6 +7,7 @@ import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol"; 
 import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
+import {RewardBalances} from "../src/rewards/RewardBalances.sol";
 import {GovToken} from "./GovToken.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
@@ -24,6 +25,7 @@ contract Helper is Test {
     GovToken govToken;
     RewardsFactory rewardsFactory;
     TimeLock timelocker;
+    RewardBalances rewardBalances;
 
     address WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
@@ -76,6 +78,8 @@ contract Helper is Test {
 
     uint256 endEpoch;
     uint256 beginEpoch;
+
+    address[] public farms;
     
     function setUp() public {
         vm.startPrank(admin);
@@ -89,6 +93,14 @@ contract Helper is Test {
 
         govToken = new GovToken();
         rewardsFactory = new RewardsFactory(address(govToken), address(vaultFactory));
+        
+    
+
+        farms.push(0x05f318Ed71F42848E5a3f249805e51520D77c654);
+        farms.push(0x07EDb0ed167CDF787e0C7Cb212cF2b60CEbc4a70);
+
+        rewardBalances = new RewardBalances(farms);
+
         vm.stopPrank();
 
     }
@@ -293,6 +305,4 @@ contract Helper is Test {
         emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
 
     }
-
-
 }

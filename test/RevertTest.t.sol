@@ -615,7 +615,25 @@ contract RevertTest is Helper {
         vm.stopPrank();
     }
     
+    /*//////////////////////////////////////////////////////////////
+                           Rewards Balances
+    //////////////////////////////////////////////////////////////*/
+    function testStakingContractAddresses() public {
+        vm.startPrank(alice);
+        vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));
+        rewardBalances.appendStakingContractAddress(address(1));
+        vm.stopPrank();
 
+        vm.startPrank(alice);
+        vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));
+        rewardBalances.removeStakingContractAddress(1);
+        vm.stopPrank();
+
+        vm.startPrank(admin);
+        vm.expectRevert(bytes("RewardBalances: OUT_OF_BOUNDS"));
+        rewardBalances.removeStakingContractAddress(10);
+        vm.stopPrank();
+    }
 
 
 
