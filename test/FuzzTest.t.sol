@@ -67,7 +67,7 @@ contract FuzzTest is FuzzHelper{
         vm.startPrank(admin);
         FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 995);
         for (uint256 i = SINGLE_MARKET_INDEX; i <= index; i++){
-            vaultFactory.createNewMarket(DEFAULT_TEST_FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
+            vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         }
         vm.stopPrank();
 

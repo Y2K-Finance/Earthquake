@@ -498,4 +498,118 @@ contract ControllerTest is ControllerHelper {
         controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
         vm.stopPrank();
     }
+
+    /*///////////////////////////////////////////////////////////////
+                           FUZZ cases
+    //////////////////////////////////////////////////////////////*/
+
+    function testFuzzDeposit(uint256 ethValue) public {
+        vm.deal(alice, ethValue);
+        vm.deal(bob, ethValue * BOB_MULTIPLIER);
+        vm.deal(chad, ethValue * CHAD_MULTIPLIER);
+        vm.deal(degen, ethValue * DEGEN_MULTIPLIER);
+
+        vm.prank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+
+        hedge = vaultFactory.getVaults(1)[0];
+        risk = vaultFactory.getVaults(1)[1];
+        
+        vHedge = Vault(hedge);
+        vRisk = Vault(risk);
+
+        //ALICE hedge DEPOSIT
+        vm.startPrank(alice);
+        ERC20(WETH).approve(hedge, ethValue);
+        vHedge.depositETH{value: ethValue}(endEpoch, alice);
+        vm.stopPrank();
+
+        //BOB hedge DEPOSIT
+        vm.startPrank(bob);
+        ERC20(WETH).approve(hedge, ethValue * BOB_MULTIPLIER);
+        vHedge.depositETH{value: ethValue * BOB_MULTIPLIER}(endEpoch, bob);
+
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == ethValue * BOB_MULTIPLIER);
+        vm.stopPrank();
+
+        //CHAD risk DEPOSIT
+        vm.startPrank(chad);
+        ERC20(WETH).approve(risk, ethValue * CHAD_MULTIPLIER);
+        vRisk.depositETH{value: ethValue * CHAD_MULTIPLIER}(endEpoch, chad);
+
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (ethValue * CHAD_MULTIPLIER));
+        vm.stopPrank();
+
+        //DEGEN risk DEPOSIT
+        vm.startPrank(degen);
+        ERC20(WETH).approve(risk, ethValue * DEGEN_MULTIPLIER);
+        vRisk.depositETH{value: ethValue * DEGEN_MULTIPLIER}(endEpoch, degen);
+
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (ethValue * DEGEN_MULTIPLIER));
+        vm.stopPrank();
+    }
+
+    function testFuzzWithdraw(uint256 ethValue) public {
+        vm.assume(ethValue >= 1);
+        testFuzzDeposit(ethValue);
+
+        hedge = vaultFactory.getVaults(1)[0];
+        risk = vaultFactory.getVaults(1)[1];
+
+        vHedge = Vault(hedge);
+        vRisk = Vault(risk);
+
+        vm.startPrank(admin);
+        vm.warp(endEpoch + 1 days);
+        vm.stopPrank();
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
+        //ALICE hedge WITHDRAW
+        vm.startPrank(alice);
+        assets = vHedge.balanceOf(alice,endEpoch);
+        vHedge.withdraw(endEpoch, assets, alice, alice);
+
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_VALUE);
+        entitledShares = vHedge.previewWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
+
+        vm.stopPrank();
+
+        //BOB hedge WITHDRAW
+        vm.startPrank(bob);
+        assets = vHedge.balanceOf(bob,endEpoch);
+        vHedge.withdraw(endEpoch, assets, bob, bob);
+        
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_VALUE);
+        entitledShares = vHedge.previewWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
+
+        vm.stopPrank();
+
+        emit log_named_uint("hedge balance", ERC20(WETH).balanceOf(address(vHedge)));
+
+        //CHAD risk WITHDRAW
+        vm.startPrank(chad);
+        assets = vRisk.balanceOf(chad,endEpoch);
+        vRisk.withdraw(endEpoch, assets, chad, chad);
+
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_VALUE);
+        entitledShares = vRisk.previewWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
+
+        vm.stopPrank();
+
+        //DEGEN risk WITHDRAW
+        vm.startPrank(degen);
+        assets = vRisk.balanceOf(degen,endEpoch);
+        vRisk.withdraw(endEpoch, assets, degen, degen);
+
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_VALUE);
+        entitledShares = vRisk.previewWithdraw(endEpoch, assets);
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
+
+        vm.stopPrank();
+
+        emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
+
+    }
 }

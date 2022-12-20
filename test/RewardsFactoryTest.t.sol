@@ -121,4 +121,20 @@ contract RewardsFactoryTest is RewardsFactoryHelper {
         vm.stopPrank();
     }
 
+    /*///////////////////////////////////////////////////////////////
+                           FUZZ cases
+    //////////////////////////////////////////////////////////////*/
+
+    function testFuzzRewardsFactoryAdminMod(uint256 index) public {
+        //testing for admin
+        vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
+        vm.startPrank(admin);
+        for (uint256 i = 1; i <= index; i++){
+            vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        }
+        rewardsFactory.createStakingRewards(index, endEpoch);
+        assertEq(vaultFactory.marketIndex(), index);
+        vm.stopPrank();   
+    }
+
 }
