@@ -13,12 +13,17 @@ import {DepegOracle} from "./oracles/DepegOracle.sol";
 /// @author nexusflip
 
 contract ControllerHelper is Test {
+    
+    Controller controller;
+    Controller testController;
 
     VaultFactory vaultFactory;
     VaultFactory testFactory;
-    Controller controller;
-    Controller testController;
     TimeLock timelocker;
+
+    Vault vHedge;
+    Vault vRisk;
+
     DepegOracle depegOracle;
     FakeOracle fakeOracle;
 
@@ -49,9 +54,6 @@ contract ControllerHelper is Test {
 
     address hedge;
     address risk;
-
-    Vault vHedge;
-    Vault vRisk;
 
     uint256 endEpoch;
     uint256 beginEpoch;

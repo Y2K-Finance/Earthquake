@@ -11,12 +11,15 @@ import {Owned} from "../src/rewards/Owned.sol";
 /// @author nexusflip
 
 contract OwnerHelper is Test {
+    Controller controller;
 
     VaultFactory vaultFactory;
-    Controller controller;
     TimeLock timelocker;
+
     Vault vHedge;
+
     FakeOracle fakeOracle;
+    
     Owned owned;
 
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;

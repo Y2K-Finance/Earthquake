@@ -13,6 +13,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 /// @author MiguelBits
 
 contract VaultTest is VaultHelper {
+    
     /*///////////////////////////////////////////////////////////////
                            REVERT cases
     //////////////////////////////////////////////////////////////*/

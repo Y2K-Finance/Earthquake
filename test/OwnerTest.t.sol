@@ -14,6 +14,7 @@ import {Owned} from "../src/rewards/Owned.sol";
 /// @author MiguelBits
 
 contract OwnerTest is OwnerHelper{
+    
     /*//////////////////////////////////////////////////////////////
                            ASSERT cases
     //////////////////////////////////////////////////////////////*/

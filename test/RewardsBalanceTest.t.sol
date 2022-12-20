@@ -14,6 +14,7 @@ import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 /// @author definedNever
 
 contract RewardsBalanceTest is RewardsBalanceHelper {
+
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases
     //////////////////////////////////////////////////////////////*/
@@ -92,6 +93,7 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
     /*//////////////////////////////////////////////////////////////
                            REVERT cases
     //////////////////////////////////////////////////////////////*/
+    
     function testRevertStakingContractAddresses() public {
         vm.startPrank(alice);
         vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));

@@ -12,6 +12,7 @@ import {FakeOracle} from "./oracles/FakeOracle.sol";
 /// @author MiguelBits
 
 contract VaultFactoryTest is VaultFactoryHelper {
+
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases
     //////////////////////////////////////////////////////////////*/
@@ -127,6 +128,7 @@ contract VaultFactoryTest is VaultFactoryHelper {
     /*///////////////////////////////////////////////////////////////
                            FUZZ cases
     //////////////////////////////////////////////////////////////*/
+    
     function testFuzzVaultFactoryMarketCreation(uint256 index) public {
         vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
         vm.startPrank(admin);

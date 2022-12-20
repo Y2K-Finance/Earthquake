@@ -12,11 +12,14 @@ import {FakeOracle} from "./oracles/FakeOracle.sol";
 
 contract VaultHelper is Test {
 
-    VaultFactory vaultFactory;
     Controller controller;
+
+    VaultFactory vaultFactory;
     TimeLock timelocker;
+
     Vault vHedge;
     Vault testVault;
+
     FakeOracle fakeOracle;
 
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -36,6 +39,7 @@ contract VaultHelper is Test {
 
     uint256 endEpoch;
     uint256 beginEpoch;
+    
     address hedge;
     
     function setUp() public {

@@ -13,18 +13,14 @@ import {GovToken} from "./GovToken.sol";
 
 contract RewardsBalanceHelper is Test {
 
-    uint256 beginEpoch;
-    uint256 endEpoch;
-    uint256 rewardsBal;
-    uint256 rewardDuration;
-    uint256 periodFinish;
+    Controller controller;
 
-    address[] farms;
+    VaultFactory vaultFactory;
+    TimeLock timelocker;
 
-    address hedge;
-    address risk;
-    address hedgeAddr;
-    address riskAddr;
+    RewardsFactory rewardsFactory;
+    RewardBalances rewardBalances;
+    GovToken govToken;
 
     address constant admin = address(1);
     address constant alice = address(2);
@@ -40,12 +36,17 @@ contract RewardsBalanceHelper is Test {
     uint256 constant AMOUNT = 10 ether;
     int256 constant DEPEG_STRIKE = 995555555555555555;
 
-    Controller controller;
-    VaultFactory vaultFactory;
-    RewardsFactory rewardsFactory;
-    RewardBalances rewardBalances;
-    GovToken govToken;
-    TimeLock timelocker;
+    uint256 beginEpoch;
+    uint256 endEpoch;
+    uint256 rewardsBal;
+    uint256 rewardDuration;
+    uint256 periodFinish;
+
+    address hedge;
+    address risk;
+    address hedgeAddr;
+    address riskAddr;
+    address[] farms;
 
     function setUp() public {
         vm.startPrank(admin);

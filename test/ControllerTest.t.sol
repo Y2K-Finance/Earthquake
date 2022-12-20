@@ -15,9 +15,11 @@ import {DepegOracle} from "./oracles/DepegOracle.sol";
 /// @author MiguelBits
 
 contract ControllerTest is ControllerHelper {
+
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases
     //////////////////////////////////////////////////////////////*/
+
     function testDeposit() public {
         vm.deal(alice, AMOUNT);
         vm.deal(bob, AMOUNT * BOB_MULTIPLIER);
@@ -460,6 +462,7 @@ contract ControllerTest is ControllerHelper {
         controller.triggerNullEpoch(vaultFactory.marketIndex(), endEpoch);
         vm.stopPrank();
     }
+    
     function testFailNullEpochRevNOTZEROTVL() public {
         //need to fix triggerNullEpoch
         vm.startPrank(admin);

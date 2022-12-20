@@ -14,17 +14,23 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
 contract OracleHelper is Test {
 
+    Controller controller;
+
     VaultFactory vaultFactory;
     VaultFactory testFactory;
-    Controller controller;
     TimeLock timelocker;
+
     Vault vHedge;
+
     FakeOracle fakeOracle;
     FakeOracle eightDec;
     FakeOracle eighteenDec;
+
     FakeFakeOracle sevenDec;
     FakeFakeOracle plusDecimals;
+
     PegOracle pegOracle;
+
     AggregatorV3Interface testOracle1;
     AggregatorV3Interface testOracle2;
 
@@ -56,6 +62,7 @@ contract OracleHelper is Test {
     int256 testPriceOne;
     int256 testPriceTwo;
     int256 testPriceThree;
+    
     address hedge;
     
     function setUp() public {

@@ -12,11 +12,13 @@ import {GovToken} from "./GovToken.sol";
 
 contract RewardsFactoryHelper is Test {
 
-    VaultFactory vaultFactory;
     Controller controller;
+
+    VaultFactory vaultFactory;
     TimeLock timelocker;
-    GovToken govToken;
+
     RewardsFactory rewardsFactory;
+    GovToken govToken;
 
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address constant tokenFRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;

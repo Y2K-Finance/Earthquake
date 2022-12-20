@@ -13,6 +13,7 @@ import {StakingRewards} from "../src/rewards/StakingRewards.sol";
 /// @author nexusflip
 
 contract RewardsFactoryTest is RewardsFactoryHelper {
+    
     /*///////////////////////////////////////////////////////////////
                            ASSERT cases
     //////////////////////////////////////////////////////////////*/
