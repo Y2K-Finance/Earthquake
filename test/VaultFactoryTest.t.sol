@@ -18,7 +18,7 @@ contract VaultFactoryTest is VaultFactoryHelper {
     
     function testCreateVaultFactory() public {
         vm.startPrank(admin);
-        VaultFactory testFactory = new VaultFactory(address(controller), address(tokenFRAX), admin);
+        testFactory = new VaultFactory(address(controller), address(tokenFRAX), admin);
         assertEq(address(controller), testFactory.treasury());
         assertEq(address(tokenFRAX), testFactory.WETH());
         assertEq(address(admin), testFactory.owner());
@@ -30,11 +30,11 @@ contract VaultFactoryTest is VaultFactoryHelper {
         
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         
-        uint timestamper = block.timestamp + timelocker.MIN_DELAY() + 1;
-        uint index = 1;
-        address newValue = address(1);
-        address tokenValue = tokenUSDC;
-        address factory = address(vaultFactory);
+        timestamper = block.timestamp + timelocker.MIN_DELAY() + 1;
+        index = 1;
+        newValue = address(1);
+        tokenValue = tokenUSDC;
+        factory = address(vaultFactory);
         address[] memory vaults = vaultFactory.getVaults(1);
 
         // test queue treasury
@@ -71,7 +71,7 @@ contract VaultFactoryTest is VaultFactoryHelper {
     function testMarketDoesNotExist() public {
         //create fake oracle for price feed
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 

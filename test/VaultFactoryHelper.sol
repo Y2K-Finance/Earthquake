@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {Vault} from "../src/Vault.sol";
 import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
 import {Controller} from "../src/Controller.sol"; 
+import {FakeOracle} from "./oracles/FakeOracle.sol";
 
 /// @author nexusflip
 /// @author MiguelBits
@@ -15,6 +16,7 @@ contract VaultFactoryHelper is Test {
     VaultFactory testFactory;
     Controller controller;
     TimeLock timelocker;
+    FakeOracle fakeOracle;
 
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address constant tokenFRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
@@ -34,6 +36,11 @@ contract VaultFactoryHelper is Test {
 
     uint256 endEpoch;
     uint256 beginEpoch;
+    uint timestamper;
+    uint index;
+    address newValue;
+    address tokenValue;
+    address factory;
     
     function setUp() public {
         vm.startPrank(admin);

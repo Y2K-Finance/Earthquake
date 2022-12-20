@@ -21,14 +21,14 @@ contract OracleTest is OracleHelper {
     //////////////////////////////////////////////////////////////*/
 
     function testCreatePegOracle() public {
-        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        pegOracle = new PegOracle(oracleSTETH, oracleETH);
         assertEq(address(pegOracle.oracle1()), oracleSTETH);
         assertEq(address(pegOracle.oracle2()), oracleETH);
     }
 
     function testLatestRoundData() public {
         vm.startPrank(admin);
-        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        pegOracle = new PegOracle(oracleSTETH, oracleETH);
         pegOracle.latestRoundData();
         vm.stopPrank();
 
@@ -36,7 +36,7 @@ contract OracleTest is OracleHelper {
 
     function testOracle1Price() public {
         vm.startPrank(admin);
-        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        pegOracle = new PegOracle(oracleSTETH, oracleETH);
         pegOracle.getOracle1_Price();
         vm.stopPrank();
 
@@ -44,19 +44,19 @@ contract OracleTest is OracleHelper {
 
     function testOracleDecimals() public {
         vm.startPrank(admin);
-        PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        pegOracle = new PegOracle(oracleSTETH, oracleETH);
         //emit log_named_uint("PegOracle decimals", pegOracle.decimals());
         assertTrue(pegOracle.decimals() == DECIMALS);
-        AggregatorV3Interface testOracle1 = AggregatorV3Interface(oracleSTETH);
-        AggregatorV3Interface testOracle2 = AggregatorV3Interface(oracleETH);
+        testOracle1 = AggregatorV3Interface(oracleSTETH);
+        testOracle2 = AggregatorV3Interface(oracleETH);
         assertTrue(testOracle1.decimals() == testOracle2.decimals());
         vm.stopPrank();
 
         //testing for 7 decimal pair
         vm.startPrank(admin);
-        FakeFakeOracle sevenDec = new FakeFakeOracle(oracleMIM, 10000000, 7);
+        sevenDec = new FakeFakeOracle(oracleMIM, 10000000, 7);
         vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_CCC, beginEpoch, endEpoch, address(sevenDec), "y2kMIM_99*");
-        int256 testPriceOne = controller.getLatestPrice(tokenMIM);
+        testPriceOne = controller.getLatestPrice(tokenMIM);
         emit log_named_int("testPrice for 7 decimals ", testPriceOne);
         emit log_named_int("strikePrice              ", DEPEG_CCC);
         assertTrue(testPriceOne > 900000000000000000 && testPriceOne <= 1000000000000000000, "oracle rounding error from 7 decimals"); 
@@ -64,7 +64,7 @@ contract OracleTest is OracleHelper {
 
         //testing for 8 decimal pair
         vm.startPrank(admin);
-        FakeOracle eightDec = new FakeOracle(oracleMIM, 100000000);
+        eightDec = new FakeOracle(oracleMIM, 100000000);
         vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_CCC, beginEpoch, endEpoch, address(eightDec), "y2kMIM_99*");
         testPriceOne = controller.getLatestPrice(tokenMIM);
         emit log_named_int("testPrice for 8 decimals ", testPriceOne);
@@ -75,15 +75,16 @@ contract OracleTest is OracleHelper {
         //testing for 18 decimal pair DEPEG
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_CCC, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-        int256 testPriceTwo = controller.getLatestPrice(tokenFRAX);
+        testPriceTwo = controller.getLatestPrice(tokenFRAX);
         emit log_named_int("testPrice for 18 decimals", testPriceTwo);
         emit log_named_int("strike price             ", DEPEG_CCC);
         //asserting between 17 and 19 decimals since most stables will not be exactly pegged to the dollar
         assertTrue(testPriceTwo >= 100000000000000000 && testPriceTwo < 10000000000000000000, "oracle rounding error from 18 decimals DEPEG");    
         vm.stopPrank();
+
         //testing for 18 decimal pair PEG
         vm.startPrank(admin);
-        FakeOracle eighteenDec = new FakeOracle(oracleMIM, 1000000000000000000);
+        eighteenDec = new FakeOracle(oracleMIM, 1000000000000000000);
         vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_CCC, beginEpoch, endEpoch, address(eighteenDec), "y2kMIM_99*");
         testPriceOne = controller.getLatestPrice(tokenMIM);
         emit log_named_int("testPrice for 18 decimals", testPriceOne);
@@ -93,9 +94,9 @@ contract OracleTest is OracleHelper {
 
         //testing for +18 decimal pairs, 20 decimals
         vm.startPrank(admin);
-        FakeFakeOracle plusDecimals = new FakeFakeOracle(oracleUSDC, 100000000000000000000, 20);
+        plusDecimals = new FakeFakeOracle(oracleUSDC, 100000000000000000000, 20);
         vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_CCC, beginEpoch, endEpoch, address(plusDecimals), "y2kDAI_99*");
-        int256 testPriceThree = controller.getLatestPrice(tokenUSDC);
+        testPriceThree = controller.getLatestPrice(tokenUSDC);
         emit log_named_int("testPrice for +18 decimal", testPriceThree);
         emit log_named_int("strike price             ", DEPEG_CCC);
         assertTrue(testPriceThree >= 100000000000000000 && testPriceThree < 10000000000000000000, "oracle rounding error from 20 decimals");

@@ -73,15 +73,13 @@ contract ControllerTest is ControllerHelper {
         vHedge = Vault(hedge);
         vRisk = Vault(risk);
 
-        uint assets;
-
         //ALICE hedge WITHDRAW
         vm.startPrank(alice);
         assets = vHedge.balanceOf(alice,endEpoch);
         vHedge.withdraw(endEpoch, assets, alice, alice);
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_BALANCE);
-        uint256 entitledShares = vHedge.previewWithdraw(endEpoch, assets);
+        entitledShares = vHedge.previewWithdraw(endEpoch, assets);
         assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(alice));
     	assertTrue(vHedge.calculateWithdrawalFeeValue(10 ether, endEpoch) == 0.05 ether);
         vm.stopPrank();
@@ -173,14 +171,14 @@ contract ControllerTest is ControllerHelper {
     }
 
     function testCreateController() public {
-        Controller testController = new Controller(address(vaultFactory), arbitrum_sequencer);
+        testController = new Controller(address(vaultFactory), arbitrum_sequencer);
         assertEq(address(vaultFactory), address(testController.vaultFactory()));
     }
 
     function testTriggerDepeg() public {
         DepositDepeg();
         vm.startPrank(admin);
-        DepegOracle depegOracle = new DepegOracle(address(oracleFRAX), address(admin));
+        depegOracle = new DepegOracle(address(oracleFRAX), address(admin));
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(depegOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
@@ -197,7 +195,7 @@ contract ControllerTest is ControllerHelper {
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.warp(endEpoch + 1 days);
         controller.triggerEndEpoch(SINGLE_MARKET_INDEX, endEpoch);
-        VaultFactory testFactory = controller.vaultFactory();
+        testFactory = controller.vaultFactory();
         assertEq(vaultFactory.getVaults(vaultFactory.marketIndex()), testFactory.getVaults(testFactory.marketIndex()));
         vm.stopPrank();
     }
@@ -278,7 +276,7 @@ contract ControllerTest is ControllerHelper {
 
         //create fake oracle for price feed
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
@@ -392,7 +390,7 @@ contract ControllerTest is ControllerHelper {
 
         //testing triggerDepeg
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 1);
+        fakeOracle = new FakeOracle(oracleFRAX, 1);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         //controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
         //vm.expectRevert(Controller.EpochNotExpired.selector);
@@ -409,7 +407,7 @@ contract ControllerTest is ControllerHelper {
 
     function testOraclePriceZero() public {
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 0);
+        fakeOracle = new FakeOracle(oracleFRAX, 0);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.expectRevert(Controller.OraclePriceZero.selector);
         controller.getLatestPrice(tokenFRAX);
@@ -418,7 +416,7 @@ contract ControllerTest is ControllerHelper {
 
     function testFailEpochNotStarted() public {
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 1);
+        fakeOracle = new FakeOracle(oracleFRAX, 1);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         //vm.expectRevert(Controller.EpochNotStarted.selector);
         controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
@@ -427,7 +425,7 @@ contract ControllerTest is ControllerHelper {
 
     function testFailEpochExpired() public {
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 1);
+        fakeOracle = new FakeOracle(oracleFRAX, 1);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.warp(endEpoch + 1);
         //vm.expectRevert(Controller.EpochExpired.selector);

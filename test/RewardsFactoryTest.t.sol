@@ -24,9 +24,8 @@ contract RewardsFactoryTest is RewardsFactoryHelper {
         //to-do:expect emit CreatedStakingReward
         rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
         //to-do: assert if rewards exist and != 0
-        (,address firstAdd) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-        (address secondAdd,) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-        assert((firstAdd != address(0)) && (secondAdd != address(0)));
+        (hedge, risk) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
+        assert((hedge != address(0)) && (risk != address(0)));
         vm.stopPrank();
 
         //works for multiple/all markets
@@ -59,9 +58,8 @@ contract RewardsFactoryTest is RewardsFactoryHelper {
         //to-do:change counter to non static variable
         for (uint256 i = SINGLE_MARKET_INDEX; i <= ALL_MARKETS_INDEX; i++){
             rewardsFactory.createStakingRewards(i, endEpoch);
-            (,address firstAddLoop) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-            (address secondAddLoop,) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-            assert(((firstAddLoop != address(0))) && (secondAddLoop != address(0)));
+            (hedgeLoop, riskLoop) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
+            assert(((hedgeLoop != address(0))) && (riskLoop != address(0)));
         }
         vm.stopPrank();
     
@@ -71,13 +69,13 @@ contract RewardsFactoryTest is RewardsFactoryHelper {
     function testPauseRewards() public {
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
-        (address rHedge, address rRisk) = rewardsFactory.createStakingRewards(1, endEpoch);
+        (hedge, risk) = rewardsFactory.createStakingRewards(1, endEpoch);
 
-        StakingRewards(rHedge).pause();
-        StakingRewards(rRisk).pause();
+        StakingRewards(hedge).pause();
+        StakingRewards(risk).pause();
         
-        assertTrue(StakingRewards(rHedge).paused() == true);
-        assertTrue(StakingRewards(rRisk).paused() == true);
+        assertTrue(StakingRewards(hedge).paused() == true);
+        assertTrue(StakingRewards(risk).paused() == true);
         vm.stopPrank();
     }
 

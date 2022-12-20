@@ -8,14 +8,19 @@ import {Controller} from "../src/Controller.sol";
 import {PegOracle} from "../src/oracles/PegOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {FakeOracle} from "./oracles/FakeOracle.sol";
+import {DepegOracle} from "./oracles/DepegOracle.sol";
 
 /// @author nexusflip
 
 contract ControllerHelper is Test {
 
     VaultFactory vaultFactory;
+    VaultFactory testFactory;
     Controller controller;
+    Controller testController;
     TimeLock timelocker;
+    DepegOracle depegOracle;
+    FakeOracle fakeOracle;
 
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address constant tokenFRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
@@ -49,6 +54,9 @@ contract ControllerHelper is Test {
 
     uint256 endEpoch;
     uint256 beginEpoch;
+    uint256 entitledShares;
+    uint assets;
+
 
     address[] public farms;
     
@@ -126,7 +134,7 @@ contract ControllerHelper is Test {
         vm.deal(degen, AMOUNT * DEGEN_MULTIPLIER);
 
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 

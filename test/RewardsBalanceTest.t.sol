@@ -40,7 +40,6 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
         && rewardBalances.stakingRewardsContracts(3) == address(12));
     }
 
-
     function testRemoveStakingContractAddress() public {
         // Test removing staking contract to the list of staking contracts.
         vm.startPrank(admin);
@@ -58,28 +57,28 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
         vm.deal(admin, AMOUNT * 2);
         vm.warp(beginEpoch - 1 days);
         
-        StakingRewards(firstAdd).notifyRewardAmount(AMOUNT);
-        StakingRewards(secondAdd).notifyRewardAmount(AMOUNT);
+        StakingRewards(hedgeAddr).notifyRewardAmount(AMOUNT);
+        StakingRewards(riskAddr).notifyRewardAmount(AMOUNT);
 
         Vault(hedge).depositETH{value: AMOUNT}(endEpoch, admin);
         Vault(risk).depositETH{value: AMOUNT}(endEpoch, admin);
 
-        IERC1155(hedge).setApprovalForAll(firstAdd, true);
-        IERC1155(risk).setApprovalForAll(secondAdd, true);
-        StakingRewards(firstAdd).stake(AMOUNT);
-        StakingRewards(secondAdd).stake(AMOUNT);
+        IERC1155(hedge).setApprovalForAll(hedgeAddr, true);
+        IERC1155(risk).setApprovalForAll(riskAddr, true);
+        StakingRewards(hedgeAddr).stake(AMOUNT);
+        StakingRewards(riskAddr).stake(AMOUNT);
 
-        uint256 rewardDuration = endEpoch - block.timestamp;
-        uint256 periodFinish = block.timestamp + rewardDuration;
+        rewardDuration = endEpoch - block.timestamp;
+        periodFinish = block.timestamp + rewardDuration;
 
         vm.warp(periodFinish);
 
-        StakingRewards(firstAdd).notifyRewardAmount(0);
-        StakingRewards(secondAdd).notifyRewardAmount(0);
+        StakingRewards(hedgeAddr).notifyRewardAmount(0);
+        StakingRewards(riskAddr).notifyRewardAmount(0);
 
         address[] memory balanceAddresses = new address[](2);
-        balanceAddresses[0] = firstAdd;
-        balanceAddresses[1] = secondAdd;
+        balanceAddresses[0] = hedgeAddr;
+        balanceAddresses[1] = riskAddr;
         RewardBalances initBalance = new RewardBalances(balanceAddresses);
 
         uint256 balOfAdmin = initBalance.balanceOf(admin);

@@ -49,7 +49,9 @@ contract RewardsFactoryHelper is Test {
     uint256 endEpoch;
     uint256 beginEpoch;
     address hedge;
+    address hedgeLoop;
     address risk;
+    address riskLoop;
     
     function setUp() public {
         vm.startPrank(admin);

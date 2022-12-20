@@ -19,7 +19,7 @@ contract VaultTest is VaultHelper {
 
     function testFeeMoreThan() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vm.expectRevert(abi.encodeWithSelector(Vault.FeeMoreThan150.selector, 151));
         testVault.createAssets(beginEpoch, endEpoch, 151);
         vm.stopPrank();
@@ -27,7 +27,7 @@ contract VaultTest is VaultHelper {
 
     function testFeeCannotBeZero() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vm.expectRevert(Vault.FeeCannotBe0.selector);
         testVault.createAssets(beginEpoch, endEpoch, 0);
         vm.stopPrank();
@@ -35,7 +35,7 @@ contract VaultTest is VaultHelper {
 
     function testVaultMarketEpochDoesNotExist() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
         vm.expectRevert(Vault.MarketEpochDoesNotExist.selector);
         testVault.deposit(endEpoch, 100, alice);
@@ -44,7 +44,7 @@ contract VaultTest is VaultHelper {
 
     function testEpochEndMustBeAfterBegin() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vm.expectRevert(Vault.EpochEndMustBeAfterBegin.selector);
         testVault.createAssets(endEpoch, beginEpoch, FEE);
         vm.stopPrank();    
@@ -54,7 +54,7 @@ contract VaultTest is VaultHelper {
         vm.deal(alice, 10 ether);
         
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
@@ -78,7 +78,7 @@ contract VaultTest is VaultHelper {
 
     function testAddressNotFactory() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vm.stopPrank();
         
         vm.startPrank(alice);
@@ -91,7 +91,7 @@ contract VaultTest is VaultHelper {
 
     function testVaultAddressNotController() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         vm.stopPrank();
 
         vm.startPrank(alice);
@@ -104,12 +104,12 @@ contract VaultTest is VaultHelper {
         vm.deal(alice, 10 ether);
         
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
-        address hedge = vaultFactory.getVaults(1)[0];
-        Vault vHedge = Vault(hedge);
+        hedge = vaultFactory.getVaults(1)[0];
+        vHedge = Vault(hedge);
 
         vm.startPrank(alice);
         ERC20(WETH).approve(hedge, 10 ether);
@@ -128,7 +128,7 @@ contract VaultTest is VaultHelper {
         vm.deal(alice, 20 ether);
         
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
@@ -148,7 +148,7 @@ contract VaultTest is VaultHelper {
 
     function testFailMarketEpochExists() public {
         vm.startPrank(admin);
-        Vault testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
+        testVault = new Vault(tokenFRAX, "Frax stable", "FRAX", admin, oracleFRAX, VAULT_STRIKE_PRICE, address(controller));
         testVault.createAssets(beginEpoch, endEpoch, FEE);
         testVault.createAssets(beginEpoch, endEpoch, FEE);
         vm.stopPrank();
@@ -177,7 +177,7 @@ contract VaultTest is VaultHelper {
         vm.deal(alice, 20 ether);
         
         vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 

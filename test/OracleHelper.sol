@@ -4,7 +4,11 @@ pragma solidity 0.8.15;
 import "forge-std/Test.sol";
 import {Vault} from "../src/Vault.sol";
 import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
-import {Controller} from "../src/Controller.sol"; 
+import {Controller} from "../src/Controller.sol";
+import {PegOracle} from "../src/oracles/PegOracle.sol";
+import {FakeOracle} from "./oracles/FakeOracle.sol";
+import {FakeFakeOracle} from "./oracles/FakeFakeOracle.sol";
+import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
 /// @author nexusflip
 
@@ -15,6 +19,14 @@ contract OracleHelper is Test {
     Controller controller;
     TimeLock timelocker;
     Vault vHedge;
+    FakeOracle fakeOracle;
+    FakeOracle eightDec;
+    FakeOracle eighteenDec;
+    FakeFakeOracle sevenDec;
+    FakeFakeOracle plusDecimals;
+    PegOracle pegOracle;
+    AggregatorV3Interface testOracle1;
+    AggregatorV3Interface testOracle2;
 
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address constant arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
@@ -41,6 +53,9 @@ contract OracleHelper is Test {
 
     uint256 endEpoch;
     uint256 beginEpoch;
+    int256 testPriceOne;
+    int256 testPriceTwo;
+    int256 testPriceThree;
     address hedge;
     
     function setUp() public {
