@@ -175,6 +175,52 @@ contract ControllerHelper is Test {
         vm.stopPrank();
     }
 
+    function FuzzDepositDepeg(uint256 ethValue) public {
+        vm.deal(alice, ethValue);
+        vm.deal(bob, ethValue * BOB_MULTIPLIER);
+        vm.deal(chad, ethValue * CHAD_MULTIPLIER);
+        vm.deal(degen, ethValue * DEGEN_MULTIPLIER);
+
+        vm.startPrank(admin);
+        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
+        vm.stopPrank();
+
+        hedge = vaultFactory.getVaults(1)[0];
+        risk = vaultFactory.getVaults(1)[1];
+        
+        vHedge = Vault(hedge);
+        vRisk = Vault(risk);
+
+        //ALICE hedge DEPOSIT
+        vm.startPrank(alice);
+        vHedge.depositETH{value: ethValue}(endEpoch, alice);
+
+        assertTrue(vHedge.balanceOf(alice,endEpoch) == (ethValue));
+        vm.stopPrank();
+
+        //BOB hedge DEPOSIT
+        vm.startPrank(bob);
+        vHedge.depositETH{value: ethValue * BOB_MULTIPLIER}(endEpoch, bob);
+
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == (ethValue * BOB_MULTIPLIER));
+        vm.stopPrank();
+
+        //CHAD risk DEPOSIT
+        vm.startPrank(chad);
+        vRisk.depositETH{value: ethValue * CHAD_MULTIPLIER}(endEpoch, chad);
+
+        assertTrue(vRisk.balanceOf(chad,endEpoch) == (ethValue * CHAD_MULTIPLIER));
+        vm.stopPrank();
+
+        //DEGEN risk DEPOSIT
+        vm.startPrank(degen);
+        vRisk.depositETH{value: ethValue * DEGEN_MULTIPLIER}(endEpoch, degen);
+
+        assertTrue(vRisk.balanceOf(degen,endEpoch) == (ethValue * DEGEN_MULTIPLIER));
+        vm.stopPrank();
+    }
+
     /*///////////////////////////////////////////////////////////////
                            CONTROLLER functions
     //////////////////////////////////////////////////////////////*/

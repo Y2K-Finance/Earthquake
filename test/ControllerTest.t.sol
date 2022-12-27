@@ -108,7 +108,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares == ERC20(WETH).balanceOf(chad));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -119,7 +119,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares == ERC20(WETH).balanceOf(degen));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(degen));
         vm.stopPrank();
 
         emit log_named_uint("risk balance", ERC20(WETH).balanceOf(address(vRisk)));
@@ -535,9 +535,9 @@ contract ControllerTest is ControllerHelper {
         vm.stopPrank();
     }
 
-    function testFuzzWithdraw(uint256 ethValue) public {
+    function testFuzzControllerDepeg(uint256 ethValue) public{
         vm.assume(ethValue >= 1 && ethValue < 256);
-        testFuzzDeposit(ethValue);
+        FuzzDepositDepeg(ethValue);
 
         hedge = vaultFactory.getVaults(1)[0];
         risk = vaultFactory.getVaults(1)[1];
@@ -545,10 +545,33 @@ contract ControllerTest is ControllerHelper {
         vHedge = Vault(hedge);
         vRisk = Vault(risk);
 
-        vm.startPrank(admin);
+        vm.warp(beginEpoch + 10 days);
+
+        emit log_named_int("strike price", vHedge.strikePrice());
+        emit log_named_int("oracle price", controller.getLatestPrice(tokenFRAX));
+        assertTrue(controller.getLatestPrice(tokenFRAX) > 900000000000000000 && controller.getLatestPrice(tokenFRAX) < 1000000000000000000);
+        assertTrue(vHedge.strikePrice() > 900000000000000000 && controller.getLatestPrice(tokenFRAX) < 1000000000000000000);
+
+        controller.triggerDepeg(SINGLE_MARKET_INDEX, endEpoch);
+
+        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL Risk not equal to Total Tvl Hedge");
+        assertTrue(vRisk.totalAssets(endEpoch) == vHedge.idClaimTVL(endEpoch), "Claim TVL Hedge not equal to Total Tvl Risk");
+    }
+
+    function testFuzzWithdraw(uint256 ethValue) public {
+        vm.assume(ethValue >= 1 && ethValue < 256);
+        testFuzzControllerDepeg(ethValue);
+
+        hedge = vaultFactory.getVaults(1)[0];
+        risk = vaultFactory.getVaults(1)[1];
+
+        vHedge = Vault(hedge);
+        vRisk = Vault(risk);
+
+        /*vm.startPrank(admin);
         vm.warp(endEpoch + 1 days);
         vm.stopPrank();
-        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
+        controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);*/
 
         //ALICE hedge WITHDRAW
         vm.startPrank(alice);
@@ -557,7 +580,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_VALUE);
         entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(alice));
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(alice));
 
         vm.stopPrank();
 
@@ -568,7 +591,7 @@ contract ControllerTest is ControllerHelper {
         
         assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_VALUE);
         entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(bob));
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(bob));
 
         vm.stopPrank();
 
@@ -581,7 +604,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_VALUE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(chad));
+        //assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(chad));
 
         vm.stopPrank();
 
@@ -592,7 +615,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_VALUE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares,endEpoch) == ERC20(WETH).balanceOf(degen));
+        //assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(degen));
 
         vm.stopPrank();
 
