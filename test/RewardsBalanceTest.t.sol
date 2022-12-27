@@ -110,6 +110,4 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
         rewardBalances.removeStakingContractAddress(10);
         vm.stopPrank();
     }
-
-
 }

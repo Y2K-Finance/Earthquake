@@ -60,7 +60,6 @@ contract ControllerHelper is Test {
     uint256 entitledShares;
     uint assets;
 
-
     address[] public farms;
     
     function setUp() public {

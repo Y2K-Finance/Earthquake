@@ -62,35 +62,6 @@ contract FuzzTest is FuzzHelper{
         vm.stopPrank();
     }
 
-    /*function testFuzzControllerDepeg(uint256 index) public{
-        vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
-        vm.startPrank(admin);
-        FakeOracle fakeOracle = new FakeOracle(oracleFRAX, 995);
-        for (uint256 i = SINGLE_MARKET_INDEX; i <= index; i++){
-            vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
-        }
-        vm.stopPrank();
-
-        Deposit(SINGLE_MARKET_INDEX);
-        DepositDepeg(index);
-
-        address hedge = vaultFactory.getVaults(1)[0];
-        address risk = vaultFactory.getVaults(1)[1];
-
-        Vault vHedge = Vault(hedge);
-        Vault vRisk = Vault(risk);
-
-        vm.warp(beginEpoch + 10 days);
-
-        emit log_named_int("strike price", vHedge.strikePrice());
-        emit log_named_int("oracle price", controller.getLatestPrice(tokenFRAX));
-
-        controller.triggerDepeg(index, endEpoch);
-
-        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL Risk not equal to Total Tvl Hedge");
-        assertTrue(vRisk.totalAssets(endEpoch) == vHedge.idClaimTVL(endEpoch), "Claim TVL Hedge not equal to Total Tvl Risk");
-    }*/
-
     function testFuzzVaultFactoryMarketCreation(uint256 index) public {
         vm.assume(index >= SINGLE_MARKET_INDEX && index <= ALL_MARKETS_INDEX);
         vm.startPrank(admin);

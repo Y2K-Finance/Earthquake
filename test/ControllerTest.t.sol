@@ -488,6 +488,8 @@ contract ControllerTest is ControllerHelper {
     //////////////////////////////////////////////////////////////*/
 
     function testFuzzDeposit(uint256 ethValue) public {
+        vm.assume(ethValue >= 1 && ethValue < 256);
+
         vm.deal(alice, ethValue);
         vm.deal(bob, ethValue * BOB_MULTIPLIER);
         vm.deal(chad, ethValue * CHAD_MULTIPLIER);
@@ -513,7 +515,7 @@ contract ControllerTest is ControllerHelper {
         ERC20(WETH).approve(hedge, ethValue * BOB_MULTIPLIER);
         vHedge.depositETH{value: ethValue * BOB_MULTIPLIER}(endEpoch, bob);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == ethValue * BOB_MULTIPLIER);
+        assertTrue(vHedge.balanceOf(bob,endEpoch) == (ethValue * BOB_MULTIPLIER));
         vm.stopPrank();
 
         //CHAD risk DEPOSIT
@@ -534,7 +536,7 @@ contract ControllerTest is ControllerHelper {
     }
 
     function testFuzzWithdraw(uint256 ethValue) public {
-        vm.assume(ethValue >= 1);
+        vm.assume(ethValue >= 1 && ethValue < 256);
         testFuzzDeposit(ethValue);
 
         hedge = vaultFactory.getVaults(1)[0];
@@ -547,6 +549,7 @@ contract ControllerTest is ControllerHelper {
         vm.warp(endEpoch + 1 days);
         vm.stopPrank();
         controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
+
         //ALICE hedge WITHDRAW
         vm.startPrank(alice);
         assets = vHedge.balanceOf(alice,endEpoch);

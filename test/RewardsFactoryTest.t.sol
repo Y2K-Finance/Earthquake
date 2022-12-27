@@ -22,9 +22,7 @@ contract RewardsFactoryTest is RewardsFactoryHelper {
         //address exists
         vm.startPrank(admin);
         vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kSTETH_99*");
-        //to-do:expect emit CreatedStakingReward
         rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
-        //to-do: assert if rewards exist and != 0
         (hedge, risk) = rewardsFactory.createStakingRewards(SINGLE_MARKET_INDEX, endEpoch);
         assert((hedge != address(0)) && (risk != address(0)));
         vm.stopPrank();
@@ -137,5 +135,4 @@ contract RewardsFactoryTest is RewardsFactoryHelper {
         assertEq(vaultFactory.marketIndex(), index);
         vm.stopPrank();   
     }
-
 }
