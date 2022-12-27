@@ -322,30 +322,21 @@ contract ControllerTest is ControllerHelper {
         controller.triggerNullEpoch(1, endEpoch);
     }
 
-    // function testControllerZeroAddress() public {
+   function testControllerZeroAddress() public {    
+        //expect ZeroAddress for admin
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.expectRevert(Controller.ZeroAddress.selector);
+        controller = new Controller(address(0), arbitrum_sequencer);
+        vm.stopPrank();
 
-        
-    //     //expect ZeroAddress for admin
-    //     vm.startPrank(admin);
-    //     vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-    //     vm.expectRevert(Controller.ZeroAddress.selector);
-    //     Controller controller = new Controller(address(0), arbitrum_sequencer);
-    //     vm.stopPrank();
-
-    //     //expect ZeroAddress for vaultFactory
-    //     vm.startPrank(admin);  
-    //     vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*"); 
-    //     vm.expectRevert(Controller.ZeroAddress.selector);
-    //     controller = new Controller(address(admin), arbitrum_sequencer);
-    //     vm.stopPrank();
-
-    //     //expected ZeroAddress for arbitrum_sequencer
-    //     vm.startPrank(admin);
-    //     vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
-    //     vm.expectRevert(Controller.ZeroAddress.selector);
-    //     controller = new Controller(address(admin), address(0));
-    //     vm.stopPrank();
-    // }
+        //expect ZeroAddress for arbitrum_sequencer
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vm.expectRevert(Controller.ZeroAddress.selector);
+        controller = new Controller(address(admin), address(0));
+        vm.stopPrank();
+    }
 
     function testFailControllerEpochNotExpired() public {
         vm.startPrank(admin);
@@ -437,7 +428,7 @@ contract ControllerTest is ControllerHelper {
         vm.stopPrank();
     }
 
-    function testFailNullEpochRevEPOCHNOTSTARTED() public {
+    function testFailNullEpochRevEpochNotStarted() public {
         //need to fix triggerNullEpoch
         vm.startPrank(admin);
         vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
@@ -451,7 +442,6 @@ contract ControllerTest is ControllerHelper {
 
         vm.startPrank(alice);
         vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
-        //vRisk.depositETH{value: AMOUNT}(endEpoch, alice);
         vm.stopPrank();
         
         vm.startPrank(admin);
@@ -463,7 +453,7 @@ contract ControllerTest is ControllerHelper {
         vm.stopPrank();
     }
     
-    function testFailNullEpochRevNOTZEROTVL() public {
+    function testFailNullEpochRevNotZeroTvl() public {
         //need to fix triggerNullEpoch
         vm.startPrank(admin);
         vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
