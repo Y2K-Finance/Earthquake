@@ -361,12 +361,6 @@ contract ControllerTest is ControllerHelper {
         
         //vm.expectRevert(Controller.EpochNotExist.selector);
         controller.triggerEndEpoch(vaultFactory.marketIndex(), 2);
-        
-
-        //testing isDisaster
-        //vm.expectRevert(Controller.EpochNotExist.selector);
-        //controller.triggerDepeg(vaultFactory.marketIndex(), block.timestamp);
-
     }
 
     function testFailEpochNotExpired() public {
@@ -423,8 +417,6 @@ contract ControllerTest is ControllerHelper {
         vm.warp(endEpoch + 1);
         //vm.expectRevert(Controller.EpochExpired.selector);
         controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
-        //vm.expectRevert(Controller.NotZeroTVL.selector);
-        //controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
         vm.stopPrank();
     }
 
@@ -454,7 +446,6 @@ contract ControllerTest is ControllerHelper {
     }
     
     function testFailNullEpochRevNotZeroTvl() public {
-        //need to fix triggerNullEpoch
         vm.startPrank(admin);
         vm.deal(alice, DEGEN_MULTIPLIER * AMOUNT);
         vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
