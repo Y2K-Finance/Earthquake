@@ -26,9 +26,9 @@ contract AssertTest is Helper {
 	/*///////////////////////////////////////////////////////////////
                            CREATION functions
     //////////////////////////////////////////////////////////////*/
-    function testOraclesShit() public {
+    function testOraclesCreation() public {
         PegOracle pegOracle = new PegOracle(oracleSTETH, oracleETH);
-        //PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
+        PegOracle pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
 
         int256 oracle1price1 = pegOracle.getOracle1_Price();
         int256 oracle1price2 = pegOracle.getOracle2_Price();
@@ -52,7 +52,6 @@ contract AssertTest is Helper {
         emit log_named_int("Controller Price: ", nowPrice);
         emit log_named_int("Token      Price: ", DEPEG_AAA);
         console2.log("Decimals: ", pegOracle.decimals());
-
     }
     
     function testPegOracleMarketCreation() public {

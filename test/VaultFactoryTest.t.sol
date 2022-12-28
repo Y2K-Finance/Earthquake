@@ -26,6 +26,86 @@ contract VaultFactoryTest is VaultFactoryHelper {
         vm.stopPrank();
     }
 
+    function testAllMarketsCreation() public {
+        vm.startPrank(admin);
+
+        // Create FRAX market
+        //index 1
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        //index 2
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_BBB, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_97*");
+        //index 3
+        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_CCC, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_95*");
+
+        // Create MIM market
+        //index 4
+        vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_AAA, beginEpoch, endEpoch, oracleMIM, "y2kMIM_99*");
+        //index 5
+        vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_BBB, beginEpoch, endEpoch, oracleMIM, "y2kMIM_97*");
+        //index 6
+        vaultFactory.createNewMarket(FEE, tokenMIM, DEPEG_CCC, beginEpoch, endEpoch, oracleMIM, "y2kMIM_95*");
+
+        // Create FEI market
+        //index 7
+        vaultFactory.createNewMarket(FEE, tokenFEI, DEPEG_AAA, beginEpoch, endEpoch, oracleFEI, "y2kFEI_99*");
+        //index 8
+        vaultFactory.createNewMarket(FEE, tokenFEI, DEPEG_BBB, beginEpoch, endEpoch, oracleFEI, "y2kFEI_97*");
+        //index 9
+        vaultFactory.createNewMarket(FEE, tokenFEI, DEPEG_CCC, beginEpoch, endEpoch, oracleFEI, "y2kFEI_95*");
+
+        // Create USDC market
+        //index 10
+        vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_AAA, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_99*");
+        //index 11
+        vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_BBB, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_97*");
+        //index 12
+        vaultFactory.createNewMarket(FEE, tokenUSDC, DEPEG_CCC, beginEpoch, endEpoch, oracleUSDC, "y2kUSDC_95*");
+
+        // Create DAI market
+        //index 13
+        vaultFactory.createNewMarket(FEE, tokenDAI, DEPEG_AAA, beginEpoch, endEpoch, oracleDAI, "y2kDAI_99*");
+        //index 14
+        vaultFactory.createNewMarket(FEE, tokenDAI, DEPEG_BBB, beginEpoch, endEpoch, oracleDAI, "y2kDAI_97*");
+        //index 15
+        vaultFactory.createNewMarket(FEE, tokenDAI, DEPEG_CCC, beginEpoch, endEpoch, oracleDAI, "y2kDAI_95*");
+        
+        vm.stopPrank();
+    }
+
+    function testAllMarketsDeployMore() public {
+
+        testAllMarketsCreation();
+
+        vm.startPrank(admin);
+
+        // Deploy more FRAX market
+        vaultFactory.deployMoreAssets(SINGLE_MARKET_INDEX, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(2, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(3, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+
+        // Deploy more MIM market
+        vaultFactory.deployMoreAssets(4, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(5, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(6, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+
+        // Deploy more FEI market
+        vaultFactory.deployMoreAssets(7, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(8, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(9, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+
+        // Deploy more USDC market
+        vaultFactory.deployMoreAssets(10, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(11, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(12, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+
+        // Deploy more DAI market
+        vaultFactory.deployMoreAssets(13, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(14, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+        vaultFactory.deployMoreAssets(ALL_MARKETS_INDEX, beginEpoch + END_DAYS, endEpoch + END_DAYS, FEE);
+
+        vm.stopPrank();
+    }
+
     function testTimelocks() public {
         vm.startPrank(admin);
         

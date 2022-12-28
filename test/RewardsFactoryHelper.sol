@@ -35,7 +35,9 @@ contract RewardsFactoryHelper is Test {
     address constant oracleDAI = 0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB;
     address constant oracleSTETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
     address constant oracleETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
+
     address constant arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+
     address constant admin = address(1);
     address constant alice = address(2);
 
@@ -44,12 +46,14 @@ contract RewardsFactoryHelper is Test {
     uint256 constant ALL_MARKETS_INDEX = 15;
     uint256 constant BEGIN_DAYS = 2 days;
     uint256 constant END_DAYS = 30 days;
+
     int256 constant DEPEG_AAA = 995555555555555555;
     int256 constant DEPEG_BBB = 975555555555555555;
     int256 constant DEPEG_CCC = 955555555555555555;
 
     uint256 endEpoch;
     uint256 beginEpoch;
+    
     address hedge;
     address hedgeLoop;
     address risk;

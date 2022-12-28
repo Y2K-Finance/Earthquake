@@ -104,6 +104,35 @@ contract OracleTest is OracleHelper {
         vm.stopPrank();
     }
 
+    function testOraclesCreation() public {
+        pegOracle = new PegOracle(oracleSTETH, oracleETH);
+        pegOracle2 = new PegOracle(oracleFRAX, oracleFEI);
+
+        oracle1price1 = pegOracle.getOracle1_Price();
+        oracle1price2 = pegOracle.getOracle2_Price();
+        emit log_named_int("oracle1price1", oracle1price1);
+        emit log_named_int("oracle1price2", oracle1price2);
+        (
+            ,
+            price,
+            ,
+            ,
+            
+        ) = pegOracle.latestRoundData();
+        emit log_named_int("oracle?price?", price);
+
+        vm.startPrank(admin);
+        vaultFactory.createNewMarket(FEE, tokenSTETH, DEPEG_AAA, beginEpoch, endEpoch, address(pegOracle), "y2kSTETH_99*");
+        vm.stopPrank();
+
+        nowPrice = controller.getLatestPrice(tokenSTETH);
+
+        emit log_named_int("Controller Price: ", nowPrice);
+        emit log_named_int("Token      Price: ", DEPEG_AAA);
+        console2.log("Decimals: ", pegOracle.decimals());
+    }
+
+
     /*//////////////////////////////////////////////////////////////
                            REVERT cases
     //////////////////////////////////////////////////////////////*/

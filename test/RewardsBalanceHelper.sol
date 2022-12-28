@@ -22,18 +22,20 @@ contract RewardsBalanceHelper is Test {
     RewardBalances rewardBalances;
     GovToken govToken;
 
-    address constant admin = address(1);
-    address constant alice = address(2);
     address constant arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address constant tokenUSDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address constant oracleUSDC = 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
+
+    address constant admin = address(1);
+    address constant alice = address(2);
 
     uint256 constant SINGLE_MARKET_INDEX = 1;
     uint256 constant FEE = 5;
     uint256 constant BEGIN_DAYS = 2 days;
     uint256 constant END_DAYS = 30 days;
     uint256 constant AMOUNT = 10 ether;
+    
     int256 constant DEPEG_STRIKE = 995555555555555555;
 
     uint256 beginEpoch;
