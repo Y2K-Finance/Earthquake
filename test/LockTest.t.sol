@@ -20,9 +20,9 @@ contract LockTest is Test {
     uint public constant MAX_EPOCHS = 32;
     uint public constant MIN_EPOCHS = 16;
     uint public constant EPOCH_DURATION_IN_DAYS = 1;
-    uint public constant EPOCH_START = block.timestamp + 5 hours;
     uint public constant AMOUNT_DEPOSIT = 1 ether;
     address public constant USER = 0xaC0D2cF77a8F8869069fc45821483701A264933B;
+    uint public immutable EPOCH_START = block.timestamp + 5 hours;
 
     //******************************************************************************/
     /*                                      DEPLOY
