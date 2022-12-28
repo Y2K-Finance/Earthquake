@@ -21,7 +21,7 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
 
     function testAppendStakingContractAddress() public {
         // Test adding staking contract to the list of staking contracts.
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
         rewardBalances.appendStakingContractAddress(address(10));
         assertTrue(rewardBalances.stakingRewardsContracts(2) == address(10));
         vm.stopPrank();
@@ -29,7 +29,7 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
 
     function testAppendStakingContractAddressLoop() public {
         //Test adding looping staking contract set to the list of staking contracts.
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
 
         address[] memory appendAddresses = new address[](2);
         appendAddresses[0] = address(11);
@@ -43,7 +43,7 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
 
     function testRemoveStakingContractAddress() public {
         // Test removing staking contract to the list of staking contracts.
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
         rewardBalances.removeStakingContractAddress(1);
         assertTrue(rewardBalances.stakingRewardsContracts(1) == address(0));
         vm.stopPrank();
@@ -51,18 +51,18 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
 
     function testBalanceOfRewards() public {
         //Test checking reward balance of an address that has rewards to claim
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
         
         rewardsBal = 19333333333333209600;
         
-        vm.deal(admin, AMOUNT * 2);
+        vm.deal(ADMIN, AMOUNT * 2);
         vm.warp(beginEpoch - 1 days);
         
         StakingRewards(hedgeAddr).notifyRewardAmount(AMOUNT);
         StakingRewards(riskAddr).notifyRewardAmount(AMOUNT);
 
-        Vault(hedge).depositETH{value: AMOUNT}(endEpoch, admin);
-        Vault(risk).depositETH{value: AMOUNT}(endEpoch, admin);
+        Vault(hedge).depositETH{value: AMOUNT}(endEpoch, ADMIN);
+        Vault(risk).depositETH{value: AMOUNT}(endEpoch, ADMIN);
 
         IERC1155(hedge).setApprovalForAll(hedgeAddr, true);
         IERC1155(risk).setApprovalForAll(riskAddr, true);
@@ -82,8 +82,8 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
         balanceAddresses[1] = riskAddr;
         RewardBalances initBalance = new RewardBalances(balanceAddresses);
 
-        uint256 balOfAdmin = initBalance.balanceOf(admin);
-        emit log_named_uint("balOfAdmin", balOfAdmin);
+        uint256 balOfAdmin = initBalance.balanceOf(ADMIN);
+        emit log_named_uint("balOfADMIN", balOfAdmin);
         
         assertTrue(balOfAdmin == rewardsBal);
 
@@ -95,17 +95,17 @@ contract RewardsBalanceTest is RewardsBalanceHelper {
     //////////////////////////////////////////////////////////////*/
     
     function testRevertStakingContractAddresses() public {
-        vm.startPrank(alice);
+        vm.startPrank(ALICE);
         vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));
         rewardBalances.appendStakingContractAddress(address(1));
         vm.stopPrank();
 
-        vm.startPrank(alice);
+        vm.startPrank(ALICE);
         vm.expectRevert(bytes("RewardBalances: FORBIDDEN"));
         rewardBalances.removeStakingContractAddress(1);
         vm.stopPrank();
 
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
         vm.expectRevert(bytes("RewardBalances: OUT_OF_BOUNDS"));
         rewardBalances.removeStakingContractAddress(10);
         vm.stopPrank();

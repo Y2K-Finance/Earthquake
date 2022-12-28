@@ -20,28 +20,28 @@ contract OwnerTest is OwnerHelper{
     //////////////////////////////////////////////////////////////*/
 
     function testOwnerAuthorize() public {
-        vm.deal(alice, AMOUNT);
+        vm.deal(ALICE, AMOUNT);
         
-        vm.startPrank(admin);
-        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
+        vm.startPrank(ADMIN);
+        fakeOracle = new FakeOracle(ORACLE_FRAX, STRIKE_PRICE_FAKE_ORACLE);
+        vaultFactory.createNewMarket(FEE, TOKEN_FRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         hedge = vaultFactory.getVaults(1)[0];
         vHedge = Vault(hedge);
 
-        vm.startPrank(alice);
+        vm.startPrank(ALICE);
         ERC20(WETH).approve(hedge, AMOUNT);
-        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, ALICE);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (AMOUNT));
+        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == (AMOUNT));
         vm.stopPrank();
 
-        vm.startPrank(alice);
+        vm.startPrank(ALICE);
         vm.warp(endEpoch + 1 days);
         controller.triggerEndEpoch(vaultFactory.marketIndex(), endEpoch);
-        vHedge.setApprovalForAll(bob, true);
-        if(vHedge.isApprovedForAll(alice, bob)){
+        vHedge.setApprovalForAll(BOB, true);
+        if(vHedge.isApprovedForAll(ALICE, BOB)){
             emit log_named_uint("Can continue", 1);
         }
 
@@ -50,16 +50,16 @@ contract OwnerTest is OwnerHelper{
         }
         vm.stopPrank();
         
-        vm.startPrank(bob);
-        vHedge.withdraw(endEpoch, AMOUNT, bob, alice);
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == 0);
+        vm.startPrank(BOB);
+        vHedge.withdraw(endEpoch, AMOUNT, BOB, ALICE);
+        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == 0);
         vm.stopPrank();
     }
 
     function testChangeOwnerFactory() public {
-        vm.startPrank(admin);
-        vaultFactory.transferOwnership(bob);
-        assertTrue(vaultFactory.owner() == bob);
+        vm.startPrank(ADMIN);
+        vaultFactory.transferOwnership(BOB);
+        assertTrue(vaultFactory.owner() == BOB);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -71,19 +71,19 @@ contract OwnerTest is OwnerHelper{
         new Owned(address(0));
     }
 
-    function testNominatorNotAdmin() public {
-        owned = new Owned(admin);
+    function testNominatorNotADMIN() public {
+        owned = new Owned(ADMIN);
 
-        vm.startPrank(alice);
+        vm.startPrank(ALICE);
         vm.expectRevert(bytes("Only the contract owner may perform this action"));
-        owned.nominateNewOwner(alice);
+        owned.nominateNewOwner(ALICE);
         vm.stopPrank();
     }
 
     function testNominateBeforeOwner() public {
-        owned = new Owned(admin);
+        owned = new Owned(ADMIN);
 
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
         vm.expectRevert(bytes("You must be nominated before you can accept ownership"));
         owned.acceptOwnership();
         vm.stopPrank();

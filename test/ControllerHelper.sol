@@ -14,80 +14,80 @@ import {DepegOracle} from "./oracles/DepegOracle.sol";
 
 contract ControllerHelper is Test {
     
-    Controller controller;
-    Controller testController;
+    Controller public controller;
+    Controller public testController;
 
-    VaultFactory vaultFactory;
-    VaultFactory testFactory;
-    TimeLock timelocker;
+    VaultFactory public vaultFactory;
+    VaultFactory public testFactory;
+    TimeLock public timelocker;
 
-    Vault vHedge;
-    Vault vRisk;
+    Vault public vHedge;
+    Vault public vRisk;
 
-    DepegOracle depegOracle;
-    FakeOracle fakeOracle;
-    PegOracle pegOracle;
-    PegOracle pegOracle2;
-    PegOracle pegOracle3;
+    DepegOracle public depegOracle;
+    FakeOracle public fakeOracle;
+    PegOracle public pegOracle;
+    PegOracle public pegOracle2;
+    PegOracle public pegOracle3;
 
-    address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-    address constant tokenFRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
-    address constant tokenFEI = 0x4A717522566C7A09FD2774cceDC5A8c43C5F9FD2;
-    address constant tokenSTETH = 0xEfa0dB536d2c8089685630fafe88CF7805966FC3;
+    address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address public constant TOKEN_FRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
+    address public constant TOKEN_FEI = 0x4A717522566C7A09FD2774cceDC5A8c43C5F9FD2;
+    address public constant TOKEN_STETH = 0xEfa0dB536d2c8089685630fafe88CF7805966FC3;
 
-    address constant oracleFRAX = 0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8;
-    address constant oracleFEI = 0x7c4720086E6feb755dab542c46DE4f728E88304d;
-    address constant oracleETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
-    address constant oracleSTETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
+    address public constant ORACLE_FRAX = 0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8;
+    address public constant ORACLE_FEI = 0x7c4720086E6feb755dab542c46DE4f728E88304d;
+    address public constant ORACLE_ETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
+    address public constant ORACLE_STETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
 
-    address constant arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
-    
-    address constant admin = address(1);
-    address constant alice = address(2);
-    address constant bob = address(3);
-    address constant chad = address(4);
-    address constant degen = address(5);
+    address public constant ARBITRUM_SEQUENCER = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
 
-    uint256 constant FEE = 5;
-    uint256 constant SINGLE_MARKET_INDEX = 1;
-    uint256 constant NULL_BALANCE = 0;
-    uint256 constant AMOUNT = 10 ether;
-    uint256 constant BEGIN_DAYS = 2 days;
-    uint256 constant END_DAYS = 30 days;
-    uint256 constant BOB_MULTIPLIER = 2;
-    uint256 constant CHAD_MULTIPLIER = 10;
-    uint256 constant DEGEN_MULTIPLIER = 20;
+    address public constant ADMIN = address(1);
+    address public constant ALICE = address(2);
+    address public constant BOB = address(3);
+    address public constant CHAD = address(4);
+    address public constant DEGEN = address(5);
 
-    int256 constant STRIKE_PRICE_FAKE_ORACLE = 90995265;
-    int256 constant CREATION_STRK = 129919825000;
-    int256 constant DEPEG_AAA = 995555555555555555;
-    int256 constant DEPEG_BBB = 975555555555555555;
-    int256 constant DEPEG_CCC = 955555555555555555;
+    uint256 public constant FEE = 5;
+    uint256 public constant SINGLE_MARKET_INDEX = 1;
+    uint256 public constant NULL_BALANCE = 0;
+    uint256 public constant AMOUNT = 10 ether;
+    uint256 public constant BEGIN_DAYS = 2 days;
+    uint256 public constant END_DAYS = 30 days;
+    uint256 public constant BOB_MULTIPLIER = 2;
+    uint256 public constant CHAD_MULTIPLIER = 10;
+    uint256 public constant DEGEN_MULTIPLIER = 20;
 
-    address hedge;
-    address risk;
+    int256 public constant STRIKE_PRICE_FAKE_ORACLE = 90995265;
+    int256 public constant CREATION_STRK = 129919825000;
+    int256 public constant DEPEG_AAA = 995555555555555555;
+    int256 public constant DEPEG_BBB = 975555555555555555;
+    int256 public constant DEPEG_CCC = 955555555555555555;
 
-    uint256 endEpoch;
-    uint256 beginEpoch;
-    uint256 entitledShares;
+    address public hedge;
+    address public risk;
 
-    uint assets;
+    uint256 public endEpoch;
+    uint256 public beginEpoch;
+    uint256 public entitledShares;
 
-    int256 oracle1price1;
-    int256 oracle1price2;
-    int256 oracle2price1;
-    int256 oracle2price2;
-    int256 oracle3price1;
-    int256 oracle3price2;
-    int256 price;
+    uint public assets;
+
+    int256 public oracle1price1;
+    int256 public oracle1price2;
+    int256 public oracle2price1;
+    int256 public oracle2price2;
+    int256 public oracle3price1;
+    int256 public oracle3price2;
+    int256 public price;
 
     address[] public farms;
     
     function setUp() public {
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
 
-        vaultFactory = new VaultFactory(admin,WETH,admin);
-        controller = new Controller(address(vaultFactory), arbitrum_sequencer);
+        vaultFactory = new VaultFactory(ADMIN,WETH,ADMIN);
+        controller = new Controller(address(vaultFactory), ARBITRUM_SEQUENCER);
         vaultFactory.setController(address(controller));
         timelocker = vaultFactory.timelocker();
 
@@ -102,7 +102,7 @@ contract ControllerHelper is Test {
                            CONTROLLER functions
     //////////////////////////////////////////////////////////////*/
 
-    function ControllerEndEpoch(address _token, uint256 _index) public{
+    function controllerEndEpoch(address _token, uint256 _index) public{
 
         hedge = vaultFactory.getVaults(_index)[0];
         risk = vaultFactory.getVaults(_index)[1];
@@ -125,7 +125,7 @@ contract ControllerHelper is Test {
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 
-    function ControllerDepeg(address _token, uint256 _index) public{
+    function controllerDepeg(address _token, uint256 _index) public{
 
         hedge = vaultFactory.getVaults(_index)[0];
         risk = vaultFactory.getVaults(_index)[1];
@@ -143,16 +143,16 @@ contract ControllerHelper is Test {
     }
 
     /*///////////////////////////////////////////////////////////////
-                           DEPOSIT functions
+                           deposit functions
     //////////////////////////////////////////////////////////////*/
 
-    function Deposit(uint256 _index) public {
-        deal(alice, AMOUNT);
-        deal(bob, AMOUNT * BOB_MULTIPLIER);
-        vm.deal(chad, AMOUNT * CHAD_MULTIPLIER);
-        vm.deal(degen, AMOUNT * DEGEN_MULTIPLIER);
+    function deposit(uint256 _index) public {
+        deal(ALICE, AMOUNT);
+        deal(BOB, AMOUNT * BOB_MULTIPLIER);
+        vm.deal(CHAD, AMOUNT * CHAD_MULTIPLIER);
+        vm.deal(DEGEN, AMOUNT * DEGEN_MULTIPLIER);
 
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, oracleFRAX, "y2kFRAX_99*");
+        vaultFactory.createNewMarket(FEE, TOKEN_FRAX, DEPEG_AAA, beginEpoch, endEpoch, ORACLE_FRAX, "y2kFRAX_99*");
 
         hedge = vaultFactory.getVaults(_index)[0];
         risk = vaultFactory.getVaults(_index)[1];
@@ -160,33 +160,33 @@ contract ControllerHelper is Test {
         vHedge = Vault(hedge);
         vRisk = Vault(risk);
 
-        //ALICE hedge DEPOSIT
-        vm.startPrank(alice);
-        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
+        //ALICE hedge deposit
+        vm.startPrank(ALICE);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, ALICE);
         vm.stopPrank();
 
-        //BOB hedge DEPOSIT
-        vm.startPrank(bob);
-        vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
+        //BOB hedge deposit
+        vm.startPrank(BOB);
+        vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, BOB);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == 20 ether);
+        assertTrue(vHedge.balanceOf(BOB,endEpoch) == 20 ether);
         vm.stopPrank();
 
         vHedge.totalAssets(endEpoch);
         emit log_named_uint("vHedge.totalAssets(endEpoch)", vHedge.totalAssets(endEpoch));
 
-        //CHAD risk DEPOSIT
-        vm.startPrank(chad);
-        vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
+        //CHAD risk deposit
+        vm.startPrank(CHAD);
+        vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, CHAD);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(CHAD,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
         vm.stopPrank();
 
-        //DEGEN risk DEPOSIT
-        vm.startPrank(degen);
-        vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
+        //DEGEN risk deposit
+        vm.startPrank(DEGEN);
+        vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, DEGEN);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
         vm.stopPrank();
 
         vRisk.totalAssets(endEpoch);
@@ -194,15 +194,15 @@ contract ControllerHelper is Test {
         emit log_named_uint("FEE value", vRisk.calculateWithdrawalFeeValue(AMOUNT, endEpoch));
     }
 
-    function DepositDepeg() public {
-        vm.deal(alice, AMOUNT);
-        vm.deal(bob, AMOUNT * BOB_MULTIPLIER);
-        vm.deal(chad, AMOUNT * CHAD_MULTIPLIER);
-        vm.deal(degen, AMOUNT * DEGEN_MULTIPLIER);
+    function depositDepeg() public {
+        vm.deal(ALICE, AMOUNT);
+        vm.deal(BOB, AMOUNT * BOB_MULTIPLIER);
+        vm.deal(CHAD, AMOUNT * CHAD_MULTIPLIER);
+        vm.deal(DEGEN, AMOUNT * DEGEN_MULTIPLIER);
 
-        vm.startPrank(admin);
-        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
+        vm.startPrank(ADMIN);
+        fakeOracle = new FakeOracle(ORACLE_FRAX, STRIKE_PRICE_FAKE_ORACLE);
+        vaultFactory.createNewMarket(FEE, TOKEN_FRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         hedge = vaultFactory.getVaults(1)[0];
@@ -211,44 +211,44 @@ contract ControllerHelper is Test {
         vHedge = Vault(hedge);
         vRisk = Vault(risk);
 
-        //ALICE hedge DEPOSIT
-        vm.startPrank(alice);
-        vHedge.depositETH{value: AMOUNT}(endEpoch, alice);
+        //ALICE hedge deposit
+        vm.startPrank(ALICE);
+        vHedge.depositETH{value: AMOUNT}(endEpoch, ALICE);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (AMOUNT));
+        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == (AMOUNT));
         vm.stopPrank();
 
-        //BOB hedge DEPOSIT
-        vm.startPrank(bob);
-        vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, bob);
+        //BOB hedge deposit
+        vm.startPrank(BOB);
+        vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, BOB);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == (AMOUNT * BOB_MULTIPLIER));
+        assertTrue(vHedge.balanceOf(BOB,endEpoch) == (AMOUNT * BOB_MULTIPLIER));
         vm.stopPrank();
 
-        //CHAD risk DEPOSIT
-        vm.startPrank(chad);
-        vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, chad);
+        //CHAD risk deposit
+        vm.startPrank(CHAD);
+        vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, CHAD);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(CHAD,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
         vm.stopPrank();
 
-        //DEGEN risk DEPOSIT
-        vm.startPrank(degen);
-        vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, degen);
+        //DEGEN risk deposit
+        vm.startPrank(DEGEN);
+        vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, DEGEN);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
         vm.stopPrank();
     }
 
-    function FuzzDepositDepeg(uint256 ethValue) public {
-        vm.deal(alice, ethValue);
-        vm.deal(bob, ethValue * BOB_MULTIPLIER);
-        vm.deal(chad, ethValue * CHAD_MULTIPLIER);
-        vm.deal(degen, ethValue * DEGEN_MULTIPLIER);
+    function fuzzDepositDepeg(uint256 ethValue) public {
+        vm.deal(ALICE, ethValue);
+        vm.deal(BOB, ethValue * BOB_MULTIPLIER);
+        vm.deal(CHAD, ethValue * CHAD_MULTIPLIER);
+        vm.deal(DEGEN, ethValue * DEGEN_MULTIPLIER);
 
-        vm.startPrank(admin);
-        fakeOracle = new FakeOracle(oracleFRAX, STRIKE_PRICE_FAKE_ORACLE);
-        vaultFactory.createNewMarket(FEE, tokenFRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
+        vm.startPrank(ADMIN);
+        fakeOracle = new FakeOracle(ORACLE_FRAX, STRIKE_PRICE_FAKE_ORACLE);
+        vaultFactory.createNewMarket(FEE, TOKEN_FRAX, DEPEG_AAA, beginEpoch, endEpoch, address(fakeOracle), "y2kFRAX_99*");
         vm.stopPrank();
 
         hedge = vaultFactory.getVaults(1)[0];
@@ -257,32 +257,32 @@ contract ControllerHelper is Test {
         vHedge = Vault(hedge);
         vRisk = Vault(risk);
 
-        //ALICE hedge DEPOSIT
-        vm.startPrank(alice);
-        vHedge.depositETH{value: ethValue}(endEpoch, alice);
+        //ALICE hedge deposit
+        vm.startPrank(ALICE);
+        vHedge.depositETH{value: ethValue}(endEpoch, ALICE);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == (ethValue));
+        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == (ethValue));
         vm.stopPrank();
 
-        //BOB hedge DEPOSIT
-        vm.startPrank(bob);
-        vHedge.depositETH{value: ethValue * BOB_MULTIPLIER}(endEpoch, bob);
+        //BOB hedge deposit
+        vm.startPrank(BOB);
+        vHedge.depositETH{value: ethValue * BOB_MULTIPLIER}(endEpoch, BOB);
 
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == (ethValue * BOB_MULTIPLIER));
+        assertTrue(vHedge.balanceOf(BOB,endEpoch) == (ethValue * BOB_MULTIPLIER));
         vm.stopPrank();
 
-        //CHAD risk DEPOSIT
-        vm.startPrank(chad);
-        vRisk.depositETH{value: ethValue * CHAD_MULTIPLIER}(endEpoch, chad);
+        //CHAD risk deposit
+        vm.startPrank(CHAD);
+        vRisk.depositETH{value: ethValue * CHAD_MULTIPLIER}(endEpoch, CHAD);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == (ethValue * CHAD_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(CHAD,endEpoch) == (ethValue * CHAD_MULTIPLIER));
         vm.stopPrank();
 
-        //DEGEN risk DEPOSIT
-        vm.startPrank(degen);
-        vRisk.depositETH{value: ethValue * DEGEN_MULTIPLIER}(endEpoch, degen);
+        //DEGEN risk deposit
+        vm.startPrank(DEGEN);
+        vRisk.depositETH{value: ethValue * DEGEN_MULTIPLIER}(endEpoch, DEGEN);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == (ethValue * DEGEN_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == (ethValue * DEGEN_MULTIPLIER));
         vm.stopPrank();
     }
 
@@ -290,7 +290,7 @@ contract ControllerHelper is Test {
                            WITHDRAW functions
     //////////////////////////////////////////////////////////////*/
 
-    function WithdrawEndEpoch() public {
+    function withdrawEndEpoch() public {
 
         hedge = vaultFactory.getVaults(1)[0];
         risk = vaultFactory.getVaults(1)[1];
@@ -301,45 +301,45 @@ contract ControllerHelper is Test {
         assets;
 
         //ALICE hedge WITHDRAW
-        vm.startPrank(alice);
-        assets = vHedge.balanceOf(alice,endEpoch);
-        vHedge.withdraw(endEpoch, assets, alice, alice);
+        vm.startPrank(ALICE);
+        assets = vHedge.balanceOf(ALICE,endEpoch);
+        vHedge.withdraw(endEpoch, assets, ALICE, ALICE);
 
-        assertTrue(vHedge.balanceOf(alice,endEpoch) == NULL_BALANCE);
+        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == NULL_BALANCE);
         entitledShares = vHedge.previewWithdraw(endEpoch, assets);
 
         vm.stopPrank();
 
         //BOB hedge WITHDRAW
-        vm.startPrank(bob);
-        assets = vHedge.balanceOf(bob,endEpoch);
-        vHedge.withdraw(endEpoch, assets, bob, bob);
+        vm.startPrank(BOB);
+        assets = vHedge.balanceOf(BOB,endEpoch);
+        vHedge.withdraw(endEpoch, assets, BOB, BOB);
         
-        assertTrue(vHedge.balanceOf(bob,endEpoch) == NULL_BALANCE);
+        assertTrue(vHedge.balanceOf(BOB,endEpoch) == NULL_BALANCE);
 
         vm.stopPrank();
 
         emit log_named_uint("hedge balance", ERC20(WETH).balanceOf(address(vHedge)));
 
         //CHAD risk WITHDRAW
-        vm.startPrank(chad);
-        assets = vRisk.balanceOf(chad,endEpoch);
-        vRisk.withdraw(endEpoch, assets, chad, chad);
+        vm.startPrank(CHAD);
+        assets = vRisk.balanceOf(CHAD,endEpoch);
+        vRisk.withdraw(endEpoch, assets, CHAD, CHAD);
 
-        assertTrue(vRisk.balanceOf(chad,endEpoch) == NULL_BALANCE);
+        assertTrue(vRisk.balanceOf(CHAD,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(chad));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(CHAD));
 
         vm.stopPrank();
 
         //DEGEN risk WITHDRAW
-        vm.startPrank(degen);
-        assets = vRisk.balanceOf(degen,endEpoch);
-        vRisk.withdraw(endEpoch, assets, degen, degen);
+        vm.startPrank(DEGEN);
+        assets = vRisk.balanceOf(DEGEN,endEpoch);
+        vRisk.withdraw(endEpoch, assets, DEGEN, DEGEN);
 
-        assertTrue(vRisk.balanceOf(degen,endEpoch) == NULL_BALANCE);
+        assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(degen));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(DEGEN));
 
         vm.stopPrank();
 

@@ -14,72 +14,70 @@ import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
 contract OracleHelper is Test {
 
-    Controller controller;
+    Controller public controller;
 
-    VaultFactory vaultFactory;
-    VaultFactory testFactory;
-    TimeLock timelocker;
+    VaultFactory public vaultFactory;
+    VaultFactory public testFactory;
+    TimeLock public timelocker;
 
-    Vault vHedge;
+    Vault public vHedge;
 
-    FakeOracle fakeOracle;
-    FakeOracle eightDec;
-    FakeOracle eighteenDec;
+    FakeOracle public fakeOracle;
+    FakeOracle public eightDec;
+    FakeOracle public eighteenDec;
 
-    FakeFakeOracle sevenDec;
-    FakeFakeOracle plusDecimals;
+    FakeFakeOracle public sevenDec;
+    FakeFakeOracle public plusDecimals;
 
-    PegOracle pegOracle;
-    PegOracle pegOracle2;
+    PegOracle public pegOracle;
+    PegOracle public pegOracle2;
 
-    AggregatorV3Interface testOracle1;
-    AggregatorV3Interface testOracle2;
+    AggregatorV3Interface public testOracle1;
+    AggregatorV3Interface public testOracle2;
 
-    address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-    address constant arbitrum_sequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
-    address constant tokenFRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
-    address constant tokenMIM = 0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A;
-    address constant tokenUSDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
-    address constant tokenSTETH = 0xEfa0dB536d2c8089685630fafe88CF7805966FC3;
+    address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address public constant ARBITRUM_SEQUENCER = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+    address public constant TOKEN_FRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
+    address public constant TOKEN_MIM = 0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A;
+    address public constant TOKEN_USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+    address public constant TOKEN_STETH = 0xEfa0dB536d2c8089685630fafe88CF7805966FC3;
 
-    address constant oracleFRAX = 0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8;
-    address constant oracleMIM = 0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b;
-    address constant oracleUSDC = 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
-    address constant oracleSTETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
-    address constant oracleETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
-    address constant oracleFEI = 0x7c4720086E6feb755dab542c46DE4f728E88304d;
-    address constant btcEthOracle = 0xc5a90A6d7e4Af242dA238FFe279e9f2BA0c64B2e;
+    address public constant ORACLE_FRAX = 0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8;
+    address public constant ORACLE_MIM = 0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b;
+    address public constant ORACLE_USDC = 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
+    address public constant ORACLE_STETH = 0x07C5b924399cc23c24a95c8743DE4006a32b7f2a;
+    address public constant ORACLE_ETH = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
+    address public constant ORACLE_FEI = 0x7c4720086E6feb755dab542c46DE4f728E88304d;
+    address public constant ORACLE_BTC_ETH = 0xc5a90A6d7e4Af242dA238FFe279e9f2BA0c64B2e;
 
-    address constant admin = address(1);
-    address constant alice = address(2);
-    address constant bob = address(3);
+    address public constant ADMIN = address(1);
 
-    uint256 constant FEE = 5;
-    uint256 constant BEGIN_DAYS = 2 days;
-    uint256 constant END_DAYS = 30 days;
-    uint256 constant DECIMALS = 18;
+    uint256 public constant FEE = 5;
+    uint256 public constant BEGIN_DAYS = 2 days;
+    uint256 public constant END_DAYS = 30 days;
+    uint256 public constant DECIMALS = 18;
 
-    int256 constant DEPEG_AAA = 995555555555555555;
-    int256 constant DEPEG_BBB = 975555555555555555;
-    int256 constant DEPEG_CCC = 955555555555555555;
+    int256 public constant DEPEG_AAA = 995555555555555555;
+    int256 public constant DEPEG_BBB = 975555555555555555;
+    int256 public constant DEPEG_CCC = 955555555555555555;
 
-    uint256 endEpoch;
-    uint256 beginEpoch;
+    uint256 public endEpoch;
+    uint256 public beginEpoch;
 
-    int256 testPriceOne;
-    int256 testPriceTwo;
-    int256 testPriceThree;
-    int256 oracle1price1;
-    int256 oracle1price2;
-    int256 price;
-    int256 nowPrice;
+    int256 public testPriceOne;
+    int256 public testPriceTwo;
+    int256 public testPriceThree;
+    int256 public oracle1price1;
+    int256 public oracle1price2;
+    int256 public price;
+    int256 public nowPrice;
     
-    address hedge;
+    address public hedge;
     
     function setUp() public {
-        vm.startPrank(admin);
+        vm.startPrank(ADMIN);
 
-        vaultFactory = new VaultFactory(admin,WETH,admin);
+        vaultFactory = new VaultFactory(ADMIN,WETH,ADMIN);
         controller = new Controller(address(vaultFactory), arbitrum_sequencer);
         vaultFactory.setController(address(controller));
         timelocker = vaultFactory.timelocker();
