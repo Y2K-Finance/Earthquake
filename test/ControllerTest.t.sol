@@ -341,8 +341,11 @@ contract ControllerTest is ControllerHelper {
         vaultFactory.createNewMarket(FEE, WETH, DEPEG_CCC, beginEpoch, endEpoch, address(pegOracle3), "y2kSTETH_95*");
         vm.stopPrank();
 
+        vm.prank(admin);
         Deposit(1);
+        vm.prank(admin);
         Deposit(2);
+        vm.prank(admin);
         Deposit(3);
 
         oracle1price1 = pegOracle.getOracle1_Price();

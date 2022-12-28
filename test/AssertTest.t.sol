@@ -52,6 +52,7 @@ contract AssertTest is Helper {
         emit log_named_int("Controller Price: ", nowPrice);
         emit log_named_int("Token      Price: ", DEPEG_AAA);
         console2.log("Decimals: ", pegOracle.decimals());
+
     }
     
     function testPegOracleMarketCreation() public {
