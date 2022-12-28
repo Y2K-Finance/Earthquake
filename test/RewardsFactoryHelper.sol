@@ -20,6 +20,7 @@ contract RewardsFactoryHelper is Test {
     RewardsFactory public rewardsFactory;
     GovToken public govToken;
 
+    address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address public constant TOKEN_FRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
     address public constant TOKEN_MIM = 0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A;
     address public constant TOKEN_FEI = 0x4A717522566C7A09FD2774cceDC5A8c43C5F9FD2;

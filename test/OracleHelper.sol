@@ -78,7 +78,7 @@ contract OracleHelper is Test {
         vm.startPrank(ADMIN);
 
         vaultFactory = new VaultFactory(ADMIN,WETH,ADMIN);
-        controller = new Controller(address(vaultFactory), arbitrum_sequencer);
+        controller = new Controller(address(vaultFactory), ARBITRUM_SEQUENCER);
         vaultFactory.setController(address(controller));
         timelocker = vaultFactory.timelocker();
 
