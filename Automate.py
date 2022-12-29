@@ -26,8 +26,3 @@ while True:
     if checkIfMidnight():
         action()
         break
-
-while True:
-    if checkIfMidnight():
-        action()
-        break
