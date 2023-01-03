@@ -211,6 +211,32 @@ contract LockTest is Test {
         ERC20(_weth).transfer(address(_lock), _rewardAmount);
 
         vm.prank(0x16cBaDA408F7523452fF91c8387b1784d00d10D8); // y2k ops
+        LockRewards(_lock).setNextEpoch_start(0, _rewardAmount, _days, 1672444844);
+
+        (uint256 _start, uint256 _finish, uint256 _locked, uint256 _rewards1, uint256 _rewards2, bool _isSet) = LockRewards(_lock).getCurrentEpoch();
+        emit log_named_uint("start", _start);
+        emit log_named_uint("finish", _finish);
+        emit log_named_uint("locked", _locked);
+        emit log_named_uint("rewards1", _rewards1);
+        emit log_named_uint("rewards2", _rewards2);
+        if(_isSet) {
+            emit log_named_string("isSet", "true");
+        } else {
+            emit log_named_string("isSet", "false");
+        }
+    }
+
+    function testClaimRealEpoch() public {
+        address _lock = 0xbDAA858Fd7b0DC05F8256330fAcB35de86283cA0;
+        //address _y2k = 0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f;
+        address _weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+        uint _rewardAmount = 14100000000000000000;
+        uint _days = 1;
+
+        vm.prank(0x5c84CF4d91Dc0acDe638363ec804792bB2108258); // treasury
+        ERC20(_weth).transfer(address(_lock), _rewardAmount);
+
+        vm.prank(0x16cBaDA408F7523452fF91c8387b1784d00d10D8); // y2k ops
         LockRewards(_lock).setNextEpoch(0, _rewardAmount, _days);
 
         (uint256 _start, uint256 _finish, uint256 _locked, uint256 _rewards1, uint256 _rewards2, bool _isSet) = LockRewards(_lock).getCurrentEpoch();
