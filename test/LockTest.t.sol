@@ -219,6 +219,7 @@ contract LockTest is Test {
         emit log_named_uint("locked", _locked);
         emit log_named_uint("rewards1", _rewards1);
         emit log_named_uint("rewards2", _rewards2);
+        
         if(_isSet) {
             emit log_named_string("isSet", "true");
         } else {
