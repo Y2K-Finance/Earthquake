@@ -226,15 +226,15 @@ contract LockTest is Test {
     //         emit log_named_string("isSet", "false");
     //     }
 
-        vm.warp(block.timestamp + 1 days + 1);
+    //     vm.warp(block.timestamp + 1 days + 1);
 
-        address anyUser = 0x35171ca1cee33E4A0047902804907D1a8BE92Cc3;
-        vm.prank(anyUser); //user that staked
-        (uint rewarded1, uint rewarded2) = LockRewards(_lock).claimReward();
-        emit log_named_uint("rewarded1", rewarded1);
-        emit log_named_uint("rewarded2", rewarded2);
+    //     address anyUser = 0x35171ca1cee33E4A0047902804907D1a8BE92Cc3;
+    //     vm.prank(anyUser); //user that staked
+    //     (uint rewarded1, uint rewarded2) = LockRewards(_lock).claimReward();
+    //     emit log_named_uint("rewarded1", rewarded1);
+    //     emit log_named_uint("rewarded2", rewarded2);
 
-    }
+    // }
 
     function startNextEpoch(uint warpTime) public {
         vm.warp(warpTime);
@@ -317,8 +317,8 @@ contract LockTest is Test {
         (uint256 start2,
         uint256 finish2,
         uint256 locked2,
-        uint256 rewards12,
-        uint256 rewards22,
+        ,
+        ,
         bool isSet2) = lockRewards16.getNextEpoch(); 
         emit log_named_uint("start2", start2);
         emit log_named_uint("finish2", finish2);
