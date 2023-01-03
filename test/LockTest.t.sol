@@ -306,6 +306,7 @@ contract LockTest is Test {
         vm.stopPrank();
 
         (uint start, uint finish, uint locked, , , ) = lockRewards16.getNextEpoch();
+        (uint start, uint finish, uint locked, , , ) = lockRewards16.getNextEpoch();
         emit log_named_uint("start", start);
         emit log_named_uint("finish", finish);
         emit log_named_uint("locked", locked);
@@ -352,6 +353,8 @@ contract LockTest is Test {
         (uint256 start,
         uint256 finish,
         uint256 locked,
+        ,
+        ,
         ,
         ,
         bool isSet) = lockRewards16.getCurrentEpoch();
