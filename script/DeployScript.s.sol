@@ -56,6 +56,7 @@ contract DeployScript is Script, HelperConfig {
                     markets.name);
 
                 //resolve triggerNullEpoch / endEpoch
+                controller.triggerNullEpoch(marketId, block.timestamp - 1);
             }
     }
 
@@ -101,6 +102,10 @@ contract DeployScript is Script, HelperConfig {
         //start rewards for farms
         StakingRewards(_rHedge).notifyRewardAmount(stringToUint(_rewardsAmountHEDGE));
         StakingRewards(_rRisk).notifyRewardAmount(stringToUint(_rewardsAmountRISK));
+
+        //unpause
+        StakingRewards(_rHedge).unpause();
+        StakingRewards(_rRisk).unpause();
     }
 
 }
