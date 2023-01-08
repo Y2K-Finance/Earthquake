@@ -74,6 +74,35 @@ contract ControllerTest is ControllerHelper {
         emit log_named_uint("treasury bal", wethBAL);
     }
 
+    function testWithrawalFees() public {
+        depositDepeg();
+
+        hedge = vaultFactory.getVaults(1)[0];
+        risk = vaultFactory.getVaults(1)[1];
+        
+        vHedge = Vault(hedge);
+        vRisk = Vault(risk);
+        
+        uint hedgeTVL = vHedge.totalAssets(endEpoch);
+        uint riskTVL = vRisk.totalAssets(endEpoch);
+        // emit log_named_uint("hedgeTVL", hedgeTVL);
+        // emit log_named_uint("riskTVL ", riskTVL);
+
+        vm.warp(endEpoch);
+        controller.triggerDepeg(1, endEpoch);
+
+        hedgeTVL = vHedge.idFinalTVL(endEpoch);
+        riskTVL = vRisk.idFinalTVL(endEpoch);
+        emit log_named_uint("hedgeTVL     ", hedgeTVL);
+        emit log_named_uint("riskTVL      ", riskTVL);
+
+        uint hedgeClaimTVL = vHedge.idClaimTVL(endEpoch);
+        uint riskClaimTVL = vRisk.idClaimTVL(endEpoch);
+        emit log_named_uint("hedgeClaimTVL", hedgeClaimTVL);
+        emit log_named_uint("riskClaimTVL ", riskClaimTVL);
+
+    }
+
     function testWithdrawDepeg() public {
         testControllerDepeg();
 

@@ -205,13 +205,13 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
 
         if (epochNull[id] == false) {
             entitledShares = previewWithdraw(id, assets);
-            // //Taking fee from the premium
-            // if (entitledShares > assets) {
-            //     uint256 premium = entitledShares - assets;
-            //     uint256 feeValue = calculateWithdrawalFeeValue(premium, id);
-            //     entitledShares = entitledShares - feeValue;
-            //     assert(asset.transfer(treasury, feeValue));
-            // }
+            //Taking fee from the premium
+            if (entitledShares > assets) {
+                uint256 premium = entitledShares - assets;
+                uint256 feeValue = calculateWithdrawalFeeValue(premium, id);
+                entitledShares = entitledShares - feeValue;
+                // assert(asset.transfer(treasury, feeValue));
+            }
         } else {
             entitledShares = assets;
         }
@@ -349,7 +349,6 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         uint256 fee = 0;
         if(idClaimTVL[id] > idFinalTVL[id]){
             fee = calculateWithdrawalFeeValue(idClaimTVL[id] - idFinalTVL[id], id);
-            idClaimTVL[id] = idClaimTVL[id] - (fee);
         }
         epochTreasuryFee[id] = fee;
         if(fee > 0)

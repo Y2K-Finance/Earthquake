@@ -55,8 +55,8 @@ contract ControllerHelper is Test {
     uint256 public constant BEGIN_DAYS = 2 days;
     uint256 public constant END_DAYS = 30 days;
     uint256 public constant BOB_MULTIPLIER = 2;
-    uint256 public constant CHAD_MULTIPLIER = 10;
-    uint256 public constant DEGEN_MULTIPLIER = 20;
+    uint256 public constant CHAD_MULTIPLIER = 100;
+    uint256 public constant DEGEN_MULTIPLIER = 200;
 
     int256 public constant STRIKE_PRICE_FAKE_ORACLE = 90995265;
     int256 public constant CREATION_STRK = 129919825000;
