@@ -67,21 +67,21 @@ contract ControllerTest is ControllerHelper {
     }
 
     function testControllerFeesEndEpoch() public {
-        uint wethBALPrev = ERC20(WETH).balanceOf(ADMIN);
-        emit log_named_uint("treasury bal", wethBALPrev);
+        uint wethBalPrev = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBalPrev);
         testControllerEndEpoch();
-        uint wethBALAfter = ERC20(WETH).balanceOf(ADMIN);
-        emit log_named_uint("treasury bal", wethBALAfter);
-        assertTrue(wethBALAfter > wethBALPrev, "treasury balance should increase");
+        uint wethBalAfter = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBalAfter);
+        assertTrue(wethBalAfter > wethBalPrev, "treasury balance should increase");
     }
 
     function testControllerFeesDepeg() public {
-        uint wethBALPrev = ERC20(WETH).balanceOf(ADMIN);
-        emit log_named_uint("treasury bal", wethBALPrev);
+        uint wethBalPrev = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBalPrev);
         testControllerDepeg();
-        uint wethBALAfter = ERC20(WETH).balanceOf(ADMIN);
-        emit log_named_uint("treasury bal", wethBALAfter);
-        assertTrue(wethBALAfter > wethBALPrev, "treasury balance should increase");
+        uint wethBalAfter = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBalAfter);
+        assertTrue(wethBalAfter > wethBalPrev, "treasury balance should increase");
     }
 
     function testWithdrawDepeg() public {
