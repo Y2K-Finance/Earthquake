@@ -197,7 +197,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(CHAD,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        //TODO assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(CHAD));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(CHAD));
         console.log("Chad");
         vm.stopPrank();
 
@@ -208,7 +208,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        //TODO assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(DEGEN));
+        assertTrue(entitledShares - vRisk.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(DEGEN));
         console.log("Degen");
         vm.stopPrank();
 
@@ -856,7 +856,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(CHAD,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        //TODO assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(CHAD));
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(CHAD));
 
         vm.stopPrank();
 
@@ -867,7 +867,7 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == NULL_BALANCE);
         entitledShares = vRisk.previewWithdraw(endEpoch, assets);
-        //TODO assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(DEGEN));
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(DEGEN));
 
         vm.stopPrank();
 
