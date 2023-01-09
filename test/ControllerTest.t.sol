@@ -100,8 +100,8 @@ contract ControllerTest is ControllerHelper {
 
         assertTrue(vHedge.balanceOf(ALICE,endEpoch) == NULL_BALANCE);
         entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        // assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(ALICE));
-    	// assertTrue(vHedge.calculateWithdrawalFeeValue(10 ether, endEpoch) == 0.05 ether);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(ALICE));
+    	assertTrue(vHedge.calculateWithdrawalFeeValue(10 ether, endEpoch) == 0.05 ether);
         vm.stopPrank();
 
         //alice balance
@@ -116,8 +116,8 @@ contract ControllerTest is ControllerHelper {
         
         assertTrue(vHedge.balanceOf(BOB,endEpoch) == NULL_BALANCE);
         entitledShares = vHedge.previewWithdraw(endEpoch, assets);
-        // assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(BOB));
-        // assertTrue(vHedge.calculateWithdrawalFeeValue(20 ether, endEpoch) == 0.1 ether);
+        assertTrue(entitledShares - vHedge.calculateWithdrawalFeeValue(entitledShares - assets, endEpoch) == ERC20(WETH).balanceOf(BOB));
+        assertTrue(vHedge.calculateWithdrawalFeeValue(20 ether, endEpoch) == 0.1 ether);
         vm.stopPrank();
 
         //bob balance
