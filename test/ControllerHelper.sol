@@ -122,7 +122,8 @@ contract ControllerHelper is Test {
         emit log_named_uint("vRisk.idClaimTVL(endEpoch) ", vRisk.idClaimTVL(endEpoch));
 
         uint feeRisk = vRisk.calculateWithdrawalFeeValue(vHedge.idFinalTVL(endEpoch), endEpoch);
-        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch) - feeRisk, "Claim TVL not total");
+        assertTrue(feeRisk == vRisk.epochTreasuryFee(endEpoch), "fee not equal");
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 
@@ -139,21 +140,21 @@ contract ControllerHelper is Test {
 
         controller.triggerDepeg(_index, endEpoch);
 
-        if(vHedge.idFinalTVL(endEpoch) > vRisk.idFinalTVL(endEpoch)){
-            emit log_named_uint("hedge final tvl", vHedge.idFinalTVL(endEpoch));
-            emit log_named_uint("risk final tvl ", vRisk.idFinalTVL(endEpoch));
-            uint feeRisk = vRisk.calculateWithdrawalFeeValue(vHedge.idFinalTVL(endEpoch) - vRisk.idFinalTVL(endEpoch), endEpoch);
-            emit log_named_uint("risk fee", feeRisk);
-            assertTrue(vHedge.idClaimTVL(endEpoch) == vRisk.idFinalTVL(endEpoch) + feeRisk, "Hedge Claim TVL not equal");
-            assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch), "Risk Claim TVL not equal");
+        //whoever has the lowest tvl will be taken a fee, since the other side had more tvl,
+        //since they swap tvl in depegs
+        if(vRisk.idFinalTVL(endEpoch) > vHedge.idFinalTVL(endEpoch)){
+            emit log_named_uint("risk fee", vRisk.epochTreasuryFee(endEpoch));
+            emit log_named_uint("hedge fee", vHedge.epochTreasuryFee(endEpoch));
+            uint feeFrom = vRisk.idFinalTVL(endEpoch) - vHedge.idFinalTVL(endEpoch);
+            assertTrue(vHedge.epochTreasuryFee(endEpoch) == vHedge.calculateWithdrawalFeeValue(feeFrom, endEpoch), "hedge fee is not correct");
+            assertTrue(vRisk.epochTreasuryFee(endEpoch) == 0, "risk fee is not 0");
         }
-        if(vHedge.idFinalTVL(endEpoch) < vRisk.idFinalTVL(endEpoch)){
-            emit log_named_uint("hedge final tvl", vHedge.idFinalTVL(endEpoch));
-            emit log_named_uint("risk final tvl ", vRisk.idFinalTVL(endEpoch));
-            uint feeHedge = vHedge.calculateWithdrawalFeeValue(vRisk.idFinalTVL(endEpoch) - vHedge.idFinalTVL(endEpoch), endEpoch);
-            emit log_named_uint("hedge fee", feeHedge);
-            assertTrue(vHedge.idClaimTVL(endEpoch) == vRisk.idFinalTVL(endEpoch) - feeHedge, "Hedge Claim TVL not equal");
-            assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch), "Risk Claim TVL not equal");
+        if(vRisk.idFinalTVL(endEpoch) < vHedge.idFinalTVL(endEpoch)){
+            emit log_named_uint("hedge fee", vHedge.epochTreasuryFee(endEpoch));
+            emit log_named_uint("risk fee", vRisk.epochTreasuryFee(endEpoch));
+            uint feeFrom = vHedge.idFinalTVL(endEpoch) - vRisk.idFinalTVL(endEpoch);
+            assertTrue(vHedge.epochTreasuryFee(endEpoch) == 0, "hedge fee is not 0");
+            assertTrue(vRisk.epochTreasuryFee(endEpoch) == vRisk.calculateWithdrawalFeeValue(feeFrom, endEpoch), "risk fee is not correct");
         }
     }
 

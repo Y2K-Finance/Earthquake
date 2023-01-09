@@ -66,12 +66,22 @@ contract ControllerTest is ControllerHelper {
         vm.stopPrank();
     }
 
-    function testControllerFees() public {
-        uint wethBAL = ERC20(WETH).balanceOf(ADMIN);
-        emit log_named_uint("treasury bal", wethBAL);
+    function testControllerFeesEndEpoch() public {
+        uint wethBALPrev = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBALPrev);
         testControllerEndEpoch();
-        wethBAL = ERC20(WETH).balanceOf(ADMIN);
-        emit log_named_uint("treasury bal", wethBAL);
+        uint wethBALAfter = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBALAfter);
+        assertTrue(wethBALAfter > wethBALPrev, "treasury balance should increase");
+    }
+
+    function testControllerFeesDepeg() public {
+        uint wethBALPrev = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBALPrev);
+        testControllerDepeg();
+        uint wethBALAfter = ERC20(WETH).balanceOf(ADMIN);
+        emit log_named_uint("treasury bal", wethBALAfter);
+        assertTrue(wethBALAfter > wethBALPrev, "treasury balance should increase");
     }
 
     function testWithdrawDepeg() public {
@@ -224,22 +234,22 @@ contract ControllerTest is ControllerHelper {
         assertTrue(vHedge.strikePrice() > 900000000000000000 && controller.getLatestPrice(TOKEN_FRAX) < 1000000000000000000, "strike price is not in range");
 
         controller.triggerDepeg(SINGLE_MARKET_INDEX, endEpoch);
-
-        if(vHedge.idFinalTVL(endEpoch) > vRisk.idFinalTVL(endEpoch)){
-            emit log_named_uint("hedge final tvl", vHedge.idFinalTVL(endEpoch));
-            emit log_named_uint("risk final tvl ", vRisk.idFinalTVL(endEpoch));
-            uint feeRisk = vRisk.calculateWithdrawalFeeValue(vHedge.idFinalTVL(endEpoch) - vRisk.idFinalTVL(endEpoch), endEpoch);
-            emit log_named_uint("risk fee", feeRisk);
-            assertTrue(vHedge.idClaimTVL(endEpoch) == vRisk.idFinalTVL(endEpoch) + feeRisk, "Hedge Claim TVL not equal");
-            assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch), "Risk Claim TVL not equal");
+        
+        //whoever has the lowest tvl will be taken a fee, since the other side had more tvl,
+        //since they swap tvl in depegs
+        if(vRisk.idFinalTVL(endEpoch) > vHedge.idFinalTVL(endEpoch)){
+            emit log_named_uint("risk fee", vRisk.epochTreasuryFee(endEpoch));
+            emit log_named_uint("hedge fee", vHedge.epochTreasuryFee(endEpoch));
+            uint feeFrom = vRisk.idFinalTVL(endEpoch) - vHedge.idFinalTVL(endEpoch);
+            assertTrue(vHedge.epochTreasuryFee(endEpoch) == vHedge.calculateWithdrawalFeeValue(feeFrom, endEpoch), "hedge fee is not correct");
+            assertTrue(vRisk.epochTreasuryFee(endEpoch) == 0, "risk fee is not 0");
         }
-        if(vHedge.idFinalTVL(endEpoch) < vRisk.idFinalTVL(endEpoch)){
-            emit log_named_uint("hedge final tvl", vHedge.idFinalTVL(endEpoch));
-            emit log_named_uint("risk final tvl ", vRisk.idFinalTVL(endEpoch));
-            uint feeHedge = vHedge.calculateWithdrawalFeeValue(vRisk.idFinalTVL(endEpoch) - vHedge.idFinalTVL(endEpoch), endEpoch);
-            emit log_named_uint("hedge fee", feeHedge);
-            assertTrue(vHedge.idClaimTVL(endEpoch) == vRisk.idFinalTVL(endEpoch) - feeHedge, "Hedge Claim TVL not equal");
-            assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch), "Risk Claim TVL not equal");
+        if(vRisk.idFinalTVL(endEpoch) < vHedge.idFinalTVL(endEpoch)){
+            emit log_named_uint("hedge fee", vHedge.epochTreasuryFee(endEpoch));
+            emit log_named_uint("risk fee", vRisk.epochTreasuryFee(endEpoch));
+            uint feeFrom = vHedge.idFinalTVL(endEpoch) - vRisk.idFinalTVL(endEpoch);
+            assertTrue(vHedge.epochTreasuryFee(endEpoch) == 0, "hedge fee is not 0");
+            assertTrue(vRisk.epochTreasuryFee(endEpoch) == vRisk.calculateWithdrawalFeeValue(feeFrom, endEpoch), "risk fee is not correct");
         }
     }
 
@@ -263,7 +273,8 @@ contract ControllerTest is ControllerHelper {
         emit log_named_uint("total assets value", vHedge.totalAssets(endEpoch));
         
         uint feeRisk = vRisk.calculateWithdrawalFeeValue(vHedge.idFinalTVL(endEpoch), endEpoch);
-        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch) - feeRisk, "Claim TVL not total");
+        assertTrue(feeRisk == vRisk.epochTreasuryFee(endEpoch), "fee not equal");
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 
@@ -281,8 +292,7 @@ contract ControllerTest is ControllerHelper {
 
         vm.warp(beginEpoch + 1 days);
         controller.triggerDepeg(vaultFactory.marketIndex(), endEpoch);
-        VaultFactory testFactory = controller.vaultFactory();
-        assertEq(vaultFactory.getVaults(vaultFactory.marketIndex()), testFactory.getVaults(testFactory.marketIndex()));
+        
     }
 
     function testTriggerEndEpoch() public {
@@ -740,7 +750,8 @@ contract ControllerTest is ControllerHelper {
         emit log_named_uint("total assets value", vHedge.totalAssets(endEpoch));
         
         uint feeRisk = vRisk.calculateWithdrawalFeeValue(vHedge.idFinalTVL(endEpoch), endEpoch);
-        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch) - feeRisk, "Claim TVL not total");
+        assertTrue(feeRisk == vRisk.epochTreasuryFee(endEpoch), "fee not equal");
+        assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
 

@@ -346,14 +346,16 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     }
 
     function sendFees(uint256 id) public onlyController marketExists(id) {
+        uint256 claimTVL = idClaimTVL[id];
+        uint256 finalTVL = idFinalTVL[id];
         uint256 fee = 0;
-        if(idClaimTVL[id] > idFinalTVL[id]){
-            fee = calculateWithdrawalFeeValue(idClaimTVL[id] - idFinalTVL[id], id);
-        }
-        epochTreasuryFee[id] = fee;
-        if(fee > 0)
-            assert(asset.transfer(treasury, fee));   
         
+        if(claimTVL > finalTVL){
+            fee = calculateWithdrawalFeeValue(claimTVL - finalTVL, id);
+            assert(asset.transfer(treasury, fee));
+        }
+
+        epochTreasuryFee[id] = fee;
     }
 
     function setEpochNull(uint256 id) public onlyController marketExists(id) {
