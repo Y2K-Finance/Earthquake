@@ -55,8 +55,8 @@ contract ControllerHelper is Test {
     uint256 public constant BEGIN_DAYS = 2 days;
     uint256 public constant END_DAYS = 30 days;
     uint256 public constant BOB_MULTIPLIER = 2;
-    uint256 public constant CHAD_MULTIPLIER = 10;
-    uint256 public constant DEGEN_MULTIPLIER = 20;
+    uint256 public constant CHAD_MULTIPLIER = 100;
+    uint256 public constant DEGEN_MULTIPLIER = 200;
 
     int256 public constant STRIKE_PRICE_FAKE_ORACLE = 90995265;
     int256 public constant CREATION_STRK = 129919825000;
@@ -121,6 +121,8 @@ contract ControllerHelper is Test {
         emit log_named_uint("vRisk.idFinalTVL(endEpoch) ", vRisk.idFinalTVL(endEpoch));
         emit log_named_uint("vRisk.idClaimTVL(endEpoch) ", vRisk.idClaimTVL(endEpoch));
 
+        uint feeRisk = vRisk.calculateWithdrawalFeeValue(vHedge.idFinalTVL(endEpoch), endEpoch);
+        assertTrue(feeRisk == vRisk.epochTreasuryFee(endEpoch), "fee not equal");
         assertTrue(vRisk.idClaimTVL(endEpoch) == vHedge.idFinalTVL(endEpoch) + vRisk.idFinalTVL(endEpoch), "Claim TVL not total");
         assertTrue(NULL_BALANCE == vHedge.idClaimTVL(endEpoch), "Hedge Claim TVL not zero");
     }
@@ -138,8 +140,22 @@ contract ControllerHelper is Test {
 
         controller.triggerDepeg(_index, endEpoch);
 
-        assertTrue(vHedge.totalAssets(endEpoch) == vRisk.idClaimTVL(endEpoch), "Claim TVL not equal");
-        assertTrue(vRisk.totalAssets(endEpoch) == vHedge.idClaimTVL(endEpoch), "Risk Claim TVL not equal");
+        //whoever has the lowest tvl will be taken a fee, since the other side had more tvl,
+        //since they swap tvl in depegs
+        if(vRisk.idFinalTVL(endEpoch) > vHedge.idFinalTVL(endEpoch)){
+            emit log_named_uint("risk fee", vRisk.epochTreasuryFee(endEpoch));
+            emit log_named_uint("hedge fee", vHedge.epochTreasuryFee(endEpoch));
+            uint feeFrom = vRisk.idFinalTVL(endEpoch) - vHedge.idFinalTVL(endEpoch);
+            assertTrue(vHedge.epochTreasuryFee(endEpoch) == vHedge.calculateWithdrawalFeeValue(feeFrom, endEpoch), "hedge fee is not correct");
+            assertTrue(vRisk.epochTreasuryFee(endEpoch) == 0, "risk fee is not 0");
+        }
+        if(vRisk.idFinalTVL(endEpoch) < vHedge.idFinalTVL(endEpoch)){
+            emit log_named_uint("hedge fee", vHedge.epochTreasuryFee(endEpoch));
+            emit log_named_uint("risk fee", vRisk.epochTreasuryFee(endEpoch));
+            uint feeFrom = vHedge.idFinalTVL(endEpoch) - vRisk.idFinalTVL(endEpoch);
+            assertTrue(vHedge.epochTreasuryFee(endEpoch) == 0, "hedge fee is not 0");
+            assertTrue(vRisk.epochTreasuryFee(endEpoch) == vRisk.calculateWithdrawalFeeValue(feeFrom, endEpoch), "risk fee is not correct");
+        }
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -215,28 +231,28 @@ contract ControllerHelper is Test {
         vm.startPrank(ALICE);
         vHedge.depositETH{value: AMOUNT}(endEpoch, ALICE);
 
-        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == (AMOUNT));
+        assertTrue(vHedge.balanceOf(ALICE,endEpoch) == (AMOUNT), "ALICE hedge deposit not equal");
         vm.stopPrank();
 
         //BOB hedge deposit
         vm.startPrank(BOB);
         vHedge.depositETH{value: AMOUNT * BOB_MULTIPLIER}(endEpoch, BOB);
 
-        assertTrue(vHedge.balanceOf(BOB,endEpoch) == (AMOUNT * BOB_MULTIPLIER));
+        assertTrue(vHedge.balanceOf(BOB,endEpoch) == (AMOUNT * BOB_MULTIPLIER), "BOB hedge deposit not equal");
         vm.stopPrank();
 
         //CHAD risk deposit
         vm.startPrank(CHAD);
         vRisk.depositETH{value: AMOUNT * CHAD_MULTIPLIER}(endEpoch, CHAD);
 
-        assertTrue(vRisk.balanceOf(CHAD,endEpoch) == (AMOUNT * CHAD_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(CHAD,endEpoch) == (AMOUNT * CHAD_MULTIPLIER), "CHAD risk deposit not equal");
         vm.stopPrank();
 
         //DEGEN risk deposit
         vm.startPrank(DEGEN);
         vRisk.depositETH{value: AMOUNT * DEGEN_MULTIPLIER}(endEpoch, DEGEN);
 
-        assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER));
+        assertTrue(vRisk.balanceOf(DEGEN,endEpoch) == (AMOUNT * DEGEN_MULTIPLIER), "DEGEN risk deposit not equal");
         vm.stopPrank();
     }
 

@@ -126,6 +126,9 @@ contract Controller {
         insrVault.sendTokens(epochEnd, address(riskVault));
         riskVault.sendTokens(epochEnd, address(insrVault));
 
+        insrVault.sendFees(epochEnd);
+        riskVault.sendFees(epochEnd);
+
         VaultTVL memory tvl = VaultTVL(
             riskVault.idClaimTVL(epochEnd),
             riskVault.idFinalTVL(epochEnd),
@@ -187,6 +190,9 @@ contract Controller {
             insrVault.idFinalTVL(epochEnd) + riskVault.idFinalTVL(epochEnd)
         );
         insrVault.sendTokens(epochEnd, address(riskVault));
+        
+        insrVault.sendFees(epochEnd);
+        riskVault.sendFees(epochEnd);
 
         VaultTVL memory tvl = VaultTVL(
             riskVault.idClaimTVL(epochEnd),

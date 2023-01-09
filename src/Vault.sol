@@ -55,6 +55,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     mapping(uint256 => bool) public idExists;
     mapping(uint256 => uint256) public epochFee;
     mapping(uint256 => bool) public epochNull;
+    mapping(uint256 => uint256) public epochTreasuryFee;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -209,7 +210,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
                 uint256 premium = entitledShares - assets;
                 uint256 feeValue = calculateWithdrawalFeeValue(premium, id);
                 entitledShares = entitledShares - feeValue;
-                assert(asset.transfer(treasury, feeValue));
+                // assert(asset.transfer(treasury, feeValue));
             }
         } else {
             entitledShares = assets;
@@ -314,7 +315,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
      */
     function endEpoch(uint256 id) public onlyController marketExists(id) {
         idEpochEnded[id] = true;
-        idFinalTVL[id] = totalAssets(id);
+        idFinalTVL[id] = totalAssets(id); //final tvl deposited by users
     }
 
     /**
@@ -327,7 +328,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         onlyController
         marketExists(id)
     {
-        idClaimTVL[id] = claimTVL;
+        idClaimTVL[id] = claimTVL; //tvl available to claim
     }
 
     /**
@@ -342,6 +343,20 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
         marketExists(id)
     {
         assert(asset.transfer(_counterparty, idFinalTVL[id]));
+    }
+
+    function sendFees(uint256 id) public onlyController marketExists(id) {
+        uint256 claimTVL = idClaimTVL[id];
+        uint256 finalTVL = idFinalTVL[id];
+        uint256 fee = 0;
+
+        if(claimTVL > finalTVL){
+            fee = calculateWithdrawalFeeValue(claimTVL - finalTVL, id);
+        }
+        epochTreasuryFee[id] = fee;
+        if (fee > 0) {
+            assert(asset.transfer(treasury, fee));
+        }
     }
 
     function setEpochNull(uint256 id) public onlyController marketExists(id) {
