@@ -18,7 +18,7 @@ import {IVaultOverhaul} from "./IVaultOverhaul.sol";
 
 /// @author Y2K Finance Team
 
-contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, ReentrancyGuard {   
+contract VaultOverhaul is IVaultOverhaul, ERC1155(""), ERC1155Supply, ReentrancyGuard {   
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -40,10 +40,10 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
 
     mapping(uint256 => uint256) public idFinalTVL;
     mapping(uint256 => uint256) public idClaimTVL;
-    mapping(uint40 => uint40) public idEpochBegin;
-    mapping(uint40 => bool) public idEpochEnded;
-    mapping(uint40 => bool) public idExists;
-    mapping(uint40 => bool) public epochNull;
+    mapping(uint256 => EpochConfig) public epochConfig;
+    mapping(uint256 => bool) public idEpochEnded;
+    mapping(uint256 => bool) public idExists;
+    mapping(uint256 => bool) public epochNull;
 
     /*///////////////////////////////////////////////////////////////
                                  EVENTS
@@ -89,12 +89,20 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
     error MarketEpochDoesNotExist();
     error EpochAlreadyStarted();
     error EpochNotFinished();
-    error FeeMoreThan150(uint256 _fee);
     error ZeroValue();
     error OwnerDidNotAuthorize(address _sender, address _owner);
     error EpochEndMustBeAfterBegin();
     error MarketEpochExists();
-    error FeeCannotBe0();
+
+    /*//////////////////////////////////////////////////////////////
+                                STRUCTS
+    //////////////////////////////////////////////////////////////*/
+
+
+    struct EpochConfig {
+        uint40 epochBegin;
+        uint40 epochEnd;
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -116,7 +124,7 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
 
     /** @notice Only market addresses can call functions that use this modifier
      */
-    modifier marketExists(uint40 id) {
+    modifier epochIdExists(uint40 id) {
         if (idExists[id] != true) revert MarketEpochDoesNotExist();
         _;
     }
@@ -174,82 +182,61 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
     //////////////////////////////////////////////////////////////*/
 
     /**
-        @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
-        @param  assets  uint256 representing how many assets the user wants to deposit, a fee will be taken from this value;
-        @param receiver  address of the receiver of the assets provided by this function, that represent the ownership of the deposited asset;
+        @param  _id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
+        @param  _assets  uint256 representing how many assets the user wants to deposit, a fee will be taken from this value;
+        @param _receiver  address of the receiver of the assets provided by this function, that represent the ownership of the deposited asset;
      */
     function deposit(
-        uint256 id,
-        uint256 assets,
-        address receiver
-    ) public override marketExists(id) epochHasNotStarted(id) nonReentrant {
-        if (receiver == address(0)) revert AddressZero();
-        assert(asset.safeTransferFrom(msg.sender, address(this), assets));
+        uint256 _id,
+        uint256 _assets,
+        address _receiver
+    ) public override epochIdExists(_id) epochHasNotStarted(_id) nonReentrant {
+        if (_receiver == address(0)) revert AddressZero();
+        assert(asset.safeTransferFrom(msg.sender, address(this), _assets));
 
-        _mint(receiver, id, assets, EMPTY);
+        _mint(_receiver, _id, _assets, EMPTY);
 
-        emit Deposit(msg.sender, receiver, id, assets);
-    }
-
-    /**
-        @notice Deposit ETH function
-        @param  id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
-        @param receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
-     */
-    function depositETH(uint256 id, address receiver)
-        external
-        payable
-        marketExists(id)
-        epochHasNotStarted(id)
-        nonReentrant
-    {
-        require(msg.value > 0, "ZeroValue");
-        if (receiver == address(0)) revert AddressZero();
-
-        IWETH(address(asset)).deposit{value: msg.value}();
-        _mint(receiver, id, msg.value, EMPTY);
-
-        emit Deposit(msg.sender, receiver, id, msg.value);
+        emit Deposit(msg.sender, _receiver, _id, _assets);
     }
 
     /**
     @notice Withdraw entitled deposited assets, checking if a depeg event
-    @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
-    @param assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
-    @param receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
-    @param owner    Address of the owner of these said assets;
+    @param  _id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
+    @param _assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according to the events;
+    @param _receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
+    @param _owner    Address of the owner of these said assets;
     @return shares How many shares the owner is entitled to, according to the conditions;
      */
     function withdraw(
-        uint40 id,
-        uint256 assets,
-        address receiver,
-        address owner
+        uint256 _id,
+        uint256 _assets,
+        address _receiver,
+        address _owner
     )
         external
         override
-        epochHasEnded(id)
-        marketExists(id)
+        epochHasEnded(_id)
+        epochIdExists(_id)
         returns (uint256 shares)
     {
-        if (receiver == address(0)) revert AddressZero();
+        if (_receiver == address(0)) revert AddressZero();
 
-        if (msg.sender != owner && isApprovedForAll(owner, msg.sender) == false)
-            revert OwnerDidNotAuthorize(msg.sender, owner);
+        if (msg.sender != _owner && isApprovedForAll(_owner, msg.sender) == false)
+            revert OwnerDidNotAuthorize(msg.sender, _owner);
 
         uint256 entitledShares;
-        _burn(owner, id, assets);
+        _burn(_owner, _id, _assets);
 
-        if (epochNull[id] == false) {
-            entitledShares = previewWithdraw(id, assets);
+        if (epochNull[_id] == false) {
+            entitledShares = previewWithdraw(_id, _assets);
         } else {
-            entitledShares = assets;
+            entitledShares = _assets;
         }
         if (entitledShares > 0) {
-            assert(asset.safeTransfer(receiver, entitledShares));
+            assert(asset.safeTransfer(_receiver, entitledShares));
         }
 
-        emit Withdraw(msg.sender, receiver, owner, id, assets, entitledShares);
+        emit Withdraw(msg.sender, _receiver, _owner, _id, _assets, entitledShares);
 
         return entitledShares;
     }
@@ -266,7 +253,7 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
         public
         view
         override
-        marketExists(_id)
+        epochIdExists(_id)
         returns (uint256)
     {
         return totalSupply(_id);
@@ -292,20 +279,21 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
     @param _withdrawalFee uint256 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5
      */
     function createAssets(
-        uint40 epochBegin,
-        uint40 epochEnd
-    ) public onlyFactory {
-        if (_withdrawalFee > 150) revert FeeMoreThan150(_withdrawalFee);
+        uint40 _epochBegin,
+        uint40 _epochEnd,
+        uint256 _epochId
+    ) external onlyFactory {
+        if (idExists[_epochId] == true) revert MarketEpochExists();
 
-        if (_withdrawalFee == 0) revert FeeCannotBe0();
+        if (_epochBegin >= _epochEnd) revert EpochEndMustBeAfterBegin();
 
-        if (idExists[epochEnd] == true) revert MarketEpochExists();
+        idExists[_epochId] = true;
 
-        if (epochBegin >= epochEnd) revert EpochEndMustBeAfterBegin();
-
-        idExists[epochEnd] = true;
-        idEpochBegin[epochEnd] = epochBegin;
-        epochs.push(epochEnd);
+        epochConfig[_epochId] = EpochConfig({
+            epochBegin: _epochBegin,
+            epochEnd: _epochEnd       
+        });
+        epochs.push(_epochId);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -316,9 +304,9 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
     @notice Controller can call this function to trigger the end of the epoch, storing the TVL of that epoch and if a depeg event occurred
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
      */
-    function endEpoch(uint40 id) public onlyController marketExists(id) {
-        idEpochEnded[id] = true;
-        idFinalTVL[id] = totalAssets(id);
+    function endEpoch(uint256 _id) public onlyController epochIdExists(id) {
+        idEpochEnded[_id] = true;
+        idFinalTVL[_id] = totalAssets(_id);
     }
 
     /**
@@ -326,12 +314,12 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping
      */
-    function setClaimTVL(uint40 id, uint256 claimTVL)
+    function setClaimTVL(uint256 _id, uint256 claimTVL)
         public
         onlyController
-        marketExists(id)
+        epochIdExists(_id)
     {
-        idClaimTVL[id] = claimTVL;
+        idClaimTVL[_id] = claimTVL;
     }
 
     /**
@@ -340,16 +328,16 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
     @param  id uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000
     @param _counterparty Address of the other vault, meaning address of the risk vault, if this is an hedge vault, and vice-versa
     */
-    function sendTokens(uint256 _amount, uint40 _id, address _counterparty)
+    function sendTokens(uint256 _amount, uint256 _id, address _counterparty)
         public
         onlyController
-        marketExists(_id)
+        epochIdExists(_id)
     {
         assert(asset.safeTransfer(_counterparty, _amount));
     }
 
-    function setEpochNull(uint40 id) public onlyController marketExists(id) {
-        epochNull[id] = true;
+    function setEpochNull(uint256 _id) public onlyController epochIdExists(_id) {
+        epochNull[_id] = true;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -360,7 +348,7 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
         @param  id uint256 token id of token
         @param assets Total number of assets
      */
-    function previewWithdraw(uint40 id, uint256 assets)
+    function previewWithdraw(uint256 _id, uint256 assets)
         public
         view
         override
@@ -370,7 +358,7 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
         // risk users can withdraw the hedge (that is paid by the hedge buyers) and risk; withdraw = (risk + hedge)
         // hedge pay for each hedge seller = ( risk / tvl before the hedge payouts ) * tvl in hedge pool
         // in case there is a depeg event, the risk users can only withdraw the hedge
-        entitledAmount = assets.mulDivUp(idClaimTVL[id], idFinalTVL[id]);
+        entitledAmount = assets.mulDivUp(idClaimTVL[_id], idFinalTVL[_id]);
         // in case the hedge wins aka depegging
         // hedge users pay the hedge to risk users anyway,
         // hedge guy can withdraw risk (that is transfered from the risk pool),
@@ -382,5 +370,17 @@ contract VaultOverhault is IVaultOverhaul, ERC1155(""), ERC1155Supply, Reentranc
      */
     function epochsLength() public view returns (uint256) {
         return epochs.length;
+    }
+
+    /** @notice Lookup epoch begin and end
+        @param _id id hashed from marketIndex, epoch begin and end and casted to uint256;
+     */
+    function getEpochTime(uint256 _id)
+        public
+        view
+        override
+        returns (uint40, uint40)
+    {
+        return (epochConfig[_id].epochBegin, epochConfig[_id].epochEnd);
     }
 }

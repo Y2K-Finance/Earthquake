@@ -39,15 +39,15 @@ contract Controller {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Depegs insurance vault when event is emitted
-     * @param epochMarketID Current market epoch ID
-     * @param tvl Current TVL
+     * @param epochMarketID market epoch ID
+     * @param tvl TVL
      * @param isDisaster Flag if event isDisaster
-     * @param epoch Current epoch
-     * @param time Current time
+     * @param epoch epoch
+     * @param time time
      * @param depegPrice Price that triggered depeg
      */
-    event DepegInsurance(
-        bytes32 epochMarketID,
+    event EpochEnded(
+        uint256 epochMarketID,
         VaultTVL tvl,
         bool isDisaster,
         uint256 epoch,
@@ -56,7 +56,7 @@ contract Controller {
     );
 
     event NullEpoch(
-        bytes32 epochMarketID,
+        uint256 epochMarketID,
         VaultTVL tvl,
         uint256 epoch,
         uint256 time
@@ -102,40 +102,42 @@ contract Controller {
 
 
     /** @notice Trigger depeg event
-     * @param marketIndex Target market index
-     * @param epochEnd End of epoch set for market
+     * @param _marketIndex Target market index
+     * @param _epochId End of epoch set for market
      */
-    function triggerDepeg(uint256 marketIndex, uint256 epochEnd) public {
-        address[2] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
+    function triggerDepeg(uint256 _marketIndex, uint256 _epochId) public {
+        address[2] memory vaultsAddress = vaultFactory.getVaults(uint32(_marketIndex));
         IVaultOverhaul premiumVault = IVaultOverhaul(vaultsAddress[0]);
         IVaultOverhaul collateralVault = IVaultOverhaul(vaultsAddress[1]);
 
         if (vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0))
-            revert MarketDoesNotExist(marketIndex);
+            revert MarketDoesNotExist(_marketIndex);
 
-        if (premiumVault.idExists(epochEnd) == false) revert EpochNotExist();
+        if (premiumVault.idExists(_epochId) == false) revert EpochNotExist();
 
         if (premiumVault.strikePrice() <= getLatestPrice(premiumVault.tokenInsured()))
             revert PriceNotAtStrikePrice(
                 getLatestPrice(premiumVault.tokenInsured())
             );
 
-        if (premiumVault.idEpochBegin(epochEnd) > block.timestamp)
+        (uint40 epochStart, uint40 epochEnd) = premiumVault.getEpochTime(_epochId);
+
+        if (uint256(epochStart) > block.timestamp)
             revert EpochNotStarted();
 
-        if (block.timestamp > epochEnd) revert EpochExpired();
+        if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.idEpochEnded(epochEnd)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(epochEnd)) revert EpochFinishedAlready();
+        if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
 
-        premiumVault.endEpoch(epochEnd);
-        collateralVault.endEpoch(epochEnd);
+        premiumVault.endEpoch(_epochId);
+        collateralVault.endEpoch(_epochId);
         
-        uint256 epochFee = vaultFactory.getEpochFee(marketIndex, premiumVault.idEpochBegin(epochEnd) ,epochEnd);
+        uint256 epochFee = vaultFactory.getEpochFee(_epochId);
 
-        uint256 premiumTVL = premiumVault.idFinalTVL(epochEnd);
-        uint256 collateralTVL = collateralVault.idFinalTVL(epochEnd);
+        uint256 premiumTVL = premiumVault.idFinalTVL(_epochId);
+        uint256 collateralTVL = collateralVault.idFinalTVL(_epochId);
 
         uint256 premiumFee = calculateWithdrawalFeeValue(premiumTVL, epochFee);
         uint256 collateralFee = calculateWithdrawalFeeValue(collateralTVL, epochFee);
@@ -143,8 +145,8 @@ contract Controller {
         uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
         uint256 collateralTVLAfterFee = collateralTVL - collateralFee;
 
-        premiumVault.setClaimTVL(epochEnd, collateralTVLAfterFee);
-        collateralVault.setClaimTVL(epochEnd, premiumTVLAfterFee);
+        premiumVault.setClaimTVL(_epochId, collateralTVLAfterFee);
+        collateralVault.setClaimTVL(_epochId, premiumTVLAfterFee);
         
         // send fees to treasury and remaining TVL to respective counterparty vault
         premiumVault.sendTokens(premiumFee, treasury);
@@ -164,14 +166,8 @@ contract Controller {
         );
         (, int256 price, , , ) = priceFeed.latestRoundData();
 
-        emit DepegInsurance(
-            keccak256(
-                abi.encodePacked(
-                    marketIndex,
-                    premiumVault.idEpochBegin(epochEnd),
-                    epochEnd
-                )
-            ),
+        emit EpochEnded(
+            _epochId,
             tvl,
             true,
             epochEnd,
@@ -181,47 +177,48 @@ contract Controller {
     }
 
     /** @notice Trigger epoch end without depeg event
-     * @param marketIndex Target market index
+     * @param _marketIndex Target market index
      * @param epochEnd End of epoch set for market
      */
-    function triggerEndEpoch(uint256 marketIndex, uint256 epochEnd) public {
-        if (block.timestamp <= epochEnd) revert EpochNotExpired();
+    function triggerEndEpoch(uint256 _marketIndex, uint256 _epochId) public {
 
-        address[2] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
+        address[2] memory vaultsAddress = vaultFactory.getVaults(uint32(_marketIndex));
 
         IVaultOverhaul premiumVault = IVaultOverhaul(vaultsAddress[0]);
         IVaultOverhaul collateralVault = IVaultOverhaul(vaultsAddress[1]);
 
-        uint40 epochEndCasted = uint40(epochEnd);
-
         if (vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0))
-            revert MarketDoesNotExist(marketIndex);
+            revert MarketDoesNotExist(_marketIndex);
 
         if (
-            premiumVault.idExists(epochEndCasted) == false ||
-            collateralVault.idExists(epochEndCasted) == false
+            premiumVault.idExists(_epochId) == false ||
+            collateralVault.idExists(_epochId) == false
         ) revert EpochNotExist();
 
+        (, uint40 epochEnd) = premiumVault.getEpochTime(_epochId);
+
+        if (block.timestamp <= uint256(epochEnd)) revert EpochNotExpired();
+
         //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.idEpochEnded(epochEndCasted)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(epochEndCasted)) revert EpochFinishedAlready();
+        if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
 
-        premiumVault.endEpoch(epochEndCasted);
-        collateralVault.endEpoch(epochEndCasted);
+        premiumVault.endEpoch(_epochId);
+        collateralVault.endEpoch(_epochId);
 
-        uint256 epochFee = vaultFactory.getEpochFee(marketIndex, premiumVault.idEpochBegin(epochEndCasted), epochEndCasted);
+        uint256 epochFee = vaultFactory.getEpochFee(_epochId);
 
-        uint256 premiumTVL = premiumVault.idFinalTVL(epochEndCasted);
-        uint256 collateralTVL = collateralVault.idFinalTVL(epochEndCasted);
+        uint256 premiumTVL = premiumVault.idFinalTVL(_epochId);
+        uint256 collateralTVL = collateralVault.idFinalTVL(_epochId);
 
         uint256 premiumFee = calculateWithdrawalFeeValue(premiumTVL, epochFee);
 
         uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
         uint256 collateralTVLAfterFee = collateralTVL + premiumTVLAfterFee;
         
-        premiumVault.setClaimTVL(epochEndCasted, 0);
+        premiumVault.setClaimTVL(_epochId, 0);
         collateralVault.setClaimTVL(
-            epochEndCasted,
+            _epochId,
            collateralTVLAfterFee
         );
 
@@ -235,14 +232,8 @@ contract Controller {
             premiumTVL
         );
 
-        emit DepegInsurance(
-            keccak256(
-                abi.encodePacked(
-                    marketIndex,
-                    premiumVault.idEpochBegin(epochEndCasted),
-                    epochEndCasted
-                )
-            ),
+        emit EpochEnded(
+            _epochId,
             tvl,
             false,
             epochEnd,
@@ -252,69 +243,59 @@ contract Controller {
     }
 
     /** @notice Trigger epoch invalid when one vault has 0 TVL
-     * @param marketIndex Target market index
-     * @param epochEnd End of epoch set for market
+     * @param _marketIndex Target market index
+     * @param _epochId End of epoch set for market
      */
-    function triggerNullEpoch(uint256 marketIndex, uint256 epochEnd) public {
-        address[2] memory vaultsAddress = vaultFactory.getVaults(marketIndex);
+    function triggerNullEpoch(uint256 _marketIndex, uint256 _epochId) public {
+        address[2] memory vaultsAddress = vaultFactory.getVaults(uint32(_marketIndex));
 
         IVaultOverhaul premiumVault = IVaultOverhaul(vaultsAddress[0]);
         IVaultOverhaul collateralVault = IVaultOverhaul(vaultsAddress[1]);
 
         if (vaultsAddress[0] == address(0) || vaultsAddress[1] == address(0))
-            revert MarketDoesNotExist(marketIndex);
+            revert MarketDoesNotExist(_marketIndex);
 
         if (
-            premiumVault.idExists(epochEnd) == false ||
-            collateralVault.idExists(epochEnd) == false
+            premiumVault.idExists(_epochId) == false ||
+            collateralVault.idExists(_epochId) == false
         ) revert EpochNotExist();
 
-        if (block.timestamp < premiumVault.idEpochBegin(epochEnd))
-            revert EpochNotStarted();
+        (uint40 epochStart,) = premiumVault.getEpochTime(_epochId);
 
-        if (
-            premiumVault.idExists(epochEnd) == false ||
-            collateralVault.idExists(epochEnd) == false
-        ) revert EpochNotExist();
+        if (block.timestamp < uint256(epochStart)) revert EpochNotStarted();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.idEpochEnded(epochEnd)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(epochEnd)) revert EpochFinishedAlready();
+        if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
 
         //set claim TVL to 0 if total assets are 0
-        if (premiumVault.totalAssets(epochEnd) == 0) {
-            premiumVault.endEpoch(epochEnd);
-            collateralVault.endEpoch(epochEnd);
+        if (premiumVault.totalAssets(_epochId) == 0) {
+            premiumVault.endEpoch(_epochId);
+            collateralVault.endEpoch(_epochId);
 
-            premiumVault.setClaimTVL(epochEnd, 0);
-            collateralVault.setClaimTVL(epochEnd, collateralVault.idFinalTVL(epochEnd));
+            premiumVault.setClaimTVL(_epochId, 0);
+            collateralVault.setClaimTVL(_epochId, collateralVault.idFinalTVL(_epochId));
 
-            collateralVault.setEpochNull(epochEnd);
-        } else if (collateralVault.totalAssets(epochEnd) == 0) {
-            premiumVault.endEpoch(epochEnd);
-            collateralVault.endEpoch(epochEnd);
+            collateralVault.setEpochNull(_epochId);
+        } else if (collateralVault.totalAssets(_epochId) == 0) {
+            premiumVault.endEpoch(_epochId);
+            collateralVault.endEpoch(_epochId);
 
-            premiumVault.setClaimTVL(epochEnd, premiumVault.idFinalTVL(epochEnd));
-            collateralVault.setClaimTVL(epochEnd, 0);
+            premiumVault.setClaimTVL(_epochId, premiumVault.idFinalTVL(_epochId));
+            collateralVault.setClaimTVL(_epochId, 0);
 
-            premiumVault.setEpochNull(epochEnd);
+            premiumVault.setEpochNull(_epochId);
         } else revert VaultNotZeroTVL();
 
         VaultTVL memory tvl = VaultTVL(
-            collateralVault.idClaimTVL(epochEnd),
-            collateralVault.idFinalTVL(epochEnd),
-            premiumVault.idClaimTVL(epochEnd),
-            premiumVault.idFinalTVL(epochEnd)
+            collateralVault.idClaimTVL(_epochId),
+            collateralVault.idFinalTVL(_epochId),
+            premiumVault.idClaimTVL(_epochId),
+            premiumVault.idFinalTVL(_epochId)
         );
 
         emit NullEpoch(
-            keccak256(
-                abi.encodePacked(
-                    marketIndex,
-                    premiumVault.idEpochBegin(epochEnd),
-                    epochEnd
-                )
-            ),
+            _epochId,
             tvl,
             epochEnd,
             block.timestamp
