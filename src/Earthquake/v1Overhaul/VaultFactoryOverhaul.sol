@@ -15,13 +15,13 @@ contract VaultFactory is Ownable {
     //////////////////////////////////////////////////////////////*/
 
     uint32 public marketIndex;
-    address public controller;
+    address[] public controllers;
     address[] public vaultImpl;
     TimeLock public timelocker;
 
     mapping(uint32 => address[2]) public indexVaults; //[0] premium and [1] collateral vault
-    mapping(uint32 => uint40[]) public indexEpochs; //all epochs in the market
-    mapping(bytes32 => uint16) public epochFee; //token address to respective oracle smart contract address
+    mapping(uint32 => uint256[]) public indexEpochs; //all epochs in the market
+    mapping(uint256 => uint16) public epochFee; //token address to respective oracle smart contract address
     mapping(address => address) public tokenToOracle; //token address to respective oracle smart contract address
 
 
@@ -33,13 +33,6 @@ contract VaultFactory is Ownable {
         if (msg.sender != address(timelocker)) revert NotTimeLocker();
         _;
     }
-
-
-    modifier onlyTimeLockerOrOwner() {
-        if (msg.sender != address(timelocker) || msg.sender != owner) revert NotTimeLockerOrOwner();
-        _;
-    }
-
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -54,6 +47,9 @@ contract VaultFactory is Ownable {
     error ControllerAlreadySet();
     error VaultImplNotSet();
     error VaultImplNotContract();
+    error NotAuthorized();
+    error FeeCannotBe0();
+
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -74,7 +70,8 @@ contract VaultFactory is Ownable {
         address token,
         string name,
         int256 strikePrice,
-        address vaultImpl
+        address vaultImpl,
+        address controller
     );
 
     /** @notice event is emitted when epoch is created
@@ -90,6 +87,7 @@ contract VaultFactory is Ownable {
      * @param strikePrice Strike price
      */
     event EpochCreated(
+        uint256 indexed marketEpochId,
         uint32 indexed mIndex,
         uint32 startEpoch,
         uint32 endEpoch,
@@ -97,7 +95,6 @@ contract VaultFactory is Ownable {
         address premium,
         address collateral,
         address token,
-        bytes32 indexed marketEpochId,
         string name,
         int256 strikePrice
     );
@@ -133,6 +130,7 @@ contract VaultFactory is Ownable {
         uint40 epochBegin;
         uint40 epochEnd;
         uint16 withdrawalFee;
+        uint256 marketEpochId;
         IVaultOverhaul premium;
         IVaultOverhaul collateral;
     }
@@ -153,13 +151,6 @@ contract VaultFactory is Ownable {
 
         timelocker = new TimeLock(_policy);
         marketIndex = _marketIndex;
-        uint32 size;
-        assembly {
-            size := extcodesize(_addr)
-        }
-        if (size == 0) revert VaultImplNotContract();
-        // need to have multiple vault implementatoin stored, as if underlyingAsset is WETH depositETH is available and vice versa
-        vaultImpl.push(_vaultImpl);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -178,14 +169,24 @@ contract VaultFactory is Ownable {
         address _token,
         int256 _strikePrice,
         address _oracle,
-        address underlyingAsset,
+        address _underlyingAsset,
         string memory _name,
-        uint256 _vaultImplIndex
+        uint256 _vaultImplIndex,
+        uint256 _controllerIndex
     ) public onlyOwner returns (address premium, address collateral) {
+        address impl = vaultImpl[_vaultImplIndex];
+        address controller = controllers[_controllerIndex];
+
         if (controller == address(0)) revert ControllerNotSet();
 
         if (IController(controller).getVaultFactory() != address(this))
             revert AddressFactoryNotInController();
+
+        if(impl == address(0)) revert AddressZero();
+
+        uint256 marketEpochId = uint256(keccak256(
+            abi.encodePacked(marketIndex, _token, _strikePrice)
+        ));
 
         marketIndex += 1;
 
@@ -203,20 +204,20 @@ contract VaultFactory is Ownable {
             "pY2K",
             _token,
             _strikePrice,
-            controller,
-            _vaultImplIndex
+            impl,
+            controller
         );
 
         // y2kUSDC_99*PREMIUM
 
         address collateral = _cloneAndDeploy(
-            underlyingAsset,
+             _underlyingAsset,
             string(abi.encodePacked(_name, "COLLATERAL")),
             "cY2K",
             _token,
             _strikePrice,
-            controller,
-            _vaultImplIndex
+            impl,
+            controller
         );
 
         indexVaults[marketIndex] = [premium, collateral];
@@ -225,11 +226,12 @@ contract VaultFactory is Ownable {
             marketIndex,
             premium,
             collateral,
-            underlyingAsset,
+            _underlyingAsset,
             _token,
             _name,
             _strikePrice,
-            vaultImpl[_vaultImplIndex]
+            impl,
+            controller
         );
 
         return (premium, collateral);
@@ -241,12 +243,10 @@ contract VaultFactory is Ownable {
         string memory _symbol,
         address _token,
         int256 _strikePrice,
-        address _controller,
-        uint256 _vaultImplIndex
+        address _vaultImpl,
+        address _controller
     ) internal returns (address _out) {
-        if(vaultImpl[_vaultImplIndex] == address(0)) revert VaultImplNotSet();
-
-        address _vaultImpl = vaultImpl[_vaultImplIndex];
+        
         // clone bytecode from the vault implementation
         // deploy the bytecode with empty constructor
         assembly {
@@ -281,7 +281,8 @@ contract VaultFactory is Ownable {
             _symbol,
             _token,
             _strikePrice,
-            _controller);
+            _controller
+        );
 
     }
 
@@ -293,26 +294,42 @@ contract VaultFactory is Ownable {
     @param _withdrawalFee uint16 of the fee value, multiply your % value by 10, Example: if you want fee of 0.5% , insert 5
      */
     function deployEpoch(
-        uint32 mIndex,
-        uint40 epochBegin,
-        uint40 epochEnd,
+        uint32 _mIndex,
+        uint40 _epochBegin,
+        uint40 _epochEnd,
         uint16 _withdrawalFee
     ) public onlyOwner {
-        if (controller == address(0)) revert ControllerNotSet();
 
-        if (mIndex > marketIndex) {
-            revert MarketDoesNotExist(mIndex);
+        if (_mIndex > marketIndex) {
+            revert MarketDoesNotExist(_mIndex);
         }
-        address premium = indexVaults[mIndex][0];
-        address collateral = indexVaults[mIndex][1];
+
+        if (_withdrawalFee == 0) revert FeeCannotBe0();
+
+        uint256 epochId = uint256(
+            keccak256(
+                abi.encodePacked(
+                    _mIndex,
+                    _epochBegin,
+                    _epochEnd
+                )
+            )
+        );
+
+        address premium = indexVaults[_mIndex][0];
+        address collateral = indexVaults[_mIndex][1];
+
+        if(IVaultOverhaul(premium).controller() == address(0)) revert ControllerNotSet();
+        if(IVaultOverhaul(collateral).controller() == address(0)) revert ControllerNotSet();
 
         MarketVault memory marketVault = MarketVault(
-            mIndex,
-            epochBegin,
-            epochEnd,
+            _mIndex,
+            _epochBegin,
+            _epochEnd,
+            _withdrawalFee,
+            epochId,
             IVaultOverhault(premium),
-            IVaultOverhault(collateral),
-            _withdrawalFee
+            IVaultOverhault(collateral) 
         );
 
         _createEpoch(marketVault);
@@ -322,24 +339,18 @@ contract VaultFactory is Ownable {
         _marketVault.premium.createAssets(
             _marketVault.epochBegin,
             _marketVault.epochEnd,
-            _marketVault.withdrawalFee
+            _marketVault.marketEpochId
         );
         _marketVault.collateral.createAssets(
             _marketVault.epochBegin,
             _marketVault.epochEnd,
-            _marketVault.withdrawalFee
+            _marketVault.marketEpochId
         );
 
-        indexEpochs[_marketVault.index].push(_marketVault.epochEnd);
+        indexEpochs[_marketVault.index].push(_marketVault.marketEpochId);
 
         emit EpochCreated(
-            keccak256(
-                abi.encodePacked(
-                    _marketVault.index,
-                    _marketVault.epochBegin,
-                    _marketVault.epochEnd
-                )
-            ),
+            _marketVault.marketEpochId,
             _marketVault.index,
             _marketVault.epochBegin,
             _marketVault.epochEnd,
@@ -353,17 +364,56 @@ contract VaultFactory is Ownable {
     }
 
     /**
+    @notice Admin function, sets the vault implementation address one time use function only
+    @notice policy can add more vaults implementations
+    @param  _vaultImpl Address of the deployed vault implementations smart contract
+     */
+    function setVaultImpl(address _vaultImpl) public {
+        if (_vaultImpl == address(0)) revert AddressZero();
+
+         if(msg.sender == owner()){
+            // owner only set impl once
+            if (_vaultImpl == address(0)) {
+                
+                vaultImpl.push(_vaultImpl);
+                emit VaultImplSet(_vaultImpl);
+            } 
+            else {
+                revert VaultImplAlreadySet();
+            }
+        } else if(msg.sender == timeLocker){
+            // timelocker can add more impl
+            vaultImpl.push(_vaultImpl);
+            emit VaultImplSet(_vaultImpl);
+        } else {
+            revert NotAuthorized();
+        }
+
+       
+    }
+
+    /**
     @notice Admin function, sets the controller address one time use function only
+    @notice policy can add more controllers
     @param  _controller Address of the controller smart contract
      */
-    function setController(address _controller) public onlyOwner {
-        if (controller == address(0)) {
-            if (_controller == address(0)) revert AddressZero();
-            controller = _controller;
-
+    function setController(address _controller) public {
+        if (_controller == address(0)) revert AddressZero();
+        if(msg.sender == owner()){
+            // owner only set controller once
+            if (controller == address(0)) {
+                controllers.push(_controller);
+                emit controllerSet(_controller);
+            } 
+            else {
+                revert ControllerAlreadySet();
+            }
+        } else if(msg.sender == timeLocker){
+            // timelocker can add more controllers
+            controllers.push(_controller);
             emit controllerSet(_controller);
         } else {
-            revert ControllerAlreadySet();
+            revert NotAuthorized();
         }
     }
 
@@ -372,18 +422,21 @@ contract VaultFactory is Ownable {
     @param _marketIndex Target market index
     @param  _controller Address of the controller smart contract
      */
-    function changeController(uint256 _marketIndex, address _controller)
+    function changeController(uint32 _marketIndex, uint256 _controllerIndex)
         public
         onlyTimeLocker
     {
-        if (_controller == address(0)) revert AddressZero();
+        address controller = controllers[_controllerIndex]; 
+
+        if(controller == address(0)) revert AddressZero();
+        if(_marketIndex > marketIndex) revert MarketDoesNotExist(_marketIndex);
         address[2] memory vaults = indexVaults[_marketIndex];
         IVaultOverhaul premium = IVaultOverhaul(vaults[0]);
         IVaultOverhaul collateral = IVaultOverhaul(vaults[1]);
-        premium.changeController(_controller);
-        collateral.changeController(_controller);
+        premium.changeController(controller);
+        collateral.changeController(controller);
 
-        emit changedController(_marketIndex, _controller);
+        emit changedController(_marketIndex, controller);
     }
 
     /**
@@ -420,18 +473,11 @@ contract VaultFactory is Ownable {
     }
 
 
-    function getEpochFee(uint32 index, uint40 epochBegin, uint40 epochEnd)
+    function getEpochFee(uint256 epochId)
         public
         view
         returns (uint16 fee)
     {
-        return indexFees[ 
-            keccak256(
-                abi.encodePacked(
-                    _marketVault.index,
-                    _marketVault.epochBegin,
-                    _marketVault.epochEnd
-                )
-            )];
+        return epochFee[epochId];
     }
 
