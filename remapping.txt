@@ -1,0 +1,3 @@
+@openzeppelin/=lib/openzeppelin-contracts/
+@chainlink=lib/chainlink/contracts/src/v0.8
+@solmate=lib/solmate/src
