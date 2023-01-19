@@ -1,12 +1,14 @@
 
+import {IVaultFactoryV2} from "./interfaces/IVaultFactoryV2.sol";
+
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.15;
+pragma solidity 0.8.17;
 contract TimeLock {
     mapping(bytes32 => bool) public queued;
 
     address public policy;
 
-    uint32 public constant MIN_DELAY = 7 days;
+    uint32 public constant MIN_DELAY = 3 days;
     uint32 public constant MAX_DELAY = 30 days;
     uint32 public constant GRACE_PERIOD = 14 days;
 
@@ -169,15 +171,15 @@ contract TimeLock {
         queued[txId] = false;
 
         //execute tx
-        if (compareStringsbyBytes(_func, "changeTreasury")) {
-            VaultFactory(_target).changeTreasury(_to, _index);
-        } else if (compareStringsbyBytes(_func, "changeController")) {
-            VaultFactory(_target).changeController(_index, _to);
-        } else if (compareStringsbyBytes(_func, "changeOracle")) {
-            VaultFactory(_target).changeOracle(_token, _to);
-        } else {
-            revert TxFailedError(_func);
-        }
+        // if (compareStringsbyBytes(_func, "changeTreasury")) {
+        //     IVaultFactoryV2(_target).changeTreasury(_to, _index);
+        // } else if (compareStringsbyBytes(_func, "changeController")) {
+        //     IVaultFactoryV2(_target).changeController(_index, _to);
+        // } else if (compareStringsbyBytes(_func, "changeOracle")) {
+        //     IVaultFactoryV2(_target).changeOracle(_token, _to);
+        // } else {
+        //     revert TxFailedError(_func);
+        // }
 
         emit Execute(
             txId,
@@ -265,4 +267,6 @@ contract TimeLock {
     function changeOwner(address _newOwner) external onlyOwner {
         policy = _newOwner;
     }
+
+    // TODO change owner on factory no queue
 }
