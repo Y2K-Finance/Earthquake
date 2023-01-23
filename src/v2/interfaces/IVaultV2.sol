@@ -2,28 +2,48 @@
 pragma solidity 0.8.17;
 
 interface IVaultV2 {
-
     // function name() external view  returns (string memory);
     // function symbol() external view  returns (string memory);
     // function asset() external view  returns (address);
 
-    // function tokenInsured() external view returns (address);
-    // function strikePrice() external view returns (int256);
+    function token() external view returns (address);
+
+    function strike() external view returns (uint256);
+
     function controller() external view returns (address);
+
     function getEpochConfig(uint256) external view returns (uint40, uint40);
+
     function totalAssets(uint256) external view returns (uint256);
 
     function idExists(uint256 _id) external view returns (bool);
+
     function idEpochEnded(uint256 _id) external view returns (bool);
+
     function idFinalTVL(uint256 _id) external view returns (uint256);
+
     function idClaimTVL(uint256 _id) external view returns (uint256);
 
-    function setEpoch(uint40 _epochBegin,  uint40 _epochEnd, uint256 _epochId) external;
+    function setEpoch(
+        uint40 _epochBegin,
+        uint40 _epochEnd,
+        uint256 _epochId
+    ) external;
+
     function endEpoch(uint256 _id) external;
+
     function setClaimTVL(uint256 _id, uint256 _amount) external;
+
     function changeController(address _controller) external;
-    function sendTokens(uint256 _id, uint256 _amount, address _receiver) external;
+
+    function sendTokens(
+        uint256 _id,
+        uint256 _amount,
+        address _receiver
+    ) external;
+
     function whiteListAddress(address _treasury) external;
+
     function setCounterPartyVault(address _counterPartyVault) external;
 
     function setEpochNull(uint256 _id) external;

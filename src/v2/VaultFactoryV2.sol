@@ -5,13 +5,16 @@ import {IVaultV2} from "./interfaces/IVaultV2.sol";
 import {VaultV2} from "./VaultV2.sol";
 import {VaultV2WETH} from "./VaultV2WETH.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import { TimeLock } from "./TimeLock.sol";
+import {TimeLock} from "./TimeLock.sol";
 
 /// @author Y2K Finance Team
 
 contract VaultFactoryV2 is Ownable {
-
     address immutable WETH;
+    bytes internal constant COLLAT = "COLLATERAL";
+    bytes internal constant PREMIUM = "PREMIUM";
+    bytes internal constant CSYMBOL = "cY2K";
+    bytes internal constant PSYMBOL = "pY2K";
     /*//////////////////////////////////////////////////////////////
                                 Storage
     //////////////////////////////////////////////////////////////*/
@@ -28,6 +31,26 @@ contract VaultFactoryV2 is Ownable {
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
+    struct MarketConfigurationCalldata {
+        address token;
+        uint256 strike;
+        address oracle;
+        address underlyingAsset;
+        string name;
+        string tokenURI;
+        address controller;
+    }
+
+    struct MarketConfiguration {
+        address underlyingAsset;
+        string name;
+        string symbol;
+        string tokenURI;
+        address token;
+        uint256 strike;
+        address controller;
+    }
+
     struct EpochConfiguration {
         uint40 epochBegin;
         uint40 epochEnd;
@@ -44,12 +67,9 @@ contract VaultFactoryV2 is Ownable {
     /** @notice Contract constructor
      * @param _policy Admin address address
      */
-    constructor(
-        address _policy,
-        address _weth
-    ) {
-        if(_policy == address(0)) revert AddressZero();
-        if(_weth == address(0)) revert AddressZero();
+    constructor(address _policy, address _weth) {
+        if (_policy == address(0)) revert AddressZero();
+        if (_weth == address(0)) revert AddressZero();
         WETH = _weth;
         timelocker = new TimeLock(_policy);
     }
@@ -59,57 +79,58 @@ contract VaultFactoryV2 is Ownable {
     //////////////////////////////////////////////////////////////*/
     /**
     @notice Function to create two new vaults, premium and collateral, with the respective params, and storing the oracle for the token provided
-    @param _token Address of the oracle to lookup the price in chainlink oracles
-    @param _strikePrice uint256 representing the price to trigger the depeg event, needs to be 18 decimals
-    @param  _oracle Address representing the smart contract to lookup the price of the given _token param
-    @return premium Address of the deployed premium vault
-    @return collateral Address of the deployed collateral vault
+    @param  _marketCalldata MarketConfigurationCalldata struct with the market params
+    @return premium address of the premium vault
+    @return collateral address of the collateral vault
+    @return marketId uint256 of the marketId
      */
-    function createNewMarket(
-        address _token,
-        int256 _strikePrice,
-        address _oracle,
-        address _underlyingAsset,
-        string memory _name,
-        string memory _tokenURI,
-        address _controller
-    ) public 
+    function createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
+        external
         onlyOwner
-        controllerIsWhitelisted(_controller)
-     returns (address premium, address collateral, uint256 marketId) {
+        returns (
+            address premium,
+            address collateral,
+            uint256 marketId
+        )
+    {
+        if (!controllers[_marketCalldata.controller]) revert ControllerNotSet();
+        if (_marketCalldata.token == address(0)) revert AddressZero();
+        if (_marketCalldata.oracle == address(0)) revert AddressZero();
+        if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
+        if (_marketCalldata.controller == address(0)) revert AddressZero();
 
-        if(_token == address(0)) revert AddressZero();
-        if(_oracle == address(0)) revert AddressZero();
-        if(_underlyingAsset == address(0)) revert AddressZero();
-        if(_controller == address(0)) revert AddressZero();
-
-        if (tokenToOracle[_token] == address(0)) {
-                tokenToOracle[_token] = _oracle;
+        if (tokenToOracle[_marketCalldata.token] == address(0)) {
+            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
         }
 
-        uint256 marketId = getMarketId(_token, _strikePrice);
-        if(marketIdToVaults[marketId][0] != address(0)) revert MarketAlreadyExists();
+        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
+        if (marketIdToVaults[marketId][0] != address(0))
+            revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
-        address premium = _deployVault(
-            _underlyingAsset,
-            string(abi.encodePacked(_name, "PREMIUM")),
-            "pY2K",
-            _tokenURI,
-            _token,
-            _strikePrice,
-            _controller
+        premium = _deployVault(
+            MarketConfiguration(
+                _marketCalldata.underlyingAsset,
+                string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
+                string(PSYMBOL),
+                _marketCalldata.tokenURI,
+                _marketCalldata.token,
+                _marketCalldata.strike,
+                _marketCalldata.controller
+            )
         );
 
         // y2kUSDC_99*COLLATERAL
-        address collateral = _deployVault(
-             _underlyingAsset,
-            string(abi.encodePacked(_name, "COLLATERAL")),
-            "cY2K",
-            _tokenURI,
-            _token,
-            _strikePrice,
-            _controller
+        collateral = _deployVault(
+            MarketConfiguration(
+                _marketCalldata.underlyingAsset,
+                string(abi.encodePacked(_marketCalldata.name, COLLAT)),
+                string(CSYMBOL),
+                _marketCalldata.tokenURI,
+                _marketCalldata.token,
+                _marketCalldata.strike,
+                _marketCalldata.controller
+            )
         );
 
         //set counterparty vault
@@ -122,11 +143,11 @@ contract VaultFactoryV2 is Ownable {
             marketId,
             premium,
             collateral,
-            _underlyingAsset,
-            _token,
-            _name,
-            _strikePrice,
-            _controller
+            _marketCalldata.underlyingAsset,
+            _marketCalldata.token,
+            _marketCalldata.name,
+            _marketCalldata.strike,
+            _marketCalldata.controller
         );
 
         return (premium, collateral, marketId);
@@ -145,18 +166,19 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochEnd,
         uint16 _withdrawalFee
     ) public onlyOwner returns (uint256 epochId) {
-
         address[2] memory vaults = marketIdToVaults[_marketId];
-    
+
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
             revert MarketDoesNotExist(_marketId);
         }
 
         if (_withdrawalFee == 0) revert FeeCannotBe0();
 
-        if(IVaultV2(vaults[0]).controller() == address(0)) revert ControllerNotSet();
-        if(IVaultV2(vaults[1]).controller() == address(0)) revert ControllerNotSet();
-        
+        if (IVaultV2(vaults[0]).controller() == address(0))
+            revert ControllerNotSet();
+        if (IVaultV2(vaults[1]).controller() == address(0))
+            revert ControllerNotSet();
+
         epochId = getEpochId(_marketId, _epochBegin, _epochEnd);
 
         _setEpoch(
@@ -167,7 +189,7 @@ contract VaultFactoryV2 is Ownable {
                 _marketId,
                 epochId,
                 IVaultV2(vaults[0]),
-                IVaultV2(vaults[1]) 
+                IVaultV2(vaults[1])
             )
         );
     }
@@ -175,45 +197,40 @@ contract VaultFactoryV2 is Ownable {
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function _deployVault(
-        address _underlyingAsset,
-        string memory _name,
-        string memory _symbol,
-        string memory _tokenURI,
-        address _token,
-        int256 _strikePrice,
-        address _controller
-    ) internal returns (address _out) {  
-
-        if(_underlyingAsset == WETH) {
-            return address(
-                new VaultV2WETH(
-                _underlyingAsset,
-                _name,
-                _symbol,
-                _tokenURI,
-                _token,
-                _strikePrice,
-                _controller,
-                treasury
-                )
-            );
-        }else {
-         return address(
-            new VaultV2(
-                _underlyingAsset,
-                _name,
-                _symbol,
-                _tokenURI,
-                _token,
-                _strikePrice,
-                _controller,
-                treasury
-                )
-            );
+    function _deployVault(MarketConfiguration memory _marketConfig)
+        internal
+        returns (address)
+    {
+        if (_marketConfig.underlyingAsset == WETH) {
+            return
+                address(
+                    new VaultV2WETH(
+                        _marketConfig.underlyingAsset,
+                        _marketConfig.name,
+                        _marketConfig.symbol,
+                        _marketConfig.tokenURI,
+                        _marketConfig.token,
+                        _marketConfig.strike,
+                        _marketConfig.controller,
+                        treasury
+                    )
+                );
+        } else {
+            return
+                address(
+                    new VaultV2(
+                        _marketConfig.underlyingAsset,
+                        _marketConfig.name,
+                        _marketConfig.symbol,
+                        _marketConfig.tokenURI,
+                        _marketConfig.token,
+                        _marketConfig.strike,
+                        _marketConfig.controller,
+                        treasury
+                    )
+                );
         }
     }
-
 
     function _setEpoch(EpochConfiguration memory _epochConfig) internal {
         _epochConfig.premium.setEpoch(
@@ -237,9 +254,8 @@ contract VaultFactoryV2 is Ownable {
             _epochConfig.epochEnd,
             address(_epochConfig.premium),
             address(_epochConfig.collateral),
-            _epochConfig.premium.tokenInsured(),
-            _epochConfig.premium.name(),
-            _epochConfig.premium.strikePrice(),
+            _epochConfig.premium.token(),
+            _epochConfig.premium.strike(),
             _epochConfig.withdrawalFee
         );
     }
@@ -251,17 +267,16 @@ contract VaultFactoryV2 is Ownable {
      */
     function whitelistController(address _controller) public {
         if (_controller == address(0)) revert AddressZero();
-        if(msg.sender == owner() && !adminSetController) {
+        if (msg.sender == owner() && !adminSetController) {
             controllers[_controller] = controllers[_controller];
             adminSetController = true;
-        }else if(msg.sender == address(timelocker)) {
-             controllers[_controller] = !controllers[_controller];
-             if(!adminSetController) adminSetController = true;
+        } else if (msg.sender == address(timelocker)) {
+            controllers[_controller] = !controllers[_controller];
+            if (!adminSetController) adminSetController = true;
         } else {
             revert NotAuthorized();
         }
     }
-
 
     /**
     @notice Admin function, whitelists an address on vault for sendTokens function
@@ -275,7 +290,7 @@ contract VaultFactoryV2 is Ownable {
         if (_treasury == address(0)) revert AddressZero();
 
         address[2] memory vaults = marketIdToVaults[_marketId];
-    
+
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
             revert MarketDoesNotExist(_marketId);
         }
@@ -306,10 +321,10 @@ contract VaultFactoryV2 is Ownable {
         onlyTimeLocker
         controllerIsWhitelisted(_controller)
     {
-        if(_controller == address(0)) revert AddressZero();
+        if (_controller == address(0)) revert AddressZero();
 
         address[2] memory vaults = marketIdToVaults[_marketId];
-    
+
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
             revert MarketDoesNotExist(_marketId);
         }
@@ -362,17 +377,12 @@ contract VaultFactoryV2 is Ownable {
         return marketIdToVaults[index];
     }
 
-
     /**
     @notice Function to retrieve the fee for a given epoch
     @param epochId uint256 of the epoch
     @return fee uint16 of the fee
      */
-    function getEpochFee(uint256 epochId)
-        public
-        view
-        returns (uint16 fee)
-    {
+    function getEpochFee(uint256 epochId) public view returns (uint16 fee) {
         return epochFee[epochId];
     }
 
@@ -382,9 +392,9 @@ contract VaultFactoryV2 is Ownable {
     @param strikePrice uint256 of the strike price
     @return marketId uint256 of the marketId
      */
-    function getMarketId(address token, int256 strikePrice)
+    function getMarketId(address token, uint256 strikePrice)
         public
-        view
+        pure
         returns (uint256 marketId)
     {
         return uint256(keccak256(abi.encodePacked(token, strikePrice)));
@@ -397,12 +407,15 @@ contract VaultFactoryV2 is Ownable {
     @param epochEnd uint40 of the epoch end
     @return epochId uint256 of the epochId
      */
-    function getEpochId(uint256 marketId, uint40 epochBegin, uint40 epochEnd)
-        public
-        view
-        returns (uint256 epochId)
-    {
-        return uint256(keccak256(abi.encodePacked(marketId, epochBegin, epochEnd)));
+    function getEpochId(
+        uint256 marketId,
+        uint40 epochBegin,
+        uint40 epochEnd
+    ) public pure returns (uint256 epochId) {
+        return
+            uint256(
+                keccak256(abi.encodePacked(marketId, epochBegin, epochEnd))
+            );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -415,7 +428,8 @@ contract VaultFactoryV2 is Ownable {
     }
 
     modifier onlyTimeLockerOrOwner() {
-        if (msg.sender != address(timelocker) && msg.sender != owner()) revert NotTimeLockerOrOwner();
+        if (msg.sender != address(timelocker) && msg.sender != owner())
+            revert NotTimeLockerOrOwner();
         _;
     }
 
@@ -423,7 +437,6 @@ contract VaultFactoryV2 is Ownable {
         if (!controllers[_controller]) revert ControllerNotSet();
         _;
     }
-
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -447,14 +460,14 @@ contract VaultFactoryV2 is Ownable {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Market is created when event is emitted
-        * @param marketId market id
-        * @param premium premium vault address
-        * @param collateral collateral vault address
-        * @param underlyingAsset underlying asset address
-        * @param token Token address to monitor strike price
-        * @param name Market name
-        * @param strikePrice Strike price
-        * @param controller Controller address
+     * @param marketId market id
+     * @param premium premium vault address
+     * @param collateral collateral vault address
+     * @param underlyingAsset underlying asset address
+     * @param token Token address to monitor strike price
+     * @param name Market name
+     * @param strike Strike price
+     * @param controller Controller address
      */
     event MarketCreated(
         uint256 indexed marketId,
@@ -463,21 +476,20 @@ contract VaultFactoryV2 is Ownable {
         address underlyingAsset,
         address token,
         string name,
-        int256 strikePrice,
+        uint256 strike,
         address controller
     );
 
     /** @notice event is emitted when epoch is created
-     * @param mIndex Current market index
+     * @param epochId epoch id derrived out of market id, start and end epoch
+     * @param marketId Current market index
      * @param startEpoch Epoch start time
      * @param endEpoch Epoch end time
-     * @param withdrawalFee Withdrawal fee
      * @param premium premium vault address
      * @param collateral collateral vault address
      * @param token Token address
-     * @param epochId epoch id derrived out of market id, start and end epoch
-     * @param name Market name
-     * @param strikePrice Strike price
+     * @param strike Strike price
+     * @param withdrawalFee Withdrawal fee
      */
     event EpochCreated(
         uint256 indexed epochId,
@@ -487,17 +499,15 @@ contract VaultFactoryV2 is Ownable {
         address premium,
         address collateral,
         address token,
-        string name,
-        int256 strikePrice,
+        uint256 strike,
         uint16 withdrawalFee
     );
 
-
     /** @notice Controller is changed when event is emitted
-        * @param marketId Target market index
-        * @param controller Target controller address
-        * @param premium Target premium vault address
-        * @param collateral Target collateral vault address
+     * @param marketId Target market index
+     * @param controller Target controller address
+     * @param premium Target premium vault address
+     * @param collateral Target collateral vault address
      */
     event ControllerChanged(
         uint256 indexed marketId,
@@ -512,7 +522,6 @@ contract VaultFactoryV2 is Ownable {
      */
     event OracleChanged(address indexed _token, address _oracle);
 
-
     /** @notice Treasury is changed when event is emitted
      * @param _treasury Treasury address
      * @param _marketId Target market index
@@ -523,5 +532,4 @@ contract VaultFactoryV2 is Ownable {
      * @param _treasury Treasury address
      */
     event TreasurySet(address _treasury);
-
 }
