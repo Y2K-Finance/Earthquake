@@ -4,25 +4,27 @@ pragma solidity 0.8.17;
 import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {SemiFungibleVault} from "./SemiFungibleVault.sol";
-import { IVaultV2 } from "./interfaces/IVaultV2.sol";
+import "./SemiFungibleVault.sol";
+import {IVaultV2} from "./interfaces/IVaultV2.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from  "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
+    SafeERC20
+} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 /// @author Y2K Finance Team
 
-contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {   
+contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
-    
+
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
     //////////////////////////////////////////////////////////////*/
 
     // Earthquake parameters
-    address public tokenInsured;
-    int256 public strikePrice;
+    address public token;
+    uint256 public strike;
     uint256 public marketId;
     // Earthquake bussiness logic
     address public counterPartyVault;
@@ -87,7 +89,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /** @notice You can only call functions that use this modifier before the current epoch has started
      */
     modifier epochHasNotStarted(uint256 _id) {
-        if (block.timestamp > epochConfig[_id].epochBegin ) revert EpochAlreadyStarted();
+        if (block.timestamp > epochConfig[_id].epochBegin)
+            revert EpochAlreadyStarted();
         _;
     }
 
@@ -110,24 +113,24 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     constructor(
-         address _assetAddress,
+        address _assetAddress,
         string memory _name,
         string memory _symbol,
         string memory _tokenURI,
         address _token,
-        int256 _strikePrice,
+        uint256 _strike,
         address _controller,
         address _treasury
     ) SemiFungibleVault(IERC20(_assetAddress), _name, _symbol, _tokenURI) {
         if (_controller == address(0)) revert AddressZero();
         if (_token == address(0)) revert AddressZero();
         if (_assetAddress == address(0)) revert AddressZero();
-        if(_treasury == address(0)) revert AddressZero();
-            tokenInsured = _token;
-            strikePrice = _strikePrice;
-            factory = msg.sender;
-            controller = _controller;
-            whitelistedAddresses[_treasury] = true;
+        if (_treasury == address(0)) revert AddressZero();
+        token = _token;
+        strike = _strike;
+        factory = msg.sender;
+        controller = _controller;
+        whitelistedAddresses[_treasury] = true;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -143,9 +146,19 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         uint256 _id,
         uint256 _assets,
         address _receiver
-    ) public epochIdExists(_id) epochHasNotStarted(_id) nonReentrant override {
+    )
+        public
+        override(SemiFungibleVault)
+        epochIdExists(_id)
+        epochHasNotStarted(_id)
+        nonReentrant
+    {
         if (_receiver == address(0)) revert AddressZero();
-        SemiFungibleVault.asset.safeTransferFrom(msg.sender, address(this), _assets);
+        SemiFungibleVault.asset.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _assets
+        );
 
         _mint(_receiver, _id, _assets, EMPTY);
 
@@ -167,15 +180,17 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         address _owner
     )
         external
+        override(SemiFungibleVault)
         epochHasEnded(_id)
         epochIdExists(_id)
-        override
         returns (uint256 shares)
     {
         if (_receiver == address(0)) revert AddressZero();
 
-        if (msg.sender != _owner && isApprovedForAll(_owner, msg.sender) == false)
-            revert OwnerDidNotAuthorize(msg.sender, _owner);
+        if (
+            msg.sender != _owner &&
+            isApprovedForAll(_owner, msg.sender) == false
+        ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
         _burn(_owner, _id, _assets);
 
@@ -187,10 +202,17 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
             entitledShares = _assets;
         }
         if (entitledShares > 0) {
-          SemiFungibleVault.asset.safeTransfer(_receiver, entitledShares);
+            SemiFungibleVault.asset.safeTransfer(_receiver, entitledShares);
         }
 
-        emit Withdraw(msg.sender, _receiver, _owner, _id, _assets, entitledShares);
+        emit Withdraw(
+            msg.sender,
+            _receiver,
+            _owner,
+            _id,
+            _assets,
+            entitledShares
+        );
 
         return entitledShares;
     }
@@ -206,10 +228,10 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function totalAssets(uint256 _id)
         public
         view
-        epochIdExists(_id)
-        override
+        override(SemiFungibleVault, IVaultV2)
         returns (uint256)
     {
+        // epochIdExists(_id)
         return totalSupply(_id);
     }
 
@@ -236,11 +258,10 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
 
         epochConfig[_epochId] = EpochConfig({
             epochBegin: _epochBegin,
-            epochEnd: _epochEnd       
+            epochEnd: _epochEnd
         });
         epochs.push(_epochId);
     }
-
 
     /**
     @notice Factory function, changes controller address
@@ -264,8 +285,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     @notice Factory function, changes _counterPartyVault address
     @param _counterPartyVault New _counterPartyVault address
      */
-    function setCounterPartyVault(address _counterPartyVault) external onlyFactory {
-         if (_counterPartyVault == address(0)) revert AddressZero();
+    function setCounterPartyVault(address _counterPartyVault)
+        external
+        onlyFactory
+    {
+        if (_counterPartyVault == address(0)) revert AddressZero();
         counterPartyVault = _counterPartyVault;
     }
 
@@ -278,7 +302,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     @param  _id identifier of the epoch
      */
     function endEpoch(uint256 _id) external onlyController epochIdExists(_id) {
-        if(idEpochEnded[_id]) revert EpochAlreadyEnded();
+        if (idEpochEnded[_id]) revert EpochAlreadyEnded();
         idEpochEnded[_id] = true;
         idFinalTVL[_id] = totalAssets(_id);
     }
@@ -288,21 +312,23 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     @notice Controller can call after the epoch has ended, this function allows the transfer of tokens to the counterparty vault or treasury. Controller is trusted to do correct accounting. 
     @param  _id uint256 identifier of the epoch
     @param _amount amount that is send to destination
-    @param _destination address of counterparty vault or treasury
+    @param _receiver address of counterparty vault or treasury
     */
-    function sendTokens(uint256 _id,uint256 _amount, address _receiver)
-        external
-        onlyController
-        epochIdExists(_id)
-        epochHasEnded(_id)
-    {
-        if(_amount > idFinalTVL[_id]) revert AmountExceedsTVL();
-        if(epochAccounting[_id] + _amount > idFinalTVL[_id]) revert AmountExceedsTVL();
-        if (!whitelistedAddresses[_receiver]) revert DestinationNotAuthorized(_receiver);
-        if(_receiver != counterPartyVault) revert DestinationNotAuthorized(_receiver);
+    function sendTokens(
+        uint256 _id,
+        uint256 _amount,
+        address _receiver
+    ) external onlyController epochIdExists(_id) epochHasEnded(_id) {
+        if (_amount > idFinalTVL[_id]) revert AmountExceedsTVL();
+        if (epochAccounting[_id] + _amount > idFinalTVL[_id])
+            revert AmountExceedsTVL();
+        if (!whitelistedAddresses[_receiver])
+            revert DestinationNotAuthorized(_receiver);
+        if (_receiver != counterPartyVault)
+            revert DestinationNotAuthorized(_receiver);
         epochAccounting[_id] += _amount;
         SemiFungibleVault.asset.safeTransfer(_receiver, _amount);
-    } 
+    }
 
     /**
     @notice Controller can call after the epoch has ended, this function stores the value that the holders of the epoch are entiteld to. The value is determined on the controller side
@@ -318,12 +344,16 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         idClaimTVL[_id] = _claimTVL;
     }
 
-
     /**
     @notice This function is called by the controller if the epoch has started, but the counterparty vault has no value. In this case the users can withdraw their deposit.
     @param  _id uint256 identifier of the epoch
      */
-    function setEpochNull(uint256 _id) public onlyController epochIdExists(_id) epochHasEnded(_id) {
+    function setEpochNull(uint256 _id)
+        public
+        onlyController
+        epochIdExists(_id)
+        epochHasEnded(_id)
+    {
         epochNull[_id] = true;
     }
 
@@ -338,14 +368,13 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function previewWithdraw(uint256 _id, uint256 _assets)
         public
         view
-        override
+        override(SemiFungibleVault)
         returns (uint256 entitledAmount)
     {
         // entitledAmount amount is derived from the claimTVL and the finalTVL
         // if user deposited 1000 assets and the claimTVL is 50% lower than idFinalTVL, the user is entitled to 500 assets
         // if user deposited 1000 assets and the claimTVL is 50% higher than idFinalTVL, the user is entitled to 1500 assets
         entitledAmount = _assets.mulDivUp(idClaimTVL[_id], idFinalTVL[_id]);
-       
     }
 
     /** @notice Lookup total epochs length
@@ -354,45 +383,40 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         return epochs.length;
     }
 
-    /** @notice Lookup all set epochs 
+    /** @notice Lookup all set epochs
      */
-    function getAllEpochs() public view returns (uint256[] memory ) {
+    function getAllEpochs() public view returns (uint256[] memory) {
         return epochs;
     }
-
 
     /** @notice Lookup epoch begin and end
         @param _id id hashed from marketIndex, epoch begin and end and casted to uint256;
      */
-    function getEpochConfig(uint256 _id)
-        public
-        view
-        returns (uint40, uint40)
-    {
+    function getEpochConfig(uint256 _id) public view returns (uint40, uint40) {
         return (epochConfig[_id].epochBegin, epochConfig[_id].epochEnd);
     }
 
-    function controller() public view returns (address) {
-        return controller;
-    }
+    // function controller() public view returns (address) {
+    //     return controller;
+    // }
 
-    function name() public view override returns (string memory) {
-        return SemiFungibleVault.name;
-    }
+    // function name() public view override returns (string memory) {
+    //     return SemiFungibleVault.name;
+    // }
 
-    function symbol() public view override returns (string memory) {
-        return SemiFungibleVault.symbol;
-    }
+    // function symbol() public view override returns (string memory) {
+    //     return SemiFungibleVault.symbol;
+    // }
 
-    function asset() public view override returns (address) {
-        return address(SemiFungibleVault.asset);
-    }
+    // function asset() public view override returns (address) {
+    //     return address(SemiFungibleVault.asset);
+    // }
 
-    function tokenInsured() public view returns (address) {
-        return tokenInsured;
-    }
+    // function token() public view returns (address) {
+    //     return token;
+    // }
 
-    function strikePrice() public view returns (int256) {
-        return strikePrice;
-    }
+    // function strike() public view returns (int256) {
+    //     return strike;
+    // }
 }

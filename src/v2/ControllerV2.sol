@@ -6,7 +6,6 @@ import {IVaultV2} from "./interfaces/IVaultV2.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
- 
 
 /// @author Y2K Finance Team
 
@@ -42,18 +41,17 @@ contract ControllerV2 {
 
     /** @notice Depegs insurance vault when event is emitted
      * @param epochId market epoch ID
-    * @param marketId market ID
+     * @param marketId market ID
      * @param tvl TVL
-     * @param isDisaster Flag if event isDisaster
-     * @param epoch epoch
+     * @param strikeMet Flag if event isDisaster
      * @param time time
      * @param depegPrice Price that triggered depeg
      */
     event EpochResolved(
-        uint256 epochID,
+        uint256 epochId,
         uint256 marketId,
         VaultTVL tvl,
-        bool strikePriceMet,
+        bool strikeMet,
         uint256 time,
         int256 depegPrice
     );
@@ -81,7 +79,11 @@ contract ControllerV2 {
      * @param _l2Sequencer Arbitrum sequencer address
      * @param _treasury Treasury address
      */
-    constructor(address _factory, address _l2Sequencer, address _treasury) {
+    constructor(
+        address _factory,
+        address _l2Sequencer,
+        address _treasury
+    ) {
         if (_factory == address(0)) revert ZeroAddress();
 
         if (_l2Sequencer == address(0)) revert ZeroAddress();
@@ -100,7 +102,6 @@ contract ControllerV2 {
      * @param _epochId End of epoch set for market
      */
     function triggerDepeg(uint256 _marketId, uint256 _epochId) public {
-        
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
         if (vaults[0] == address(0) || vaults[1] == address(0))
@@ -111,56 +112,68 @@ contract ControllerV2 {
 
         if (premiumVault.idExists(_epochId) == false) revert EpochNotExist();
 
-        int256 price = getLatestPrice(premiumVault.tokenInsured());
+        int256 price = getLatestPrice(premiumVault.token());
 
-        if (premiumVault.strikePrice() <= price)
-            revert PriceNotAtStrikePrice(
-                price
-            );
+        if (int256(premiumVault.strike()) <= price)
+            revert PriceNotAtStrikePrice(price);
 
-        (uint40 epochStart, uint40 epochEnd) = premiumVault.getEpochConfig(_epochId);
+        (uint40 epochStart, uint40 epochEnd) = premiumVault.getEpochConfig(
+            _epochId
+        );
 
-        if (uint256(epochStart) > block.timestamp)
-            revert EpochNotStarted();
+        if (uint256(epochStart) > block.timestamp) revert EpochNotStarted();
 
         if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
         if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.idEpochEnded(_epochId))
+            revert EpochFinishedAlready();
 
         premiumVault.endEpoch(_epochId);
         collateralVault.endEpoch(_epochId);
-        
+
         uint256 epochFee = vaultFactory.getEpochFee(_epochId);
 
         uint256 premiumTVL = premiumVault.idFinalTVL(_epochId);
         uint256 collateralTVL = collateralVault.idFinalTVL(_epochId);
 
         uint256 premiumFee = calculateWithdrawalFeeValue(premiumTVL, epochFee);
-        uint256 collateralFee = calculateWithdrawalFeeValue(collateralTVL, epochFee);
+        uint256 collateralFee = calculateWithdrawalFeeValue(
+            collateralTVL,
+            epochFee
+        );
 
-        uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
-        uint256 collateralTVLAfterFee = collateralTVL - collateralFee;
+        // avoid stack too deep error by avoiding local variables
+        // uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
+        // uint256 collateralTVLAfterFee = collateralTVL - collateralFee;
 
-        premiumVault.setClaimTVL(_epochId, collateralTVLAfterFee);
-        collateralVault.setClaimTVL(_epochId, premiumTVLAfterFee);
-        
+        premiumVault.setClaimTVL(_epochId, collateralTVL - collateralFee);
+        collateralVault.setClaimTVL(_epochId, premiumTVL - premiumFee);
+
         // send fees to treasury and remaining TVL to respective counterparty vault
-        // strike price reached so premium is entitled to collateralTVLAfterFee
+        // strike price reached so premium is entitled to collateralTVL - collateralFee
         premiumVault.sendTokens(_epochId, premiumFee, treasury);
-        premiumVault.sendTokens(_epochId, premiumTVLAfterFee, address(collateralVault));
-        // strike price is reached so collateral is still entitled to premiumTVLAfterFee but looses collateralTVL
+        premiumVault.sendTokens(
+            _epochId,
+            premiumTVL - premiumFee,
+            address(collateralVault)
+        );
+        // strike price is reached so collateral is still entitled to premiumTVL - premiumFee but looses collateralTVL
         collateralVault.sendTokens(_epochId, collateralFee, treasury);
-        collateralVault.sendTokens(_epochId, collateralTVLAfterFee, address(premiumVault));
+        collateralVault.sendTokens(
+            _epochId,
+            collateralTVL - collateralFee,
+            address(premiumVault)
+        );
 
         emit EpochResolved(
             _epochId,
             _marketId,
             VaultTVL(
-            premiumTVLAfterFee,
+            premiumTVL - premiumFee,
             collateralTVL,
-            collateralTVLAfterFee,
+            collateralTVL - collateralFee,
             premiumTVL
             ),
             true,
@@ -171,10 +184,9 @@ contract ControllerV2 {
 
     /** @notice Trigger epoch end without depeg event
      * @param _marketId Target market index
-     * @param epochEnd End of epoch set for market
+     * @param _epochId End of epoch set for market
      */
     function triggerEndEpoch(uint256 _marketId, uint256 _epochId) public {
-
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
         if (vaults[0] == address(0) || vaults[1] == address(0))
@@ -194,7 +206,8 @@ contract ControllerV2 {
 
         //require this function cannot be called twice in the same epoch for the same vault
         if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.idEpochEnded(_epochId))
+            revert EpochFinishedAlready();
 
         premiumVault.endEpoch(_epochId);
         collateralVault.endEpoch(_epochId);
@@ -208,29 +221,25 @@ contract ControllerV2 {
 
         uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
         uint256 collateralTVLAfterFee = collateralTVL + premiumTVLAfterFee;
-        
+
         // strike price is not reached so premium is entiled to 0
         premiumVault.setClaimTVL(_epochId, 0);
         // strike price is not reached so collateral is entitled to collateralTVL + premiumTVLAfterFee
-        collateralVault.setClaimTVL(
-            _epochId,
-           collateralTVLAfterFee
-        );
+        collateralVault.setClaimTVL(_epochId, collateralTVLAfterFee);
 
         // send premium fees to treasury and remaining TVL to collateral vault
         premiumVault.sendTokens(_epochId, premiumFee, treasury);
         // strike price reached so collateral is entitled to collateralTVLAfterFee
-        premiumVault.sendTokens(_epochId, premiumTVLAfterFee, address(collateralVault));
-          
+        premiumVault.sendTokens(
+            _epochId,
+            premiumTVLAfterFee,
+            address(collateralVault)
+        );
+
         emit EpochResolved(
             _epochId,
             _marketId,
-            VaultTVL(
-                collateralTVLAfterFee,
-                collateralTVL,
-                0,
-                premiumTVL
-            ),
+            VaultTVL(collateralTVLAfterFee, collateralTVL, 0, premiumTVL),
             false,
             block.timestamp,
             0
@@ -261,7 +270,8 @@ contract ControllerV2 {
 
         //require this function cannot be called twice in the same epoch for the same vault
         if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.idEpochEnded(_epochId))
+            revert EpochFinishedAlready();
 
         //set claim TVL to 0 if total assets are 0
         if (premiumVault.totalAssets(_epochId) == 0) {
@@ -269,14 +279,20 @@ contract ControllerV2 {
             collateralVault.endEpoch(_epochId);
 
             premiumVault.setClaimTVL(_epochId, 0);
-            collateralVault.setClaimTVL(_epochId, collateralVault.idFinalTVL(_epochId));
+            collateralVault.setClaimTVL(
+                _epochId,
+                collateralVault.idFinalTVL(_epochId)
+            );
 
             collateralVault.setEpochNull(_epochId);
         } else if (collateralVault.totalAssets(_epochId) == 0) {
             premiumVault.endEpoch(_epochId);
             collateralVault.endEpoch(_epochId);
 
-            premiumVault.setClaimTVL(_epochId, premiumVault.idFinalTVL(_epochId));
+            premiumVault.setClaimTVL(
+                _epochId,
+                premiumVault.idFinalTVL(_epochId)
+            );
             collateralVault.setClaimTVL(_epochId, 0);
 
             premiumVault.setEpochNull(_epochId);
@@ -285,12 +301,12 @@ contract ControllerV2 {
         emit NullEpoch(
             _epochId,
             _marketId,
-             VaultTVL(
-            collateralVault.idClaimTVL(_epochId),
-            collateralVault.idFinalTVL(_epochId),
-            premiumVault.idClaimTVL(_epochId),
-            premiumVault.idFinalTVL(_epochId)
-             ),
+            VaultTVL(
+                collateralVault.idClaimTVL(_epochId),
+                collateralVault.idFinalTVL(_epochId),
+                premiumVault.idClaimTVL(_epochId),
+                premiumVault.idFinalTVL(_epochId)
+            ),
             block.timestamp
         );
     }
@@ -359,8 +375,7 @@ contract ControllerV2 {
         return address(vaultFactory);
     }
 
-
-   function calculateWithdrawalFeeValue(uint256 amount, uint256 fee)
+    function calculateWithdrawalFeeValue(uint256 amount, uint256 fee)
         public
         pure
         returns (uint256 feeValue)
@@ -368,5 +383,4 @@ contract ControllerV2 {
         // 0.5% = multiply by 1000 then divide by 5
         return amount.mulDivUp(fee, 1000);
     }
-
 }

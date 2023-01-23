@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from  "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
+    SafeERC20
+} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {
     ERC1155Supply
 } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {ISemiFungibleVault} from "./interfaces/ISemiFungibleVault.sol";
 
 /// @author MiguelBits
 /// @author SlumDog
 
-abstract contract SemiFungibleVault is ERC1155Supply {
-   using SafeERC20 for IERC20;
+abstract contract SemiFungibleVault is ISemiFungibleVault, ERC1155Supply {
+    using SafeERC20 for IERC20;
 
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
@@ -23,40 +24,6 @@ abstract contract SemiFungibleVault is ERC1155Supply {
     string public name;
     string public symbol;
     bytes internal constant EMPTY = "";
-
-    /*///////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Deposit into vault when event is emitted
-     * @param caller Address of deposit caller
-     * @param owner receiver who will own of the tokens representing this deposit
-     * @param id Vault id
-     * @param assets Amount of owner assets to deposit into vault
-     */
-    event Deposit(
-        address caller,
-        address indexed owner,
-        uint256 indexed id,
-        uint256 assets
-    );
-
-    /** @notice Withdraw from vault when event is emitted
-     * @param caller Address of withdraw caller
-     * @param receiver Address of receiver of assets
-     * @param owner Owner of shares
-     * @param id Vault id
-     * @param assets Amount of owner assets to withdraw from vault
-     * @param shares Amount of owner shares to burn
-     */
-    event Withdraw(
-        address caller,
-        address receiver,
-        address indexed owner,
-        uint256 indexed id,
-        uint256 assets,
-        uint256 shares
-    );
 
     /** @notice Contract constructor
      * @param _asset ERC20 token
