@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IVaultFactoryV2} from "./interfaces/IVaultFactoryV2.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
+import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 /// @author Y2K Finance Team
 
-contract ControllerV2 {
+contract ControllerPeggedAssetV2 {
     using FixedPointMathLib for uint256;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;

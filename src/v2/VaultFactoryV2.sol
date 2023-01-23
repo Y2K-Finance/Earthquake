@@ -10,7 +10,7 @@ import {TimeLock} from "./TimeLock.sol";
 /// @author Y2K Finance Team
 
 contract VaultFactoryV2 is Ownable {
-    address immutable WETH;
+    address immutable public WETH;
     bytes internal constant COLLAT = "COLLATERAL";
     bytes internal constant PREMIUM = "PREMIUM";
     bytes internal constant CSYMBOL = "cY2K";
@@ -67,11 +67,12 @@ contract VaultFactoryV2 is Ownable {
     /** @notice Contract constructor
      * @param _policy Admin address address
      */
-    constructor(address _policy, address _weth) {
+    constructor(address _policy, address _weth, address _treasury) {
         if (_policy == address(0)) revert AddressZero();
         if (_weth == address(0)) revert AddressZero();
         WETH = _weth;
         timelocker = new TimeLock(_policy);
+        treasury = _treasury;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -97,7 +98,6 @@ contract VaultFactoryV2 is Ownable {
         if (_marketCalldata.token == address(0)) revert AddressZero();
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
         if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
-        if (_marketCalldata.controller == address(0)) revert AddressZero();
 
         if (tokenToOracle[_marketCalldata.token] == address(0)) {
             tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
@@ -268,7 +268,7 @@ contract VaultFactoryV2 is Ownable {
     function whitelistController(address _controller) public {
         if (_controller == address(0)) revert AddressZero();
         if (msg.sender == owner() && !adminSetController) {
-            controllers[_controller] = controllers[_controller];
+            controllers[_controller] = true;
             adminSetController = true;
         } else if (msg.sender == address(timelocker)) {
             controllers[_controller] = !controllers[_controller];
