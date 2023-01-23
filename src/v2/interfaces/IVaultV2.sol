@@ -12,6 +12,8 @@ interface IVaultV2 {
 
     function controller() external view returns (address);
 
+    function counterPartyVault() external view returns (address);
+
     function getEpochConfig(uint256) external view returns (uint40, uint40);
 
     function totalAssets(uint256) external view returns (uint256);
