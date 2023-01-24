@@ -49,4 +49,6 @@ interface IVaultV2 {
     function setCounterPartyVault(address _counterPartyVault) external;
 
     function setEpochNull(uint256 _id) external;
+
+    function whitelistedAddresses(address _address) external view returns (bool);
 }

@@ -321,7 +321,7 @@ contract ControllerPeggedAssetV2 {
     function getLatestPrice(address _token)
         public
         view
-        returns (int256 nowPrice)
+        returns (int256)
     {
         (
             ,

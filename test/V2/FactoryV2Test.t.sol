@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import "./Helper.sol";
 import "../../src/v2/VaultFactoryV2.sol";
-
+import "../../src/v2/interfaces/IVaultV2.sol";
 
 contract FactoryV2Test is Helper {
       VaultFactoryV2 factory;
@@ -174,21 +174,194 @@ contract FactoryV2Test is Helper {
                 uint16(0x4)
                 );
         vm.stopPrank();
+
+        uint256 marketId = createMarketHelper();
+
+        // test revert cases
+        vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0x1)));
+            factory.createEpoch(
+                uint256(0x1),// market does not exist
+                uint40(0x2),
+                uint40(0x3),
+                uint16(0x4)
+            );
+  
+        vm.expectRevert(VaultFactoryV2.FeeCannotBe0.selector);
+            factory.createEpoch(
+                marketId,
+                uint40(0x2),
+                uint40(0x3),
+                uint16(0) // fee can not be 0
+            );
+
+        
+        // make sure epoch can not be set if controller is deprecated
+        address[2] memory vaults = factory.getVaults(marketId);
+        vm.startPrank(address(factory.timelocker()));
+            factory.whitelistController(controller);
+        vm.stopPrank();
+        vm.expectRevert(VaultFactoryV2.ControllerNotSet.selector);
+            factory.createEpoch(
+                marketId,
+                uint40(0x2),
+                uint40(0x3),
+                uint16(0x4)
+            );
+        vm.startPrank(address(factory.timelocker()));
+            factory.whitelistController(controller);
+        vm.stopPrank();
+
+        vm.expectRevert(VaultV2.EpochEndMustBeAfterBegin.selector);
+            factory.createEpoch(
+                marketId,
+                uint40(0x5), // begin must be before end
+                uint40(0x3),
+                uint16(0x4)
+            );
+
+       uint256 epochId =  factory.createEpoch(
+                marketId,
+                uint40(0x2),
+                uint40(0x3),
+                uint16(0x4)
+       );
+       vm.expectRevert(VaultV2.EpochAlreadyExists.selector);
+            factory.createEpoch(
+                marketId,
+                uint40(0x2),
+                uint40(0x3),
+                uint16(0x4)
+            );
+
+        // test success case
+        uint40 begin = uint40(0x3);
+        uint40 end = uint40(0x4);
+        uint16 fee = uint16(0x5);
+
+        uint256 epochId2 =  factory.createEpoch(
+                marketId,
+                begin,
+                end,
+                fee
+       );
+
+        // test if epoch fee is correct
+        uint16 fetchedFee = factory.getEpochFee(epochId2);
+        assertEq(fee, fee);
+        
+        // test if epoch config is correct
+        (uint40 fetchedBegin, uint40 fetchedEnd) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
+        assertEq(begin, fetchedBegin);
+        assertEq(end, fetchedEnd);
+
+        // test if epoch is added to market
+        uint256[] memory epochs = factory.getEpochsByMarketId(marketId);
+        assertEq(epochs[0], epochId);
+        assertEq(epochs[1], epochId2);
+
     }
 
-    // function testChangeTreasury() {
+    function testChangeTreasuryOnVault() public  {
+        // test revert cases
+        uint256 marketId = createMarketHelper();
 
-    // }
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+            factory.changeTreasury(uint256(0x2), address(0x20));
+
+        vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0x2)));
+                factory.changeTreasury(uint256(0x2), address(0x20));
+            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
+                factory.changeTreasury(marketId, address(0));
+
+            // test success case
+            factory.changeTreasury(marketId, address(0x20));
+            address[2] memory vaults = factory.getVaults(marketId);
+            assertTrue(IVaultV2(vaults[0]).whitelistedAddresses(address(0x20)));
+            assertTrue(IVaultV2(vaults[1]).whitelistedAddresses(address(0x20)));
+        vm.stopPrank();
+    }
     
-    // function testSetTreasury() {
+    function testSetTreasury() public {
+        // test revert cases
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+            factory.setTreasury(address(0x20));
 
-    // }
+        vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
+                factory.setTreasury(address(0));
 
-    // function testChangeController() {
+            // test success case
+            factory.setTreasury(address(0x20));
+            assertEq(factory.treasury(), address(0x20));
+        vm.stopPrank();
+    }
+
+    function testChangeController() public {
+        address newController = address(0x20);
+        // test revert cases
+        uint256 marketId = createMarketHelper();
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+            factory.changeController(marketId, newController);
         
-    // }
+        vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(VaultFactoryV2.ControllerNotSet.selector);
+                factory.changeController(marketId, newController);
+            factory.whitelistController(newController);
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0x1)));
+                factory.changeController(uint256(0x1), newController);
+       
 
-    // function testChangeOracle() {
+            // test success case
+            factory.changeController(marketId, newController);
+            address[2] memory vaults = factory.getVaults(marketId);
+            assertEq(IVaultV2(vaults[0]).controller(), newController);
+            assertEq(IVaultV2(vaults[1]).controller(), newController);
+        vm.stopPrank();
+    }
 
-    // }
+    function testChangeOracle() public {
+        // test revert cases
+        address token = address(0x1);
+        // address oldOracle = address(0x3);
+        address newOracle = address(0x4);
+
+        createMarketHelper();
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+            factory.changeOracle(token,newOracle);
+
+        vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
+                factory.changeOracle(address(0), newOracle);
+            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
+                factory.changeOracle(token, address(0));
+       
+
+            // test success case
+            factory.changeOracle(token, newOracle);
+        vm.stopPrank();
+        assertEq(factory.tokenToOracle(token), newOracle); 
+    }
+
+    function createMarketHelper() public returns(uint256 marketId){
+
+        address token = address(0x1);
+        address oracle = address(0x3);
+        address underlying = address(0x4);
+        uint256 strike = uint256(0x2);
+        string memory name = string("test");
+        string memory symbol = string("tst");
+
+        (, ,marketId) = factory.createNewMarket(
+             VaultFactoryV2.MarketConfigurationCalldata(
+                token,
+                strike,
+                oracle,
+                underlying,
+                name,
+                symbol,
+                controller
+            )
+        );
+    }
 }

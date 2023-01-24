@@ -174,9 +174,9 @@ contract VaultFactoryV2 is Ownable {
 
         if (_withdrawalFee == 0) revert FeeCannotBe0();
 
-        if (IVaultV2(vaults[0]).controller() == address(0))
+        if (!controllers[IVaultV2(vaults[0]).controller()])
             revert ControllerNotSet();
-        if (IVaultV2(vaults[1]).controller() == address(0))
+        if (!controllers[IVaultV2(vaults[1]).controller()])
             revert ControllerNotSet();
 
         epochId = getEpochId(_marketId, _epochBegin, _epochEnd);
@@ -283,7 +283,7 @@ contract VaultFactoryV2 is Ownable {
     @param _treasury Treasury address
     @param  _marketId Target market index
      */
-    function changeTreasury(address _treasury, uint256 _marketId)
+    function changeTreasury(uint256 _marketId, address _treasury)
         public
         onlyTimeLocker
     {
@@ -378,6 +378,19 @@ contract VaultFactoryV2 is Ownable {
     }
 
     /**
+    @notice Function to retrieve the epochId for a given marketId
+    @param marketId marketId
+    @return epochIds uint256 array of epochIds
+     */
+    function getEpochsByMarketId(uint256 marketId)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        return marketIdToEpochs[marketId];
+    }
+
+    /**
     @notice Function to retrieve the fee for a given epoch
     @param epochId uint256 of the epoch
     @return fee uint16 of the fee
@@ -427,12 +440,6 @@ contract VaultFactoryV2 is Ownable {
         _;
     }
 
-    modifier onlyTimeLockerOrOwner() {
-        if (msg.sender != address(timelocker) && msg.sender != owner())
-            revert NotTimeLockerOrOwner();
-        _;
-    }
-
     modifier controllerIsWhitelisted(address _controller) {
         if (!controllers[_controller]) revert ControllerNotSet();
         _;
@@ -448,7 +455,6 @@ contract VaultFactoryV2 is Ownable {
     error AddressFactoryNotInController();
     error ControllerNotSet();
     error NotTimeLocker();
-    error NotTimeLockerOrOwner();
     error ControllerAlreadySet();
     error VaultImplNotSet();
     error VaultImplNotContract();
