@@ -396,27 +396,4 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         return (epochConfig[_id].epochBegin, epochConfig[_id].epochEnd);
     }
 
-    // function controller() public view returns (address) {
-    //     return controller;
-    // }
-
-    // function name() public view override returns (string memory) {
-    //     return SemiFungibleVault.name;
-    // }
-
-    // function symbol() public view override returns (string memory) {
-    //     return SemiFungibleVault.symbol;
-    // }
-
-    // function asset() public view override returns (address) {
-    //     return address(SemiFungibleVault.asset);
-    // }
-
-    // function token() public view returns (address) {
-    //     return token;
-    // }
-
-    // function strike() public view returns (int256) {
-    //     return strike;
-    // }
 }
