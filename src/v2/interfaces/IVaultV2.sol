@@ -18,13 +18,13 @@ interface IVaultV2 {
 
     function totalAssets(uint256) external view returns (uint256);
 
-    function idExists(uint256 _id) external view returns (bool);
+    function epochExists(uint256 _id) external view returns (bool);
 
-    function idEpochEnded(uint256 _id) external view returns (bool);
+    function epochResolved(uint256 _id) external view returns (bool);
 
-    function idFinalTVL(uint256 _id) external view returns (uint256);
+    function finalTVL(uint256 _id) external view returns (uint256);
 
-    function idClaimTVL(uint256 _id) external view returns (uint256);
+    function claimTVL(uint256 _id) external view returns (uint256);
 
     function setEpoch(
         uint40 _epochBegin,
@@ -32,7 +32,7 @@ interface IVaultV2 {
         uint256 _epochId
     ) external;
 
-    function endEpoch(uint256 _id) external;
+    function resolveEpoch(uint256 _id) external;
 
     function setClaimTVL(uint256 _id, uint256 _amount) external;
 

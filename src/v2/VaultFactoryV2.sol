@@ -29,39 +29,6 @@ contract VaultFactoryV2 is Ownable {
     mapping(address => bool) public controllers;
 
     /*//////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
-    struct MarketConfigurationCalldata {
-        address token;
-        uint256 strike;
-        address oracle;
-        address underlyingAsset;
-        string name;
-        string tokenURI;
-        address controller;
-    }
-
-    struct MarketConfiguration {
-        address underlyingAsset;
-        string name;
-        string symbol;
-        string tokenURI;
-        address token;
-        uint256 strike;
-        address controller;
-    }
-
-    struct EpochConfiguration {
-        uint40 epochBegin;
-        uint40 epochEnd;
-        uint16 withdrawalFee;
-        uint256 marketId;
-        uint256 epochId;
-        IVaultV2 premium;
-        IVaultV2 collateral;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
     /** @notice Contract constructor
@@ -429,6 +396,39 @@ contract VaultFactoryV2 is Ownable {
             uint256(
                 keccak256(abi.encodePacked(marketId, epochBegin, epochEnd))
             );
+    }
+
+     /*//////////////////////////////////////////////////////////////
+                                STRUCTS
+    //////////////////////////////////////////////////////////////*/
+    struct MarketConfigurationCalldata {
+        address token;
+        uint256 strike;
+        address oracle;
+        address underlyingAsset;
+        string name;
+        string tokenURI;
+        address controller;
+    }
+
+    struct MarketConfiguration {
+        address underlyingAsset;
+        string name;
+        string symbol;
+        string tokenURI;
+        address token;
+        uint256 strike;
+        address controller;
+    }
+
+    struct EpochConfiguration {
+        uint40 epochBegin;
+        uint40 epochEnd;
+        uint16 withdrawalFee;
+        uint256 marketId;
+        uint256 epochId;
+        IVaultV2 premium;
+        IVaultV2 collateral;
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -32,81 +32,14 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     address public controller;
     uint256[] public epochs;
 
-    mapping(uint256 => uint256) public idFinalTVL;
-    mapping(uint256 => uint256) public idClaimTVL;
+    mapping(uint256 => uint256) public finalTVL;
+    mapping(uint256 => uint256) public claimTVL;
     mapping(uint256 => uint256) public epochAccounting;
     mapping(uint256 => EpochConfig) public epochConfig;
-    mapping(uint256 => bool) public idEpochEnded;
-    mapping(uint256 => bool) public idExists;
+    mapping(uint256 => bool) public epochResolved;
+    mapping(uint256 => bool) public epochExists;
     mapping(uint256 => bool) public epochNull;
     mapping(address => bool) public whitelistedAddresses;
-
-    /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
-    error AddressZero();
-    error AddressNotFactory(address _contract);
-    error AddressNotController(address _contract);
-    error EpochDoesNotExist();
-    error EpochAlreadyStarted();
-    error EpochNotFinished();
-    error EpochAlreadyEnded();
-    error ZeroValue();
-    error OwnerDidNotAuthorize(address _sender, address _owner);
-    error EpochEndMustBeAfterBegin();
-    error EpochAlreadyExists();
-    error DestinationNotAuthorized(address _counterparty);
-    error AmountExceedsTVL();
-    error AlreadyInitialized();
-
-    /*//////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
-
-    struct EpochConfig {
-        uint40 epochBegin;
-        uint40 epochEnd;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Only factory addresses can call functions that use this modifier
-     */
-    modifier onlyFactory() {
-        if (msg.sender != factory) revert AddressNotFactory(msg.sender);
-        _;
-    }
-
-    /** @notice Only controller addresses can call functions that use this modifier
-     */
-    modifier onlyController() {
-        if (msg.sender != controller) revert AddressNotController(msg.sender);
-        _;
-    }
-
-    /** @notice You can only call functions that use this modifier before the current epoch has started
-     */
-    modifier epochHasNotStarted(uint256 _id) {
-        if (block.timestamp > epochConfig[_id].epochBegin)
-            revert EpochAlreadyStarted();
-        _;
-    }
-
-    /** @notice Check if epoch exists
-     */
-    modifier epochIdExists(uint256 id) {
-        if (!idExists[id]) revert EpochDoesNotExist();
-        _;
-    }
-
-    /** @notice You can only call functions that use this modifier after the current epoch has ended
-     */
-    modifier epochHasEnded(uint256 id) {
-        if (!idEpochEnded[id]) revert EpochNotFinished();
-        _;
-    }
 
     /*//////////////////////////////////////////////////////////////
                                  CONSTRUCTOR
@@ -181,8 +114,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     )
         external
         override(SemiFungibleVault)
-        epochHasEnded(_id)
         epochIdExists(_id)
+        epochHasEnded(_id)
         returns (uint256 shares)
     {
         if (_receiver == address(0)) revert AddressZero();
@@ -250,11 +183,12 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         uint40 _epochEnd,
         uint256 _epochId
     ) external onlyFactory {
-        if (idExists[_epochId] == true) revert EpochAlreadyExists();
+        if(_epochId == 0 || _epochBegin == 0 || _epochEnd == 0 ) revert InvalidEpoch();
+        if (epochExists[_epochId] == true) revert EpochAlreadyExists();
 
         if (_epochBegin >= _epochEnd) revert EpochEndMustBeAfterBegin();
 
-        idExists[_epochId] = true;
+        epochExists[_epochId] = true;
 
         epochConfig[_epochId] = EpochConfig({
             epochBegin: _epochBegin,
@@ -301,10 +235,10 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     @notice Controller can call this function to resolve the epoch, this function will set the epoch as ended and store the deposited TVL of the epoch
     @param  _id identifier of the epoch
      */
-    function endEpoch(uint256 _id) external onlyController epochIdExists(_id) {
-        if (idEpochEnded[_id]) revert EpochAlreadyEnded();
-        idEpochEnded[_id] = true;
-        idFinalTVL[_id] = totalAssets(_id);
+    function resolveEpoch(uint256 _id) external onlyController epochIdExists(_id) epochHasStarted(_id){
+        if (epochResolved[_id]) revert EpochAlreadyEnded();
+        epochResolved[_id] = true;
+        finalTVL[_id] = totalAssets(_id);
     }
 
     /**
@@ -319,12 +253,10 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         uint256 _amount,
         address _receiver
     ) external onlyController epochIdExists(_id) epochHasEnded(_id) {
-        if (_amount > idFinalTVL[_id]) revert AmountExceedsTVL();
-        if (epochAccounting[_id] + _amount > idFinalTVL[_id])
+        if (_amount > finalTVL[_id]) revert AmountExceedsTVL();
+        if (epochAccounting[_id] + _amount > finalTVL[_id])
             revert AmountExceedsTVL();
-        if (!whitelistedAddresses[_receiver])
-            revert DestinationNotAuthorized(_receiver);
-        if (_receiver != counterPartyVault)
+        if (!whitelistedAddresses[_receiver] && _receiver != counterPartyVault)
             revert DestinationNotAuthorized(_receiver);
         epochAccounting[_id] += _amount;
         SemiFungibleVault.asset.safeTransfer(_receiver, _amount);
@@ -341,7 +273,9 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochIdExists(_id)
         epochHasEnded(_id)
     {
-        idClaimTVL[_id] = _claimTVL;
+        if(_claimTVL > IVaultV2(counterPartyVault).finalTVL(_id)) revert InvalidClaimTVL();
+
+        claimTVL[_id] = _claimTVL;
     }
 
     /**
@@ -372,9 +306,9 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         returns (uint256 entitledAmount)
     {
         // entitledAmount amount is derived from the claimTVL and the finalTVL
-        // if user deposited 1000 assets and the claimTVL is 50% lower than idFinalTVL, the user is entitled to 500 assets
-        // if user deposited 1000 assets and the claimTVL is 50% higher than idFinalTVL, the user is entitled to 1500 assets
-        entitledAmount = _assets.mulDivUp(idClaimTVL[_id], idFinalTVL[_id]);
+        // if user deposited 1000 assets and the claimTVL is 50% lower than finalTVL, the user is entitled to 500 assets
+        // if user deposited 1000 assets and the claimTVL is 50% higher than finalTVL, the user is entitled to 1500 assets
+        entitledAmount = _assets.mulDivUp(claimTVL[_id], finalTVL[_id]);
     }
 
     /** @notice Lookup total epochs length
@@ -392,8 +326,88 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /** @notice Lookup epoch begin and end
         @param _id id hashed from marketIndex, epoch begin and end and casted to uint256;
      */
-    function getEpochConfig(uint256 _id) public view returns (uint40, uint40) {
-        return (epochConfig[_id].epochBegin, epochConfig[_id].epochEnd);
+    function getEpochConfig(uint256 _id) public view returns (uint40 epochBegin, uint40 epochEnd) {
+        epochBegin = epochConfig[_id].epochBegin;
+        epochEnd = epochConfig[_id].epochEnd;
     }
 
+
+    /*//////////////////////////////////////////////////////////////
+                                STRUCTS
+    //////////////////////////////////////////////////////////////*/
+
+    struct EpochConfig {
+        uint40 epochBegin;
+        uint40 epochEnd;
+    }
+
+     /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    /** @notice Only factory addresses can call functions that use this modifier
+     */
+    modifier onlyFactory() {
+        if (msg.sender != factory) revert AddressNotFactory(msg.sender);
+        _;
+    }
+
+    /** @notice Only controller addresses can call functions that use this modifier
+     */
+    modifier onlyController() {
+        if (msg.sender != controller) revert AddressNotController(msg.sender);
+        _;
+    }
+
+    /** @notice You can only call functions that use this modifier before the epoch has started
+     */
+    modifier epochHasNotStarted(uint256 _id) {
+        if (block.timestamp > epochConfig[_id].epochBegin)
+            revert EpochAlreadyStarted();
+        _;
+    }
+
+    /** @notice You can only call functions that use this modifier after the epoch has started
+     */
+    modifier epochHasStarted(uint256 _id) {
+        if (block.timestamp < epochConfig[_id].epochBegin)
+            revert EpochNotStarted();
+        _;
+    }
+
+
+    /** @notice Check if epoch exists
+     */
+    modifier epochIdExists(uint256 id) {
+        if (!epochExists[id]) revert EpochDoesNotExist();
+        _;
+    }
+
+    /** @notice You can only call functions that use this modifier after the epoch has ended
+     */
+    modifier epochHasEnded(uint256 id) {
+        if (!epochResolved[id]) revert EpochNotResolved();
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+    error AddressZero();
+    error AddressNotFactory(address _contract);
+    error AddressNotController(address _contract);
+    error EpochDoesNotExist();
+    error EpochAlreadyStarted();
+    error EpochNotResolved();
+    error EpochAlreadyEnded();
+    error EpochNotStarted();
+    error ZeroValue();
+    error OwnerDidNotAuthorize(address _sender, address _owner);
+    error EpochEndMustBeAfterBegin();
+    error EpochAlreadyExists();
+    error DestinationNotAuthorized(address _counterparty);
+    error AmountExceedsTVL();
+    error AlreadyInitialized();
+    error InvalidEpoch();
+    error InvalidClaimTVL();
 }
