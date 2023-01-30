@@ -4,9 +4,6 @@ pragma solidity 0.8.17;
 import "./Helper.sol";
 import "../../src/v2/VaultV2.sol";
 import "../../src/v2/interfaces/IVaultV2.sol";
-import {
-    SafeERC20
-} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract VaultV2Test is Helper {
     VaultV2 vault;
@@ -529,7 +526,7 @@ contract VaultV2Test is Helper {
         vault.setCounterPartyVault(newCounterPartyVault);
 
         assertEq(vault.counterPartyVault(), newCounterPartyVault);
-        
+
     }
 
     function helperSetEpoch(
