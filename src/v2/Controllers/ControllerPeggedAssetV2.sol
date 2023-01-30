@@ -18,59 +18,6 @@ contract ControllerPeggedAssetV2 {
     address public treasury;
 
     /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    error MarketDoesNotExist(uint256 marketId);
-    error SequencerDown();
-    error GracePeriodNotOver();
-    error ZeroAddress();
-    error EpochFinishedAlready();
-    error PriceNotAtStrikePrice(int256 price);
-    error EpochNotStarted();
-    error EpochExpired();
-    error OraclePriceZero();
-    error RoundIDOutdated();
-    error EpochNotExist();
-    error EpochNotExpired();
-    error VaultNotZeroTVL();
-
-    /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Depegs insurance vault when event is emitted
-     * @param epochId market epoch ID
-     * @param marketId market ID
-     * @param tvl TVL
-     * @param strikeMet Flag if event isDisaster
-     * @param time time
-     * @param depegPrice Price that triggered depeg
-     */
-    event EpochResolved(
-        uint256 epochId,
-        uint256 marketId,
-        VaultTVL tvl,
-        bool strikeMet,
-        uint256 time,
-        int256 depegPrice
-    );
-
-    event NullEpoch(
-        uint256 epochId,
-        uint256 marketId,
-        VaultTVL tvl,
-        uint256 time
-    );
-
-    struct VaultTVL {
-        uint256 COLLAT_claimTVL;
-        uint256 COLLAT_finalTVL;
-        uint256 PREM_claimTVL;
-        uint256 PREM_finalTVL;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
@@ -110,7 +57,7 @@ contract ControllerPeggedAssetV2 {
         IVaultV2 premiumVault = IVaultV2(vaults[0]);
         IVaultV2 collateralVault = IVaultV2(vaults[1]);
 
-        if (premiumVault.idExists(_epochId) == false) revert EpochNotExist();
+        if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
 
         int256 price = getLatestPrice(premiumVault.token());
 
@@ -126,17 +73,17 @@ contract ControllerPeggedAssetV2 {
         if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(_epochId))
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
 
-        premiumVault.endEpoch(_epochId);
-        collateralVault.endEpoch(_epochId);
+        premiumVault.resolveEpoch(_epochId);
+        collateralVault.resolveEpoch(_epochId);
 
         uint256 epochFee = vaultFactory.getEpochFee(_epochId);
 
-        uint256 premiumTVL = premiumVault.idFinalTVL(_epochId);
-        uint256 collateralTVL = collateralVault.idFinalTVL(_epochId);
+        uint256 premiumTVL = premiumVault.finalTVL(_epochId);
+        uint256 collateralTVL = collateralVault.finalTVL(_epochId);
 
         uint256 premiumFee = calculateWithdrawalFeeValue(premiumTVL, epochFee);
         uint256 collateralFee = calculateWithdrawalFeeValue(
@@ -196,8 +143,8 @@ contract ControllerPeggedAssetV2 {
         IVaultV2 collateralVault = IVaultV2(vaults[1]);
 
         if (
-            premiumVault.idExists(_epochId) == false ||
-            collateralVault.idExists(_epochId) == false
+            premiumVault.epochExists(_epochId) == false ||
+            collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
 
         (, uint40 epochEnd) = premiumVault.getEpochConfig(_epochId);
@@ -205,17 +152,17 @@ contract ControllerPeggedAssetV2 {
         if (block.timestamp <= uint256(epochEnd)) revert EpochNotExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(_epochId))
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
 
-        premiumVault.endEpoch(_epochId);
-        collateralVault.endEpoch(_epochId);
+        premiumVault.resolveEpoch(_epochId);
+        collateralVault.resolveEpoch(_epochId);
 
         uint256 epochFee = vaultFactory.getEpochFee(_epochId);
 
-        uint256 premiumTVL = premiumVault.idFinalTVL(_epochId);
-        uint256 collateralTVL = collateralVault.idFinalTVL(_epochId);
+        uint256 premiumTVL = premiumVault.finalTVL(_epochId);
+        uint256 collateralTVL = collateralVault.finalTVL(_epochId);
 
         uint256 premiumFee = calculateWithdrawalFeeValue(premiumTVL, epochFee);
 
@@ -260,8 +207,8 @@ contract ControllerPeggedAssetV2 {
         IVaultV2 collateralVault = IVaultV2(vaults[1]);
 
         if (
-            premiumVault.idExists(_epochId) == false ||
-            collateralVault.idExists(_epochId) == false
+            premiumVault.epochExists(_epochId) == false ||
+            collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
 
         (uint40 epochStart, ) = premiumVault.getEpochConfig(_epochId);
@@ -269,29 +216,29 @@ contract ControllerPeggedAssetV2 {
         if (block.timestamp < uint256(epochStart)) revert EpochNotStarted();
 
         //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.idEpochEnded(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.idEpochEnded(_epochId))
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
 
         //set claim TVL to 0 if total assets are 0
         if (premiumVault.totalAssets(_epochId) == 0) {
-            premiumVault.endEpoch(_epochId);
-            collateralVault.endEpoch(_epochId);
+            premiumVault.resolveEpoch(_epochId);
+            collateralVault.resolveEpoch(_epochId);
 
             premiumVault.setClaimTVL(_epochId, 0);
             collateralVault.setClaimTVL(
                 _epochId,
-                collateralVault.idFinalTVL(_epochId)
+                collateralVault.finalTVL(_epochId)
             );
 
             collateralVault.setEpochNull(_epochId);
         } else if (collateralVault.totalAssets(_epochId) == 0) {
-            premiumVault.endEpoch(_epochId);
-            collateralVault.endEpoch(_epochId);
+            premiumVault.resolveEpoch(_epochId);
+            collateralVault.resolveEpoch(_epochId);
 
             premiumVault.setClaimTVL(
                 _epochId,
-                premiumVault.idFinalTVL(_epochId)
+                premiumVault.finalTVL(_epochId)
             );
             collateralVault.setClaimTVL(_epochId, 0);
 
@@ -302,10 +249,10 @@ contract ControllerPeggedAssetV2 {
             _epochId,
             _marketId,
             VaultTVL(
-                collateralVault.idClaimTVL(_epochId),
-                collateralVault.idFinalTVL(_epochId),
-                premiumVault.idClaimTVL(_epochId),
-                premiumVault.idFinalTVL(_epochId)
+                collateralVault.claimTVL(_epochId),
+                collateralVault.finalTVL(_epochId),
+                premiumVault.claimTVL(_epochId),
+                premiumVault.finalTVL(_epochId)
             ),
             block.timestamp
         );
@@ -350,14 +297,15 @@ contract ControllerPeggedAssetV2 {
         );
         (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
             .latestRoundData();
+        uint256 decimals = priceFeed.decimals();
 
-        if (priceFeed.decimals() < 18) {
-            uint256 decimals = 10**(18 - (priceFeed.decimals()));
+        if (decimals < 18) {
+            decimals = 10**(18 - (decimals));
             price = price * int256(decimals);
-        } else if (priceFeed.decimals() == 18) {
+        } else if (decimals == 18) {
             price = price;
         } else {
-            uint256 decimals = 10**((priceFeed.decimals() - 18));
+            decimals = 10**((decimals - 18));
             price = price / int256(decimals);
         }
 
@@ -382,5 +330,59 @@ contract ControllerPeggedAssetV2 {
     {
         // 0.5% = multiply by 1000 then divide by 5
         return amount.mulDivUp(fee, 1000);
+    }
+
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error MarketDoesNotExist(uint256 marketId);
+    error SequencerDown();
+    error GracePeriodNotOver();
+    error ZeroAddress();
+    error EpochFinishedAlready();
+    error PriceNotAtStrikePrice(int256 price);
+    error EpochNotStarted();
+    error EpochExpired();
+    error OraclePriceZero();
+    error RoundIDOutdated();
+    error EpochNotExist();
+    error EpochNotExpired();
+    error VaultNotZeroTVL();
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /** @notice Depegs insurance vault when event is emitted
+     * @param epochId market epoch ID
+     * @param marketId market ID
+     * @param tvl TVL
+     * @param strikeMet Flag if event isDisaster
+     * @param time time
+     * @param depegPrice Price that triggered depeg
+     */
+    event EpochResolved(
+        uint256 epochId,
+        uint256 marketId,
+        VaultTVL tvl,
+        bool strikeMet,
+        uint256 time,
+        int256 depegPrice
+    );
+
+    event NullEpoch(
+        uint256 epochId,
+        uint256 marketId,
+        VaultTVL tvl,
+        uint256 time
+    );
+
+    struct VaultTVL {
+        uint256 COLLAT_claimTVL;
+        uint256 COLLAT_finalTVL;
+        uint256 PREM_claimTVL;
+        uint256 PREM_finalTVL;
     }
 }
