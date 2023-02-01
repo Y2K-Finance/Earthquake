@@ -205,7 +205,7 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
     
     
-    function enQueueRollover(uint256 _assets, uint256 _epochId, address _receiver) public 
+    function enListInRollover(uint256 _assets, uint256 _epochId, address _receiver) public 
     epochIdExists(_epochId)
     minRequiredDeposit(_assets)
     {
@@ -239,7 +239,7 @@ contract Carousel is VaultV2 {
         emit RolloverQueued(_receiver, _assets, _epochId);
     }
 
-    function deQueueRollover(address _receiver) {
+    function deListInRollover(address _receiver) public {
         // check if user has already queued up a rollover
         if(ownerToRollOverQueueIndex[_receiver] == 0) revert NoRolloverQueued();
         // check if sender is approved by owner
@@ -290,11 +290,9 @@ contract Carousel is VaultV2 {
             }
         }
 
-        uint256 relayerFee = _operations * relayerFee;
-
         asset.safeTransfer(
                 feeTreasury,
-                relayerFee
+                _operations * relayerFee
         );
        
     }
@@ -328,11 +326,9 @@ contract Carousel is VaultV2 {
 
                 rolloverAccounting[_epochId] = index;
 
-                uint256 relayerFee = _operations * relayerFee;
-
                 asset.safeTransfer(
                     feeTreasury,
-                    relayerFee
+                    _operations * relayerFee
                 );
             }
         }
