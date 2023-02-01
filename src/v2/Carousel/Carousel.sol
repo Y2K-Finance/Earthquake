@@ -18,7 +18,6 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     // Earthquake parameters
-    uint256 public minRequired;
     uint256 public relayerFee;
     uint256 public closingTimeFrame;
     address public feeTreasury;
@@ -128,7 +127,7 @@ contract Carousel is VaultV2 {
         override(VaultV2)
         epochIdExists(_id)
         epochHasEnded(_id)
-        notRollingOver(_owner)
+        notRollingOver(_owner, _id, _assets)
         nonReentrant
         returns (uint256 shares)
     {
@@ -178,7 +177,7 @@ contract Carousel is VaultV2 {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public override notRollingOver(from) {
+    ) public override notRollingOver(from, id, amount) {
         require(
             from == _msgSender() || isApprovedForAll(from, _msgSender()),
             "ERC1155: caller is not owner nor approved"
@@ -195,12 +194,8 @@ contract Carousel is VaultV2 {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public override notRollingOver(from) {
-        require(
-            from == _msgSender() || isApprovedForAll(from, _msgSender()),
-            "ERC1155: transfer caller is not owner nor approved"
-        );
-        _safeBatchTransferFrom(from, to, ids, amounts, data);
+    ) public override {
+       revert(); 
     }
 
 
@@ -210,30 +205,65 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
     
     
-    function setRollover(uint256 assets, uint256 _epochId, address _receiver) public epochIdExists(_epochId){
+    function enQueueRollover(uint256 _assets, uint256 _epochId, address _receiver) public 
+    epochIdExists(_epochId)
+    minRequiredDeposit(_assets)
+    {
         // check if sender is approved by owner
          if (
             msg.sender != _receiver &&
             isApprovedForAll(_receiver, msg.sender) == false
         ) revert OwnerDidNotAuthorize(msg.sender, _receiver);
         // check if user has enough balance
-        if(balanceOf(_receiver, _epochId) < assets) revert InsufficientBalance();
-        if(assets < minRequired) revert InsufficientBalance();
+        if(balanceOf(_receiver, _epochId) < _assets) revert InsufficientBalance();
 
         // check if user has already queued up a rollover
-        if(ownerToRollOverQueueIndex[msg.sender] != 0) revert AlreadyRollingOver();
-
-        rolloverQueue.push(
-            QueueItem({
-            assets: assets,
-            receiver: msg.sender,
-            epochId: _epochId
-        })
+        if(ownerToRollOverQueueIndex[_receiver] != 0){
+            // if so, update the queue
+            uint256 index = getRolloverIndex(_receiver);
+            rolloverQueue[index].assets = _assets;
+            rolloverQueue[index].epochId = _epochId;
+        }else {
+            // if not, add to queue
+            rolloverQueue
+            .push(
+                QueueItem({
+                assets: _assets,
+                receiver: _receiver,
+                epochId: _epochId
+            })
         );
+        }
+        ownerToRollOverQueueIndex[_receiver] = rolloverQueue.length;
 
-        ownerToRollOverQueueIndex[msg.sender] = rolloverQueue.length - 1;
+        emit RolloverQueued(_receiver, _assets, _epochId);
+    }
 
-        emit RolloverQueued(msg.sender, assets, _epochId);
+    function deQueueRollover(address _receiver) {
+        // check if user has already queued up a rollover
+        if(ownerToRollOverQueueIndex[_receiver] == 0) revert NoRolloverQueued();
+        // check if sender is approved by owner
+        if (
+            msg.sender != _receiver &&
+            isApprovedForAll(_receiver, msg.sender) == false
+        ) revert OwnerDidNotAuthorize(msg.sender, _receiver);
+
+        // swich the last item in the queue with the item to be removed
+        uint256 index = getRolloverIndex(_receiver);
+        if(index == rolloverQueue.length - 1) {
+            rolloverQueue.pop();
+            delete ownerToRollOverQueueIndex[_receiver];
+        }else {
+            // overwrite the item to be removed with the last item in the queue
+            rolloverQueue[index] = rolloverQueue[rolloverQueue.length - 1];
+            // remove the last item in the queue
+            rolloverQueue.pop();
+            // update the index of prev last user
+            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index;
+            // remove receiver from index mapping
+            delete ownerToRollOverQueueIndex[_receiver];
+        }
+
     }
 
     function mintDepositInQueue(uint256 _epochId, uint256 _operations) external 
@@ -314,6 +344,14 @@ contract Carousel is VaultV2 {
         else return false;
     }
 
+    /*///////////////////////////////////////////////////////////////
+                        Getter Functions
+    //////////////////////////////////////////////////////////////*/
+
+    function getRolloverIndex(address _owner) internal view returns (uint256) {
+        return ownerToRollOverQueueIndex[_owner] - 1;
+    }
+
     
 
     /*//////////////////////////////////////////////////////////////
@@ -361,8 +399,11 @@ contract Carousel is VaultV2 {
         _;
     }
 
-    modifier notRollingOver(address _owner) {
-        if(ownerToRollOverQueueIndex[_owner] != 0) revert AlreadyRollingOver();
+    modifier notRollingOver(address _receiver, uint256 _epochId, uint256 _assets) {
+        if(ownerToRollOverQueueIndex[_receiver] != 0) {
+            QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
+            if(item.epochId == _epochId && item.assets < _assets) revert AlreadyRollingOver();  
+        }
         _;
     }
 
@@ -374,4 +415,5 @@ contract Carousel is VaultV2 {
     error OverflowQueue();
     error AlreadyRollingOver();
     error InsufficientBalance();
+    error NoRolloverQueued();
 }
