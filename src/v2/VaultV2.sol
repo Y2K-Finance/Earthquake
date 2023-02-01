@@ -81,7 +81,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         address _receiver
     )
         public
-        override(SemiFungibleVault)
+        virtual override(SemiFungibleVault)
         epochIdExists(_id)
         epochHasNotStarted(_id)
         nonReentrant
@@ -112,10 +112,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         address _receiver,
         address _owner
     )
-        external
+        external virtual
         override(SemiFungibleVault)
         epochIdExists(_id)
         epochHasEnded(_id)
+        nonReentrant
         returns (uint256 shares)
     {
         if (_receiver == address(0)) revert AddressZero();
@@ -329,6 +330,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function getEpochConfig(uint256 _id) public view returns (uint40 epochBegin, uint40 epochEnd) {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
+    }
+
+    function _asset() internal view returns(IERC20)
+    {
+        return asset;
     }
 
 
