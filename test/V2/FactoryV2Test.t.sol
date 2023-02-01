@@ -247,7 +247,7 @@ contract FactoryV2Test is Helper {
 
         // test if epoch fee is correct
         uint16 fetchedFee = factory.getEpochFee(epochId2);
-        assertEq(fee, fee);
+        assertEq(fee, fetchedFee);
         
         // test if epoch config is correct
         (uint40 fetchedBegin, uint40 fetchedEnd) = IVaultV2(vaults[0]).getEpochConfig(epochId2);

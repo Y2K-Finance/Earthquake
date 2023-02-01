@@ -111,4 +111,5 @@ abstract contract SemiFungibleVault is ISemiFungibleVault, ERC1155Supply {
         virtual
         returns (uint256)
     {}
+
 }
