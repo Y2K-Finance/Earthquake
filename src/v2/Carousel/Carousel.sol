@@ -88,8 +88,7 @@ contract Carousel is VaultV2 {
         if(queueClosed(_id)) {
             uint256 lateDepositFee = _assets; // TODO: calculate late deposit fee 
             uint256 assetsToDeposit = _assets; // TODO: calculate assets to deposit
-            _asset().safeTransferFrom(
-                msg.sender,
+            _asset().safeTransfer(
                 feeTreasury,
                 lateDepositFee
             );
