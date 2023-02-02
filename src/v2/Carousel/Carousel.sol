@@ -16,17 +16,18 @@ contract Carousel is VaultV2 {
     /*///////////////////////////////////////////////////////////////
                                IMMUTABLES AND STORAGE
     //////////////////////////////////////////////////////////////*/
-
     // Earthquake parameters
     uint256 public relayerFee;
     uint256 public closingTimeFrame;
     address public feeTreasury;
-
+    IERC20 public emissionsToken;
 
     mapping(address => uint256) public ownerToRollOverQueueIndex;
     QueueItem[] public rolloverQueue;
     QueueItem[] public depositQueue;
     mapping(uint256 => uint256) public rolloverAccounting;
+    mapping(uint256 => mapping(address => uint256)) private _emissionsBalances;
+    mapping(uint256 => uint256) private emissions;
 
     /*//////////////////////////////////////////////////////////////
                                  CONSTRUCTOR
@@ -42,6 +43,7 @@ contract Carousel is VaultV2 {
         address _controller,
         address _treasury,
         address _feeTreasury,
+        address _emissionsToken,
         uint256 _relayerFee
     ) VaultV2(_assetAddress,
         _name,
@@ -52,6 +54,7 @@ contract Carousel is VaultV2 {
         _controller,
          _treasury) {
         
+        emissionsToken = IERC20(_emissionsToken);
         relayerFee = _relayerFee;
         feeTreasury = _feeTreasury;
       
@@ -139,9 +142,9 @@ contract Carousel is VaultV2 {
         ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
         _burn(_owner, _id, _assets);
-
+        _burnEmissions(_owner, _id, _assets);
         uint256 entitledShares;
-
+        uint256 entitledEmissions = previewEmissionsWithdraw(_id, _assets);
         if (epochNull[_id] == false) {
             entitledShares = previewWithdraw(_id, _assets);
         } else {
@@ -150,6 +153,11 @@ contract Carousel is VaultV2 {
         if (entitledShares > 0) {
             SemiFungibleVault.asset.safeTransfer(_receiver, entitledShares);
         }
+        if(entitledEmissions > 0) {
+            emissionsToken.safeTransfer(_receiver, entitledEmissions);
+        }
+
+
 
         emit Withdraw(
             msg.sender,
@@ -183,6 +191,14 @@ contract Carousel is VaultV2 {
             "ERC1155: caller is not owner nor approved"
         );
         _safeTransferFrom(from, to, id, amount, data);
+        // emissions transfer
+        uint256 fromBalance = _emissionsBalances[id][from];
+        require(fromBalance >= amount, "ERC1155: insufficient balance for transfer");
+        unchecked {
+            _emissionsBalances[id][from] = fromBalance - amount;
+        }
+        _emissionsBalances[id][to] += amount;
+        emit TransferSingleEmissions(_msgSender(), from, to, id, amount);
     }
 
     /**
@@ -340,6 +356,59 @@ contract Carousel is VaultV2 {
         else return false;
     }
 
+        /*///////////////////////////////////////////////////////////////
+                        INTERNAL MUTATIVE LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function _mint(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) internal override {
+        _mint(to, id, amount, data);
+        _mintEmissoins(to, id, amount, data);
+    }
+
+    function _mintEmissoins(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) internal  {
+        require(to != address(0), "ERC1155: mint to the zero address");
+
+        _emissionsBalances[id][to] += amount;
+        emit TransferSingleEmissions(_msgSender(), address(0), to, id, amount);
+    }
+
+   function _burnEmissions(
+        address from,
+        uint256 id,
+        uint256 amount
+    ) internal {
+        require(from != address(0), "ERC1155: burn from the zero address");
+
+        uint256 fromBalance = _emissionsBalances[id][from];
+        require(fromBalance >= amount, "ERC1155: burn amount exceeds balance");
+        unchecked {
+            _emissionsBalances[id][from] = fromBalance - amount;
+        }
+
+        emit TransferSingleEmissions(_msgSender(), from, address(0), id, amount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                        ADMIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    function setEmissions(
+        uint256 _epochId,
+        uint256 _emissionsRate
+    ) external onlyFactory epochIdExists(_epochId) {
+        emissions[_epochId] = _emissionsRate;
+    }
+
     /*///////////////////////////////////////////////////////////////
                         Getter Functions
     //////////////////////////////////////////////////////////////*/
@@ -348,7 +417,14 @@ contract Carousel is VaultV2 {
         return ownerToRollOverQueueIndex[_owner] - 1;
     }
 
-    
+    function previewEmissionsWithdraw(uint256 _id, uint256 _assets)
+        public
+        view
+        returns (uint256 entitledAmount)
+    {
+
+        entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
+    }    
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
@@ -359,32 +435,6 @@ contract Carousel is VaultV2 {
         address receiver;
         uint256 epochId;
     }
-
-
-    /*//////////////////////////////////////////////////////////////
-                                EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event DepositInQueue(
-        address indexed sender,
-        address indexed receiver,
-        uint256 epochId,
-        uint256 assets
-    );
-
-    event LateDeposit(
-        address indexed sender,
-        address indexed receiver,
-        uint256 epochId,
-        uint256 assets,
-        uint256 lateDepositFee
-    );
-
-    event RolloverQueued(
-        address indexed sender,
-        uint256 assets,
-        uint256 epochId
-    );
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -412,4 +462,37 @@ contract Carousel is VaultV2 {
     error AlreadyRollingOver();
     error InsufficientBalance();
     error NoRolloverQueued();
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event DepositInQueue(
+        address indexed sender,
+        address indexed receiver,
+        uint256 epochId,
+        uint256 assets
+    );
+
+    event LateDeposit(
+        address indexed sender,
+        address indexed receiver,
+        uint256 epochId,
+        uint256 assets,
+        uint256 lateDepositFee
+    );
+
+    event RolloverQueued(
+        address indexed sender,
+        uint256 assets,
+        uint256 epochId
+    );
+
+    event TransferSingleEmissions(
+        address indexed operator,
+        address indexed from,
+        address indexed to,
+        uint256 id,
+        uint256 value
+    );
 }
