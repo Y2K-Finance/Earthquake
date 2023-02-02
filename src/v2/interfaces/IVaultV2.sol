@@ -50,5 +50,8 @@ interface IVaultV2 {
 
     function setEpochNull(uint256 _id) external;
 
-    function whitelistedAddresses(address _address) external view returns (bool);
+    function whitelistedAddresses(address _address)
+        external
+        view
+        returns (bool);
 }

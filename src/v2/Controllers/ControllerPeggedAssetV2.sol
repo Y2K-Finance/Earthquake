@@ -118,10 +118,10 @@ contract ControllerPeggedAssetV2 {
             _epochId,
             _marketId,
             VaultTVL(
-            premiumTVL - premiumFee,
-            collateralTVL,
-            collateralTVL - collateralFee,
-            premiumTVL
+                premiumTVL - premiumFee,
+                collateralTVL,
+                collateralTVL - collateralFee,
+                premiumTVL
             ),
             true,
             block.timestamp,
@@ -236,10 +236,7 @@ contract ControllerPeggedAssetV2 {
             premiumVault.resolveEpoch(_epochId);
             collateralVault.resolveEpoch(_epochId);
 
-            premiumVault.setClaimTVL(
-                _epochId,
-                premiumVault.finalTVL(_epochId)
-            );
+            premiumVault.setClaimTVL(_epochId, premiumVault.finalTVL(_epochId));
             collateralVault.setClaimTVL(_epochId, 0);
 
             premiumVault.setEpochNull(_epochId);
@@ -265,11 +262,7 @@ contract ControllerPeggedAssetV2 {
      * @param _token Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token)
-        public
-        view
-        returns (int256)
-    {
+    function getLatestPrice(address _token) public view returns (int256) {
         (
             ,
             /*uint80 roundId*/
@@ -331,7 +324,6 @@ contract ControllerPeggedAssetV2 {
         // 0.5% = multiply by 1000 then divide by 5
         return amount.mulDivUp(fee, 1000);
     }
-
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
