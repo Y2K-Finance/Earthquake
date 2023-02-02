@@ -10,7 +10,7 @@ import {TimeLock} from "./TimeLock.sol";
 /// @author Y2K Finance Team
 
 contract VaultFactoryV2 is Ownable {
-    address immutable public WETH;
+    address public immutable WETH;
     bytes internal constant COLLAT = "COLLATERAL";
     bytes internal constant PREMIUM = "PREMIUM";
     bytes internal constant CSYMBOL = "cY2K";
@@ -34,7 +34,11 @@ contract VaultFactoryV2 is Ownable {
     /** @notice Contract constructor
      * @param _policy Admin address address
      */
-    constructor(address _policy, address _weth, address _treasury) {
+    constructor(
+        address _policy,
+        address _weth,
+        address _treasury
+    ) {
         if (_policy == address(0)) revert AddressZero();
         if (_weth == address(0)) revert AddressZero();
         WETH = _weth;
@@ -398,7 +402,7 @@ contract VaultFactoryV2 is Ownable {
             );
     }
 
-     /*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
     struct MarketConfigurationCalldata {

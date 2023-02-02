@@ -7,7 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-   
+
 /// @author Y2K Finance Team
 
 contract Carousel is VaultV2 {
@@ -45,21 +45,22 @@ contract Carousel is VaultV2 {
         address _feeTreasury,
         address _emissionsToken,
         uint256 _relayerFee
-    ) VaultV2(_assetAddress,
-        _name,
-        _symbol,
-        _tokenURI,
-         _token,
-         _strike,
-        _controller,
-         _treasury) {
-        
+    )
+        VaultV2(
+            _assetAddress,
+            _name,
+            _symbol,
+            _tokenURI,
+            _token,
+            _strike,
+            _controller,
+            _treasury
+        )
+    {
         emissionsToken = IERC20(_emissionsToken);
         relayerFee = _relayerFee;
         feeTreasury = _feeTreasury;
-      
     }
-
 
     /*///////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC
@@ -79,40 +80,33 @@ contract Carousel is VaultV2 {
     {
         if (_receiver == address(0)) revert AddressZero();
 
-        _asset().safeTransferFrom(
-            msg.sender,
-            address(this),
-            _assets
-        );
-
+        _asset().safeTransferFrom(msg.sender, address(this), _assets);
 
         // mint logic, either in queue or direct deposit
-        if(queueClosed(_id)) {
-            uint256 lateDepositFee = _assets; // TODO: calculate late deposit fee 
+        if (queueClosed(_id)) {
+            uint256 lateDepositFee = _assets; // TODO: calculate late deposit fee
             uint256 assetsToDeposit = _assets; // TODO: calculate assets to deposit
-            _asset().safeTransfer(
-                feeTreasury,
-                lateDepositFee
-            );
-            
+            _asset().safeTransfer(feeTreasury, lateDepositFee);
+
             _mint(_receiver, _id, assetsToDeposit, EMPTY);
 
-            emit LateDeposit(msg.sender, _receiver, _id, assetsToDeposit, lateDepositFee);
-
+            emit LateDeposit(
+                msg.sender,
+                _receiver,
+                _id,
+                assetsToDeposit,
+                lateDepositFee
+            );
         } else {
-             depositQueue.push(
-                QueueItem({
-                assets: _assets,
-                receiver: _receiver,
-                epochId: _id
-            })
-        );
+            depositQueue.push(
+                QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
+            );
 
             emit DepositInQueue(msg.sender, _receiver, _id, _assets);
         }
     }
 
-/**
+    /**
     @notice Withdraw entitled deposited assets, checking if a depeg event
     @param  _id uint256 identifier of the epoch you want to withdraw from;
     @param _assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according the vaults claimTVL;
@@ -126,7 +120,8 @@ contract Carousel is VaultV2 {
         address _receiver,
         address _owner
     )
-          external virtual
+        external
+        virtual
         override(VaultV2)
         epochIdExists(_id)
         epochHasEnded(_id)
@@ -153,11 +148,9 @@ contract Carousel is VaultV2 {
         if (entitledShares > 0) {
             SemiFungibleVault.asset.safeTransfer(_receiver, entitledShares);
         }
-        if(entitledEmissions > 0) {
+        if (entitledEmissions > 0) {
             emissionsToken.safeTransfer(_receiver, entitledEmissions);
         }
-
-
 
         emit Withdraw(
             msg.sender,
@@ -193,7 +186,10 @@ contract Carousel is VaultV2 {
         _safeTransferFrom(from, to, id, amount, data);
         // emissions transfer
         uint256 fromBalance = _emissionsBalances[id][from];
-        require(fromBalance >= amount, "ERC1155: insufficient balance for transfer");
+        require(
+            fromBalance >= amount,
+            "ERC1155: insufficient balance for transfer"
+        );
         unchecked {
             _emissionsBalances[id][from] = fromBalance - amount;
         }
@@ -211,44 +207,42 @@ contract Carousel is VaultV2 {
         uint256[] memory amounts,
         bytes memory data
     ) public override {
-       revert(); 
+        revert();
     }
-
-
 
     /*///////////////////////////////////////////////////////////////
                         Carousel Rollover Logic
     //////////////////////////////////////////////////////////////*/
-    
-    
-    function enListInRollover(uint256 _assets, uint256 _epochId, address _receiver) public 
-    epochIdExists(_epochId)
-    minRequiredDeposit(_assets)
-    {
+
+    function enListInRollover(
+        uint256 _assets,
+        uint256 _epochId,
+        address _receiver
+    ) public epochIdExists(_epochId) minRequiredDeposit(_assets) {
         // check if sender is approved by owner
-         if (
+        if (
             msg.sender != _receiver &&
             isApprovedForAll(_receiver, msg.sender) == false
         ) revert OwnerDidNotAuthorize(msg.sender, _receiver);
         // check if user has enough balance
-        if(balanceOf(_receiver, _epochId) < _assets) revert InsufficientBalance();
+        if (balanceOf(_receiver, _epochId) < _assets)
+            revert InsufficientBalance();
 
         // check if user has already queued up a rollover
-        if(ownerToRollOverQueueIndex[_receiver] != 0){
+        if (ownerToRollOverQueueIndex[_receiver] != 0) {
             // if so, update the queue
             uint256 index = getRolloverIndex(_receiver);
             rolloverQueue[index].assets = _assets;
             rolloverQueue[index].epochId = _epochId;
-        }else {
+        } else {
             // if not, add to queue
-            rolloverQueue
-            .push(
+            rolloverQueue.push(
                 QueueItem({
-                assets: _assets,
-                receiver: _receiver,
-                epochId: _epochId
-            })
-        );
+                    assets: _assets,
+                    receiver: _receiver,
+                    epochId: _epochId
+                })
+            );
         }
         ownerToRollOverQueueIndex[_receiver] = rolloverQueue.length;
 
@@ -257,7 +251,8 @@ contract Carousel is VaultV2 {
 
     function deListInRollover(address _receiver) public {
         // check if user has already queued up a rollover
-        if(ownerToRollOverQueueIndex[_receiver] == 0) revert NoRolloverQueued();
+        if (ownerToRollOverQueueIndex[_receiver] == 0)
+            revert NoRolloverQueued();
         // check if sender is approved by owner
         if (
             msg.sender != _receiver &&
@@ -266,10 +261,10 @@ contract Carousel is VaultV2 {
 
         // swich the last item in the queue with the item to be removed
         uint256 index = getRolloverIndex(_receiver);
-        if(index == rolloverQueue.length - 1) {
+        if (index == rolloverQueue.length - 1) {
             rolloverQueue.pop();
             delete ownerToRollOverQueueIndex[_receiver];
-        }else {
+        } else {
             // overwrite the item to be removed with the last item in the queue
             rolloverQueue[index] = rolloverQueue[rolloverQueue.length - 1];
             // remove the last item in the queue
@@ -279,13 +274,13 @@ contract Carousel is VaultV2 {
             // remove receiver from index mapping
             delete ownerToRollOverQueueIndex[_receiver];
         }
-
     }
 
-    function mintDepositInQueue(uint256 _epochId, uint256 _operations) external 
-    epochIdExists(_epochId)
-    epochHasNotStarted(_epochId)
-    nonReentrant 
+    function mintDepositInQueue(uint256 _epochId, uint256 _operations)
+        external
+        epochIdExists(_epochId)
+        epochHasNotStarted(_epochId)
+        nonReentrant
     {
         // make sure there is already a new epoch set
         // epoch has not started
@@ -293,70 +288,87 @@ contract Carousel is VaultV2 {
         uint256 length = rolloverQueue.length;
 
         // revert if queue is empty or operations are more than queue length
-        if(length == 0 || _operations > length-1) revert OverflowQueue();
+        if (length == 0 || _operations > length - 1) revert OverflowQueue();
 
         // queue is executed from the tail to the head
         // get last index of queue
         uint256 i = length - 1;
         while (i > (length - 1) - _operations) {
-            _mint(queue[i].receiver, queue[i].epochId, queue[i].assets - relayerFee, EMPTY);
+            _mint(
+                queue[i].receiver,
+                queue[i].epochId,
+                queue[i].assets - relayerFee,
+                EMPTY
+            );
             depositQueue.pop();
             unchecked {
                 i--;
             }
         }
 
-        asset.safeTransfer(
-                feeTreasury,
-                _operations * relayerFee
-        );
-       
+        asset.safeTransfer(feeTreasury, _operations * relayerFee);
     }
 
-    function mintRollovers(uint256 _epochId, uint256 _operations) external
-            epochIdExists(_epochId)
-            epochHasNotStarted(_epochId)
-            nonReentrant  
-        {
-            // make sure there is already a new epoch set
-            // epoch has not started
-            // prev epoch is resolved
-            if ( epochResolved[epochs[epochs.length - 2]] && epochs[epochs.length - 1 ] == _epochId) {
-
-                QueueItem[] memory queue = rolloverQueue;
-                uint256 length = rolloverQueue.length;
-                // revert if queue is empty or operations are more than queue length
-                if(length == 0 || _operations > length-1) revert OverflowQueue();
-                // account for how many operations have been done
-                uint256 index = rolloverAccounting[_epochId];
-                while(index < _operations) {
+    function mintRollovers(uint256 _epochId, uint256 _operations)
+        external
+        epochIdExists(_epochId)
+        epochHasNotStarted(_epochId)
+        nonReentrant
+    {
+        // make sure there is already a new epoch set
+        // epoch has not started
+        // prev epoch is resolved
+        if (
+            epochResolved[epochs[epochs.length - 2]] &&
+            epochs[epochs.length - 1] == _epochId
+        ) {
+            QueueItem[] memory queue = rolloverQueue;
+            uint256 length = rolloverQueue.length;
+            // revert if queue is empty or operations are more than queue length
+            if (length == 0 || _operations > length - 1) revert OverflowQueue();
+            // account for how many operations have been done
+            uint256 index = rolloverAccounting[_epochId];
+            while (index < _operations) {
                 // only roll over if user won last epoch
-                if (previewWithdraw(queue[index].epochId, queue[index].assets) > queue[index].assets) {
-                        _burn(queue[index].receiver, queue[index].epochId, queue[index].assets);
-                        _mint(queue[index].receiver, _epochId, queue[index].assets - relayerFee, EMPTY);
-                        rolloverQueue[index].assets = queue[index].assets - relayerFee;
-                        rolloverQueue[index].epochId = _epochId;
-                    }
-                    index++;
+                if (
+                    previewWithdraw(queue[index].epochId, queue[index].assets) >
+                    queue[index].assets
+                ) {
+                    _burn(
+                        queue[index].receiver,
+                        queue[index].epochId,
+                        queue[index].assets
+                    );
+                    _mint(
+                        queue[index].receiver,
+                        _epochId,
+                        queue[index].assets - relayerFee,
+                        EMPTY
+                    );
+                    rolloverQueue[index].assets =
+                        queue[index].assets -
+                        relayerFee;
+                    rolloverQueue[index].epochId = _epochId;
                 }
-
-                rolloverAccounting[_epochId] = index;
-
-                asset.safeTransfer(
-                    feeTreasury,
-                    _operations * relayerFee
-                );
+                index++;
             }
+
+            rolloverAccounting[_epochId] = index;
+
+            asset.safeTransfer(feeTreasury, _operations * relayerFee);
         }
-    
+    }
 
     function queueClosed(uint256 _epochId) public view returns (bool) {
-        if(_epochId == 0) return false;
-        else if (block.timestamp + closingTimeFrame >= epochConfig[_epochId].epochBegin) return true;
+        if (_epochId == 0) return false;
+        else if (
+            block.timestamp + closingTimeFrame >=
+            epochConfig[_epochId].epochBegin
+        ) return true;
         else return false;
     }
 
-        /*///////////////////////////////////////////////////////////////
+    /*///////////////////////////////////////////////////////////////
                         INTERNAL MUTATIVE LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -375,14 +387,14 @@ contract Carousel is VaultV2 {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) internal  {
+    ) internal {
         require(to != address(0), "ERC1155: mint to the zero address");
 
         _emissionsBalances[id][to] += amount;
         emit TransferSingleEmissions(_msgSender(), address(0), to, id, amount);
     }
 
-   function _burnEmissions(
+    function _burnEmissions(
         address from,
         uint256 id,
         uint256 amount
@@ -395,17 +407,24 @@ contract Carousel is VaultV2 {
             _emissionsBalances[id][from] = fromBalance - amount;
         }
 
-        emit TransferSingleEmissions(_msgSender(), from, address(0), id, amount);
+        emit TransferSingleEmissions(
+            _msgSender(),
+            from,
+            address(0),
+            id,
+            amount
+        );
     }
 
     /*///////////////////////////////////////////////////////////////
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function setEmissions(
-        uint256 _epochId,
-        uint256 _emissionsRate
-    ) external onlyFactory epochIdExists(_epochId) {
+    function setEmissions(uint256 _epochId, uint256 _emissionsRate)
+        external
+        onlyFactory
+        epochIdExists(_epochId)
+    {
         emissions[_epochId] = _emissionsRate;
     }
 
@@ -422,9 +441,8 @@ contract Carousel is VaultV2 {
         view
         returns (uint256 entitledAmount)
     {
-
         entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
-    }    
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
@@ -441,14 +459,19 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     modifier minRequiredDeposit(uint256 _assets) {
-       if(_assets < relayerFee) revert MinDeposit();
+        if (_assets < relayerFee) revert MinDeposit();
         _;
     }
 
-    modifier notRollingOver(address _receiver, uint256 _epochId, uint256 _assets) {
-        if(ownerToRollOverQueueIndex[_receiver] != 0) {
+    modifier notRollingOver(
+        address _receiver,
+        uint256 _epochId,
+        uint256 _assets
+    ) {
+        if (ownerToRollOverQueueIndex[_receiver] != 0) {
             QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
-            if(item.epochId == _epochId && item.assets < _assets) revert AlreadyRollingOver();  
+            if (item.epochId == _epochId && item.assets < _assets)
+                revert AlreadyRollingOver();
         }
         _;
     }

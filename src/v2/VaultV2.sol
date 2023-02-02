@@ -81,7 +81,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         address _receiver
     )
         public
-        virtual override(SemiFungibleVault)
+        virtual
+        override(SemiFungibleVault)
         epochIdExists(_id)
         epochHasNotStarted(_id)
         nonReentrant
@@ -112,7 +113,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         address _receiver,
         address _owner
     )
-        external virtual
+        external
+        virtual
         override(SemiFungibleVault)
         epochIdExists(_id)
         epochHasEnded(_id)
@@ -184,7 +186,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         uint40 _epochEnd,
         uint256 _epochId
     ) external onlyFactory {
-        if(_epochId == 0 || _epochBegin == 0 || _epochEnd == 0 ) revert InvalidEpoch();
+        if (_epochId == 0 || _epochBegin == 0 || _epochEnd == 0)
+            revert InvalidEpoch();
         if (epochExists[_epochId] == true) revert EpochAlreadyExists();
 
         if (_epochBegin >= _epochEnd) revert EpochEndMustBeAfterBegin();
@@ -236,7 +239,12 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     @notice Controller can call this function to resolve the epoch, this function will set the epoch as ended and store the deposited TVL of the epoch
     @param  _id identifier of the epoch
      */
-    function resolveEpoch(uint256 _id) external onlyController epochIdExists(_id) epochHasStarted(_id){
+    function resolveEpoch(uint256 _id)
+        external
+        onlyController
+        epochIdExists(_id)
+        epochHasStarted(_id)
+    {
         if (epochResolved[_id]) revert EpochAlreadyEnded();
         epochResolved[_id] = true;
         finalTVL[_id] = totalAssets(_id);
@@ -274,7 +282,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochIdExists(_id)
         epochHasEnded(_id)
     {
-        if(_claimTVL > IVaultV2(counterPartyVault).finalTVL(_id)) revert InvalidClaimTVL();
+        if (_claimTVL > IVaultV2(counterPartyVault).finalTVL(_id))
+            revert InvalidClaimTVL();
 
         claimTVL[_id] = _claimTVL;
     }
@@ -327,16 +336,18 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /** @notice Lookup epoch begin and end
         @param _id id hashed from marketIndex, epoch begin and end and casted to uint256;
      */
-    function getEpochConfig(uint256 _id) public view returns (uint40 epochBegin, uint40 epochEnd) {
+    function getEpochConfig(uint256 _id)
+        public
+        view
+        returns (uint40 epochBegin, uint40 epochEnd)
+    {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
     }
 
-    function _asset() internal view returns(IERC20)
-    {
+    function _asset() internal view returns (IERC20) {
         return asset;
     }
-
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
@@ -347,7 +358,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         uint40 epochEnd;
     }
 
-     /*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
@@ -380,7 +391,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
             revert EpochNotStarted();
         _;
     }
-
 
     /** @notice Check if epoch exists
      */
