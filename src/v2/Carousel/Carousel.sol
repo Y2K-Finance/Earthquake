@@ -324,10 +324,14 @@ contract Carousel is VaultV2 {
         ) {
             QueueItem[] memory queue = rolloverQueue;
             uint256 length = rolloverQueue.length;
-            // revert if queue is empty or operations are more than queue length
-            if (length == 0 || _operations > length - 1) revert OverflowQueue();
-            // account for how many operations have been done
             uint256 index = rolloverAccounting[_epochId];
+            // revert if queue is empty or operations are more than queue length
+                if (
+                length == 0 ||
+                _operations > length - 1 ||
+                (index + _operations) > length - 1 ) revert OverflowQueue();
+            // account for how many operations have been done
+           
             while (index < _operations) {
                 // only roll over if user won last epoch
                 if (
@@ -470,7 +474,7 @@ contract Carousel is VaultV2 {
     ) {
         if (ownerToRollOverQueueIndex[_receiver] != 0) {
             QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
-            if (item.epochId == _epochId && item.assets < _assets)
+            if (item.epochId == _epochId && (balanceOf(_receiver, _epochId) - item.assets) < _assets)
                 revert AlreadyRollingOver();
         }
         _;
