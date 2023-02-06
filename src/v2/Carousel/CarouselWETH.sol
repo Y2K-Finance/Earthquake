@@ -52,11 +52,8 @@ contract CarouselWETH is Carousel {
 
         IWETH(address(asset)).deposit{value: msg.value}();
 
-        uint assets = msg.value;
+        uint256 assets = msg.value;
 
         _deposit(_id, assets, _receiver);
     }
-
-    
-
 }

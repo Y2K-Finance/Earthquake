@@ -492,13 +492,27 @@ contract Carousel is VaultV2 {
         entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
     }
 
-    // function gettRolloverTVL(type name) {
-        
-    // }
+    function getRolloverTVL( uint256 _epochId ) public view returns(uint256 tvl) {
+        for (uint256 i = 0; i < rolloverQueue.length; i++) {
+            if(
+                rolloverQueue[i].epochId == _epochId && 
+                (previewWithdraw(queue[index].epochId, queue[index].assets) >
+                queue[index].assets
+            )
+            ) {
+                 tvl += rolloverQueue[i].assets;
+            }
+           
+        }
+    }
 
-    // function getDepositQueueTVL(type name) {
+    function getDepositQueueTVL() public view returns(uint256 tvl) {
+        for (uint256 i = 0; i < depositQueue.length; i++) {
+            tvl += depositQueue[i].assets;
+        }
+    }
         
-    // }
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
