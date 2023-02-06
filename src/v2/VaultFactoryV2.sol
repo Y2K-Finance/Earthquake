@@ -136,8 +136,8 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee
-    ) public onlyOwner returns (uint256 epochId) {
-        address[2] memory vaults = marketIdToVaults[_marketId];
+    ) public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
+        vaults = marketIdToVaults[_marketId];
 
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
             revert MarketDoesNotExist(_marketId);

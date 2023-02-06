@@ -219,7 +219,7 @@ contract FactoryV2Test is Helper {
                 uint16(0x4)
             );
 
-       uint256 epochId =  factory.createEpoch(
+      ( uint256 epochId,) =  factory.createEpoch(
                 marketId,
                 uint40(0x2),
                 uint40(0x3),
@@ -238,7 +238,7 @@ contract FactoryV2Test is Helper {
         uint40 end = uint40(0x4);
         uint16 fee = uint16(0x5);
 
-        uint256 epochId2 =  factory.createEpoch(
+       ( uint256 epochId2,) =  factory.createEpoch(
                 marketId,
                 begin,
                 end,
