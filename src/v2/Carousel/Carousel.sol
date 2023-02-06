@@ -34,43 +34,29 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     constructor(
-        address _assetAddress,
-        string memory _name,
-        string memory _symbol,
-        string memory _tokenURI,
-        address _token,
-        uint256 _strike,
-        address _controller,
-        address _treasury,
-        bytes memory _data 
+        ConstructorArgs memory _data 
     )
         VaultV2(
-            _assetAddress,
-            _name,
-            _symbol,
-            _tokenURI,
-            _token,
-            _strike,
-            _controller,
-            _treasury
+            _data.assetAddress,
+            _data.name,
+            _data.symbol,
+            _data.tokenURI,
+            _data.token,
+            _data.strike,
+            _data.controller,
+            _data.treasury
         )
     {
-        ( 
-            address _emissionsToken,
-            uint256 _relayerFee, 
-            uint256 _closingTimeFrame,
-            uint256 _lateDepositFee
-        ) = abi.decode(_data, (address, uint256, uint256, uint256));
-        if(relayerFee < 10000) revert RelayerFeeToLow();
-        if(closingTimeFrame == 0) revert ClosingTimeFrame();
-        if(lateDepositFee > 10000) revert BPSToHigh();
-        if(_emissionsToken == address(0)) revert AddressZero();
-        emissionsToken = IERC20(_emissionsToken);
-        relayerFee = _relayerFee;
-        closingTimeFrame = _closingTimeFrame;
-        lateDepositFee = _lateDepositFee;
+        if(_data.relayerFee < 10000) revert RelayerFeeToLow();
+        if(_data.closingTimeFrame == 0) revert ClosingTimeFrame();
+        if(_data.lateDepositFee > 10000) revert BPSToHigh();
+        if(_data.emissionsToken == address(0)) revert AddressZero();
+        emissionsToken = IERC20(_data.emissionsToken);
+        relayerFee = _data.relayerFee;
+        closingTimeFrame = _data.closingTimeFrame;
+        lateDepositFee = _data.lateDepositFee;
 
-        // set epoch 0 to be allways available to deposit
+        // set epoch 0 to be allways available to deposit into Queue
         epochExists[0] = true;
         epochConfig[0] = EpochConfig({
             epochBegin: 10**10*40 - 7 days,
@@ -411,14 +397,13 @@ contract Carousel is VaultV2 {
         bytes memory data
     ) internal override {
         _mint(to, id, amount, data);
-        _mintEmissoins(to, id, amount, data);
+        _mintEmissoins(to, id, amount);
     }
 
     function _mintEmissoins(
         address to,
         uint256 id,
-        uint256 amount,
-        bytes memory data
+        uint256 amount
     ) internal {
         require(to != address(0), "ERC1155: mint to the zero address");
 
@@ -527,6 +512,21 @@ contract Carousel is VaultV2 {
         uint256 assets;
         address receiver;
         uint256 epochId;
+    }
+
+    struct ConstructorArgs {
+        address assetAddress;
+        string name;
+        string symbol;
+        string tokenURI;
+        address token;
+        uint256 strike;
+        address controller;
+        address treasury;
+        address emissionsToken;
+        uint256 relayerFee;
+        uint256 closingTimeFrame;
+        uint256 lateDepositFee;
     }
 
     /*//////////////////////////////////////////////////////////////

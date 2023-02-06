@@ -20,21 +20,38 @@ contract CarouselTest is Helper {
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
         vault = new Carousel(
-            address(0),
-            "Vault",
-            "v",
-            "randomURI",
-             address(0),
-            STRIKE,
-            controller,
-            TREASURY,
-            abi.encode(
+            Carousel.ConstructorArgs(
+                address(0),
+                "Vault",
+                "v",
+                "randomURI",
+                address(0),
+                STRIKE,
+                controller,
+                TREASURY,
                 emissionsToken,
                 relayerFee,
                 closingTimeFrame,
                 lateDepositFee
             )
         );
+
+        // vault = new Carousel(
+        //     address(0),
+        //     "Vault",
+        //     "v",
+        //     "randomURI",
+        //      address(0),
+        //     STRIKE,
+        //     controller,
+        //     TREASURY,
+        //     abi.encode(
+        //         emissionsToken,
+        //         relayerFee,
+        //         closingTimeFrame,
+        //         lateDepositFee
+        //     )
+        // );
 
         vm.warp(120000);
 
