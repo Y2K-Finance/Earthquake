@@ -60,6 +60,13 @@ contract Carousel is VaultV2 {
         emissionsToken = IERC20(_emissionsToken);
         relayerFee = _relayerFee;
         feeTreasury = _feeTreasury;
+        // set epoch 0 to be allways available to deposit
+        epochExists[0] = true;
+        epochConfig[0] = EpochConfig({
+            epochBegin: 10**10*40 - 7 days,
+            epochEnd: 10**10*40
+        });
+        epochs.push(0);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -287,6 +294,9 @@ contract Carousel is VaultV2 {
         QueueItem[] memory queue = depositQueue;
         uint256 length = rolloverQueue.length;
 
+        // dont allow minting if epochId is 0
+        if (_epochId == 0) revert();
+
         // revert if queue is empty or operations are more than queue length
         if (length == 0 || _operations > length - 1) revert OverflowQueue();
 
@@ -315,6 +325,8 @@ contract Carousel is VaultV2 {
         epochHasNotStarted(_epochId)
         nonReentrant
     {
+        // dont allow minting if epochId is 0
+        if (_epochId == 0) revert();
         // make sure there is already a new epoch set
         // epoch has not started
         // prev epoch is resolved
@@ -447,6 +459,14 @@ contract Carousel is VaultV2 {
     {
         entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
     }
+
+    // function gettRolloverTVL(type name) {
+        
+    // }
+
+    // function getDepositQueueTVL(type name) {
+        
+    // }
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS

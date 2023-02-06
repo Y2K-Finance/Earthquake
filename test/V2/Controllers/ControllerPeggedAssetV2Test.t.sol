@@ -69,7 +69,7 @@ contract ControllerPeggedAssetV2Test is Helper {
         end = uint40(block.timestamp + 1 days);
         withdrawalFee = 10;
 
-        epochId = factory.createEpoch(
+        (epochId, ) = factory.createEpoch(
             marketId,
             begin,
             end,
