@@ -496,8 +496,8 @@ contract Carousel is VaultV2 {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
             if(
                 rolloverQueue[i].epochId == _epochId && 
-                (previewWithdraw(queue[index].epochId, queue[index].assets) >
-                queue[index].assets
+                (previewWithdraw(rolloverQueue[i].epochId, rolloverQueue[i].assets) >
+                rolloverQueue[i].assets
             )
             ) {
                  tvl += rolloverQueue[i].assets;
@@ -510,8 +510,6 @@ contract Carousel is VaultV2 {
         for (uint256 i = 0; i < depositQueue.length; i++) {
             tvl += depositQueue[i].assets;
         }
-    }
-        
     }
 
     /*//////////////////////////////////////////////////////////////
