@@ -78,4 +78,9 @@ interface ICarousel {
     function changeLateDepositFee(uint256 _lateDepositFee) external;
 
     function changeTreasury(address) external;
+
+    function balanceOfEmissoins(address _user, uint256 _epochId)
+        external
+        view
+        returns (uint256);
 }

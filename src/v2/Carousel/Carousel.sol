@@ -43,7 +43,6 @@ contract Carousel is VaultV2 {
         address _controller,
         address _treasury,
         bytes memory _data 
-
     )
         VaultV2(
             _assetAddress,
@@ -510,6 +509,14 @@ contract Carousel is VaultV2 {
         for (uint256 i = 0; i < depositQueue.length; i++) {
             tvl += depositQueue[i].assets;
         }
+    }
+
+    function balanceOfEmissions(address _owner, uint256 _id)
+        public
+        view
+        returns (uint256)
+    {
+        return _emissionsBalances[_id][_owner];
     }
 
     /*//////////////////////////////////////////////////////////////
