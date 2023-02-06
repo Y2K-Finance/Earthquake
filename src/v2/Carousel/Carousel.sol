@@ -19,7 +19,8 @@ contract Carousel is VaultV2 {
     // Earthquake parameters
     uint256 public relayerFee;
     uint256 public closingTimeFrame;
-    address public feeTreasury;
+    uint256 public lateDepositFee;
+    address public treasury;
     IERC20 public emissionsToken;
 
     mapping(address => uint256) public ownerToRollOverQueueIndex;
@@ -42,9 +43,8 @@ contract Carousel is VaultV2 {
         uint256 _strike,
         address _controller,
         address _treasury,
-        address _feeTreasury,
-        address _emissionsToken,
-        uint256 _relayerFee
+        bytes memory _data 
+
     )
         VaultV2(
             _assetAddress,
@@ -57,9 +57,22 @@ contract Carousel is VaultV2 {
             _treasury
         )
     {
+        ( 
+            address _emissionsToken,
+            uint256 _relayerFee, 
+            uint256 _closingTimeFrame,
+            uint256 _lateDepositFee
+        ) = abi.decode(_data, (address, uint256, uint256, uint256));
+        if(relayerFee < 10000) revert RelayerFeeToLow();
+        if(closingTimeFrame == 0) revert ClosingTimeFrame();
+        if(lateDepositFee > 10000) revert BPSToHigh();
+        if(_emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_emissionsToken);
+        treasury = _treasury;
         relayerFee = _relayerFee;
-        feeTreasury = _feeTreasury;
+        closingTimeFrame = _closingTimeFrame;
+        lateDepositFee = _lateDepositFee;
+
         // set epoch 0 to be allways available to deposit
         epochExists[0] = true;
         epochConfig[0] = EpochConfig({
@@ -89,28 +102,7 @@ contract Carousel is VaultV2 {
 
         _asset().safeTransferFrom(msg.sender, address(this), _assets);
 
-        // mint logic, either in queue or direct deposit
-        if (queueClosed(_id)) {
-            uint256 lateDepositFee = _assets; // TODO: calculate late deposit fee
-            uint256 assetsToDeposit = _assets; // TODO: calculate assets to deposit
-            _asset().safeTransfer(feeTreasury, lateDepositFee);
-
-            _mint(_receiver, _id, assetsToDeposit, EMPTY);
-
-            emit LateDeposit(
-                msg.sender,
-                _receiver,
-                _id,
-                assetsToDeposit,
-                lateDepositFee
-            );
-        } else {
-            depositQueue.push(
-                QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
-            );
-
-            emit DepositInQueue(msg.sender, _receiver, _id, _assets);
-        }
+        _deposit(_id, _assets, _receiver);
     }
 
     /**
@@ -316,7 +308,7 @@ contract Carousel is VaultV2 {
             }
         }
 
-        asset.safeTransfer(feeTreasury, _operations * relayerFee);
+        asset.safeTransfer(msg.sender, _operations * relayerFee);
     }
 
     function mintRollovers(uint256 _epochId, uint256 _operations)
@@ -371,7 +363,7 @@ contract Carousel is VaultV2 {
 
             rolloverAccounting[_epochId] = index;
 
-            asset.safeTransfer(feeTreasury, _operations * relayerFee);
+            asset.safeTransfer(msg.sender, _operations * relayerFee);
         }
     }
 
@@ -387,6 +379,33 @@ contract Carousel is VaultV2 {
     /*///////////////////////////////////////////////////////////////
                         INTERNAL MUTATIVE LOGIC
     //////////////////////////////////////////////////////////////*/
+
+    function _deposit(uint256 _id,  uint256 _assets, address _receiver) internal {
+             // mint logic, either in queue or direct deposit
+        if (queueClosed(_id)) {
+            // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
+            uint256 lateDepositFee = _assets.mulDivUp(lateDepositFee, 10000);
+             // 0.5% = multiply by 1000 then divide by 5
+            uint256 assetsToDeposit = _assets - lateDepositFee;
+            _asset().safeTransfer(treasury, lateDepositFee);
+
+            _mint(_receiver, _id, assetsToDeposit, EMPTY);
+
+            emit LateDeposit(
+                msg.sender,
+                _receiver,
+                _id,
+                assetsToDeposit,
+                lateDepositFee
+            );
+        } else {
+            depositQueue.push(
+                QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
+            );
+
+            emit DepositInQueue(msg.sender, _receiver, _id, _assets);
+        }
+    }
 
     function _mint(
         address to,
@@ -442,6 +461,25 @@ contract Carousel is VaultV2 {
         epochIdExists(_epochId)
     {
         emissions[_epochId] = _emissionsRate;
+    }
+
+    function changeRelayerFee(uint256 _relayerFee) external onlyFactory {
+        relayerFee = _relayerFee;
+    }
+
+    function changeClosingTimeFrame(uint256 _closingTimeFrame)
+        external
+        onlyFactory
+    {
+        closingTimeFrame = _closingTimeFrame;
+    }
+
+    function changeLateDepositFee(uint256 _lateDepositFee) external onlyFactory {
+        lateDepositFee = _lateDepositFee;
+    }
+
+    function changeTreasury(address _treasury) external onlyFactory {
+        treasury = _treasury;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -509,7 +547,9 @@ contract Carousel is VaultV2 {
     error AlreadyRollingOver();
     error InsufficientBalance();
     error NoRolloverQueued();
-
+    error RelayerFeeToLow();
+    error ClosingTimeFrame();
+    error BPSToHigh();
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/

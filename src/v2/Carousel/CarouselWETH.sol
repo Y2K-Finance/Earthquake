@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IWETH} from "./interfaces/IWETH.sol";
-import {VaultV2} from "./VaultV2.sol";
+import {IWETH} from "../interfaces/IWETH.sol";
+import {Carousel} from "./Carousel.sol";
 
 /// @author Y2K Finance Team
 
-contract VaultV2WETH is VaultV2 {
+contract CarouselWETH is Carousel {
     /*//////////////////////////////////////////////////////////////
                                  CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -19,9 +19,10 @@ contract VaultV2WETH is VaultV2 {
         address _token,
         uint256 _strikePrice,
         address _controller,
-        address _treasury
+        address _treasury,
+        bytes memory _data
     )
-        VaultV2(
+        Carousel(
             _assetAddress,
             _name,
             _symbol,
@@ -29,29 +30,33 @@ contract VaultV2WETH is VaultV2 {
             _token,
             _strikePrice,
             _controller,
-            _treasury
+            _treasury,
+            _data
         )
     {}
 
     /**
         @notice Deposit ETH function
-        @param  _id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
+        @param  _id ;
         @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */
     function depositETH(uint256 _id, address _receiver)
         external
         payable
+        minRequiredDeposit(msg.value)
         epochIdExists(_id)
         epochHasNotStarted(_id)
         nonReentrant
     {
-        require(msg.value > 0, "ZeroValue");
         if (_receiver == address(0)) revert AddressZero();
 
         IWETH(address(asset)).deposit{value: msg.value}();
-        _mint(_receiver, _id, msg.value, EMPTY);
 
-        emit Deposit(msg.sender, _receiver, _id, msg.value);
+        uint assets = msg.value;
+
+        _deposit(_id, assets, _receiver);
     }
+
+    
 
 }
