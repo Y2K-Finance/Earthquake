@@ -27,6 +27,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     uint256 public strike;
     uint256 public marketId;
     // Earthquake bussiness logic
+    address public treasury;
     address public counterPartyVault;
     address public factory;
     address public controller;
@@ -63,6 +64,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         strike = _strike;
         factory = msg.sender;
         controller = _controller;
+        treasury = _treasury;
         whitelistedAddresses[_treasury] = true;
     }
 
@@ -217,6 +219,15 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function whiteListAddress(address _wAddress) public onlyFactory {
         if (_wAddress == address(0)) revert AddressZero();
         whitelistedAddresses[_wAddress] = !whitelistedAddresses[_wAddress];
+    }
+
+    /**
+    @notice Factory function, changes treasury address
+    @param _treasury New treasury address
+     */
+    function setTreasury(address _treasury) public onlyFactory {
+        if (_treasury == address(0)) revert AddressZero();
+        treasury = _treasury;
     }
 
     /**

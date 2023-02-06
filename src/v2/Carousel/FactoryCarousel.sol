@@ -21,8 +21,7 @@ contract CarouselFactory is VaultFactoryV2 {
         address _policy,
         address _weth,
         address _treasury,
-        address _emissoinsToken,
-        address _relayerTreasury
+        address _emissoinsToken
     ) VaultFactoryV2(_policy, _weth, _treasury) {
         emissionsToken = IERC20(_emissoinsToken);
     }
@@ -130,6 +129,7 @@ contract CarouselFactory is VaultFactoryV2 {
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
     function _deployVaultCarousel(CarouselMarketConfiguration memory _marketConfig)
         internal
         returns (address)
@@ -176,6 +176,11 @@ contract CarouselFactory is VaultFactoryV2 {
                 );
         }
     }
+
+
+    /*//////////////////////////////////////////////////////////////
+                                ADMIN FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
 
     function changeRelayerFee(uint256 _relayerFee, uint256 _marketIndex)
