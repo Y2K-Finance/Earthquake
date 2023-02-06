@@ -71,12 +71,11 @@ interface ICarousel {
 
     function previewEmissionsWithdraw(uint256 _id, uint256 _assets) external;
 
-  function changeRelayerFee(uint256 _relayerFee) external;
-  
-  function changeClosingTimeFrame(uint256 _closingTimeFrame) external;
-   
-function changeLateDepositFee(uint256 _lateDepositFee) external;
+    function changeRelayerFee(uint256 _relayerFee) external;
 
-function changeTreasury(address ) external;
-    
+    function changeClosingTimeFrame(uint256 _closingTimeFrame) external;
+
+    function changeLateDepositFee(uint256 _lateDepositFee) external;
+
+    function changeTreasury(address) external;
 }

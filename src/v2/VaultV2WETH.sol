@@ -53,5 +53,4 @@ contract VaultV2WETH is VaultV2 {
 
         emit Deposit(msg.sender, _receiver, _id, msg.value);
     }
-
 }

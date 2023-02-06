@@ -17,6 +17,7 @@ import {
 contract CarouselFactory is VaultFactoryV2 {
     using SafeERC20 for IERC20;
     IERC20 public emissionsToken;
+
     constructor(
         address _policy,
         address _weth,
@@ -26,14 +27,16 @@ contract CarouselFactory is VaultFactoryV2 {
         emissionsToken = IERC20(_emissoinsToken);
     }
 
-     /**
+    /**
     @notice Function to create two new vaults, premium and collateral, with the respective params, and storing the oracle for the token provided
     @param  _marketCalldata MarketConfigurationCalldata struct with the market params
     @return premium address of the premium vault
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
      */
-    function createNewMarket(CarouselMarketConfigurationCalldata memory _marketCalldata)
+    function createNewMarket(
+        CarouselMarketConfigurationCalldata memory _marketCalldata
+    )
         external
         onlyOwner
         returns (
@@ -106,7 +109,7 @@ contract CarouselFactory is VaultFactoryV2 {
 
         return (premium, collateral, marketId);
     }
-    
+
     function createEpochWithEmissions(
         uint256 _marketId,
         uint40 _epochBegin,
@@ -116,7 +119,12 @@ contract CarouselFactory is VaultFactoryV2 {
         uint256 _emissions2
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
-        (epochId, vaults) = createEpoch(_marketId, _epochBegin, _epochEnd, _withdrawalFee);
+        (epochId, vaults) = createEpoch(
+            _marketId,
+            _epochBegin,
+            _epochEnd,
+            _withdrawalFee
+        );
 
         emissionsToken.safeTransferFrom(msg.sender, vaults[0], _emissions1);
         ICarousel(vaults[0]).setEmissions(epochId, _emissions1);
@@ -125,15 +133,13 @@ contract CarouselFactory is VaultFactoryV2 {
         ICarousel(vaults[1]).setEmissions(epochId, _emissions2);
     }
 
-
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _deployVaultCarousel(CarouselMarketConfiguration memory _marketConfig)
-        internal
-        returns (address)
-    {
+    function _deployVaultCarousel(
+        CarouselMarketConfiguration memory _marketConfig
+    ) internal returns (address) {
         if (_marketConfig.underlyingAsset == WETH) {
             return
                 address(
@@ -146,11 +152,11 @@ contract CarouselFactory is VaultFactoryV2 {
                         _marketConfig.strike,
                         _marketConfig.controller,
                         treasury,
-                        abi.encode(  
-                        address(emissionsToken),
-                        _marketConfig.relayerFee,
-                        _marketConfig.closingTimeFrame,
-                        _marketConfig.lateDepositFee
+                        abi.encode(
+                            address(emissionsToken),
+                            _marketConfig.relayerFee,
+                            _marketConfig.closingTimeFrame,
+                            _marketConfig.lateDepositFee
                         )
                     )
                 );
@@ -166,7 +172,7 @@ contract CarouselFactory is VaultFactoryV2 {
                         _marketConfig.strike,
                         _marketConfig.controller,
                         treasury,
-                        abi.encode(  
+                        abi.encode(
                             address(emissionsToken),
                             _marketConfig.relayerFee,
                             _marketConfig.closingTimeFrame,
@@ -177,11 +183,9 @@ contract CarouselFactory is VaultFactoryV2 {
         }
     }
 
-
     /*//////////////////////////////////////////////////////////////
                                 ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-
 
     function changeRelayerFee(uint256 _relayerFee, uint256 _marketIndex)
         public
@@ -190,7 +194,7 @@ contract CarouselFactory is VaultFactoryV2 {
         if (_relayerFee > 10000) revert InvalidRelayerFee();
 
         address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if(vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
+        if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
         ICarousel insr = ICarousel(vaults[0]);
         ICarousel risk = ICarousel(vaults[1]);
         insr.changeRelayerFee(_relayerFee);
@@ -199,13 +203,13 @@ contract CarouselFactory is VaultFactoryV2 {
         // emit changedRelayerFee(_relayerFee, _marketIndex);
     }
 
-    function changeClosingTimeFrame(uint256 _closingTimeFrame, uint256 _marketIndex)
-        public
-        onlyTimeLocker
-    {
+    function changeClosingTimeFrame(
+        uint256 _closingTimeFrame,
+        uint256 _marketIndex
+    ) public onlyTimeLocker {
         if (_closingTimeFrame == 0) revert InvalidClosingTimeFrame();
         address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if(vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
+        if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
         ICarousel insr = ICarousel(vaults[0]);
         ICarousel risk = ICarousel(vaults[1]);
         insr.changeClosingTimeFrame(_closingTimeFrame);
@@ -217,11 +221,11 @@ contract CarouselFactory is VaultFactoryV2 {
     function changeLateDepositFee(uint256 _lateDepositFee, uint256 _marketIndex)
         public
         onlyTimeLocker
-    { 
+    {
         if (_lateDepositFee > 10000) revert InvalidLateDepositFee();
         // TODO might need to be able to change individual vaults
         address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if(vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
+        if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
         ICarousel insr = ICarousel(vaults[0]);
         ICarousel risk = ICarousel(vaults[1]);
         insr.changeLateDepositFee(_lateDepositFee);
@@ -234,7 +238,7 @@ contract CarouselFactory is VaultFactoryV2 {
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
 
-     struct CarouselMarketConfigurationCalldata {
+    struct CarouselMarketConfigurationCalldata {
         address token;
         uint256 strike;
         address oracle;
@@ -242,23 +246,22 @@ contract CarouselFactory is VaultFactoryV2 {
         string name;
         string tokenURI;
         address controller;
-        uint256 relayerFee; 
+        uint256 relayerFee;
         uint256 closingTimeFrame;
-        uint256 lateDepositFee; 
+        uint256 lateDepositFee;
     }
 
-
-     struct CarouselMarketConfiguration {
-         address underlyingAsset;
+    struct CarouselMarketConfiguration {
+        address underlyingAsset;
         string name;
         string symbol;
         string tokenURI;
         address token;
         uint256 strike;
         address controller;
-        uint256 relayerFee; 
+        uint256 relayerFee;
         uint256 closingTimeFrame;
-        uint256 lateDepositFee; 
+        uint256 lateDepositFee;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -267,6 +270,5 @@ contract CarouselFactory is VaultFactoryV2 {
 
     error InvalidRelayerFee();
     error InvalidClosingTimeFrame();
-    error InvalidLateDepositFee();    
-
+    error InvalidLateDepositFee();
 }
