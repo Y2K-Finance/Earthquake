@@ -12,26 +12,10 @@ contract CarouselWETH is Carousel {
     //////////////////////////////////////////////////////////////*/
 
     constructor(
-        address _assetAddress,
-        string memory _name,
-        string memory _symbol,
-        string memory _tokenURI,
-        address _token,
-        uint256 _strikePrice,
-        address _controller,
-        address _treasury,
-        bytes memory _data
+       Carousel.ConstructorArgs memory _data
     )
         Carousel(
-            _assetAddress,
-            _name,
-            _symbol,
-            _tokenURI,
-            _token,
-            _strikePrice,
-            _controller,
-            _treasury,
-            _data
+           _data
         )
     {}
 

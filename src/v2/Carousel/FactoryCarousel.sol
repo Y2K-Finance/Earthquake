@@ -59,7 +59,7 @@ contract CarouselFactory is VaultFactoryV2 {
             revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
-        premium = _deployVaultCarousel(
+        premium = _deployCarouselVault(
             CarouselMarketConfiguration(
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
@@ -75,7 +75,7 @@ contract CarouselFactory is VaultFactoryV2 {
         );
 
         // y2kUSDC_99*COLLATERAL
-        collateral = _deployVaultCarousel(
+        collateral = _deployCarouselVault(
             CarouselMarketConfiguration(
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, COLLAT)),
@@ -137,13 +137,14 @@ contract CarouselFactory is VaultFactoryV2 {
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _deployVaultCarousel(
+    function _deployCarouselVault(
         CarouselMarketConfiguration memory _marketConfig
     ) internal returns (address) {
         if (_marketConfig.underlyingAsset == WETH) {
             return
                 address(
                     new CarouselWETH(
+                        Carousel.ConstructorArgs(
                         _marketConfig.underlyingAsset,
                         _marketConfig.name,
                         _marketConfig.symbol,
@@ -152,11 +153,10 @@ contract CarouselFactory is VaultFactoryV2 {
                         _marketConfig.strike,
                         _marketConfig.controller,
                         treasury,
-                        abi.encode(
-                            address(emissionsToken),
-                            _marketConfig.relayerFee,
-                            _marketConfig.closingTimeFrame,
-                            _marketConfig.lateDepositFee
+                        address(emissionsToken),
+                        _marketConfig.relayerFee,
+                        _marketConfig.closingTimeFrame,
+                        _marketConfig.lateDepositFee
                         )
                     )
                 );
@@ -164,15 +164,15 @@ contract CarouselFactory is VaultFactoryV2 {
             return
                 address(
                     new Carousel(
-                        _marketConfig.underlyingAsset,
-                        _marketConfig.name,
-                        _marketConfig.symbol,
-                        _marketConfig.tokenURI,
-                        _marketConfig.token,
-                        _marketConfig.strike,
-                        _marketConfig.controller,
-                        treasury,
-                        abi.encode(
+                       Carousel.ConstructorArgs(
+                            _marketConfig.underlyingAsset,
+                            _marketConfig.name,
+                            _marketConfig.symbol,
+                            _marketConfig.tokenURI,
+                            _marketConfig.token,
+                            _marketConfig.strike,
+                            _marketConfig.controller,
+                            treasury,
                             address(emissionsToken),
                             _marketConfig.relayerFee,
                             _marketConfig.closingTimeFrame,
