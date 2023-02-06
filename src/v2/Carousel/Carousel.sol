@@ -20,7 +20,6 @@ contract Carousel is VaultV2 {
     uint256 public relayerFee;
     uint256 public closingTimeFrame;
     uint256 public lateDepositFee;
-    address public treasury;
     IERC20 public emissionsToken;
 
     mapping(address => uint256) public ownerToRollOverQueueIndex;
@@ -68,7 +67,6 @@ contract Carousel is VaultV2 {
         if(lateDepositFee > 10000) revert BPSToHigh();
         if(_emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_emissionsToken);
-        treasury = _treasury;
         relayerFee = _relayerFee;
         closingTimeFrame = _closingTimeFrame;
         lateDepositFee = _lateDepositFee;
@@ -476,10 +474,6 @@ contract Carousel is VaultV2 {
 
     function changeLateDepositFee(uint256 _lateDepositFee) external onlyFactory {
         lateDepositFee = _lateDepositFee;
-    }
-
-    function changeTreasury(address _treasury) external onlyFactory {
-        treasury = _treasury;
     }
 
     /*///////////////////////////////////////////////////////////////

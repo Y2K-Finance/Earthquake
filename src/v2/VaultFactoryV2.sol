@@ -268,6 +268,8 @@ contract VaultFactoryV2 is Ownable {
 
         IVaultV2(vaults[0]).whiteListAddress(_treasury);
         IVaultV2(vaults[1]).whiteListAddress(_treasury);
+        IVaultV2(vaults[0]).setTreasury(treasury);
+        IVaultV2(vaults[1]).setTreasury(treasury);
 
         emit ChangedTreasury(_treasury, _marketId);
     }
