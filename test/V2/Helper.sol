@@ -14,4 +14,6 @@ contract Helper is Test {
     address NOTADMIN = address(0x99);
     uint256 STRIKE = 1000000000000000000;
     address USER = address(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
+    address USER2 = address(0x12312);
+
 }
