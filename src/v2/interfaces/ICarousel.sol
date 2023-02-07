@@ -83,4 +83,7 @@ interface ICarousel {
         external
         view
         returns (uint256);
+
+    function getDepositQueueLenght() external view;
+    function getRolloverQueueLenght() external view;
 }
