@@ -136,6 +136,9 @@ contract CarouselTest is Helper {
         deal(emissionsToken, address(vault), 100 ether, true);
         vault.setEpoch(_epochBegin, _epochEnd, _epochId);
         vault.setEmissions( _epochId, _emissions);
+    
+        helperDepositInEpochs(_epochId,USER, false);
+        helperDepositInEpochs(_epochId,USER2, false);
 
         vm.warp(_epochBegin - 10 minutes);
     
