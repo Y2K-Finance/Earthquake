@@ -292,6 +292,7 @@ contract Carousel is VaultV2 {
                 _epochId,
                 queue[i].assets - relayerFee
             );
+            emit Deposit(msg.sender,  queue[i].receiver, _epochId,  queue[i].assets - relayerFee);
             depositQueue.pop();
             if( i == 0 ) break;
             unchecked {
@@ -300,6 +301,7 @@ contract Carousel is VaultV2 {
         }
 
         emit DepositMinted(_epochId, _operations);
+       
 
         asset.safeTransfer(msg.sender, _operations * relayerFee);
     }
