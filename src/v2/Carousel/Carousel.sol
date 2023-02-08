@@ -76,15 +76,19 @@ contract Carousel is VaultV2 {
     )
         public
         override(VaultV2)
-        minRequiredDeposit(_assets)
         epochIdExists(_id)
         epochHasNotStarted(_id)
+        minRequiredDeposit(_assets)
         nonReentrant
     {
+        // make sure that epoch exists
+        // epoch has not started (valid deposit period)
+        // amount is enough to pay for relayer fees in case of queue deposit
+        // function is not reentrant
         if (_receiver == address(0)) revert AddressZero();
 
         _asset().safeTransferFrom(msg.sender, address(this), _assets);
-
+        // handles deposit logic for all cases (direct deposit, late deposit (if activated), queue deposit)
         _deposit(_id, _assets, _receiver);
     }
 
@@ -111,6 +115,10 @@ contract Carousel is VaultV2 {
         nonReentrant
         returns (uint256 shares)
     {
+        // make sure that epoch exists
+        // epoch is resolved
+        // owners funds are not locked in rollover
+        // function is not reentrant
         if (_receiver == address(0)) revert AddressZero();
 
         if (
@@ -279,14 +287,12 @@ contract Carousel is VaultV2 {
         // get last index of queue
         uint256 i = length - 1;
         while ((length - _operations) <= i) {
-            if(queue[i].epochId == _epochId || queue[i].epochId == 0) {
-                _mintShares(
-                    queue[i].receiver,
-                    _epochId,
-                    queue[i].assets - relayerFee
-                );
-                depositQueue.pop();
-            }
+            _mintShares(
+                queue[i].receiver,
+                _epochId,
+                queue[i].assets - relayerFee
+            );
+            depositQueue.pop();
             if( i == 0 ) break;
             unchecked {
                 i--;
@@ -328,8 +334,9 @@ contract Carousel is VaultV2 {
     
             // account for how many operations have been done
             uint256 prevIndex = index;
+            uint256 executions = 0;
            
-            while ((index - prevIndex) < (_operations)) {    
+            while ((index-prevIndex) < (_operations)) {    
                 // only roll over if last epoch is resolved and user won
                 if(epochResolved[queue[index].epochId]) {
                     if (
@@ -350,6 +357,8 @@ contract Carousel is VaultV2 {
                             queue[index].assets -
                             relayerFee;
                         rolloverQueue[index].epochId = _epochId;
+                        // only pay relayer for successful mints
+                        executions++;
                     }
                 }
                 index++;
@@ -357,7 +366,7 @@ contract Carousel is VaultV2 {
 
             rolloverAccounting[_epochId] = index;
 
-            asset.safeTransfer(msg.sender, _operations * relayerFee);
+            asset.safeTransfer(msg.sender, executions * relayerFee);
         }
     }
 
@@ -396,6 +405,7 @@ contract Carousel is VaultV2 {
         else if(_id != 0){
             // manually deposit and not pay realyer fee
             _mintShares(_receiver, _id, _assets);
+            emit Deposit(msg.sender, _receiver, _id, _assets);
         } else {
             depositQueue.push(
                 QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
