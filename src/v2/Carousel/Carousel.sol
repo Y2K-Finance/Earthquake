@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import "../VaultV2.sol";
+import "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
@@ -278,7 +279,7 @@ contract Carousel is VaultV2 {
         uint256 length = depositQueue.length;
 
         // dont allow minting if epochId is 0
-        if (_epochId == 0) revert();
+        if (_epochId == 0) revert InvalidEpochId();
 
         // revert if queue is empty or operations are more than queue length
         if (length == 0 || _operations > length) revert OverflowQueue();
@@ -312,9 +313,9 @@ contract Carousel is VaultV2 {
         epochHasNotStarted(_epochId)
         nonReentrant
     {
+        // epoch has not started
         // dont allow minting if epochId is 0
-        if (_epochId == 0) revert();
-  
+        if (_epochId == 0) revert InvalidEpochId();
 
         uint256 length = rolloverQueue.length;
         uint256 index = rolloverAccounting[_epochId];
@@ -325,51 +326,51 @@ contract Carousel is VaultV2 {
         _operations > length ||
         (index + _operations) > length  ) revert OverflowQueue();
 
-        // make sure there is already a new epoch set
-        // epoch has not started
         // prev epoch is resolved
-        if (
-            epochResolved[epochs[epochs.length - 2]] &&
-            epochs[epochs.length - 1] == _epochId
-        ) {
-            QueueItem[] memory queue = rolloverQueue;
-    
-            // account for how many operations have been done
-            uint256 prevIndex = index;
-            uint256 executions = 0;
-           
-            while ((index-prevIndex) < (_operations)) {    
-                // only roll over if last epoch is resolved and user won
-                if(epochResolved[queue[index].epochId]) {
-                    if (
-                        previewWithdraw(queue[index].epochId, queue[index].assets) >
+        if(!epochResolved[epochs[epochs.length - 2]]) revert EpochNotResolved();
+
+        // make sure epoch is next epoch
+        if (epochs[epochs.length - 1] != _epochId) revert InvalidEpochId();   
+
+        QueueItem[] memory queue = rolloverQueue;
+
+        // account for how many operations have been done
+        uint256 prevIndex = index;
+        uint256 executions = 0;
+        
+        while ((index-prevIndex) < (_operations)) {    
+            // only roll over if last epoch is resolved and user won
+            if(epochResolved[queue[index].epochId]) {
+                if (
+                    previewWithdraw(queue[index].epochId, queue[index].assets) >
+                    queue[index].assets
+                ) {
+                    _burn(
+                        queue[index].receiver,
+                        queue[index].epochId,
                         queue[index].assets
-                    ) {
-                        _burn(
-                            queue[index].receiver,
-                            queue[index].epochId,
-                            queue[index].assets
-                        );
-                        _mintShares(
-                            queue[index].receiver,
-                            _epochId,
-                            queue[index].assets - relayerFee
-                        );
-                        rolloverQueue[index].assets =
-                            queue[index].assets -
-                            relayerFee;
-                        rolloverQueue[index].epochId = _epochId;
-                        // only pay relayer for successful mints
-                        executions++;
-                    }
+                    );
+                    _mintShares(
+                        queue[index].receiver,
+                        _epochId,
+                        queue[index].assets - relayerFee
+                    );
+                    rolloverQueue[index].assets =
+                        queue[index].assets -
+                        relayerFee;
+                    rolloverQueue[index].epochId = _epochId;
+                    // only pay relayer for successful mints
+                    executions++;
                 }
-                index++;
             }
-
-            rolloverAccounting[_epochId] = index;
-
-            asset.safeTransfer(msg.sender, executions * relayerFee);
+            index++;
         }
+
+        if(executions > 0) rolloverAccounting[_epochId] = index;
+
+        if(executions * relayerFee > 0) asset.safeTransfer(msg.sender, executions * relayerFee);
+       
+    
     }
 
     function queueClosed(uint256 _epochId) public view returns (bool) {
@@ -593,6 +594,7 @@ contract Carousel is VaultV2 {
     error MinDeposit();
     error OverflowQueue();
     error AlreadyRollingOver();
+    error InvalidEpochId();
     error InsufficientBalance();
     error NoRolloverQueued();
     error RelayerFeeToLow();
