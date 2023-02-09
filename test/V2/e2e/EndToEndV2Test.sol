@@ -80,7 +80,7 @@ contract EndToEndV2Test is Helper {
        MintableToken(UNDERLYING).mint(USER);
     }
 
-    function testEndToEndDeposit() public {
+    function testEndToEndEndEpoch() public {
         vm.startPrank(USER);
 
         //deal ether
