@@ -72,15 +72,15 @@ contract EndToEndV2Test is Helper {
         );
         
         //create depeg market
-        depegOracle = new FakeOracle(USDC_CHAINLINK, 900000000000000000);
-        depegStrike = uint256(0x1);
+        depegOracle = new FakeOracle(USDC_CHAINLINK, 90995265);
+        depegStrike = uint256(909952660);
         (
             depegPremium,
             depegCollateral,
             depegMarketId
         ) = factory.createNewMarket(
             VaultFactoryV2.MarketConfigurationCalldata(
-                TOKEN,
+                USDC_TOKEN,
                 depegStrike,
                 address(depegOracle),
                 UNDERLYING,
@@ -91,8 +91,8 @@ contract EndToEndV2Test is Helper {
         );
 
         //create epoch for end epoch
-        begin = uint40(block.timestamp + 1 days);
-        end = uint40(block.timestamp + 2 days);
+        begin = uint40(block.timestamp - 5 days);
+        end = uint40(block.timestamp - 3 days);
         fee = uint16(0x5);
 
         epochId = factory.createEpoch(
@@ -116,16 +116,14 @@ contract EndToEndV2Test is Helper {
     function testEndToEndEndEpoch() public {
         vm.startPrank(USER);
 
+        vm.warp(begin - 1 days);
+
         //deal ether
         vm.deal(USER, DEALT_AMOUNT);
 
         //approve gov token
         MintableToken(UNDERLYING).approve(premium, DEPOSIT_AMOUNT);
         MintableToken(UNDERLYING).approve(collateral, DEPOSIT_AMOUNT);
-
-        //allowance for gov token
-        MintableToken(UNDERLYING).allowance(USER, premium);
-        MintableToken(UNDERLYING).allowance(USER, collateral);
 
         //deposit in both vaults
         VaultV2(premium).deposit(epochId, DEPOSIT_AMOUNT, USER);
@@ -165,16 +163,13 @@ contract EndToEndV2Test is Helper {
     function testEndToEndDepeg() public {
         vm.startPrank(USER);
 
+        vm.warp(begin - 10 days);
         //deal ether
         vm.deal(USER, DEALT_AMOUNT);
 
         //approve gov token
         MintableToken(UNDERLYING).approve(depegPremium, DEPOSIT_AMOUNT);
         MintableToken(UNDERLYING).approve(depegCollateral, DEPOSIT_AMOUNT);
-
-        //allowance for gov token
-        MintableToken(UNDERLYING).allowance(USER, depegPremium);
-        MintableToken(UNDERLYING).allowance(USER, depegCollateral);
 
         //deposit in both vaults
         VaultV2(depegPremium).deposit(depegEpochId, DEPOSIT_AMOUNT, USER);
