@@ -34,7 +34,7 @@ contract CarouselFactory is VaultFactoryV2 {
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
      */
-    function createNewMarket(
+    function createNewCarouselMarket(
         CarouselMarketConfigurationCalldata memory _marketCalldata
     )
         external
@@ -115,8 +115,8 @@ contract CarouselFactory is VaultFactoryV2 {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee,
-        uint256 _emissions1,
-        uint256 _emissions2
+        uint256 _permiumEmissions,
+        uint256 _collatEmissoins
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
         (epochId, vaults) = createEpoch(
@@ -126,11 +126,11 @@ contract CarouselFactory is VaultFactoryV2 {
             _withdrawalFee
         );
 
-        emissionsToken.safeTransferFrom(msg.sender, vaults[0], _emissions1);
-        ICarousel(vaults[0]).setEmissions(epochId, _emissions1);
+        emissionsToken.safeTransferFrom(treasury, vaults[0], _permiumEmissions);
+        ICarousel(vaults[0]).setEmissions(epochId, _permiumEmissions);
 
-        emissionsToken.safeTransferFrom(msg.sender, vaults[1], _emissions2);
-        ICarousel(vaults[1]).setEmissions(epochId, _emissions2);
+        emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissoins);
+        ICarousel(vaults[1]).setEmissions(epochId, _collatEmissoins);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -86,4 +86,14 @@ interface ICarousel {
 
     function getDepositQueueLenght() external view;
     function getRolloverQueueLenght() external view;
+
+    function emissionsToken() external view returns (address);
+
+    function relayerFee() external view returns (uint256);
+
+    function closingTimeFrame() external view returns (uint256);
+
+    function lateDepositFee() external view returns (uint256);
+
+    function emissions(uint256 _epochId) external view returns (uint256);
 }
