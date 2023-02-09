@@ -27,8 +27,8 @@ contract Carousel is VaultV2 {
     QueueItem[] public rolloverQueue;
     QueueItem[] public depositQueue;
     mapping(uint256 => uint256) public rolloverAccounting;
-    mapping(uint256 => mapping(address => uint256)) private _emissionsBalances;
-    mapping(uint256 => uint256) private emissions;
+    mapping(uint256 => mapping(address => uint256)) public _emissionsBalances;
+    mapping(uint256 => uint256) public emissions;
 
     /*//////////////////////////////////////////////////////////////
                                  CONSTRUCTOR
