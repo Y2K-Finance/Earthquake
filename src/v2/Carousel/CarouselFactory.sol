@@ -191,7 +191,7 @@ contract CarouselFactory is VaultFactoryV2 {
         public
         onlyTimeLocker
     {
-        if (_relayerFee > 10000) revert InvalidRelayerFee();
+        if (_relayerFee < 10000) revert InvalidRelayerFee();
 
         address[2] memory vaults = marketIdToVaults[_marketIndex];
         if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
