@@ -198,7 +198,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
 
         epochConfig[_epochId] = EpochConfig({
             epochBegin: _epochBegin,
-            epochEnd: _epochEnd
+            epochEnd: _epochEnd,
+            epochCreationTime: uint40(block.timestamp)
         });
         epochs.push(_epochId);
     }
@@ -367,6 +368,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     struct EpochConfig {
         uint40 epochBegin;
         uint40 epochEnd;
+        uint40 epochCreationTime;
     }
 
     /*//////////////////////////////////////////////////////////////

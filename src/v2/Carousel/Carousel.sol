@@ -19,7 +19,6 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
     // Earthquake parameters
     uint256 public relayerFee;
-    uint256 public closingTimeFrame;
     uint256 public lateDepositFee;
     IERC20 public emissionsToken;
 
@@ -49,12 +48,10 @@ contract Carousel is VaultV2 {
         )
     {
         if(_data.relayerFee < 10000) revert RelayerFeeToLow();
-        if(_data.closingTimeFrame == 0) revert ClosingTimeFrame();
         if(_data.lateDepositFee > 10000) revert BPSToHigh();
         if(_data.emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_data.emissionsToken);
         relayerFee = _data.relayerFee;
-        closingTimeFrame = _data.closingTimeFrame;
         lateDepositFee = _data.lateDepositFee;
 
         // set epoch 0 to be allways available to deposit into Queue
@@ -388,24 +385,20 @@ contract Carousel is VaultV2 {
 
     function _deposit(uint256 _id,  uint256 _assets, address _receiver) internal {
              // mint logic, either in queue or direct deposit
-        if (queueClosed(_id)) {
-            // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
-            uint256 lateDepositFee = _assets.mulDivUp(lateDepositFee, 10000);
-             // 0.5% = multiply by 1000 then divide by 5
-            uint256 assetsToDeposit = _assets - lateDepositFee;
-            _asset().safeTransfer(treasury, lateDepositFee);
+            if(_id != 0){
+                uint256 assetsToDeposit = _assets:
+                if(lateDepositFee > 0){
+                    (uint256 maxX, , uint256 minX)= getEpochConfig(_id)
+                    uint256 fee = calculateFeePercent(minX, maxX);
+                    // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
+                    uint256 lateDepositFee = _assets.mulDivUp(fee, 10000);
+                    // 0.5% = multiply by 1000 then divide by 5
+                    assetsToDeposit = _assets - lateDepositFee;
+                    _asset().safeTransfer(treasury, lateDepositFee);
+                }
 
             _mintShares(_receiver, _id, assetsToDeposit);
 
-            emit LateDeposit(
-                msg.sender,
-                _receiver,
-                _id,
-                assetsToDeposit,
-                lateDepositFee
-            );
-        }
-        else if(_id != 0){
             // manually deposit and not pay realyer fee
             _mintShares(_receiver, _id, _assets);
             emit Deposit(msg.sender, _receiver, _id, _assets);
@@ -416,6 +409,22 @@ contract Carousel is VaultV2 {
 
             emit DepositInQueue(msg.sender, _receiver, _id, _assets);
         }
+    }
+
+     /**
+     * Calculate rewards within a specific range.
+     */
+    function calculateFeePercent(
+        int256 minX,
+        int256 maxX
+    ) internal pure returns (uint256 _y) {
+        /**
+         * Two Point Form
+         * https://www.cuemath.com/geometry/two-point-form/
+         */
+         uint256 maxY = lateDepositFee * WAD;
+        _y = (((maxY / (maxX - minX)) * (block.timestamp - maxX)) + maxY) / WAD;
+        
     }
 
     function _mintShares(
@@ -475,13 +484,6 @@ contract Carousel is VaultV2 {
 
     function changeRelayerFee(uint256 _relayerFee) external onlyFactory {
         relayerFee = _relayerFee;
-    }
-
-    function changeClosingTimeFrame(uint256 _closingTimeFrame)
-        external
-        onlyFactory
-    {
-        closingTimeFrame = _closingTimeFrame;
     }
 
     function changeLateDepositFee(uint256 _lateDepositFee) external onlyFactory {
@@ -561,7 +563,6 @@ contract Carousel is VaultV2 {
         address treasury;
         address emissionsToken;
         uint256 relayerFee;
-        uint256 closingTimeFrame;
         uint256 lateDepositFee;
     }
 
@@ -598,7 +599,6 @@ contract Carousel is VaultV2 {
     error InsufficientBalance();
     error NoRolloverQueued();
     error RelayerFeeToLow();
-    error ClosingTimeFrame();
     error BPSToHigh();
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
