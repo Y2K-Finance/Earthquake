@@ -14,6 +14,7 @@ contract ControllerPeggedAssetV2 {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
+
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     address public treasury;
 
@@ -263,7 +264,7 @@ contract ControllerPeggedAssetV2 {
      * @return nowPrice Current token price
      */
     function getLatestPrice(address _token) public view returns (int256) {
-        (
+         (
             ,
             /*uint80 roundId*/
             int256 answer,
@@ -321,8 +322,8 @@ contract ControllerPeggedAssetV2 {
         pure
         returns (uint256 feeValue)
     {
-        // 0.5% = multiply by 1000 then divide by 5
-        return amount.mulDivUp(fee, 1000);
+        // 0.5% = multiply by 10000 then divide by 5
+        return amount.mulDivUp(fee, 10000);
     }
 
     /*//////////////////////////////////////////////////////////////
