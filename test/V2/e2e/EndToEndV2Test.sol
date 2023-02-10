@@ -37,7 +37,7 @@ contract EndToEndV2Test is Helper {
     uint16 public fee;
 
     uint256 public constant AMOUNT_AFTER_FEE = 19.95 ether;
-    uint256 public constant PERMIUM_DEPOSIT_AMOUNT = 2 ether;
+    uint256 public constant PREMIUM_DEPOSIT_AMOUNT = 2 ether;
     uint256 public constant COLLAT_DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEALT_AMOUNT = 20 ether;
@@ -178,15 +178,15 @@ contract EndToEndV2Test is Helper {
         vm.deal(USER, DEALT_AMOUNT);
 
         //approve gov token
-        MintableToken(UNDERLYING).approve(depegPremium, PERMIUM_DEPOSIT_AMOUNT);
+        MintableToken(UNDERLYING).approve(depegPremium, PREMIUM_DEPOSIT_AMOUNT);
         MintableToken(UNDERLYING).approve(depegCollateral, COLLAT_DEPOSIT_AMOUNT);
 
         //deposit in both vaults
-        VaultV2(depegPremium).deposit(depegEpochId, PERMIUM_DEPOSIT_AMOUNT, USER);
+        VaultV2(depegPremium).deposit(depegEpochId, PREMIUM_DEPOSIT_AMOUNT, USER);
         VaultV2(depegCollateral).deposit(depegEpochId, COLLAT_DEPOSIT_AMOUNT, USER);
 
         //check deposit balances
-        assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), PERMIUM_DEPOSIT_AMOUNT);
+        assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), PREMIUM_DEPOSIT_AMOUNT);
         assertEq(VaultV2(depegCollateral).balanceOf(USER ,depegEpochId), COLLAT_DEPOSIT_AMOUNT);
 
         //check user underlying balance
@@ -202,11 +202,11 @@ contract EndToEndV2Test is Helper {
         uint256 collateralShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegPremium).finalTVL(depegEpochId), fee);
 
         //check vault balances on withdraw
-        assertEq(premiumShareValue, VaultV2(depegPremium).previewWithdraw(depegEpochId, PERMIUM_DEPOSIT_AMOUNT));
+        assertEq(premiumShareValue, VaultV2(depegPremium).previewWithdraw(depegEpochId, PREMIUM_DEPOSIT_AMOUNT));
         assertEq(collateralShareValue, VaultV2(depegCollateral).previewWithdraw(depegEpochId, COLLAT_DEPOSIT_AMOUNT));
 
         //withdraw from vaults
-        VaultV2(depegPremium).withdraw(depegEpochId, PERMIUM_DEPOSIT_AMOUNT, USER, USER);
+        VaultV2(depegPremium).withdraw(depegEpochId, PREMIUM_DEPOSIT_AMOUNT, USER, USER);
         VaultV2(depegCollateral).withdraw(depegEpochId, COLLAT_DEPOSIT_AMOUNT, USER, USER);
 
         //check vaults balance
