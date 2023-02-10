@@ -199,7 +199,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochConfig[_epochId] = EpochConfig({
             epochBegin: _epochBegin,
             epochEnd: _epochEnd,
-            epochCreationTime: uint40(block.timestamp)
+            epochCreation: uint40(block.timestamp)
         });
         epochs.push(_epochId);
     }
@@ -349,10 +349,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function getEpochConfig(uint256 _id)
         public
         view
-        returns (uint40 epochBegin, uint40 epochEnd)
+        returns (uint40 epochBegin, uint40 epochEnd, uint40 epochCreation)
     {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
+        epochCreation = epochConfig[_id].epochCreation;
     }
 
     function _asset() internal view returns (IERC20) {
@@ -366,7 +367,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     struct EpochConfig {
         uint40 epochBegin;
         uint40 epochEnd;
-        uint40 epochCreationTime;
+        uint40 epochCreation;
     }
 
     /*//////////////////////////////////////////////////////////////

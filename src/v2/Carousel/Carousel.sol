@@ -2,7 +2,6 @@
 pragma solidity 0.8.17;
 
 import "../VaultV2.sol";
-import "forge-std/Test.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
@@ -19,7 +18,7 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
     // Earthquake parameters
     uint256 public relayerFee;
-    uint256 public lateDepositFee;
+    uint256 public depositFee;
     IERC20 public emissionsToken;
 
     mapping(address => uint256) public ownerToRollOverQueueIndex;
@@ -48,17 +47,18 @@ contract Carousel is VaultV2 {
         )
     {
         if(_data.relayerFee < 10000) revert RelayerFeeToLow();
-        if(_data.lateDepositFee > 10000) revert BPSToHigh();
+        if(_data.depositFee > 10000) revert BPSToHigh();
         if(_data.emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_data.emissionsToken);
         relayerFee = _data.relayerFee;
-        lateDepositFee = _data.lateDepositFee;
+        depositFee = _data.depositFee;
 
         // set epoch 0 to be allways available to deposit into Queue
         epochExists[0] = true;
         epochConfig[0] = EpochConfig({
             epochBegin: 10**10*40 - 7 days,
-            epochEnd: 10**10*40
+            epochEnd: 10**10*40,
+            epochCreation: uint40(block.timestamp)
         });
         epochs.push(0);
     }
@@ -336,25 +336,39 @@ contract Carousel is VaultV2 {
         uint256 executions = 0;
         
         while ((index-prevIndex) < (_operations)) {    
-            // only roll over if last epoch is resolved and user won
+            // only roll over if last epoch is resolved
             if(epochResolved[queue[index].epochId]) {
+                uint256 entitledShares = previewWithdraw(
+                    queue[index].epochId,
+                    queue[index].assets
+                );
+                // mint only if user won epoch he is rolling over
                 if (
-                    previewWithdraw(queue[index].epochId, queue[index].assets) >
+                    entitledShares >
                     queue[index].assets
                 ) {
+                    // @note we know that user could not withdraw these shares or transfer them
                     _burn(
                         queue[index].receiver,
                         queue[index].epochId,
                         queue[index].assets
                     );
+                    emit Withdraw(
+                        msg.sender,
+                        queue[index].receiver,
+                        queue[index].receiver,
+                        _epochId,
+                        queue[index].assets,
+                        entitledShares
+                    );
+                    uint256 assetsToMint = queue[index].assets - relayerFee;
                     _mintShares(
                         queue[index].receiver,
                         _epochId,
-                        queue[index].assets - relayerFee
+                        assetsToMint
                     );
-                    rolloverQueue[index].assets =
-                        queue[index].assets -
-                        relayerFee;
+                    emit Deposit(msg.sender,  queue[index].receiver, _epochId, assetsToMint);
+                    rolloverQueue[index].assets = assetsToMint;
                     rolloverQueue[index].epochId = _epochId;
                     // only pay relayer for successful mints
                     executions++;
@@ -370,15 +384,6 @@ contract Carousel is VaultV2 {
     
     }
 
-    function queueClosed(uint256 _epochId) public view returns (bool) {
-        if (
-            (block.timestamp + closingTimeFrame >=
-            epochConfig[_epochId].epochBegin) 
-            && lateDepositFee > 0 // late deposit fee should be a feature that can be turned off
-        ) return true ;
-        else return false;
-    }
-
     /*///////////////////////////////////////////////////////////////
                         INTERNAL MUTATIVE LOGIC
     //////////////////////////////////////////////////////////////*/
@@ -386,22 +391,23 @@ contract Carousel is VaultV2 {
     function _deposit(uint256 _id,  uint256 _assets, address _receiver) internal {
              // mint logic, either in queue or direct deposit
             if(_id != 0){
-                uint256 assetsToDeposit = _assets:
-                if(lateDepositFee > 0){
-                    (uint256 maxX, , uint256 minX)= getEpochConfig(_id)
-                    uint256 fee = calculateFeePercent(minX, maxX);
+                uint256 assetsToDeposit = _assets;
+
+                if(depositFee > 0){
+                    (uint256 maxX, , uint256 minX)= getEpochConfig(_id);
+                    // depisit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
+                    // this is because late depositors have an informational advantage
+                    uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
                     // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
-                    uint256 lateDepositFee = _assets.mulDivUp(fee, 10000);
+                    uint256 feeAmount = _assets.mulDivUp(fee, 10000);
                     // 0.5% = multiply by 1000 then divide by 5
-                    assetsToDeposit = _assets - lateDepositFee;
-                    _asset().safeTransfer(treasury, lateDepositFee);
+                    assetsToDeposit = _assets - feeAmount;
+                    _asset().safeTransfer(treasury, feeAmount);
                 }
 
-            _mintShares(_receiver, _id, assetsToDeposit);
+                _mintShares(_receiver, _id, assetsToDeposit);
 
-            // manually deposit and not pay realyer fee
-            _mintShares(_receiver, _id, _assets);
-            emit Deposit(msg.sender, _receiver, _id, _assets);
+                emit Deposit(msg.sender, _receiver, _id, _assets);
         } else {
             depositQueue.push(
                 QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
@@ -414,17 +420,22 @@ contract Carousel is VaultV2 {
      /**
      * Calculate rewards within a specific range.
      */
-    function calculateFeePercent(
+    function _calculateFeePercent(
         int256 minX,
         int256 maxX
-    ) internal pure returns (uint256 _y) {
+    ) internal view returns (uint256 _y) {
         /**
          * Two Point Form
          * https://www.cuemath.com/geometry/two-point-form/
+         * https://ethereum.stackexchange.com/a/143172
          */
-         uint256 maxY = lateDepositFee * WAD;
-        _y = (((maxY / (maxX - minX)) * (block.timestamp - maxX)) + maxY) / WAD;
-        
+         // minY will always be 0 thats why is (maxY - minY) shorten to maxY
+        int256 maxY = int256(depositFee) * int256(FixedPointMathLib.WAD);
+        _y = 
+        uint256( // cast to uint256
+            ((((maxY) / (maxX - minX)) * (int256(block.timestamp) - maxX)) + maxY) // two point math
+            / (int256(FixedPointMathLib.WAD)) // scale down 
+        );        
     }
 
     function _mintShares(
@@ -432,7 +443,6 @@ contract Carousel is VaultV2 {
         uint256 id,
         uint256 amount 
     ) internal {
-
         _mint(to, id, amount, EMPTY);
         _mintEmissoins(to, id, amount);
     }
@@ -486,8 +496,8 @@ contract Carousel is VaultV2 {
         relayerFee = _relayerFee;
     }
 
-    function changeLateDepositFee(uint256 _lateDepositFee) external onlyFactory {
-        lateDepositFee = _lateDepositFee;
+    function changeLateDepositFee(uint256 _depositFee) external onlyFactory {
+        depositFee = _depositFee;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -563,7 +573,7 @@ contract Carousel is VaultV2 {
         address treasury;
         address emissionsToken;
         uint256 relayerFee;
-        uint256 lateDepositFee;
+        uint256 depositFee;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -621,7 +631,7 @@ contract Carousel is VaultV2 {
         address indexed receiver,
         uint256 epochId,
         uint256 assets,
-        uint256 lateDepositFee
+        uint256 depositFee
     );
 
     event RolloverQueued(

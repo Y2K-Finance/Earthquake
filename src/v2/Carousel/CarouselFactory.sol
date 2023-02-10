@@ -69,8 +69,7 @@ contract CarouselFactory is VaultFactoryV2 {
                 _marketCalldata.strike,
                 _marketCalldata.controller,
                 _marketCalldata.relayerFee,
-                _marketCalldata.closingTimeFrame,
-                _marketCalldata.lateDepositFee
+                _marketCalldata.depositFee
             )
         );
 
@@ -85,8 +84,7 @@ contract CarouselFactory is VaultFactoryV2 {
                 _marketCalldata.strike,
                 _marketCalldata.controller,
                 _marketCalldata.relayerFee,
-                _marketCalldata.closingTimeFrame,
-                _marketCalldata.lateDepositFee
+                _marketCalldata.depositFee
             )
         );
 
@@ -155,8 +153,7 @@ contract CarouselFactory is VaultFactoryV2 {
                         treasury,
                         address(emissionsToken),
                         _marketConfig.relayerFee,
-                        _marketConfig.closingTimeFrame,
-                        _marketConfig.lateDepositFee
+                        _marketConfig.depositFee
                         )
                     )
                 );
@@ -175,8 +172,7 @@ contract CarouselFactory is VaultFactoryV2 {
                             treasury,
                             address(emissionsToken),
                             _marketConfig.relayerFee,
-                            _marketConfig.closingTimeFrame,
-                            _marketConfig.lateDepositFee
+                            _marketConfig.depositFee
                         )
                     )
                 );
@@ -200,38 +196,22 @@ contract CarouselFactory is VaultFactoryV2 {
         insr.changeRelayerFee(_relayerFee);
         risk.changeRelayerFee(_relayerFee);
 
-        // emit changedRelayerFee(_relayerFee, _marketIndex);
+        emit ChangedRelayerFee(_relayerFee, _marketIndex);
     }
 
-    function changeClosingTimeFrame(
-        uint256 _closingTimeFrame,
-        uint256 _marketIndex
-    ) public onlyTimeLocker {
-        if (_closingTimeFrame == 0) revert InvalidClosingTimeFrame();
-        address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
-        ICarousel insr = ICarousel(vaults[0]);
-        ICarousel risk = ICarousel(vaults[1]);
-        insr.changeClosingTimeFrame(_closingTimeFrame);
-        risk.changeClosingTimeFrame(_closingTimeFrame);
-
-        // emit ChangedClosingTimeFrame(_closingTimeFrame, _marketIndex);
-    }
-
-    function changeLateDepositFee(uint256 _lateDepositFee, uint256 _marketIndex)
+    function changeDepositFee(uint256 _depositFee, uint256 _marketIndex, uint256 vaultIndex)
         public
         onlyTimeLocker
     {
-        if (_lateDepositFee > 10000) revert InvalidLateDepositFee();
+        if(vaultIndex > 1) revert InvalidVaultIndex();
+        // _depositFee is in basis points max 15%
+        if (_depositFee > 1500) revert InvalidDepositFee();
         // TODO might need to be able to change individual vaults
         address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
-        ICarousel insr = ICarousel(vaults[0]);
-        ICarousel risk = ICarousel(vaults[1]);
-        insr.changeLateDepositFee(_lateDepositFee);
-        risk.changeLateDepositFee(_lateDepositFee);
+        if (vaults[vaultIndex] == address(0)) revert MarketDoesNotExist(_marketIndex);
+        ICarousel(vaults[vaultIndex]).changeDepositFee(_depositFee);
 
-        // emit ChangedLateDepositFee(_lateDepositFee, _marketIndex);
+        emit ChangedDepositFee(_depositFee, _marketIndex, vaultIndex, vaults[vaultIndex]);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -247,8 +227,7 @@ contract CarouselFactory is VaultFactoryV2 {
         string tokenURI;
         address controller;
         uint256 relayerFee;
-        uint256 closingTimeFrame;
-        uint256 lateDepositFee;
+        uint256 depositFee;
     }
 
     struct CarouselMarketConfiguration {
@@ -260,8 +239,7 @@ contract CarouselFactory is VaultFactoryV2 {
         uint256 strike;
         address controller;
         uint256 relayerFee;
-        uint256 closingTimeFrame;
-        uint256 lateDepositFee;
+        uint256 depositFee;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -270,5 +248,22 @@ contract CarouselFactory is VaultFactoryV2 {
 
     error InvalidRelayerFee();
     error InvalidClosingTimeFrame();
-    error InvalidLateDepositFee();
+    error InvalidVaultIndex();
+    error InvalidDepositFee();
+
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event ChangedDepositFee(
+        uint256 depositFee,
+        uint256 marketIndex,
+        uint256 vaultIndex,
+        address vault
+    );
+
+    event ChangedRelayerFee(uint256 relayerFee, uint256 marketIndex);
+
+
 }

@@ -250,7 +250,7 @@ contract FactoryV2Test is Helper {
         assertEq(fee, fetchedFee);
         
         // test if epoch config is correct
-        (uint40 fetchedBegin, uint40 fetchedEnd) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
+        (uint40 fetchedBegin, uint40 fetchedEnd, ) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
         assertEq(begin, fetchedBegin);
         assertEq(end, fetchedEnd);
 

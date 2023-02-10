@@ -151,9 +151,10 @@ contract VaultV2Test is Helper {
 
         // test success case
         assertTrue(vault.epochExists(epochId));
-        (uint40 b, uint40 e) = vault.getEpochConfig(epochId);
+        (uint40 b, uint40 e, uint40 c) = vault.getEpochConfig(epochId);
         assertEq(b, begin);
         assertEq(e, end);
+        assertEq(c, block.timestamp);
 
         helperSetEpoch(begin + 1, end + 1, epochId + 1);
         // get all epochs

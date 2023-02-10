@@ -16,14 +16,15 @@ contract CarouselTest is Helper {
     address relayer = address(0x55);
     address emissionsToken;
     uint256 relayerFee = 2 gwei;
-    uint256 closingTimeFrame = 1000;
-    uint256 lateDepositFee = 1000;
+    uint256 depositFee = 1000;
     address USER3 = address(0x123);
     address USER4 = address(0x345);
     address USER5 = address(0x567);
     address USER6 = address(0x789);
 
     function setUp() public {
+
+        vm.warp(1675884389);
 
         emissionsToken = address(new MintableToken("EmissionsToken", "etkn"));
 
@@ -41,8 +42,7 @@ contract CarouselTest is Helper {
                 TREASURY,
                 emissionsToken,
                 relayerFee,
-                closingTimeFrame,
-                lateDepositFee
+                depositFee
             )
         );
 
@@ -136,16 +136,16 @@ contract CarouselTest is Helper {
         deal(emissionsToken, address(vault), 100 ether, true);
         vault.setEpoch(_epochBegin, _epochEnd, _epochId);
         vault.setEmissions( _epochId, _emissions);
+
+        vm.warp(_epochBegin - 10 minutes);
     
         helperDepositInEpochs(_epochId,USER, false);
         helperDepositInEpochs(_epochId,USER2, false);
 
-        console.log(vault.epochExists(_epochId));
-
         // enlist in rollover for next epoch
         vm.startPrank(USER);
         //_epochId == epoch user is depositing in / amount of shares he wants to rollover
-        vault.enlistInRollover(_epochId, 10 ether, USER);
+        vault.enlistInRollover(_epochId, 8 ether, USER);
         vm.stopPrank();
 
         // resolve first epoch
@@ -153,8 +153,6 @@ contract CarouselTest is Helper {
         vm.startPrank(controller);
         vault.resolveEpoch(_epochId);
         vm.stopPrank();
-
-        
 
         // create second epoch
         _epochBegin = uint40(block.timestamp + 1 days);
