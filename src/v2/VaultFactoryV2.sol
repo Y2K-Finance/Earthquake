@@ -33,6 +33,8 @@ contract VaultFactoryV2 is Ownable {
     //////////////////////////////////////////////////////////////*/
     /** @notice Contract constructor
      * @param _policy Admin address address
+     * @param _weth WETH address
+     * @param _treasury Treasury address
      */
     constructor(
         address _policy,
@@ -232,8 +234,8 @@ contract VaultFactoryV2 is Ownable {
     }
 
     /**
-    @notice Function to whiteliste controller smart contract, only owner or timelocker can add more controllers
-    @notice owner can set controller once, all future controllers must be set by timelocker
+    @notice Function to whitelist controller smart contract, only owner or timelocker can add more controllers. 
+    owner can set controller once, all future controllers must be set by timelocker.
     @param  _controller Address of the controller smart contract
      */
     function whitelistController(address _controller) public {
@@ -441,11 +443,15 @@ contract VaultFactoryV2 is Ownable {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Modifier to check if the caller is the timelocker
+     */
     modifier onlyTimeLocker() {
         if (msg.sender != address(timelocker)) revert NotTimeLocker();
         _;
     }
 
+    /** @notice Modifier to check if the controller is whitelisted on the factory
+     */
     modifier controllerIsWhitelisted(address _controller) {
         if (!controllers[_controller]) revert ControllerNotSet();
         _;

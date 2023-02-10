@@ -20,6 +20,16 @@ contract TimeLock {
     error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
     error TxFailedError(string func);
 
+    /** @notice queues transaction when emitted
+        @param txId unique id of the transaction
+        @param target contract to call
+        @param func function to call
+        @param index market index of the vault to call the function on
+        @param data data to pass to the function
+        @param to address to change the params to
+        @param token token to change the params to
+        @param timestamp timestamp to execute the transaction
+     */
     event Queue(
         bytes32 indexed txId,
         address indexed target,
@@ -31,6 +41,16 @@ contract TimeLock {
         uint256 timestamp
     );
 
+    /** @notice executes transaction when emitted
+        @param txId unique id of the transaction
+        @param target contract to call
+        @param func function to call
+        @param index market index of the vault to call the function on
+        @param data data to pass to the function
+        @param to address to change the params to
+        @param token token to change the params to
+        @param timestamp timestamp to execute the transaction
+     */
     event Execute(
         bytes32 indexed txId,
         address indexed target,
@@ -42,6 +62,16 @@ contract TimeLock {
         uint256 timestamp
     );
 
+    /** @notice deletes transaction when emitted
+        @param txId unique id of the transaction
+        @param target contract to call
+        @param func function to call
+        @param index market index of the vault to call the function on
+        @param data data to pass to the function
+        @param to address to change the params to
+        @param token token to change the params to
+        @param timestamp timestamp to execute the transaction
+     */
     event Delete(
         bytes32 indexed txId,
         address indexed target,
@@ -53,11 +83,16 @@ contract TimeLock {
         uint256 timestamp
     );
 
+    /** @notice only owner can call functions with this modifier
+     */
     modifier onlyOwner() {
         if (msg.sender != policy) revert NotOwner(msg.sender);
         _;
     }
 
+    /** @notice constructor
+        @param _policy  address of the policy contract;
+      */
     constructor(address _policy) {
         policy = _policy;
     }
@@ -193,6 +228,15 @@ contract TimeLock {
         );
     }
 
+    /** @notice cancels the transaction
+        *  @param _target The target contract
+        *  @param _func The function to call
+        *  @param _index The market index of the vault to call the function on
+        *  @param _data The data to pass to the function
+        *  @param _to The address to change the params to
+        *  @param _token The token to change the params to
+        *  @param _timestamp The timestamp after which to execute the transaction
+     */
     function cancel(
         address _target,
         string calldata _func,
@@ -232,6 +276,16 @@ contract TimeLock {
         );
     }
 
+    /** @notice get transaction id
+        *  @param _target The target contract
+        *  @param _func The function to call
+        *  @param _index The market index of the vault to call the function on
+        *  @param _data The data to pass to the function
+        *  @param _to The address to change the params to
+        *  @param _token The token to change the params to
+        *  @param _timestamp The timestamp after which to execute the transaction
+        *  @return txId
+     */
     function getTxId(
         address _target,
         string calldata _func,
@@ -255,6 +309,11 @@ contract TimeLock {
             );
     }
 
+    /** @notice compare strings by bytes
+        *  @param s1 string 1
+        *  @param s2 string 2
+        *  @return bool
+     */
     function compareStringsbyBytes(string memory s1, string memory s2)
         public
         pure
@@ -264,6 +323,9 @@ contract TimeLock {
             keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
     }
 
+    /** @notice change owner
+        *  @param _newOwner new owner
+    */
     function changeOwner(address _newOwner) external onlyOwner {
         policy = _newOwner;
     }

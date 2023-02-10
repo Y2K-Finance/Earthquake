@@ -11,6 +11,16 @@ contract VaultV2WETH is VaultV2 {
                                  CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice constructor
+        @param _assetAddress  address of the asset to be deposited;
+        @param _name  string representing the name of the vault;
+        @param _symbol  string representing the symbol of the vault;
+        @param _tokenURI  string representing the tokenURI of the vault;
+        @param _token  address of the token to be used as a reward for the stakers;
+        @param _strikePrice  uint256 representing the strike price of the vault;
+        @param _controller  address of the controller of the vault;
+        @param _treasury  address of the treasury of the vault;
+     */
     constructor(
         address _assetAddress,
         string memory _name,

@@ -32,6 +32,9 @@ contract Carousel is VaultV2 {
                                  CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice constructor
+        @param _data  Carousel.ConstructorArgs struct containing the data to be used in the constructor;
+     */
     constructor(
         ConstructorArgs memory _data 
     )
@@ -67,6 +70,11 @@ contract Carousel is VaultV2 {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Deposit function
+        @param  _id epoch id
+        @param _assets   uint256 of how many assets you want to deposit;
+        @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
+     */
     function deposit(
         uint256 _id,
         uint256 _assets,
@@ -202,6 +210,11 @@ contract Carousel is VaultV2 {
                         Carousel Rollover Logic
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice enlists in rollover queue
+        @param  _epochId epoch id
+        @param _assets   uint256 of how many assets deposited;
+        @param _receiver  address of the receiver of the emissions;
+     */
     function enlistInRollover(
         uint256 _epochId,
         uint256 _assets,
@@ -237,6 +250,9 @@ contract Carousel is VaultV2 {
         emit RolloverQueued(_receiver, _assets, _epochId);
     }
 
+    /** @notice delists from rollover queue
+        @param _receiver  address of the receiver of the emissions;
+     */
     function delistInRollover(address _receiver) public {
         // check if user has already queued up a rollover
         if (ownerToRollOverQueueIndex[_receiver] == 0)
@@ -264,6 +280,10 @@ contract Carousel is VaultV2 {
         }
     }
 
+    /** @notice mints deposit in rollover queue
+        @param _epochId epoch id
+        @param _operations  uint256 of how many operations to execute;
+     */
     function mintDepositInQueue(uint256 _epochId, uint256 _operations)
         external
         epochIdExists(_epochId)
@@ -304,6 +324,10 @@ contract Carousel is VaultV2 {
         asset.safeTransfer(msg.sender, _operations * relayerFee);
     }
 
+    /** @notice mints for rollovers
+        @param _epochId epoch id
+        @param _operations  uint256 of how many operations to execute;
+     */
     function mintRollovers(uint256 _epochId, uint256 _operations)
         external
         epochIdExists(_epochId)
@@ -484,6 +508,10 @@ contract Carousel is VaultV2 {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice sets emissions
+        * @param _epochId epoch id
+        * @param _emissionsRate emissions rate
+     */
     function setEmissions(uint256 _epochId, uint256 _emissionsRate)
         external
         onlyFactory
@@ -492,6 +520,9 @@ contract Carousel is VaultV2 {
         emissions[_epochId] = _emissionsRate;
     }
 
+    /** @notice changes relayer fee
+        * @param _relayerFee relayer fee
+     */
     function changeRelayerFee(uint256 _relayerFee) external onlyFactory {
         relayerFee = _relayerFee;
     }
@@ -504,10 +535,19 @@ contract Carousel is VaultV2 {
                         Getter Functions
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice returns the rollover index
+        * @param _owner address of the owner
+        * @return rollover index
+     */
     function getRolloverIndex(address _owner) internal view returns (uint256) {
         return ownerToRollOverQueueIndex[_owner] - 1;
     }
 
+    /** @notice returns the emissions to withdraw
+        * @param _id epoch id
+        * @param _assets amount of assets to withdraw
+        * @return entitledAmount amount of emissions to withdraw
+     */
     function previewEmissionsWithdraw(uint256 _id, uint256 _assets)
         public
         view
@@ -516,14 +556,23 @@ contract Carousel is VaultV2 {
         entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
     }
 
+    /** @notice returns the deposit queue length
+        * @return queue length for the deposit
+     */
     function getDepositQueueLenght() public view returns (uint256) {
         return depositQueue.length;
     }
 
+    /** @notice returns the queue length for the rollover
+        * @return queue length for the rollover
+     */
     function getRolloverQueueLenght() public view returns (uint256) {
         return rolloverQueue.length;
     }
 
+    /** @notice returns the total value locked in the rollover queue
+      * @return tvl total value locked in the rollover queue
+     */
     function getRolloverTVL( uint256 _epochId ) public view returns(uint256 tvl) {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
             if(
@@ -538,12 +587,18 @@ contract Carousel is VaultV2 {
         }
     }
 
+    /** @notice returns the total value locked in the deposit queue
+      * @return tvl total value locked in the deposit queue
+     */
     function getDepositQueueTVL() public view returns(uint256 tvl) {
         for (uint256 i = 0; i < depositQueue.length; i++) {
             tvl += depositQueue[i].assets;
         }
     }
 
+    /** @notice returns the total emissions balance
+      * @return totalEmissions total emissions balance
+    */
     function balanceOfEmissions(address _owner, uint256 _id)
         public
         view
@@ -580,11 +635,19 @@ contract Carousel is VaultV2 {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice checks if deposit is greater than relayer fee
+      * @param _assets amount of assets to deposit
+     */
     modifier minRequiredDeposit(uint256 _assets) {
         if (_assets < relayerFee) revert MinDeposit();
         _;
     }
 
+    /** @notice checks if not rolling over
+        * @param _receiver address of the receiver
+        * @param _epochId epoch id
+        * @param _assets amount of assets to deposit
+     */
     modifier notRollingOver(
         address _receiver,
         uint256 _epochId,
@@ -614,6 +677,12 @@ contract Carousel is VaultV2 {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice emitted when a deposit is queued
+      * @param sender the address of the sender
+      * @param receiver the address of the receiver
+      * @param epochId the epoch id
+      * @param assets the amount of assets
+     */
     event DepositInQueue(
         address indexed sender,
         address indexed receiver,
@@ -621,11 +690,24 @@ contract Carousel is VaultV2 {
         uint256 assets
     );
 
+    /** @notice emitted when a deposit is rolled over
+      * @param sender the address of the sender
+      * @param receiver the address of the receiver
+      * @param epochId the epoch id
+      * @param assets the amount of assets
+     */
     event DepositMinted(
         uint256 epochId,
         uint256 operations
     );
 
+    /** @notice emitted when a deposit is late
+        * @param sender the address of the sender
+        * @param receiver the address of the receiver
+        * @param epochId the epoch id
+        * @param assets the amount of assets
+        * @param lateDepositFee the late deposit fee
+     */
     event LateDeposit(
         address indexed sender,
         address indexed receiver,
@@ -634,12 +716,24 @@ contract Carousel is VaultV2 {
         uint256 depositFee
     );
 
+    /** @notice emitted when a rollover is queued
+        * @param sender the address of the sender
+        * @param assets the amount of assets
+        * @param epochId the epoch id
+     */
     event RolloverQueued(
         address indexed sender,
         uint256 assets,
         uint256 epochId
     );
 
+    /** @notice emitted when emissions are transfered
+        * @param operator the address of the operator
+        * @param from the address of the sender
+        * @param to the address of the receiver
+        * @param id the id of the emissions
+        * @param value the amount of emissions
+     */
     event TransferSingleEmissions(
         address indexed operator,
         address indexed from,
