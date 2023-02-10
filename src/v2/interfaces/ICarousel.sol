@@ -73,7 +73,7 @@ interface ICarousel {
 
     function changeRelayerFee(uint256 _relayerFee) external;
 
-    function changeDepositFee(uint256 _lateDepositFee) external;
+    function changeDepositFee(uint256 _depositFee) external;
 
     function changeTreasury(address) external;
 

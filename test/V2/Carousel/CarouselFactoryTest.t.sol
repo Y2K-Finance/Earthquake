@@ -13,7 +13,7 @@ contract CarouselFactoryTest is Helper {
         address controller;
         address emissionsToken;
         uint256 relayerFee;
-        uint256 lateDepositFee;
+        uint256 depositFee;
    
         function setUp() public {
 
@@ -30,7 +30,7 @@ contract CarouselFactoryTest is Helper {
         factory.whitelistController(address(controller));
 
         relayerFee = 2 gwei;
-        lateDepositFee = 100; // 1%
+        depositFee = 100; // 1%
      }
 
       function testCarouselMarketCreation() public {
@@ -57,7 +57,7 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                lateDepositFee
+                depositFee
             )
         );
 
@@ -74,8 +74,8 @@ contract CarouselFactoryTest is Helper {
         assertEq(IVaultV2(collateral).counterPartyVault(), premium);   
 
         // test late deposit fee on Vaults is set
-        assertEq(ICarousel(premium).depositFee(), lateDepositFee);
-        assertEq(ICarousel(collateral).depositFee(), lateDepositFee);
+        assertEq(ICarousel(premium).depositFee(), depositFee);
+        assertEq(ICarousel(collateral).depositFee(), depositFee);
 
         // test if relayer fee is set
         assertEq(ICarousel(premium).relayerFee(), relayerFee);
@@ -208,30 +208,35 @@ contract CarouselFactoryTest is Helper {
     //     vm.stopPrank();
     // }    
 
-    // test changeLateDepositFee
-    // function testChangeLateDepositFee() public {
-    //     uint256 marketId = createMarketHelper();
-    //     uint16 newFee = 200; // 2%
-    //     vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-    //     factory.changeLateDepositFee(newFee, marketId);
+    // test changeDepositFee
+    function testChangeDepositFee() public {
+        uint256 marketId = createMarketHelper();
+        uint16 newFee = 200; // 2%
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+        factory.changeDepositFee(newFee, marketId, 0);
 
-    //     // get time locker
-    //     address timeLocker = address(factory.timelocker());
+        // get time locker
+        address timeLocker = address(factory.timelocker());
 
-    //     vm.startPrank(timeLocker);
-    //     vm.expectRevert(CarouselFactory.InvalidLateDepositFee.selector);
-    //     factory.changeLateDepositFee(11000, marketId); // revert if fee is greater than 100%
+        vm.startPrank(timeLocker);
+        vm.expectRevert(CarouselFactory.InvalidDepositFee.selector);
+        factory.changeDepositFee(11000, marketId, 0); // revert if fee is greater than 100%
 
-    //     vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
-    //     factory.changeLateDepositFee(newFee, 100); // revert if market does not exist
+        vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
+        factory.changeDepositFee(newFee, 100, 0); // revert if market does not exist
 
-    //     // test success case
-    //     factory.changeLateDepositFee(newFee, marketId);
-    //     assertEq(ICarousel(factory.getVaults(marketId)[0]).lateDepositFee(), newFee);
-    //     assertEq(ICarousel(factory.getVaults(marketId)[1]).lateDepositFee(), newFee);
+        // test success case
+        // change fee for premium vault
+        factory.changeDepositFee(newFee, marketId, 0);
+        assertEq(ICarousel(factory.getVaults(marketId)[0]).depositFee(), newFee);
+        // check if collateral vault fee is not changed
+        assertEq(ICarousel(factory.getVaults(marketId)[1]).depositFee(), depositFee);
 
-    //     vm.stopPrank();
-    // }
+        // change fee for collateral vault
+        factory.changeDepositFee(newFee, marketId, 1);
+        assertEq(ICarousel(factory.getVaults(marketId)[1]).depositFee(), newFee);
+        vm.stopPrank();
+    }
 
     function createMarketHelper() public returns(uint256 marketId){
 
@@ -257,7 +262,7 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                lateDepositFee
+                depositFee
             )
         );
     }

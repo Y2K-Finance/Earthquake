@@ -119,8 +119,8 @@ contract CarouselFactory is VaultFactoryV2 {
     @param _epochBegin uint40 of the epoch begin
     @param _epochEnd uint40 of the epoch end
     @param _withdrawalFee uint16 of the withdrawal fee
-    @param _emissions1 uint256 of the emissions for the premium vault
-    @param _emissions2 uint256 of the emissions for the collateral vault
+    @param _permiumEmissions uint256 of the emissions for the premium vault
+    @param _collatEmissoins uint256 of the emissions for the collateral vault
     @return epochId uint256 of the epochId
     @return vaults address[2] of the vaults
      */

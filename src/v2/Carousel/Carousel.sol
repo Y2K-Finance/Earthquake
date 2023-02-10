@@ -50,7 +50,7 @@ contract Carousel is VaultV2 {
         )
     {
         if(_data.relayerFee < 10000) revert RelayerFeeToLow();
-        if(_data.depositFee > 10000) revert BPSToHigh();
+        if(_data.depositFee > 1500) revert BPSToHigh();
         if(_data.emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_data.emissionsToken);
         relayerFee = _data.relayerFee;
@@ -211,6 +211,7 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice enlists in rollover queue
+        @dev user needs to have >= _assets in epoch (_epochId)
         @param  _epochId epoch id
         @param _assets   uint256 of how many assets deposited;
         @param _receiver  address of the receiver of the emissions;
@@ -251,23 +252,23 @@ contract Carousel is VaultV2 {
     }
 
     /** @notice delists from rollover queue
-        @param _receiver  address of the receiver of the emissions;
+        @param _owner address that is delisting from rollover queue
      */
-    function delistInRollover(address _receiver) public {
+    function delistInRollover(address _owner) public {
         // check if user has already queued up a rollover
-        if (ownerToRollOverQueueIndex[_receiver] == 0)
+        if (ownerToRollOverQueueIndex[_owner] == 0)
             revert NoRolloverQueued();
         // check if sender is approved by owner
         if (
-            msg.sender != _receiver &&
-            isApprovedForAll(_receiver, msg.sender) == false
-        ) revert OwnerDidNotAuthorize(msg.sender, _receiver);
+            msg.sender != _owner &&
+            isApprovedForAll(_owner, msg.sender) == false
+        ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
         // swich the last item in the queue with the item to be removed
-        uint256 index = getRolloverIndex(_receiver);
+        uint256 index = getRolloverIndex(_owner);
         if (index == rolloverQueue.length - 1) {
             rolloverQueue.pop();
-            delete ownerToRollOverQueueIndex[_receiver];
+            delete ownerToRollOverQueueIndex[_owner];
         } else {
             // overwrite the item to be removed with the last item in the queue
             rolloverQueue[index] = rolloverQueue[rolloverQueue.length - 1];
@@ -276,7 +277,7 @@ contract Carousel is VaultV2 {
             // update the index of prev last user
             ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index;
             // remove receiver from index mapping
-            delete ownerToRollOverQueueIndex[_receiver];
+            delete ownerToRollOverQueueIndex[_owner];
         }
     }
 
@@ -318,8 +319,7 @@ contract Carousel is VaultV2 {
             }
         }
 
-        emit DepositMinted(_epochId, _operations);
-       
+        emit RelayerMinted(_epochId, _operations);
 
         asset.safeTransfer(msg.sender, _operations * relayerFee);
     }
@@ -405,6 +405,7 @@ contract Carousel is VaultV2 {
 
         if(executions * relayerFee > 0) asset.safeTransfer(msg.sender, executions * relayerFee);
        
+        emit RelayerMinted(_epochId, executions);
     
     }
 
@@ -527,7 +528,7 @@ contract Carousel is VaultV2 {
         relayerFee = _relayerFee;
     }
 
-    function changeLateDepositFee(uint256 _depositFee) external onlyFactory {
+    function changeDepositFee(uint256 _depositFee) external onlyFactory {
         depositFee = _depositFee;
     }
 
@@ -690,13 +691,11 @@ contract Carousel is VaultV2 {
         uint256 assets
     );
 
-    /** @notice emitted when a deposit is rolled over
-      * @param sender the address of the sender
-      * @param receiver the address of the receiver
+    /** @notice emitted when shares are minted by relayer
       * @param epochId the epoch id
-      * @param assets the amount of assets
+      * @param operations how many positions were minted
      */
-    event DepositMinted(
+    event RelayerMinted(
         uint256 epochId,
         uint256 operations
     );
@@ -706,7 +705,7 @@ contract Carousel is VaultV2 {
         * @param receiver the address of the receiver
         * @param epochId the epoch id
         * @param assets the amount of assets
-        * @param lateDepositFee the late deposit fee
+        * @param depositFee the linear deposit fee
      */
     event LateDeposit(
         address indexed sender,
