@@ -228,8 +228,8 @@ contract CarouselFactory is VaultFactoryV2 {
         onlyTimeLocker
     {
         if(vaultIndex > 1) revert InvalidVaultIndex();
-        // _depositFee is in basis points max 15%
-        if (_depositFee > 1500) revert InvalidDepositFee();
+        // _depositFee is in basis points max 0.5%
+        if (_depositFee > 50) revert InvalidDepositFee();
         // TODO might need to be able to change individual vaults
         address[2] memory vaults = marketIdToVaults[_marketIndex];
         if (vaults[vaultIndex] == address(0)) revert MarketDoesNotExist(_marketIndex);

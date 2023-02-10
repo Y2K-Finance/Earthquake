@@ -50,7 +50,7 @@ contract Carousel is VaultV2 {
         )
     {
         if(_data.relayerFee < 10000) revert RelayerFeeToLow();
-        if(_data.depositFee > 1500) revert BPSToHigh();
+        if(_data.depositFee > 50) revert BPSToHigh();
         if(_data.emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_data.emissionsToken);
         relayerFee = _data.relayerFee;
