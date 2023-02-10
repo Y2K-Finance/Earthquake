@@ -316,6 +316,10 @@ contract ControllerPeggedAssetV2 {
         return address(vaultFactory);
     }
 
+    /** @notice Calculate amount to withdraw after subtracting protocol fee
+        * @param amount Amount of tokens to withdraw
+        * @param fee Fee to be applied
+     */
     function calculateWithdrawalFeeValue(uint256 amount, uint256 fee)
         public
         pure
@@ -347,7 +351,7 @@ contract ControllerPeggedAssetV2 {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    /** @notice Depegs insurance vault when event is emitted
+    /** @notice Resolves epoch when event is emitted
      * @param epochId market epoch ID
      * @param marketId market ID
      * @param tvl TVL
@@ -364,6 +368,12 @@ contract ControllerPeggedAssetV2 {
         int256 depegPrice
     );
 
+    /** @notice Sets epoch to null when event is emitted
+        * @param epochId market epoch ID
+        * @param marketId market ID
+        * @param tvl TVL
+        * @param time timestamp
+     */
     event NullEpoch(
         uint256 epochId,
         uint256 marketId,

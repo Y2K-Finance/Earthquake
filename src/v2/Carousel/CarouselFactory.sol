@@ -18,6 +18,12 @@ contract CarouselFactory is VaultFactoryV2 {
     using SafeERC20 for IERC20;
     IERC20 public emissionsToken;
 
+    /** @notice constructor
+    @param _policy admin address
+    @param _weth address of the weth contract
+    @param _treasury address of the treasury contract
+    @param _emissoinsToken address of the emissions token
+     */
     constructor(
         address _policy,
         address _weth,
@@ -108,6 +114,16 @@ contract CarouselFactory is VaultFactoryV2 {
         return (premium, collateral, marketId);
     }
 
+    /** @notice Function to create a new epoch with emissions
+    @param _marketId uint256 of the marketId
+    @param _epochBegin uint40 of the epoch begin
+    @param _epochEnd uint40 of the epoch end
+    @param _withdrawalFee uint16 of the withdrawal fee
+    @param _emissions1 uint256 of the emissions for the premium vault
+    @param _emissions2 uint256 of the emissions for the collateral vault
+    @return epochId uint256 of the epochId
+    @return vaults address[2] of the vaults
+     */
     function createEpochWithEmissions(
         uint256 _marketId,
         uint40 _epochBegin,
@@ -135,6 +151,10 @@ contract CarouselFactory is VaultFactoryV2 {
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Function to deploy a new Carousel vault
+    @param _marketConfig CarouselMarketConfiguration struct with the vault params
+    @return address of the new vault
+     */
     function _deployCarouselVault(
         CarouselMarketConfiguration memory _marketConfig
     ) internal returns (address) {
@@ -183,6 +203,10 @@ contract CarouselFactory is VaultFactoryV2 {
                                 ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Function to change the relayer fee
+    @param _relayerFee uint256 of the relayer fee
+    @param _marketIndex uint256 of the market index
+     */
     function changeRelayerFee(uint256 _relayerFee, uint256 _marketIndex)
         public
         onlyTimeLocker

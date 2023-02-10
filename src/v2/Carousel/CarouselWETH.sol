@@ -11,6 +11,9 @@ contract CarouselWETH is Carousel {
                                  CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice constructor
+        @param _data  Carousel.ConstructorArgs struct containing the data to be used in the constructor;
+     */
     constructor(
        Carousel.ConstructorArgs memory _data
     )
