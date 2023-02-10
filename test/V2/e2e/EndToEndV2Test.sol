@@ -2,12 +2,9 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
-import "../../oracles/FakeOracle.sol";
 import "../../../src/v2/VaultFactoryV2.sol";
 import "../../../src/v2/VaultV2.sol";
-import "../../../src/v2/interfaces/IVaultV2.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 
@@ -16,7 +13,6 @@ contract EndToEndV2Test is Helper {
 
     VaultFactoryV2 public factory;
     ControllerPeggedAssetV2 public controller;
-    FakeOracle public depegOracle;
 
     address public premium;
     address public collateral;
@@ -30,19 +26,22 @@ contract EndToEndV2Test is Helper {
     uint256 public depegMarketId;
     uint256 public depegStrike;
     uint256 public depegEpochId;
-
-    uint40 public begin;
-    uint40 public end;
-
-    uint16 public fee;
+    uint256 public premiumShareValue;
+    uint256 public collateralShareValue;
+    uint256 public arbForkId;
 
     uint256 public constant AMOUNT_AFTER_FEE = 19.95 ether;
     uint256 public constant PREMIUM_DEPOSIT_AMOUNT = 2 ether;
     uint256 public constant COLLAT_DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEALT_AMOUNT = 20 ether;
-    string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
-    uint256 arbForkId;
+
+    uint40 public begin;
+    uint40 public end;
+
+    uint16 public fee;
+
+    string public ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
 
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
@@ -198,8 +197,8 @@ contract EndToEndV2Test is Helper {
         //trigger depeg
         controller.triggerDepeg(depegMarketId, depegEpochId);
 
-        uint256 premiumShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegCollateral).finalTVL(depegEpochId), fee);
-        uint256 collateralShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegPremium).finalTVL(depegEpochId), fee);
+        premiumShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegCollateral).finalTVL(depegEpochId), fee);
+        collateralShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegPremium).finalTVL(depegEpochId), fee);
 
         //check vault balances on withdraw
         assertEq(premiumShareValue, VaultV2(depegPremium).previewWithdraw(depegEpochId, PREMIUM_DEPOSIT_AMOUNT));
