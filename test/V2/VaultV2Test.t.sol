@@ -349,14 +349,14 @@ contract VaultV2Test is Helper {
         vault.setClaimTVL(epochId,  10 ether);
 
 
-        vm.warp(begin + 1);
+        /*vm.warp(begin + 1);
         // test claim TVL is less than counterparty tvl
 
         vault.resolveEpoch(epochId);
         counterpartyVault.resolveEpoch(epochId);
 
         vm.expectRevert(VaultV2.InvalidClaimTVL.selector);
-        vault.setClaimTVL(epochId,  11 ether);
+        vault.setClaimTVL(epochId,  11 ether);*/
 
         vm.stopPrank();
 

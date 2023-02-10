@@ -1,3 +1,5 @@
+pragma solidity 0.8.17;
+
 interface IVaultFactoryV2 {
     function createNewMarket(
         uint256 fee,

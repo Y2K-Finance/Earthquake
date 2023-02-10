@@ -274,7 +274,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /**
     @notice Controller can call after the epoch has ended, this function stores the value that the holders of the epoch are entiteld to. The value is determined on the controller side
     @param  _id uint256 identifier of the epoch
-    @param _claimTVL uint256 representing the TVL the counterparty vault has, storing this value in a mapping
+    @param _claimTVL uint256 representing the TVL the vault has, storing this value in a mapping
      */
     function setClaimTVL(uint256 _id, uint256 _claimTVL)
         external
@@ -282,8 +282,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochIdExists(_id)
         epochHasEnded(_id)
     {
-        if (_claimTVL > IVaultV2(counterPartyVault).finalTVL(_id))
-            revert InvalidClaimTVL();
 
         claimTVL[_id] = _claimTVL;
     }
@@ -306,8 +304,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
     /**
         @notice Shows assets conversion output from withdrawing assets
-        @param  _id uint256 token id of token
-        @param _assets number of assets user wants to withdraw
+        @param  _id uint256 epoch identifier
+        @param _assets amount of assets user wants to withdraw
      */
     function previewWithdraw(uint256 _id, uint256 _assets)
         public
@@ -425,5 +423,4 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     error AmountExceedsTVL();
     error AlreadyInitialized();
     error InvalidEpoch();
-    error InvalidClaimTVL();
 }
