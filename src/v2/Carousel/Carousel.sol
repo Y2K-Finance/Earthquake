@@ -408,19 +408,6 @@ contract Carousel is VaultV2 {
     
     }
 
-    /** @notice checks if rollover queue is closed
-        @param _epochId epoch id
-        @return bool
-     */
-    function queueClosed(uint256 _epochId) public view returns (bool) {
-        if (
-            (block.timestamp + closingTimeFrame >=
-            epochConfig[_epochId].epochBegin) 
-            && lateDepositFee > 0 // late deposit fee should be a feature that can be turned off
-        ) return true ;
-        else return false;
-    }
-
     /*///////////////////////////////////////////////////////////////
                         INTERNAL MUTATIVE LOGIC
     //////////////////////////////////////////////////////////////*/
