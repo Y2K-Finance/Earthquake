@@ -8,8 +8,12 @@ import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/interfaces/IVaultV2.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
+
 
 contract EndToEndV2Test is Helper {
+    using FixedPointMathLib for uint256;
+
     VaultFactoryV2 public factory;
     ControllerPeggedAssetV2 public controller;
     FakeOracle public depegOracle;
@@ -33,10 +37,17 @@ contract EndToEndV2Test is Helper {
     uint16 public fee;
 
     uint256 public constant AMOUNT_AFTER_FEE = 19.95 ether;
+    uint256 public constant PERMIUM_DEPOSIT_AMOUNT = 2 ether;
+    uint256 public constant COLLAT_DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEALT_AMOUNT = 20 ether;
+    string ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
+    uint256 arbForkId;
 
     function setUp() public {
+        arbForkId = vm.createFork(ARBITRUM_RPC_URL);
+        vm.selectFork(arbForkId);
+        
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
         factory = new VaultFactoryV2(
@@ -72,8 +83,8 @@ contract EndToEndV2Test is Helper {
         );
         
         //create depeg market
-        depegOracle = new FakeOracle(USDC_CHAINLINK, 90995265);
-        depegStrike = uint256(909952660);
+        // depegOracle = new FakeOracle(USDC_CHAINLINK, 2 ether);
+        depegStrike = uint256(2 ether);
         (
             depegPremium,
             depegCollateral,
@@ -82,7 +93,7 @@ contract EndToEndV2Test is Helper {
             VaultFactoryV2.MarketConfigurationCalldata(
                 USDC_TOKEN,
                 depegStrike,
-                address(depegOracle),
+                USDC_CHAINLINK,
                 UNDERLYING,
                 name,
                 symbol,
@@ -93,7 +104,7 @@ contract EndToEndV2Test is Helper {
         //create epoch for end epoch
         begin = uint40(block.timestamp - 5 days);
         end = uint40(block.timestamp - 3 days);
-        fee = uint16(0x5);
+        fee = 50; // 0.5%
 
         epochId = factory.createEpoch(
                 marketId,
@@ -168,16 +179,16 @@ contract EndToEndV2Test is Helper {
         vm.deal(USER, DEALT_AMOUNT);
 
         //approve gov token
-        MintableToken(UNDERLYING).approve(depegPremium, DEPOSIT_AMOUNT);
-        MintableToken(UNDERLYING).approve(depegCollateral, DEPOSIT_AMOUNT);
+        MintableToken(UNDERLYING).approve(depegPremium, PERMIUM_DEPOSIT_AMOUNT);
+        MintableToken(UNDERLYING).approve(depegCollateral, COLLAT_DEPOSIT_AMOUNT);
 
         //deposit in both vaults
-        VaultV2(depegPremium).deposit(depegEpochId, DEPOSIT_AMOUNT, USER);
-        VaultV2(depegCollateral).deposit(depegEpochId, DEPOSIT_AMOUNT, USER);
+        VaultV2(depegPremium).deposit(depegEpochId, PERMIUM_DEPOSIT_AMOUNT, USER);
+        VaultV2(depegCollateral).deposit(depegEpochId, COLLAT_DEPOSIT_AMOUNT, USER);
 
         //check deposit balances
-        assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), DEPOSIT_AMOUNT);
-        assertEq(VaultV2(depegCollateral).balanceOf(USER ,depegEpochId), DEPOSIT_AMOUNT);
+        assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), PERMIUM_DEPOSIT_AMOUNT);
+        assertEq(VaultV2(depegCollateral).balanceOf(USER ,depegEpochId), COLLAT_DEPOSIT_AMOUNT);
 
         //check user underlying balance
         assertEq(USER.balance, DEALT_AMOUNT);
@@ -188,13 +199,16 @@ contract EndToEndV2Test is Helper {
         //trigger depeg
         controller.triggerDepeg(depegMarketId, depegEpochId);
 
+        uint256 premiumShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegCollateral).finalTVL(depegEpochId), fee);
+        uint256 collateralShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegPremium).finalTVL(depegEpochId), fee);
+
         //check vault balances on withdraw
-        assertEq(VaultV2(depegPremium).previewWithdraw(depegEpochId, DEPOSIT_AMOUNT), AMOUNT_AFTER_FEE);
-        assertEq(VaultV2(depegCollateral).previewWithdraw(depegEpochId, DEPOSIT_AMOUNT), 0);
+        assertEq(premiumShareValue, VaultV2(depegPremium).previewWithdraw(depegEpochId, PERMIUM_DEPOSIT_AMOUNT));
+        assertEq(collateralShareValue, VaultV2(depegCollateral).previewWithdraw(depegEpochId, COLLAT_DEPOSIT_AMOUNT));
 
         //withdraw from vaults
-        VaultV2(depegPremium).withdraw(depegEpochId, DEPOSIT_AMOUNT, USER, USER);
-        VaultV2(depegCollateral).withdraw(depegEpochId, DEPOSIT_AMOUNT, USER, USER);
+        VaultV2(depegPremium).withdraw(depegEpochId, PERMIUM_DEPOSIT_AMOUNT, USER, USER);
+        VaultV2(depegCollateral).withdraw(depegEpochId, COLLAT_DEPOSIT_AMOUNT, USER, USER);
 
         //check vaults balance
         assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), 0);
@@ -204,5 +218,9 @@ contract EndToEndV2Test is Helper {
         assertEq(USER.balance, DEALT_AMOUNT);
 
         vm.stopPrank();
+    }
+
+    function helperCalculateFeeAdjustedValue(uint256 amount, uint16 fee) internal pure returns (uint256) {
+        return amount - amount.mulDivUp(fee, 10000);
     }
 }
