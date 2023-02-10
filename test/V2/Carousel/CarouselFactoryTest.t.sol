@@ -13,7 +13,6 @@ contract CarouselFactoryTest is Helper {
         address controller;
         address emissionsToken;
         uint256 relayerFee;
-        uint256 closingTimeFrame;
         uint256 lateDepositFee;
    
         function setUp() public {
@@ -31,7 +30,6 @@ contract CarouselFactoryTest is Helper {
         factory.whitelistController(address(controller));
 
         relayerFee = 2 gwei;
-        closingTimeFrame = 1 hours;
         lateDepositFee = 100; // 1%
      }
 
@@ -59,7 +57,6 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                closingTimeFrame,
                 lateDepositFee
             )
         );
@@ -77,12 +74,8 @@ contract CarouselFactoryTest is Helper {
         assertEq(IVaultV2(collateral).counterPartyVault(), premium);   
 
         // test late deposit fee on Vaults is set
-        assertEq(ICarousel(premium).lateDepositFee(), lateDepositFee);
-        assertEq(ICarousel(collateral).lateDepositFee(), lateDepositFee);
-
-        // test if closing time frame is set
-        assertEq(ICarousel(premium).closingTimeFrame(), closingTimeFrame);
-        assertEq(ICarousel(collateral).closingTimeFrame(), closingTimeFrame);
+        assertEq(ICarousel(premium).depositFee(), lateDepositFee);
+        assertEq(ICarousel(collateral).depositFee(), lateDepositFee);
 
         // test if relayer fee is set
         assertEq(ICarousel(premium).relayerFee(), relayerFee);
@@ -148,7 +141,7 @@ contract CarouselFactoryTest is Helper {
         assertEq(fee, fetchedFee);
         
         // test if epoch config is correct
-        (uint40 fetchedBegin, uint40 fetchedEnd) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
+        (uint40 fetchedBegin, uint40 fetchedEnd, ) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
         assertEq(begin, fetchedBegin);
         assertEq(end, fetchedEnd);
 
@@ -191,54 +184,54 @@ contract CarouselFactoryTest is Helper {
     }
 
     // tes test changeClosingTimeFrame
-    function testChangeClosingTimeFrame() public {
-        uint256 marketId = createMarketHelper();
-        uint40 newTimeFrame = 1000;
-        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-        factory.changeClosingTimeFrame(newTimeFrame, marketId);
+    // function testChangeClosingTimeFrame() public {
+    //     uint256 marketId = createMarketHelper();
+    //     uint40 newTimeFrame = 1000;
+    //     vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+    //     factory.changeClosingTimeFrame(newTimeFrame, marketId);
 
-        // get time locker
-        address timeLocker = address(factory.timelocker());
+    //     // get time locker
+    //     address timeLocker = address(factory.timelocker());
 
-        vm.startPrank(timeLocker);
-        vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
-        factory.changeClosingTimeFrame(newTimeFrame, 100); // revert if market does not exist
+    //     vm.startPrank(timeLocker);
+    //     vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
+    //     factory.changeClosingTimeFrame(newTimeFrame, 100); // revert if market does not exist
 
-        vm.expectRevert(CarouselFactory.InvalidClosingTimeFrame.selector);
-        factory.changeClosingTimeFrame(0, marketId); // revert if time frame is 0
+    //     vm.expectRevert(CarouselFactory.InvalidClosingTimeFrame.selector);
+    //     factory.changeClosingTimeFrame(0, marketId); // revert if time frame is 0
 
-        // test success case
-        factory.changeClosingTimeFrame(newTimeFrame, marketId);
-        assertEq(ICarousel(factory.getVaults(marketId)[0]).closingTimeFrame(), newTimeFrame);
-        assertEq(ICarousel(factory.getVaults(marketId)[1]).closingTimeFrame(), newTimeFrame);
+    //     // test success case
+    //     factory.changeClosingTimeFrame(newTimeFrame, marketId);
+    //     assertEq(ICarousel(factory.getVaults(marketId)[0]).closingTimeFrame(), newTimeFrame);
+    //     assertEq(ICarousel(factory.getVaults(marketId)[1]).closingTimeFrame(), newTimeFrame);
 
-        vm.stopPrank();
-    }    
+    //     vm.stopPrank();
+    // }    
 
     // test changeLateDepositFee
-    function testChangeLateDepositFee() public {
-        uint256 marketId = createMarketHelper();
-        uint16 newFee = 200; // 2%
-        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-        factory.changeLateDepositFee(newFee, marketId);
+    // function testChangeLateDepositFee() public {
+    //     uint256 marketId = createMarketHelper();
+    //     uint16 newFee = 200; // 2%
+    //     vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+    //     factory.changeLateDepositFee(newFee, marketId);
 
-        // get time locker
-        address timeLocker = address(factory.timelocker());
+    //     // get time locker
+    //     address timeLocker = address(factory.timelocker());
 
-        vm.startPrank(timeLocker);
-        vm.expectRevert(CarouselFactory.InvalidLateDepositFee.selector);
-        factory.changeLateDepositFee(11000, marketId); // revert if fee is greater than 100%
+    //     vm.startPrank(timeLocker);
+    //     vm.expectRevert(CarouselFactory.InvalidLateDepositFee.selector);
+    //     factory.changeLateDepositFee(11000, marketId); // revert if fee is greater than 100%
 
-        vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
-        factory.changeLateDepositFee(newFee, 100); // revert if market does not exist
+    //     vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
+    //     factory.changeLateDepositFee(newFee, 100); // revert if market does not exist
 
-        // test success case
-        factory.changeLateDepositFee(newFee, marketId);
-        assertEq(ICarousel(factory.getVaults(marketId)[0]).lateDepositFee(), newFee);
-        assertEq(ICarousel(factory.getVaults(marketId)[1]).lateDepositFee(), newFee);
+    //     // test success case
+    //     factory.changeLateDepositFee(newFee, marketId);
+    //     assertEq(ICarousel(factory.getVaults(marketId)[0]).lateDepositFee(), newFee);
+    //     assertEq(ICarousel(factory.getVaults(marketId)[1]).lateDepositFee(), newFee);
 
-        vm.stopPrank();
-    }
+    //     vm.stopPrank();
+    // }
 
     function createMarketHelper() public returns(uint256 marketId){
 
@@ -264,7 +257,6 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                closingTimeFrame,
                 lateDepositFee
             )
         );

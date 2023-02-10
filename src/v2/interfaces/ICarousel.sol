@@ -73,9 +73,7 @@ interface ICarousel {
 
     function changeRelayerFee(uint256 _relayerFee) external;
 
-    function changeClosingTimeFrame(uint256 _closingTimeFrame) external;
-
-    function changeLateDepositFee(uint256 _lateDepositFee) external;
+    function changeDepositFee(uint256 _lateDepositFee) external;
 
     function changeTreasury(address) external;
 
@@ -91,9 +89,7 @@ interface ICarousel {
 
     function relayerFee() external view returns (uint256);
 
-    function closingTimeFrame() external view returns (uint256);
-
-    function lateDepositFee() external view returns (uint256);
+    function depositFee() external view returns (uint256);
 
     function emissions(uint256 _epochId) external view returns (uint256);
 }
