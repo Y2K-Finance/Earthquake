@@ -28,7 +28,7 @@ contract FactoryV2Test is Helper {
             TREASURY
         );
        
-        assertEq(address(factory.timelocker().policy()), ADMIN);
+        assertEq(address(TimeLock(factory.timelocker()).policy()), ADMIN);
         assertEq(address(factory.WETH()), WETH);
         assertEq(address(factory.treasury()), TREASURY);
         assertEq(address(factory.owner()), address(this));
@@ -46,7 +46,7 @@ contract FactoryV2Test is Helper {
         factory.whitelistController(controller2);
 
         // new controllers can be added by queueing them in tomelocker
-        vm.startPrank(address(factory.timelocker()));
+        vm.startPrank(factory.timelocker());
         factory.whitelistController(controller2);
         assertTrue(factory.controllers(controller2));
         vm.stopPrank();

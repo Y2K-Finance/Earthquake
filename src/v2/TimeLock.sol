@@ -12,84 +12,6 @@ contract TimeLock {
     uint32 public constant MAX_DELAY = 30 days;
     uint32 public constant GRACE_PERIOD = 14 days;
 
-    error NotOwner(address sender);
-    error AlreadyQueuedError(bytes32 txId);
-    error TimestampNotInRangeError(uint256 blocktimestamp, uint256 timestamp);
-    error NotQueuedError(bytes32 txId);
-    error TimestampNotPassedError(uint256 blocktimestamp, uint256 timestamp);
-    error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
-    error TxFailedError(string func);
-
-    /** @notice queues transaction when emitted
-        @param txId unique id of the transaction
-        @param target contract to call
-        @param func function to call
-        @param index market index of the vault to call the function on
-        @param data data to pass to the function
-        @param to address to change the params to
-        @param token token to change the params to
-        @param timestamp timestamp to execute the transaction
-     */
-    event Queue(
-        bytes32 indexed txId,
-        address indexed target,
-        string func,
-        uint256 index,
-        uint256 data,
-        address to,
-        address token,
-        uint256 timestamp
-    );
-
-    /** @notice executes transaction when emitted
-        @param txId unique id of the transaction
-        @param target contract to call
-        @param func function to call
-        @param index market index of the vault to call the function on
-        @param data data to pass to the function
-        @param to address to change the params to
-        @param token token to change the params to
-        @param timestamp timestamp to execute the transaction
-     */
-    event Execute(
-        bytes32 indexed txId,
-        address indexed target,
-        string func,
-        uint256 index,
-        uint256 data,
-        address to,
-        address token,
-        uint256 timestamp
-    );
-
-    /** @notice deletes transaction when emitted
-        @param txId unique id of the transaction
-        @param target contract to call
-        @param func function to call
-        @param index market index of the vault to call the function on
-        @param data data to pass to the function
-        @param to address to change the params to
-        @param token token to change the params to
-        @param timestamp timestamp to execute the transaction
-     */
-    event Delete(
-        bytes32 indexed txId,
-        address indexed target,
-        string func,
-        uint256 index,
-        uint256 data,
-        address to,
-        address token,
-        uint256 timestamp
-    );
-
-    /** @notice only owner can call functions with this modifier
-     */
-    modifier onlyOwner() {
-        if (msg.sender != policy) revert NotOwner(msg.sender);
-        _;
-    }
-
     /** @notice constructor
         @param _policy  address of the policy contract;
       */
@@ -101,30 +23,24 @@ contract TimeLock {
      * @dev leave params zero if not using them
      * @notice Queue a transaction
      * @param _target The target contract
+     * @param _value The value to send to the function
      * @param _func The function to call
-     * @param _index The market index of the vault to call the function on
      * @param _data The data to pass to the function
-     * @param _to The address to change the params to
-     * @param _token The token to change the params to
      * @param _timestamp The timestamp to execute the transaction
      */
     function queue(
         address _target,
+        uint256 _value,
         string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
+        bytes calldata _data,
         uint256 _timestamp
     ) external onlyOwner {
         //create tx id
         bytes32 txId = getTxId(
             _target,
+            _value,
             _func,
-            _index,
             _data,
-            _to,
-            _token,
             _timestamp
         );
 
@@ -147,11 +63,9 @@ contract TimeLock {
         emit Queue(
             txId,
             _target,
+            _value,
             _func,
-            _index,
             _data,
-            _to,
-            _token,
             _timestamp
         );
     }
@@ -159,30 +73,24 @@ contract TimeLock {
     /**
      * @dev leave params zero if not using them
      * @notice Execute a Queued a transaction
-     * @param _target The target contract
-     * @param _func The function to call
-     * @param _index The market index of the vault to call the function on
-     * @param _data The data to pass to the function
-     * @param _to The address to change the params to
-     * @param _token The token to change the params to
-     * @param _timestamp The timestamp after which to execute the transaction
+     *  @param _target The target contract
+     *  @param _value The value to send to the function
+     *  @param _func The function to call
+     *  @param _data The data to pass to the function
+     *  @param _timestamp The timestamp after which to execute the transaction
      */
     function execute(
         address _target,
+        uint256 _value,
         string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
+        bytes calldata _data,
         uint256 _timestamp
-    ) external onlyOwner {
+    ) external onlyOwner returns (bytes memory) {
         bytes32 txId = getTxId(
             _target,
+            _value,
             _func,
-            _index,
             _data,
-            _to,
-            _token,
             _timestamp
         );
 
@@ -204,55 +112,55 @@ contract TimeLock {
 
         //delete tx from queue
         queued[txId] = false;
+        
+        // prepare data
+        bytes memory data;
+        if (bytes(_func).length > 0) {
+            // data = func selector + _data
+            data = abi.encodePacked(bytes4(keccak256(bytes(_func))), _data);
+        } else {
+            // call fallback with data
+            data = _data;
+        }
 
-        //execute tx
-        // if (compareStringsbyBytes(_func, "changeTreasury")) {
-        //     IVaultFactoryV2(_target).changeTreasury(_to, _index);
-        // } else if (compareStringsbyBytes(_func, "changeController")) {
-        //     IVaultFactoryV2(_target).changeController(_index, _to);
-        // } else if (compareStringsbyBytes(_func, "changeOracle")) {
-        //     IVaultFactoryV2(_target).changeOracle(_token, _to);
-        // } else {
-        //     revert TxFailedError(_func);
-        // }
+        // call target
+        (bool ok, bytes memory res) = _target.call{value: _value}(data);
+        if (!ok) {
+            revert TxFailedError(_func);
+        }
+    
 
         emit Execute(
             txId,
             _target,
+            _value,
             _func,
-            _index,
             _data,
-            _to,
-            _token,
             _timestamp
         );
+        
+        return res;
     }
 
     /** @notice cancels the transaction
         *  @param _target The target contract
+        *  @param _value The value to send to the function
         *  @param _func The function to call
-        *  @param _index The market index of the vault to call the function on
         *  @param _data The data to pass to the function
-        *  @param _to The address to change the params to
-        *  @param _token The token to change the params to
         *  @param _timestamp The timestamp after which to execute the transaction
      */
     function cancel(
         address _target,
+        uint256 _value,
         string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
+        bytes calldata _data,
         uint256 _timestamp
     ) external onlyOwner {
         bytes32 txId = getTxId(
             _target,
+            _value,
             _func,
-            _index,
             _data,
-            _to,
-            _token,
             _timestamp
         );
 
@@ -267,11 +175,9 @@ contract TimeLock {
         emit Delete(
             txId,
             _target,
+            _value,
             _func,
-            _index,
             _data,
-            _to,
-            _token,
             _timestamp
         );
     }
@@ -279,31 +185,25 @@ contract TimeLock {
     /** @notice get transaction id
         *  @param _target The target contract
         *  @param _func The function to call
-        *  @param _index The market index of the vault to call the function on
+        *  @param _value The value to send to the function
         *  @param _data The data to pass to the function
-        *  @param _to The address to change the params to
-        *  @param _token The token to change the params to
         *  @param _timestamp The timestamp after which to execute the transaction
         *  @return txId
      */
     function getTxId(
         address _target,
+        uint256 _value,
         string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
+        bytes calldata _data,
         uint256 _timestamp
     ) public pure returns (bytes32 txId) {
         return
             keccak256(
                 abi.encode(
                     _target,
+                    _value,
                     _func,
-                    _index,
                     _data,
-                    _to,
-                    _token,
                     _timestamp
                 )
             );
@@ -330,5 +230,74 @@ contract TimeLock {
         policy = _newOwner;
     }
 
-    // TODO change owner on factory no queue
+    /*///////////////////////////////////////////////////////////////
+                               ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error NotOwner(address sender);
+    error AlreadyQueuedError(bytes32 txId);
+    error TimestampNotInRangeError(uint256 blocktimestamp, uint256 timestamp);
+    error NotQueuedError(bytes32 txId);
+    error TimestampNotPassedError(uint256 blocktimestamp, uint256 timestamp);
+    error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
+    error TxFailedError(string func);
+
+    
+    /** @notice queues transaction when emitted
+        @param txId unique id of the transaction
+        @param target contract to call
+        @param value value to send to the function
+        @param func function to call
+        @param data data to pass to the function
+        @param timestamp timestamp to execute the transaction
+     */
+    event Queue(
+        bytes32 indexed txId,
+        address indexed target,
+        uint256 value,
+        string func,
+        bytes data,
+        uint256 timestamp
+    );
+
+    /** @notice executes transaction when emitted
+        @param txId unique id of the transaction
+        @param target contract to call
+        @param value value to send to the function
+        @param func function to call
+        @param data data to pass to the function
+        @param timestamp timestamp to execute the transaction
+     */
+    event Execute(
+        bytes32 indexed txId,
+        address indexed target,
+        uint256 value,
+        string func,
+        bytes data,
+        uint256 timestamp
+    );
+
+    /** @notice deletes transaction when emitted
+        @param txId unique id of the transaction
+        @param target contract to call
+        @param value value to send to the function
+        @param func function to call
+        @param data data to pass to the function
+        @param timestamp timestamp to execute the transaction
+     */
+    event Delete(
+        bytes32 indexed txId,
+        address indexed target,
+        uint256 value,
+        string func,
+        bytes data,
+        uint256 timestamp
+    );
+
+    /** @notice only owner can call functions with this modifier
+     */
+    modifier onlyOwner() {
+        if (msg.sender != policy) revert NotOwner(msg.sender);
+        _;
+    }
 }

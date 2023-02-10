@@ -20,7 +20,7 @@ contract VaultFactoryV2 is Ownable {
     //////////////////////////////////////////////////////////////*/
     address public treasury;
     bool internal adminSetController;
-    TimeLock public timelocker;
+    address public timelocker;
 
     mapping(uint256 => address[2]) public marketIdToVaults; //[0] premium and [1] collateral vault
     mapping(uint256 => uint256[]) public marketIdToEpochs; //all epochs in the market
@@ -44,7 +44,7 @@ contract VaultFactoryV2 is Ownable {
         if (_policy == address(0)) revert AddressZero();
         if (_weth == address(0)) revert AddressZero();
         WETH = _weth;
-        timelocker = new TimeLock(_policy);
+        timelocker = address(new TimeLock(_policy));
         treasury = _treasury;
     }
 
@@ -243,7 +243,7 @@ contract VaultFactoryV2 is Ownable {
         if (msg.sender == owner() && !adminSetController) {
             controllers[_controller] = true;
             adminSetController = true;
-        } else if (msg.sender == address(timelocker)) {
+        } else if (msg.sender == timelocker) {
             controllers[_controller] = !controllers[_controller];
             if (!adminSetController) adminSetController = true;
         } else {
@@ -446,7 +446,7 @@ contract VaultFactoryV2 is Ownable {
     /** @notice Modifier to check if the caller is the timelocker
      */
     modifier onlyTimeLocker() {
-        if (msg.sender != address(timelocker)) revert NotTimeLocker();
+        if (msg.sender != timelocker) revert NotTimeLocker();
         _;
     }
 
