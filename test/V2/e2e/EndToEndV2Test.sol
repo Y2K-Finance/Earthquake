@@ -83,7 +83,6 @@ contract EndToEndV2Test is Helper {
         );
         
         //create depeg market
-        // depegOracle = new FakeOracle(USDC_CHAINLINK, 2 ether);
         depegStrike = uint256(2 ether);
         (
             depegPremium,
