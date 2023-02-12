@@ -133,8 +133,8 @@ contract EndToEndCarouselTest is Helper {
         vm.warp(begin - 1 days);
         
         //deal ether
-        vm.deal(USER, 20 ether);
-        vm.deal(USER2, 18 ether);
+        vm.deal(USER, 18 ether);
+        vm.deal(USER2, 10 ether);
 
         //approve ether deposit
         IERC20(UNDERLYING).approve(premium, 2 ether);
@@ -154,7 +154,7 @@ contract EndToEndCarouselTest is Helper {
         //approve ether deposit
         IERC20(UNDERLYING).approve(collateral, 10 ether);
 
-        //deposit in carousel vaults
+        //deposit in carousel vault
         Carousel(collateral).deposit(0, 10 ether, USER2);
 
         vm.stopPrank();
@@ -215,6 +215,51 @@ contract EndToEndCarouselTest is Helper {
 
         //assert rollover accounting
         assertEq(Carousel(collateral).rolloverAccounting(nextEpochId), 2);
+
+        vm.startPrank(USER);
+
+        //approve ether deposit
+        IERC20(UNDERLYING).approve(premium, 6 ether);
+
+        //premium deposit for assertions
+        Carousel(premium).deposit(0, 6 ether, USER);
+        Carousel(premium).mintDepositInQueue(nextEpochId, 1);
+
+        vm.stopPrank();
+
+        //warp to nextEpochEnd
+        vm.warp(nextEpochEnd + 1 minutes);
+
+        //trigger next epoch end
+        controller.triggerEndEpoch(marketId, nextEpochId);
+
+        //check vault balances on withdraw
+        assertEq(Carousel(premium).previewWithdraw(nextEpochId, 6 ether), 0);
+        assertEq(Carousel(collateral).previewWithdraw(nextEpochId, 16 ether), NEXT_COLLATERAL_MINUS_FEES);
+
+        //withdraw USER1
+        vm.startPrank(USER);
+
+        Carousel(collateral).withdraw(nextEpochId, 8 ether, USER, USER);
+
+        vm.stopPrank();
+
+        //withdraw USER2
+        vm.startPrank(USER2);
+
+        Carousel(collateral).withdraw(nextEpochId, 8 ether, USER2, USER2);
+
+        vm.stopPrank();
+
+        //check vaults balance
+        assertEq(Carousel(premium).balanceOf(USER ,nextEpochId), 0);
+        assertEq(Carousel(collateral).balanceOf(USER ,nextEpochId), 0);
+        assertEq(Carousel(premium).balanceOf(USER2 ,nextEpochId), 0);
+        assertEq(Carousel(collateral).balanceOf(USER2 ,nextEpochId), 0);
+
+        //check user balances
+        //assertEq(USER.balance, );
+        //assertEq(USER2.balance, );
 
     }
 }
