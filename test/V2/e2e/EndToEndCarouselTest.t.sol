@@ -218,6 +218,20 @@ contract EndToEndCarouselTest is Helper {
 
         vm.startPrank(USER);
 
+        assertEq(Carousel(collateral).previewWithdraw(epochId, 2 ether), COLLATERAL_MINUS_FEES_DIV10);
+        Carousel(collateral).withdraw(epochId, 2 ether - depositFee - relayerFee, USER, USER);
+        //Carousel(premium).withdraw(epochId, 1 ether, USER, USER);
+
+        vm.stopPrank();
+
+        vm.startPrank(USER2);
+
+        Carousel(collateral).withdraw(epochId, 2 ether - depositFee - relayerFee, USER2, USER2);
+
+        vm.stopPrank();
+
+        vm.startPrank(USER);
+
         //approve ether deposit
         IERC20(UNDERLYING).approve(premium, 6 ether);
 
