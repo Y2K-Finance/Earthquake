@@ -203,18 +203,18 @@ contract EndToEndCarouselTest is Helper {
         controller.triggerEndEpoch(marketId, epochId);
 
         //check vault balances on withdraw
-        assertEq(Carousel(premium).previewWithdraw(epochId, 10 ether), 0);
-        assertEq(Carousel(premium).previewWithdraw(epochId, 2 ether), 0);
+        assertEq(Carousel(premium).previewWithdraw(epochId, 12 ether), 0);
         assertEq(Carousel(collateral).previewWithdraw(epochId, 20 ether), COLLATERAL_MINUS_FEES);
 
         // let relayer rollover for users
         vm.startPrank(RELAYER);
 
-        Carousel(premium).mintRollovers(nextEpochId, 2);
+        Carousel(collateral).mintRollovers(nextEpochId, 2);
 
         vm.stopPrank();
 
-        assertEq(Carousel(premium).rolloverAccounting(nextEpochId), nextEpochId);
+        //assert rollover accounting
+        assertEq(Carousel(collateral).rolloverAccounting(nextEpochId), 2);
 
     }
 }
