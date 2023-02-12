@@ -80,7 +80,7 @@ contract CarouselTest is Helper {
         // should revert if operations are not in queue length
         vm.expectRevert(Carousel.OverflowQueue.selector);
         vault.mintDepositInQueue(_epochId, 2);
-        // should revert if operations are not in queue length
+        // should revert if epoch already started
         vm.warp(_epochBegin + 100);
         vm.expectRevert(VaultV2.EpochAlreadyStarted.selector);
         vault.mintDepositInQueue(_epochId, 1);
