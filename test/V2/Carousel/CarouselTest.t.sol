@@ -16,7 +16,7 @@ contract CarouselTest is Helper {
     address relayer = address(0x55);
     address emissionsToken;
     uint256 relayerFee = 2 gwei;
-    uint256 depositFee = 1000;
+    uint256 depositFee = 50;
     address USER3 = address(0x123);
     address USER4 = address(0x345);
     address USER5 = address(0x567);

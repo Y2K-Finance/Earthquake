@@ -26,6 +26,7 @@ contract EndToEndCarouselTest is Helper {
     uint256 public collatEmissions;
     uint256 public epochId;
     uint256 public arbForkId;
+    uint256 public queueLength;
 
     uint40 public begin;
     uint40 public end;
@@ -102,7 +103,8 @@ contract EndToEndCarouselTest is Helper {
                 collatEmissions
         );
 
-        MintableToken(UNDERLYING).mint(USER);
+        deal(UNDERLYING, USER, 1000 ether, true);
+        deal(UNDERLYING, USER2, 1000 ether, true);
 
     }
 
@@ -116,12 +118,44 @@ contract EndToEndCarouselTest is Helper {
         vm.deal(USER, 20 ether);
 
         //approve ether deposit
-        MintableToken(UNDERLYING).approve(premium, 10 ether);
-        MintableToken(UNDERLYING).approve(collateral, 2 ether);
+        IERC20(UNDERLYING).approve(premium, 10 ether);
 
         //deposit in carousel vaults
         Carousel(premium).deposit(epochId, 10 ether, USER);
-        Carousel(collateral).deposit(epochId, 2 ether, USER);
+
+        vm.stopPrank();
+
+        vm.startPrank(USER2);
+
+         //warp to deposit period
+        vm.warp(begin - 1 days);
+        
+        //deal ether
+        vm.deal(USER2, 20 ether);
+
+        //approve ether deposit
+        IERC20(UNDERLYING).approve(premium, 10 ether);
+
+        //deposit in carousel vaults
+        Carousel(premium).deposit(epochId, 10 ether, USER2);
+
+        vm.stopPrank();
+
+        //warp to deposit period
+        vm.warp(begin - 1 days);
+
+        //assert queue length
+        queueLength = 2;
+        assertEq(Carousel(premium).getDepositQueueLenght(), queueLength);
+
+        //mint deposit in queue
+        Carousel(premium).mintDepositInQueue(epochId, queueLength);
+
+        //assert balance and emissions
+        assertEq(Carousel(premium).balanceOf(USER, epochId), 10 ether - relayerFee);
+        assertEq(Carousel(premium).balanceOfEmissions(USER, epochId), 10 ether - relayerFee);
+        assertEq(Carousel(premium).balanceOf(USER2, epochId), 10 ether - relayerFee);
+        assertEq(Carousel(premium).balanceOfEmissions(USER2, epochId), 10 ether - relayerFee);
 
         vm.stopPrank();
     }
