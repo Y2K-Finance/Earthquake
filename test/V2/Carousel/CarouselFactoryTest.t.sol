@@ -30,7 +30,7 @@ contract CarouselFactoryTest is Helper {
         factory.whitelistController(address(controller));
 
         relayerFee = 2 gwei;
-        depositFee = 100; // 1%
+        depositFee = 50; // 1%
      }
 
       function testCarouselMarketCreation() public {
@@ -211,7 +211,7 @@ contract CarouselFactoryTest is Helper {
     // test changeDepositFee
     function testChangeDepositFee() public {
         uint256 marketId = createMarketHelper();
-        uint16 newFee = 200; // 2%
+        uint16 newFee = 25; // 2%
         vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
         factory.changeDepositFee(newFee, marketId, 0);
 

@@ -12,7 +12,7 @@ contract Helper is Test {
     address public constant TREASURY = address(0x777);
     address public constant NOTADMIN = address(0x99);
     address public constant USER = address(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
-    address USER2 = address(0x12312);
+    address public constant USER2 = address(0x12312);
     address public constant ARBITRUM_SEQUENCER = address(0xFdB631F5EE196F0ed6FAa767959853A9F217697D);
     address public constant USDC_CHAINLINK = address(0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3);
     address public constant USDC_TOKEN = address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
