@@ -39,6 +39,7 @@ contract EndToEndCarouselTest is Helper {
         vm.selectFork(arbForkId);
 
         emissionsToken = address(new MintableToken("Emissions Token", "EMT"));
+        UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
         factory = new CarouselFactory(
             ADMIN,
@@ -80,19 +81,19 @@ contract EndToEndCarouselTest is Helper {
         // deploy epoch
         begin = uint40(block.timestamp - 5 days);
         end = uint40(block.timestamp - 3 days);
-        fee = uint16(0x5); //0,5%
+        fee = uint16(50); //0,5%
         premiumEmissions = 1000 ether;
         collatEmissions = 100 ether;
 
         // approve emissions token to factory
         vm.startPrank(TREASURY);
 
+        MintableToken(emissionsToken).mint(address(TREASURY), 5000);
         MintableToken(emissionsToken).approve(address(factory),  5000 ether);
 
         vm.stopPrank();
 
-
-       ( epochId, ) =  factory.createEpochWithEmissions(
+       ( epochId, ) = factory.createEpochWithEmissions(
                 marketId,
                 begin,
                 end,
@@ -101,15 +102,24 @@ contract EndToEndCarouselTest is Helper {
                 collatEmissions
         );
 
-        emit log_named_uint("epochId: ", epochId);
+        MintableToken(UNDERLYING).mint(USER);
+
     }
 
     function testEndToEndCarousel() public {
         vm.startPrank(USER);
 
-        IERC20(UNDERLYING).approve(address(premium), 10 ether);
-        IERC20(UNDERLYING).approve(address(collateral), 2 ether);
+        //warp to deposit period
+        vm.warp(begin - 1 days);
+        
+        //deal ether
+        vm.deal(USER, 20 ether);
 
+        //approve ether deposit
+        MintableToken(UNDERLYING).approve(premium, 10 ether);
+        MintableToken(UNDERLYING).approve(collateral, 2 ether);
+
+        //deposit in carousel vaults
         Carousel(premium).deposit(epochId, 10 ether, USER);
         Carousel(collateral).deposit(epochId, 2 ether, USER);
 
