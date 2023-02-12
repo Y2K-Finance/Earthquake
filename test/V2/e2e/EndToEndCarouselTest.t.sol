@@ -121,7 +121,7 @@ contract EndToEndCarouselTest is Helper {
         IERC20(UNDERLYING).approve(premium, 10 ether);
 
         //deposit in carousel vaults
-        Carousel(premium).deposit(epochId, 10 ether, USER);
+        Carousel(premium).deposit(0, 10 ether, USER);
 
         vm.stopPrank();
 
@@ -137,7 +137,7 @@ contract EndToEndCarouselTest is Helper {
         IERC20(UNDERLYING).approve(premium, 10 ether);
 
         //deposit in carousel vaults
-        Carousel(premium).deposit(epochId, 10 ether, USER2);
+        Carousel(premium).deposit(0, 10 ether, USER2);
 
         vm.stopPrank();
 
