@@ -8,9 +8,24 @@ CarouselFactory factory;
 
 address controller;
 address emissionsToken;
+address token;
+address oracle;
+address underlying;
+address premium;
+address collateral;
 
 uint256 relayerFee;
 uint256 depositFee;
+uint256 strike;
+uint256 marketId;
+uint256 premiumEmissions;
+uint256 collatEmissions;
+
+uint40 begin;
+uint40 end;
+
+uint16 fee;
+
 
 contract EndToEndCarouselTest is Helper {
     function setUp() public {
@@ -30,18 +45,18 @@ contract EndToEndCarouselTest is Helper {
         relayerFee = 2 gwei;
         depositFee = 100; // 1%
 
-        address token = address(0x1);
-        address oracle = address(0x3);
-        address underlying = address(0x4);
-        uint256 strike = uint256(0x2);
+        token = address(0x1);
+        oracle = address(0x3);
+        underlying = address(0x4);
+        strike = uint256(0x2);
         string memory name = string("");
         string memory symbol = string("");
 
         // deploy market
         (
-            address premium,
-            address collateral,
-            uint256 marketId
+            premium,
+            collateral,
+            marketId
         ) = factory.createNewCarouselMarket(
             CarouselFactory.CarouselMarketConfigurationCalldata(
                 token,
@@ -65,11 +80,12 @@ contract EndToEndCarouselTest is Helper {
 
         // approve emissions token to factory
         vm.startPrank(TREASURY);
+
         MintableToken(emissionsToken).approve(address(factory),  5000 ether);
         vm.stopPrank();
 
 
-       ( uint256 epochId2, address[2] memory vaults ) =  factory.createEpochWithEmissions(
+       ( uint256 epochId, address[2] memory vaults ) =  factory.createEpochWithEmissions(
                 marketId,
                 begin,
                 end,
