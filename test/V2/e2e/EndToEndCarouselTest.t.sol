@@ -222,8 +222,7 @@ contract EndToEndCarouselTest is Helper {
         IERC20(UNDERLYING).approve(premium, 6 ether);
 
         //premium deposit for assertions
-        Carousel(premium).deposit(0, 6 ether, USER);
-        Carousel(premium).mintDepositInQueue(nextEpochId, 1);
+        Carousel(premium).deposit(nextEpochId, 6 ether, USER);
 
         vm.stopPrank();
 
