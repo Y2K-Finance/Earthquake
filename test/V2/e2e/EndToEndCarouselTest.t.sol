@@ -26,9 +26,9 @@ contract EndToEndCarouselTest is Helper {
     uint256 public collatEmissions;
     uint256 public epochId;
     uint256 public nextEpochId;
-    uint256 public arbForkId;
     uint256 public collateralQueueLength;
     uint256 public premiumQueueLength;
+    uint256 public arbForkId;
 
     uint40 public begin;
     uint40 public end;
@@ -37,10 +37,10 @@ contract EndToEndCarouselTest is Helper {
 
     uint16 public fee;
 
-    string public ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
+    string public arbitrumRpcUrl = vm.envString("ARBITRUM_RPC_URL");
 
     function setUp() public {
-        arbForkId = vm.createFork(ARBITRUM_RPC_URL);
+        arbForkId = vm.createFork(arbitrumRpcUrl);
         vm.selectFork(arbForkId);
 
         emissionsToken = address(new MintableToken("Emissions Token", "EMT"));
@@ -218,14 +218,15 @@ contract EndToEndCarouselTest is Helper {
 
         vm.startPrank(USER);
 
+        //check shares from premium, withdraw first epoch
         assertEq(Carousel(collateral).previewWithdraw(epochId, 2 ether), COLLATERAL_MINUS_FEES_DIV10);
         Carousel(collateral).withdraw(epochId, 2 ether - depositFee - relayerFee, USER, USER);
-        //Carousel(premium).withdraw(epochId, 1 ether, USER, USER);
 
         vm.stopPrank();
 
         vm.startPrank(USER2);
 
+        //withdraw first epoch
         Carousel(collateral).withdraw(epochId, 2 ether - depositFee - relayerFee, USER2, USER2);
 
         vm.stopPrank();
