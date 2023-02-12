@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Helper is Test {
     uint256 public constant STRIKE = 1000000000000000000;
+    uint256 public constant COLLATERAL_MINUS_FEES = 21899999998480000000;
     address public constant ADMIN = address(0x1);
     address public constant WETH = address(0x888);
     address public constant TREASURY = address(0x777);
@@ -16,6 +17,7 @@ contract Helper is Test {
     address public constant ARBITRUM_SEQUENCER = address(0xFdB631F5EE196F0ed6FAa767959853A9F217697D);
     address public constant USDC_CHAINLINK = address(0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3);
     address public constant USDC_TOKEN = address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
+    address public constant RELAYER = address(0x55);
     address public UNDERLYING = address(0x123);
     address public TOKEN = address(new MintableToken("Token", "tkn"));
 }
