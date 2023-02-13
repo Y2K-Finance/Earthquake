@@ -3,10 +3,10 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
-import "../src/VaultFactory.sol";
-import "../src/Controller.sol";
+import "../src/_legacy_V1/VaultFactory.sol";
+import "../src/_legacy_V1/Controller.sol";
 //TODO change this after deploy  y2k token
-import "../src/rewards/RewardsFactory.sol";
+import "../src/_legacy_V1/rewards/PausableRewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./keepers/KeeperDepeg.sol";
