@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-interface IVaultV2 {
+interface ICarousel {
     // function name() external view  returns (string memory);
     // function symbol() external view  returns (string memory);
     // function asset() external view  returns (address);
@@ -14,7 +14,7 @@ interface IVaultV2 {
 
     function counterPartyVault() external view returns (address);
 
-    function getEpochConfig(uint256) external view returns (uint40, uint40, uint40);
+    function getEpochConfig(uint256) external view returns (uint40, uint40);
 
     function totalAssets(uint256) external view returns (uint256);
 
@@ -55,5 +55,41 @@ interface IVaultV2 {
         view
         returns (bool);
 
-    function setTreasury(address _treasury) external;
+    function enListInRollover(
+        uint256 _assets,
+        uint256 _epochId,
+        address _receiver
+    ) external;
+
+    function deListInRollover(address _receiver) external;
+
+    function mintDepositInQueue(uint256 _epochId, uint256 _operations) external;
+
+    function mintRollovers(uint256 _epochId, uint256 _operations) external;
+
+    function setEmissions(uint256 _epochId, uint256 _emissionsRate) external;
+
+    function previewEmissionsWithdraw(uint256 _id, uint256 _assets) external;
+
+    function changeRelayerFee(uint256 _relayerFee) external;
+
+    function changeDepositFee(uint256 _depositFee) external;
+
+    function changeTreasury(address) external;
+
+    function balanceOfEmissoins(address _user, uint256 _epochId)
+        external
+        view
+        returns (uint256);
+
+    function getDepositQueueLenght() external view;
+    function getRolloverQueueLenght() external view;
+
+    function emissionsToken() external view returns (address);
+
+    function relayerFee() external view returns (uint256);
+
+    function depositFee() external view returns (uint256);
+
+    function emissions(uint256 _epochId) external view returns (uint256);
 }

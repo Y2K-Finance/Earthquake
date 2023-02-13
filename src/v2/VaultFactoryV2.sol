@@ -20,7 +20,7 @@ contract VaultFactoryV2 is Ownable {
     //////////////////////////////////////////////////////////////*/
     address public treasury;
     bool internal adminSetController;
-    TimeLock public timelocker;
+    address public timelocker;
 
     mapping(uint256 => address[2]) public marketIdToVaults; //[0] premium and [1] collateral vault
     mapping(uint256 => uint256[]) public marketIdToEpochs; //all epochs in the market
@@ -33,6 +33,8 @@ contract VaultFactoryV2 is Ownable {
     //////////////////////////////////////////////////////////////*/
     /** @notice Contract constructor
      * @param _policy Admin address address
+     * @param _weth WETH address
+     * @param _treasury Treasury address
      */
     constructor(
         address _policy,
@@ -42,7 +44,7 @@ contract VaultFactoryV2 is Ownable {
         if (_policy == address(0)) revert AddressZero();
         if (_weth == address(0)) revert AddressZero();
         WETH = _weth;
-        timelocker = new TimeLock(_policy);
+        timelocker = address(new TimeLock(_policy));
         treasury = _treasury;
     }
 
@@ -136,8 +138,8 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee
-    ) public onlyOwner returns (uint256 epochId) {
-        address[2] memory vaults = marketIdToVaults[_marketId];
+    ) public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
+        vaults = marketIdToVaults[_marketId];
 
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
             revert MarketDoesNotExist(_marketId);
@@ -232,8 +234,8 @@ contract VaultFactoryV2 is Ownable {
     }
 
     /**
-    @notice Function to whiteliste controller smart contract, only owner or timelocker can add more controllers
-    @notice owner can set controller once, all future controllers must be set by timelocker
+    @notice Function to whitelist controller smart contract, only owner or timelocker can add more controllers. 
+    owner can set controller once, all future controllers must be set by timelocker.
     @param  _controller Address of the controller smart contract
      */
     function whitelistController(address _controller) public {
@@ -241,7 +243,7 @@ contract VaultFactoryV2 is Ownable {
         if (msg.sender == owner() && !adminSetController) {
             controllers[_controller] = true;
             adminSetController = true;
-        } else if (msg.sender == address(timelocker)) {
+        } else if (msg.sender == timelocker) {
             controllers[_controller] = !controllers[_controller];
             if (!adminSetController) adminSetController = true;
         } else {
@@ -268,8 +270,33 @@ contract VaultFactoryV2 is Ownable {
 
         IVaultV2(vaults[0]).whiteListAddress(_treasury);
         IVaultV2(vaults[1]).whiteListAddress(_treasury);
+        IVaultV2(vaults[0]).setTreasury(treasury);
+        IVaultV2(vaults[1]).setTreasury(treasury);
 
-        emit ChangedTreasury(_treasury, _marketId);
+        emit AddressWhitelisted(_treasury, _marketId);
+    }
+
+    /**
+    @notice Admin function, whitelists an address on vault for sendTokens function
+    @param  _marketId Target market index
+    @param _wAddress Treasury address
+     */
+    function whitelistAddressOnMarket(uint256 _marketId, address _wAddress)
+        public
+        onlyTimeLocker
+    {
+        if (_wAddress == address(0)) revert AddressZero();
+
+        address[2] memory vaults = marketIdToVaults[_marketId];
+
+        if (vaults[0] == address(0) || vaults[1] == address(0)) {
+            revert MarketDoesNotExist(_marketId);
+        }
+
+        IVaultV2(vaults[0]).whiteListAddress(_wAddress);
+        IVaultV2(vaults[1]).whiteListAddress(_wAddress);
+
+        emit AddressWhitelisted(_wAddress, _marketId);
     }
 
     /**
@@ -439,11 +466,15 @@ contract VaultFactoryV2 is Ownable {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Modifier to check if the caller is the timelocker
+     */
     modifier onlyTimeLocker() {
-        if (msg.sender != address(timelocker)) revert NotTimeLocker();
+        if (msg.sender != timelocker) revert NotTimeLocker();
         _;
     }
 
+    /** @notice Modifier to check if the controller is whitelisted on the factory
+     */
     modifier controllerIsWhitelisted(address _controller) {
         if (!controllers[_controller]) revert ControllerNotSet();
         _;
@@ -532,11 +563,11 @@ contract VaultFactoryV2 is Ownable {
      */
     event OracleChanged(address indexed _token, address _oracle);
 
-    /** @notice Treasury is changed when event is emitted
-     * @param _treasury Treasury address
+    /** @notice Address whitelisted is changed when event is emitted
+     * @param _wAddress whitelisted address
      * @param _marketId Target market index
      */
-    event ChangedTreasury(address _treasury, uint256 indexed _marketId);
+    event AddressWhitelisted(address _wAddress, uint256 indexed _marketId);
 
     /** @notice Treasury is changed when event is emitted
      * @param _treasury Treasury address

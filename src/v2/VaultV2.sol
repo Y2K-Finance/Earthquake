@@ -27,6 +27,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     uint256 public strike;
     uint256 public marketId;
     // Earthquake bussiness logic
+    address public treasury;
     address public counterPartyVault;
     address public factory;
     address public controller;
@@ -45,6 +46,16 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
                                  CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice constructor
+        @param _assetAddress  address of the asset that will be used as collateral;
+        @param _name  string representing the name of the vault;
+        @param _symbol  string representing the symbol of the vault;
+        @param _tokenURI  string representing the tokenURI of the vault;
+        @param _token  address of the token that will be used as collateral;
+        @param _strike  uint256 representing the strike price of the vault;
+        @param _controller  address of the controller of the vault;
+        @param _treasury  address of the treasury of the vault;
+     */
     constructor(
         address _assetAddress,
         string memory _name,
@@ -63,6 +74,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         strike = _strike;
         factory = msg.sender;
         controller = _controller;
+        treasury = _treasury;
         whitelistedAddresses[_treasury] = true;
     }
 
@@ -196,7 +208,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
 
         epochConfig[_epochId] = EpochConfig({
             epochBegin: _epochBegin,
-            epochEnd: _epochEnd
+            epochEnd: _epochEnd,
+            epochCreation: uint40(block.timestamp)
         });
         epochs.push(_epochId);
     }
@@ -217,6 +230,15 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function whiteListAddress(address _wAddress) public onlyFactory {
         if (_wAddress == address(0)) revert AddressZero();
         whitelistedAddresses[_wAddress] = !whitelistedAddresses[_wAddress];
+    }
+
+    /**
+    @notice Factory function, changes treasury address
+    @param _treasury New treasury address
+     */
+    function setTreasury(address _treasury) public onlyFactory {
+        if (_treasury == address(0)) revert AddressZero();
+        treasury = _treasury;
     }
 
     /**
@@ -337,10 +359,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function getEpochConfig(uint256 _id)
         public
         view
-        returns (uint40 epochBegin, uint40 epochEnd)
+        returns (uint40 epochBegin, uint40 epochEnd, uint40 epochCreation)
     {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
+        epochCreation = epochConfig[_id].epochCreation;
     }
 
     function _asset() internal view returns (IERC20) {
@@ -354,6 +377,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     struct EpochConfig {
         uint40 epochBegin;
         uint40 epochEnd;
+        uint40 epochCreation;
     }
 
     /*//////////////////////////////////////////////////////////////

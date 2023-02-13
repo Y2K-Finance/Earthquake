@@ -28,7 +28,7 @@ contract FactoryV2Test is Helper {
             TREASURY
         );
        
-        assertEq(address(factory.timelocker().policy()), ADMIN);
+        assertEq(address(TimeLock(factory.timelocker()).policy()), ADMIN);
         assertEq(address(factory.WETH()), WETH);
         assertEq(address(factory.treasury()), TREASURY);
         assertEq(address(factory.owner()), address(this));
@@ -46,7 +46,7 @@ contract FactoryV2Test is Helper {
         factory.whitelistController(controller2);
 
         // new controllers can be added by queueing them in tomelocker
-        vm.startPrank(address(factory.timelocker()));
+        vm.startPrank(factory.timelocker());
         factory.whitelistController(controller2);
         assertTrue(factory.controllers(controller2));
         vm.stopPrank();
@@ -219,7 +219,7 @@ contract FactoryV2Test is Helper {
                 uint16(0x4)
             );
 
-       uint256 epochId =  factory.createEpoch(
+      ( uint256 epochId,) =  factory.createEpoch(
                 marketId,
                 uint40(0x2),
                 uint40(0x3),
@@ -238,7 +238,7 @@ contract FactoryV2Test is Helper {
         uint40 end = uint40(0x4);
         uint16 fee = uint16(0x5);
 
-        uint256 epochId2 =  factory.createEpoch(
+       ( uint256 epochId2,) =  factory.createEpoch(
                 marketId,
                 begin,
                 end,
@@ -250,7 +250,7 @@ contract FactoryV2Test is Helper {
         assertEq(fee, fetchedFee);
         
         // test if epoch config is correct
-        (uint40 fetchedBegin, uint40 fetchedEnd) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
+        (uint40 fetchedBegin, uint40 fetchedEnd, ) = IVaultV2(vaults[0]).getEpochConfig(epochId2);
         assertEq(begin, fetchedBegin);
         assertEq(end, fetchedEnd);
 
