@@ -238,11 +238,6 @@ contract VaultV2Test is Helper {
         // check balances
         assertEq(vault.balanceOf(USER ,epochId), 0);
         vm.stopPrank();
-        
-        // check withdraw before epoch started
-
-        // check withdraw after epoch ended
-
     }
 
     function testResolveEpoch() public {
