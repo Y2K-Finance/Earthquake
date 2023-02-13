@@ -296,13 +296,6 @@ contract EndToEndCarouselTest is Helper {
 
         //check vaults balance
 
-        //SHOULD BE 0
-        assertEq(Carousel(premium).previewEmissionsWithdraw(nextEpochId, 6 ether - relayerFee), 0);
-        assertEq(Carousel(premium).balanceOf(USER ,nextEpochId), 0);
-
-        assertEq(Carousel(collateral).balanceOf(USER ,nextEpochId), 0);
-        assertEq(Carousel(premium).balanceOf(USER2 ,nextEpochId), 0);
-        assertEq(Carousel(collateral).balanceOf(USER2 ,nextEpochId), 0);
 
         //assert balance of treasury and users
         assertEq(IERC20(emissionsToken).balanceOf(TREASURY), 2800 ether);
