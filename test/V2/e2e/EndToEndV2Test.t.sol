@@ -104,7 +104,7 @@ contract EndToEndV2Test is Helper {
         end = uint40(block.timestamp - 3 days);
         fee = 50; // 0.5%
 
-        epochId = factory.createEpoch(
+        (epochId, ) = factory.createEpoch(
                 marketId,
                 begin,
                 end,
@@ -112,7 +112,7 @@ contract EndToEndV2Test is Helper {
        );
 
        //create epoch for depeg
-        depegEpochId = factory.createEpoch(
+        (depegEpochId, ) = factory.createEpoch(
                 depegMarketId,
                 begin,
                 end,

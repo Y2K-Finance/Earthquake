@@ -558,10 +558,16 @@ contract Carousel is VaultV2 {
         entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
     }
 
+    /** @notice returns the deposit queue length
+        * @return queue length for the deposit
+     */
     function getDepositQueueLenght() public view returns (uint256) {
         return depositQueue.length;
     }
 
+    /** @notice returns the queue length for the rollover
+        * @return queue length for the rollover
+     */
     function getRolloverQueueLenght() public view returns (uint256) {
         return rolloverQueue.length;
     }
