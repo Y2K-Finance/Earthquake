@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 import { OpsReady, IOps } from "./OpsReady.sol";
-import {IController} from "../../src/interfaces/IController.sol";
+import {IController} from "../../src/_legacy_V1/interfaces/IController.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract KeeperGelatoEndEpoch is OpsReady, Ownable {
