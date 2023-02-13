@@ -273,7 +273,30 @@ contract VaultFactoryV2 is Ownable {
         IVaultV2(vaults[0]).setTreasury(treasury);
         IVaultV2(vaults[1]).setTreasury(treasury);
 
-        emit ChangedTreasury(_treasury, _marketId);
+        emit AddressWhitelisted(_treasury, _marketId);
+    }
+
+    /**
+    @notice Admin function, whitelists an address on vault for sendTokens function
+    @param  _marketId Target market index
+    @param _wAddress Treasury address
+     */
+    function whitelistAddressOnMarket(uint256 _marketId, address _wAddress)
+        public
+        onlyTimeLocker
+    {
+        if (_wAddress == address(0)) revert AddressZero();
+
+        address[2] memory vaults = marketIdToVaults[_marketId];
+
+        if (vaults[0] == address(0) || vaults[1] == address(0)) {
+            revert MarketDoesNotExist(_marketId);
+        }
+
+        IVaultV2(vaults[0]).whiteListAddress(_wAddress);
+        IVaultV2(vaults[1]).whiteListAddress(_wAddress);
+
+        emit AddressWhitelisted(_wAddress, _marketId);
     }
 
     /**
@@ -540,11 +563,11 @@ contract VaultFactoryV2 is Ownable {
      */
     event OracleChanged(address indexed _token, address _oracle);
 
-    /** @notice Treasury is changed when event is emitted
-     * @param _treasury Treasury address
+    /** @notice Address whitelisted is changed when event is emitted
+     * @param _wAddress whitelisted address
      * @param _marketId Target market index
      */
-    event ChangedTreasury(address _treasury, uint256 indexed _marketId);
+    event AddressWhitelisted(address _wAddress, uint256 indexed _marketId);
 
     /** @notice Treasury is changed when event is emitted
      * @param _treasury Treasury address

@@ -16,7 +16,7 @@ contract CarouselTest is Helper {
     address relayer = address(0x55);
     address emissionsToken;
     uint256 relayerFee = 2 gwei;
-    uint256 depositFee = 1000;
+    uint256 depositFee = 50;
     address USER3 = address(0x123);
     address USER4 = address(0x345);
     address USER5 = address(0x567);
@@ -80,7 +80,7 @@ contract CarouselTest is Helper {
         // should revert if operations are not in queue length
         vm.expectRevert(Carousel.OverflowQueue.selector);
         vault.mintDepositInQueue(_epochId, 2);
-        // should revert if operations are not in queue length
+        // should revert if epoch already started
         vm.warp(_epochBegin + 100);
         vm.expectRevert(VaultV2.EpochAlreadyStarted.selector);
         vault.mintDepositInQueue(_epochId, 1);
@@ -136,6 +136,9 @@ contract CarouselTest is Helper {
         deal(emissionsToken, address(vault), 100 ether, true);
         vault.setEpoch(_epochBegin, _epochEnd, _epochId);
         vault.setEmissions( _epochId, _emissions);
+    
+        helperDepositInEpochs(_epochId,USER, false);
+        helperDepositInEpochs(_epochId,USER2, false);
 
         vm.warp(_epochBegin - 10 minutes);
     

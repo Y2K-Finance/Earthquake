@@ -43,11 +43,13 @@ contract ControllerPeggedAssetV2Test is Helper {
         vm.warp(120000);
         MintableToken(UNDERLYING).mint(address(this));
 
-        vm.startPrank(ADMIN);
-
         address oracle = address(0x3);
         string memory name = string("");
         string memory symbol = string("");
+
+        vm.startPrank(factory.timelocker());
+        factory.whitelistController(address(controller));
+        vm.stopPrank();
 
         (
             premium,
@@ -75,8 +77,6 @@ contract ControllerPeggedAssetV2Test is Helper {
             end,
             withdrawalFee
         );
-
-        vm.stopPrank();
 
         MintableToken(UNDERLYING).mint(USER);
 
