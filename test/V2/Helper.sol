@@ -7,9 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Helper is Test {
     uint256 public constant STRIKE = 1000000000000000000;
-    uint256 public constant COLLATERAL_MINUS_FEES = 21899999998480000000;
-    uint256 public constant COLLATERAL_MINUS_FEES_DIV10 = 2189999999848000000;
-    uint256 public constant NEXT_COLLATERAL_MINUS_FEES = 21563770001390942501;
+    uint256 public constant COLLATERAL_MINUS_FEES = 21989999998408000000;
+    uint256 public constant COLLATERAL_MINUS_FEES_DIV10 = 2198999999840800000;
+    uint256 public constant NEXT_COLLATERAL_MINUS_FEES = 21827317001456829251;
+    uint256 public constant USER_ASSETS_AFTER_WITHDRAW = 9999999995999999950;
     address public constant ADMIN = address(0x1);
     address public constant WETH = address(0x888);
     address public constant TREASURY = address(0x777);

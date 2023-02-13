@@ -207,11 +207,7 @@ contract EndToEndCarouselTest is Helper {
         assertEq(Carousel(collateral).previewWithdraw(epochId, 20 ether), COLLATERAL_MINUS_FEES);
 
         // let relayer rollover for users
-        vm.startPrank(RELAYER);
-
         Carousel(collateral).mintRollovers(nextEpochId, 2);
-
-        vm.stopPrank();
 
         //assert rollover accounting
         assertEq(Carousel(collateral).rolloverAccounting(nextEpochId), 2);
@@ -236,7 +232,7 @@ contract EndToEndCarouselTest is Helper {
         //approve ether deposit
         IERC20(UNDERLYING).approve(premium, 6 ether);
 
-        //premium deposit for assertions
+        //premium deposit for assertions - PLEASE CHECK THIS
         Carousel(premium).deposit(nextEpochId, 6 ether, USER);
 
         vm.stopPrank();
@@ -253,46 +249,64 @@ contract EndToEndCarouselTest is Helper {
 
         //withdraw USER1
         vm.startPrank(USER);
-        
-            uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
-            Carousel(collateral).delistInRollover(USER);
-            uint256 afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
-            assertTrue(afterQueueLength == beforeQueueLength--);
 
-            uint256 balanceInNextEpoch = Carousel(collateral).balanceOf(USER, nextEpochId);
-            // @note user deposited had to pay relayer fee twice, once when depoisting in deposit queue and once rolling over
-            assertTrue(balanceInNextEpoch == 8 ether - (relayerFee * 2)); 
-            Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER, USER);
+        //delist rollover
+        uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        Carousel(collateral).delistInRollover(USER);
+
+        //assert rollover queue length
+        uint256 afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        assertEq(afterQueueLength, beforeQueueLength - 1);
+
+        //assert balance in next epoch
+        uint256 balanceInNextEpoch = Carousel(collateral).balanceOf(USER, nextEpochId);
+
+        //assert rollover minus relayer fee
+        assertEq(balanceInNextEpoch, 8 ether - relayerFee);
+
+        //withdraw after rollover
+        Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER, USER);
 
         vm.stopPrank();
 
         //withdraw USER2
         vm.startPrank(USER2);
 
-            assertTrue(Carousel(collateral).getRolloverIndex(USER2) == 0);
+        //assert rollover index
+        assertTrue(Carousel(collateral).getRolloverIndex(USER2) == 0);
 
-            beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
-            Carousel(collateral).delistInRollover(USER2);
-            afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
-            assertTrue(afterQueueLength == beforeQueueLength--);
+        //delist rollover
+        beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        Carousel(collateral).delistInRollover(USER2);
 
-            balanceInNextEpoch = Carousel(collateral).balanceOf(USER2, nextEpochId);
-            // @note user deposited had to pay relayer fee twice, once when depoisting in deposit queue and once rolling over
-            assertTrue(balanceInNextEpoch == 8 ether - (relayerFee * 2)); 
+        //assert rollover queue length
+        afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        assertEq(afterQueueLength, beforeQueueLength - 1);
 
-            Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER2, USER2);
+        //assert balance in next epoch
+        balanceInNextEpoch = Carousel(collateral).balanceOf(USER2, nextEpochId);
+
+        //assert rollover minus relayer fee
+        assertTrue(balanceInNextEpoch == 8 ether - relayerFee); 
+
+        //withdraw after rollover
+        Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER2, USER2);
 
         vm.stopPrank();
 
         //check vaults balance
+
+        //SHOULD BE 0
+        assertEq(Carousel(premium).previewEmissionsWithdraw(nextEpochId, 6 ether - relayerFee), 0);
         assertEq(Carousel(premium).balanceOf(USER ,nextEpochId), 0);
+
         assertEq(Carousel(collateral).balanceOf(USER ,nextEpochId), 0);
         assertEq(Carousel(premium).balanceOf(USER2 ,nextEpochId), 0);
         assertEq(Carousel(collateral).balanceOf(USER2 ,nextEpochId), 0);
 
-        //check user balances
-        //assertEq(USER.balance, );
-        //assertEq(USER2.balance, );
-
+        //assert balance of treasury and users
+        assertEq(IERC20(emissionsToken).balanceOf(TREASURY), 2800 ether);
+        assertEq(IERC20(emissionsToken).balanceOf(USER), USER_ASSETS_AFTER_WITHDRAW);
+        assertEq(IERC20(emissionsToken).balanceOf(USER2), USER_ASSETS_AFTER_WITHDRAW);
     }
 }
