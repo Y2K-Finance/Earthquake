@@ -43,11 +43,13 @@ contract ControllerPeggedAssetV2Test is Helper {
         vm.warp(120000);
         MintableToken(UNDERLYING).mint(address(this));
 
-        vm.startPrank(ADMIN);
-
         address oracle = address(0x3);
         string memory name = string("");
         string memory symbol = string("");
+
+        vm.startPrank(factory.timelocker());
+        factory.whitelistController(address(controller));
+        vm.stopPrank();
 
         (
             premium,
@@ -69,14 +71,12 @@ contract ControllerPeggedAssetV2Test is Helper {
         end = uint40(block.timestamp + 1 days);
         withdrawalFee = 10;
 
-        epochId = factory.createEpoch(
+        (epochId, ) = factory.createEpoch(
             marketId,
             begin,
             end,
             withdrawalFee
         );
-
-        vm.stopPrank();
 
         MintableToken(UNDERLYING).mint(USER);
 

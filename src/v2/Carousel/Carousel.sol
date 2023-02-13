@@ -18,54 +18,63 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
     // Earthquake parameters
     uint256 public relayerFee;
-    uint256 public closingTimeFrame;
-    address public feeTreasury;
+    uint256 public depositFee;
     IERC20 public emissionsToken;
 
     mapping(address => uint256) public ownerToRollOverQueueIndex;
     QueueItem[] public rolloverQueue;
     QueueItem[] public depositQueue;
     mapping(uint256 => uint256) public rolloverAccounting;
-    mapping(uint256 => mapping(address => uint256)) private _emissionsBalances;
-    mapping(uint256 => uint256) private emissions;
+    mapping(uint256 => mapping(address => uint256)) public _emissionsBalances;
+    mapping(uint256 => uint256) public emissions;
 
     /*//////////////////////////////////////////////////////////////
                                  CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice constructor
+        @param _data  Carousel.ConstructorArgs struct containing the data to be used in the constructor;
+     */
     constructor(
-        address _assetAddress,
-        string memory _name,
-        string memory _symbol,
-        string memory _tokenURI,
-        address _token,
-        uint256 _strike,
-        address _controller,
-        address _treasury,
-        address _feeTreasury,
-        address _emissionsToken,
-        uint256 _relayerFee
+        ConstructorArgs memory _data 
     )
         VaultV2(
-            _assetAddress,
-            _name,
-            _symbol,
-            _tokenURI,
-            _token,
-            _strike,
-            _controller,
-            _treasury
+            _data.assetAddress,
+            _data.name,
+            _data.symbol,
+            _data.tokenURI,
+            _data.token,
+            _data.strike,
+            _data.controller,
+            _data.treasury
         )
     {
-        emissionsToken = IERC20(_emissionsToken);
-        relayerFee = _relayerFee;
-        feeTreasury = _feeTreasury;
+        if(_data.relayerFee < 10000) revert RelayerFeeToLow();
+        if(_data.depositFee > 250) revert BPSToHigh();
+        if(_data.emissionsToken == address(0)) revert AddressZero();
+        emissionsToken = IERC20(_data.emissionsToken);
+        relayerFee = _data.relayerFee;
+        depositFee = _data.depositFee;
+
+        // set epoch 0 to be allways available to deposit into Queue
+        epochExists[0] = true;
+        epochConfig[0] = EpochConfig({
+            epochBegin: 10**10*40 - 7 days,
+            epochEnd: 10**10*40,
+            epochCreation: uint40(block.timestamp)
+        });
+        epochs.push(0);
     }
 
     /*///////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice Deposit function
+        @param  _id epoch id
+        @param _assets   uint256 of how many assets you want to deposit;
+        @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
+     */
     function deposit(
         uint256 _id,
         uint256 _assets,
@@ -73,37 +82,20 @@ contract Carousel is VaultV2 {
     )
         public
         override(VaultV2)
-        minRequiredDeposit(_assets)
         epochIdExists(_id)
         epochHasNotStarted(_id)
+        minRequiredDeposit(_assets)
         nonReentrant
     {
+        // make sure that epoch exists
+        // epoch has not started (valid deposit period)
+        // amount is enough to pay for relayer fees in case of queue deposit
+        // function is not reentrant
         if (_receiver == address(0)) revert AddressZero();
 
         _asset().safeTransferFrom(msg.sender, address(this), _assets);
-
-        // mint logic, either in queue or direct deposit
-        if (queueClosed(_id)) {
-            uint256 lateDepositFee = _assets; // TODO: calculate late deposit fee
-            uint256 assetsToDeposit = _assets; // TODO: calculate assets to deposit
-            _asset().safeTransfer(feeTreasury, lateDepositFee);
-
-            _mint(_receiver, _id, assetsToDeposit, EMPTY);
-
-            emit LateDeposit(
-                msg.sender,
-                _receiver,
-                _id,
-                assetsToDeposit,
-                lateDepositFee
-            );
-        } else {
-            depositQueue.push(
-                QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
-            );
-
-            emit DepositInQueue(msg.sender, _receiver, _id, _assets);
-        }
+        // handles deposit logic for all cases (direct deposit, late deposit (if activated), queue deposit)
+        _deposit(_id, _assets, _receiver);
     }
 
     /**
@@ -129,6 +121,10 @@ contract Carousel is VaultV2 {
         nonReentrant
         returns (uint256 shares)
     {
+        // make sure that epoch exists
+        // epoch is resolved
+        // owners funds are not locked in rollover
+        // function is not reentrant
         if (_receiver == address(0)) revert AddressZero();
 
         if (
@@ -214,9 +210,15 @@ contract Carousel is VaultV2 {
                         Carousel Rollover Logic
     //////////////////////////////////////////////////////////////*/
 
-    function enListInRollover(
-        uint256 _assets,
+    /** @notice enlists in rollover queue
+        @dev user needs to have >= _assets in epoch (_epochId)
+        @param  _epochId epoch id
+        @param _assets   uint256 of how many assets deposited;
+        @param _receiver  address of the receiver of the emissions;
+     */
+    function enlistInRollover(
         uint256 _epochId,
+        uint256 _assets,
         address _receiver
     ) public epochIdExists(_epochId) minRequiredDeposit(_assets) {
         // check if sender is approved by owner
@@ -249,33 +251,42 @@ contract Carousel is VaultV2 {
         emit RolloverQueued(_receiver, _assets, _epochId);
     }
 
-    function deListInRollover(address _receiver) public {
+    /** @notice delists from rollover queue
+        @param _owner address that is delisting from rollover queue
+     */
+    function delistInRollover(address _owner) public {
         // check if user has already queued up a rollover
-        if (ownerToRollOverQueueIndex[_receiver] == 0)
+        if (ownerToRollOverQueueIndex[_owner] == 0)
             revert NoRolloverQueued();
         // check if sender is approved by owner
         if (
-            msg.sender != _receiver &&
-            isApprovedForAll(_receiver, msg.sender) == false
-        ) revert OwnerDidNotAuthorize(msg.sender, _receiver);
+            msg.sender != _owner &&
+            isApprovedForAll(_owner, msg.sender) == false
+        ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
         // swich the last item in the queue with the item to be removed
-        uint256 index = getRolloverIndex(_receiver);
-        if (index == rolloverQueue.length - 1) {
+        uint256 index = getRolloverIndex(_owner);
+        uint256 lenght = rolloverQueue.length;
+        if (index == lenght - 1) {
+            // if only one item in queue
             rolloverQueue.pop();
-            delete ownerToRollOverQueueIndex[_receiver];
+            delete ownerToRollOverQueueIndex[_owner];
         } else {
             // overwrite the item to be removed with the last item in the queue
-            rolloverQueue[index] = rolloverQueue[rolloverQueue.length - 1];
+            rolloverQueue[index] = rolloverQueue[lenght - 1];
             // remove the last item in the queue
             rolloverQueue.pop();
-            // update the index of prev last user
-            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index;
+            // update the index of prev last user ( mapping index is allways array index + 1)
+            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index+ 1;
             // remove receiver from index mapping
-            delete ownerToRollOverQueueIndex[_receiver];
+            delete ownerToRollOverQueueIndex[_owner];
         }
     }
 
+    /** @notice mints deposit in rollover queue
+        @param _epochId epoch id
+        @param _operations  uint256 of how many operations to execute;
+     */
     function mintDepositInQueue(uint256 _epochId, uint256 _operations)
         external
         epochIdExists(_epochId)
@@ -285,108 +296,188 @@ contract Carousel is VaultV2 {
         // make sure there is already a new epoch set
         // epoch has not started
         QueueItem[] memory queue = depositQueue;
-        uint256 length = rolloverQueue.length;
+        uint256 length = depositQueue.length;
+
+        // dont allow minting if epochId is 0
+        if (_epochId == 0) revert InvalidEpochId();
 
         // revert if queue is empty or operations are more than queue length
-        if (length == 0 || _operations > length - 1) revert OverflowQueue();
+        if (length == 0 || _operations > length) revert OverflowQueue();
 
         // queue is executed from the tail to the head
         // get last index of queue
         uint256 i = length - 1;
-        while (i > (length - 1) - _operations) {
-            _mint(
+        while ((length - _operations) <= i) {
+            _mintShares(
                 queue[i].receiver,
-                queue[i].epochId,
-                queue[i].assets - relayerFee,
-                EMPTY
+                _epochId,
+                queue[i].assets - relayerFee
             );
+            emit Deposit(msg.sender,  queue[i].receiver, _epochId,  queue[i].assets - relayerFee);
             depositQueue.pop();
+            if( i == 0 ) break;
             unchecked {
                 i--;
             }
         }
 
-        asset.safeTransfer(feeTreasury, _operations * relayerFee);
+        emit RelayerMinted(_epochId, _operations);
+
+        asset.safeTransfer(msg.sender, _operations * relayerFee);
     }
 
+    /** @notice mints for rollovers
+        @param _epochId epoch id
+        @param _operations  uint256 of how many operations to execute;
+     */
     function mintRollovers(uint256 _epochId, uint256 _operations)
         external
         epochIdExists(_epochId)
         epochHasNotStarted(_epochId)
         nonReentrant
     {
-        // make sure there is already a new epoch set
         // epoch has not started
-        // prev epoch is resolved
+        // dont allow minting if epochId is 0
+        if (_epochId == 0) revert InvalidEpochId();
+
+        uint256 length = rolloverQueue.length;
+        uint256 index = rolloverAccounting[_epochId];
+
+        // revert if queue is empty or operations are more than queue length
         if (
-            epochResolved[epochs[epochs.length - 2]] &&
-            epochs[epochs.length - 1] == _epochId
-        ) {
-            QueueItem[] memory queue = rolloverQueue;
-            uint256 length = rolloverQueue.length;
-            // revert if queue is empty or operations are more than queue length
-            if (length == 0 || _operations > length - 1) revert OverflowQueue();
-            // account for how many operations have been done
-            uint256 index = rolloverAccounting[_epochId];
-            while (index < _operations) {
-                // only roll over if user won last epoch
+        length == 0 ||
+        _operations > length ||
+        (index + _operations) > length  ) revert OverflowQueue();
+
+        // prev epoch is resolved
+        if(!epochResolved[epochs[epochs.length - 2]]) revert EpochNotResolved();
+
+        // make sure epoch is next epoch
+        if (epochs[epochs.length - 1] != _epochId) revert InvalidEpochId();   
+
+        QueueItem[] memory queue = rolloverQueue;
+
+        // account for how many operations have been done
+        uint256 prevIndex = index;
+        uint256 executions = 0;
+        
+        while ((index-prevIndex) < (_operations)) {    
+            // only roll over if last epoch is resolved
+            if(epochResolved[queue[index].epochId]) {
+                uint256 entitledShares = previewWithdraw(
+                    queue[index].epochId,
+                    queue[index].assets
+                );
+                // mint only if user won epoch he is rolling over
                 if (
-                    previewWithdraw(queue[index].epochId, queue[index].assets) >
+                    entitledShares >
                     queue[index].assets
                 ) {
+                    // @note we know that user could not withdraw these shares or transfer them
                     _burn(
                         queue[index].receiver,
                         queue[index].epochId,
                         queue[index].assets
                     );
-                    _mint(
+                    emit Withdraw(
+                        msg.sender,
+                        queue[index].receiver,
                         queue[index].receiver,
                         _epochId,
-                        queue[index].assets - relayerFee,
-                        EMPTY
+                        queue[index].assets,
+                        entitledShares
                     );
-                    rolloverQueue[index].assets =
-                        queue[index].assets -
-                        relayerFee;
+                    uint256 assetsToMint = queue[index].assets - relayerFee;
+                    _mintShares(
+                        queue[index].receiver,
+                        _epochId,
+                        assetsToMint
+                    );
+                    emit Deposit(msg.sender,  queue[index].receiver, _epochId, assetsToMint);
+                    rolloverQueue[index].assets = assetsToMint;
                     rolloverQueue[index].epochId = _epochId;
+                    // only pay relayer for successful mints
+                    executions++;
                 }
-                index++;
             }
-
-            rolloverAccounting[_epochId] = index;
-
-            asset.safeTransfer(feeTreasury, _operations * relayerFee);
+            index++;
         }
-    }
 
-    function queueClosed(uint256 _epochId) public view returns (bool) {
-        if (_epochId == 0) return false;
-        else if (
-            block.timestamp + closingTimeFrame >=
-            epochConfig[_epochId].epochBegin
-        ) return true;
-        else return false;
+        if(executions > 0) rolloverAccounting[_epochId] = index;
+
+        if(executions * relayerFee > 0) asset.safeTransfer(msg.sender, executions * relayerFee);
+       
+        emit RelayerMinted(_epochId, executions);
+    
     }
 
     /*///////////////////////////////////////////////////////////////
                         INTERNAL MUTATIVE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _mint(
+    function _deposit(uint256 _id,  uint256 _assets, address _receiver) internal {
+             // mint logic, either in queue or direct deposit
+            if(_id != 0){
+                uint256 assetsToDeposit = _assets;
+
+                if(depositFee > 0){
+                    (uint256 maxX, , uint256 minX)= getEpochConfig(_id);
+                    // depisit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
+                    // this is because late depositors have an informational advantage
+                    uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
+                    // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
+                    uint256 feeAmount = _assets.mulDivUp(fee, 10000);
+                    // 0.5% = multiply by 1000 then divide by 5
+                    assetsToDeposit = _assets - feeAmount;
+                    _asset().safeTransfer(treasury, feeAmount);
+                }
+
+                _mintShares(_receiver, _id, assetsToDeposit);
+
+                emit Deposit(msg.sender, _receiver, _id, _assets);
+        } else {
+            depositQueue.push(
+                QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
+            );
+
+            emit DepositInQueue(msg.sender, _receiver, _id, _assets);
+        }
+    }
+
+     /**
+     * Calculate rewards within a specific range.
+     */
+    function _calculateFeePercent(
+        int256 minX,
+        int256 maxX
+    ) internal view returns (uint256 _y) {
+        /**
+         * Two Point Form
+         * https://www.cuemath.com/geometry/two-point-form/
+         * https://ethereum.stackexchange.com/a/143172
+         */
+         // minY will always be 0 thats why is (maxY - minY) shorten to maxY
+        int256 maxY = int256(depositFee) * int256(FixedPointMathLib.WAD);
+        _y = 
+        uint256( // cast to uint256
+            ((((maxY) / (maxX - minX)) * (int256(block.timestamp) - maxX)) + maxY) // two point math
+            / (int256(FixedPointMathLib.WAD)) // scale down 
+        );        
+    }
+
+    function _mintShares(
         address to,
         uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) internal override {
-        _mint(to, id, amount, data);
-        _mintEmissoins(to, id, amount, data);
+        uint256 amount 
+    ) internal {
+        _mint(to, id, amount, EMPTY);
+        _mintEmissoins(to, id, amount);
     }
 
     function _mintEmissoins(
         address to,
         uint256 id,
-        uint256 amount,
-        bytes memory data
+        uint256 amount
     ) internal {
         require(to != address(0), "ERC1155: mint to the zero address");
 
@@ -420,6 +511,10 @@ contract Carousel is VaultV2 {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice sets emissions
+        * @param _epochId epoch id
+        * @param _emissionsRate emissions rate
+     */
     function setEmissions(uint256 _epochId, uint256 _emissionsRate)
         external
         onlyFactory
@@ -428,20 +523,106 @@ contract Carousel is VaultV2 {
         emissions[_epochId] = _emissionsRate;
     }
 
+    /** @notice changes relayer fee
+        * @param _relayerFee relayer fee
+     */
+    function changeRelayerFee(uint256 _relayerFee) external onlyFactory {
+        relayerFee = _relayerFee;
+    }
+
+    function changeDepositFee(uint256 _depositFee) external onlyFactory {
+        if(_depositFee > 250) revert BPSToHigh();
+        depositFee = _depositFee;
+    }
+
     /*///////////////////////////////////////////////////////////////
                         Getter Functions
     //////////////////////////////////////////////////////////////*/
 
-    function getRolloverIndex(address _owner) internal view returns (uint256) {
+    /** @notice returns the rollover index
+        * @param _owner address of the owner
+        * @return rollover index
+     */
+    function getRolloverIndex(address _owner) public view returns (uint256) {
         return ownerToRollOverQueueIndex[_owner] - 1;
     }
 
+    /** @notice returns the emissions to withdraw
+        * @param _id epoch id
+        * @param _assets amount of assets to withdraw
+        * @return entitledAmount amount of emissions to withdraw
+     */
     function previewEmissionsWithdraw(uint256 _id, uint256 _assets)
         public
         view
         returns (uint256 entitledAmount)
     {
         entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
+    }
+
+    /** @notice returns the deposit queue length
+        * @return queue length for the deposit
+     */
+    function getDepositQueueLenght() public view returns (uint256) {
+        return depositQueue.length;
+    }
+
+    /** @notice returns the queue length for the rollover
+        * @return queue length for the rollover
+     */
+    function getRolloverQueueLenght() public view returns (uint256) {
+        return rolloverQueue.length;
+    }
+
+    /** @notice returns the total value locked in the rollover queue
+      * @return tvl total value locked in the rollover queue
+     */
+    function getRolloverTVL( uint256 _epochId ) public view returns(uint256 tvl) {
+        for (uint256 i = 0; i < rolloverQueue.length; i++) {
+            if(
+                rolloverQueue[i].epochId == _epochId && 
+                (previewWithdraw(rolloverQueue[i].epochId, rolloverQueue[i].assets) >
+                rolloverQueue[i].assets
+            )
+            ) {
+                 tvl += rolloverQueue[i].assets;
+            }
+           
+        }
+    }
+
+     /** @notice returns users rollover balance and epoch which is rolling over
+        * @param _owner address of the user
+        * @return balance balance of the user
+        * @return epochId epoch id 
+     */
+    function getRolloverBalance(address _owner)
+        public
+        view
+        returns (uint256 balance, uint256 epochId)
+    {
+        balance = rolloverQueue[getRolloverIndex(_owner)].assets;
+        epochId = rolloverQueue[getRolloverIndex(_owner)].epochId;
+    }
+
+    /** @notice returns the total value locked in the deposit queue
+      * @return tvl total value locked in the deposit queue
+     */
+    function getDepositQueueTVL() public view returns(uint256 tvl) {
+        for (uint256 i = 0; i < depositQueue.length; i++) {
+            tvl += depositQueue[i].assets;
+        }
+    }
+
+    /** @notice returns the total emissions balance
+      * @return totalEmissions total emissions balance
+    */
+    function balanceOfEmissions(address _owner, uint256 _id)
+        public
+        view
+        returns (uint256)
+    {
+        return _emissionsBalances[_id][_owner];
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -454,15 +635,37 @@ contract Carousel is VaultV2 {
         uint256 epochId;
     }
 
+    struct ConstructorArgs {
+        address assetAddress;
+        string name;
+        string symbol;
+        string tokenURI;
+        address token;
+        uint256 strike;
+        address controller;
+        address treasury;
+        address emissionsToken;
+        uint256 relayerFee;
+        uint256 depositFee;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice checks if deposit is greater than relayer fee
+      * @param _assets amount of assets to deposit
+     */
     modifier minRequiredDeposit(uint256 _assets) {
         if (_assets < relayerFee) revert MinDeposit();
         _;
     }
 
+    /** @notice checks if not rolling over
+        * @param _receiver address of the receiver
+        * @param _epochId epoch id
+        * @param _assets amount of assets to deposit
+     */
     modifier notRollingOver(
         address _receiver,
         uint256 _epochId,
@@ -470,7 +673,7 @@ contract Carousel is VaultV2 {
     ) {
         if (ownerToRollOverQueueIndex[_receiver] != 0) {
             QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
-            if (item.epochId == _epochId && item.assets < _assets)
+            if (item.epochId == _epochId && (balanceOf(_receiver, _epochId) - item.assets) < _assets)
                 revert AlreadyRollingOver();
         }
         _;
@@ -483,13 +686,21 @@ contract Carousel is VaultV2 {
     error MinDeposit();
     error OverflowQueue();
     error AlreadyRollingOver();
+    error InvalidEpochId();
     error InsufficientBalance();
     error NoRolloverQueued();
-
+    error RelayerFeeToLow();
+    error BPSToHigh();
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice emitted when a deposit is queued
+      * @param sender the address of the sender
+      * @param receiver the address of the receiver
+      * @param epochId the epoch id
+      * @param assets the amount of assets
+     */
     event DepositInQueue(
         address indexed sender,
         address indexed receiver,
@@ -497,20 +708,48 @@ contract Carousel is VaultV2 {
         uint256 assets
     );
 
+    /** @notice emitted when shares are minted by relayer
+      * @param epochId the epoch id
+      * @param operations how many positions were minted
+     */
+    event RelayerMinted(
+        uint256 epochId,
+        uint256 operations
+    );
+
+    /** @notice emitted when a deposit is late
+        * @param sender the address of the sender
+        * @param receiver the address of the receiver
+        * @param epochId the epoch id
+        * @param assets the amount of assets
+        * @param depositFee the linear deposit fee
+     */
     event LateDeposit(
         address indexed sender,
         address indexed receiver,
         uint256 epochId,
         uint256 assets,
-        uint256 lateDepositFee
+        uint256 depositFee
     );
 
+    /** @notice emitted when a rollover is queued
+        * @param sender the address of the sender
+        * @param assets the amount of assets
+        * @param epochId the epoch id
+     */
     event RolloverQueued(
         address indexed sender,
         uint256 assets,
         uint256 epochId
     );
 
+    /** @notice emitted when emissions are transfered
+        * @param operator the address of the operator
+        * @param from the address of the sender
+        * @param to the address of the receiver
+        * @param id the id of the emissions
+        * @param value the amount of emissions
+     */
     event TransferSingleEmissions(
         address indexed operator,
         address indexed from,
