@@ -266,16 +266,18 @@ contract Carousel is VaultV2 {
 
         // swich the last item in the queue with the item to be removed
         uint256 index = getRolloverIndex(_owner);
-        if (index == rolloverQueue.length - 1) {
+        uint256 lenght = rolloverQueue.length;
+        if (index == lenght - 1) {
+            // if only one item in queue
             rolloverQueue.pop();
             delete ownerToRollOverQueueIndex[_owner];
         } else {
             // overwrite the item to be removed with the last item in the queue
-            rolloverQueue[index] = rolloverQueue[rolloverQueue.length - 1];
+            rolloverQueue[index] = rolloverQueue[lenght - 1];
             // remove the last item in the queue
             rolloverQueue.pop();
-            // update the index of prev last user
-            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index;
+            // update the index of prev last user ( mapping index is allways array index + 1)
+            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index+ 1;
             // remove receiver from index mapping
             delete ownerToRollOverQueueIndex[_owner];
         }
@@ -541,7 +543,7 @@ contract Carousel is VaultV2 {
         * @param _owner address of the owner
         * @return rollover index
      */
-    function getRolloverIndex(address _owner) internal view returns (uint256) {
+    function getRolloverIndex(address _owner) public view returns (uint256) {
         return ownerToRollOverQueueIndex[_owner] - 1;
     }
 
@@ -587,6 +589,20 @@ contract Carousel is VaultV2 {
             }
            
         }
+    }
+
+     /** @notice returns users rollover balance and epoch which is rolling over
+        * @param _owner address of the user
+        * @return balance balance of the user
+        * @return epochId epoch id 
+     */
+    function getRolloverBalance(address _owner)
+        public
+        view
+        returns (uint256 balance, uint256 epochId)
+    {
+        balance = rolloverQueue[getRolloverIndex(_owner)].assets;
+        epochId = rolloverQueue[getRolloverIndex(_owner)].epochId;
     }
 
     /** @notice returns the total value locked in the deposit queue

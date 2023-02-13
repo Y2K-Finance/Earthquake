@@ -253,15 +253,34 @@ contract EndToEndCarouselTest is Helper {
 
         //withdraw USER1
         vm.startPrank(USER);
+        
+            uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+            Carousel(collateral).delistInRollover(USER);
+            uint256 afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
+            assertTrue(afterQueueLength == beforeQueueLength--);
 
-        Carousel(collateral).withdraw(nextEpochId, 8 ether, USER, USER);
+            uint256 balanceInNextEpoch = Carousel(collateral).balanceOf(USER, nextEpochId);
+            // @note user deposited had to pay relayer fee twice, once when depoisting in deposit queue and once rolling over
+            assertTrue(balanceInNextEpoch == 8 ether - (relayerFee * 2)); 
+            Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER, USER);
 
         vm.stopPrank();
 
         //withdraw USER2
         vm.startPrank(USER2);
 
-        Carousel(collateral).withdraw(nextEpochId, 8 ether, USER2, USER2);
+            assertTrue(Carousel(collateral).getRolloverIndex(USER2) == 0);
+
+            beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+            Carousel(collateral).delistInRollover(USER2);
+            afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
+            assertTrue(afterQueueLength == beforeQueueLength--);
+
+            balanceInNextEpoch = Carousel(collateral).balanceOf(USER2, nextEpochId);
+            // @note user deposited had to pay relayer fee twice, once when depoisting in deposit queue and once rolling over
+            assertTrue(balanceInNextEpoch == 8 ether - (relayerFee * 2)); 
+
+            Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER2, USER2);
 
         vm.stopPrank();
 
