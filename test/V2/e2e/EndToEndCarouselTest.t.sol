@@ -6,7 +6,6 @@ import "../../../src/V2/interfaces/ICarousel.sol";
 import "../../../src/V2/Carousel/Carousel.sol";
 import "../../../src/V2/Controllers/ControllerPeggedAssetV2.sol";
 
-
 contract EndToEndCarouselTest is Helper {
     using stdStorage for StdStorage;
 
@@ -119,10 +118,9 @@ contract EndToEndCarouselTest is Helper {
                 premiumEmissions,
                 collatEmissions
         );
-        
 
-        deal(UNDERLYING, USER, 1000 ether, true);
-        deal(UNDERLYING, USER2, 1000 ether, true);
+        deal(UNDERLYING, USER, 18 ether, true);
+        deal(UNDERLYING, USER2, 10 ether, true);
 
     }
 
@@ -131,10 +129,6 @@ contract EndToEndCarouselTest is Helper {
 
         //warp to deposit period
         vm.warp(begin - 1 days);
-        
-        //deal ether
-        vm.deal(USER, 18 ether);
-        vm.deal(USER2, 10 ether);
 
         //approve ether deposit
         IERC20(UNDERLYING).approve(premium, 2 ether);
@@ -266,6 +260,7 @@ contract EndToEndCarouselTest is Helper {
 
         //withdraw after rollover
         Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER, USER);
+        Carousel(premium).withdraw(nextEpochId, Carousel(premium).balanceOf(USER, nextEpochId), USER, USER);
 
         vm.stopPrank();
 
@@ -295,11 +290,18 @@ contract EndToEndCarouselTest is Helper {
         vm.stopPrank();
 
         //check vaults balance
+        assertEq(Carousel(premium).balanceOf(USER, nextEpochId), 0);
+        assertEq(Carousel(collateral).balanceOf(USER, nextEpochId), 0);
+        assertEq(Carousel(premium).balanceOf(USER2, nextEpochId), 0);
+        assertEq(Carousel(collateral).balanceOf(USER2, nextEpochId), 0);
 
-
-        //assert balance of treasury and users
+        //assert emissions balance of treasury and users
         assertEq(IERC20(emissionsToken).balanceOf(TREASURY), 2800 ether);
-        assertEq(IERC20(emissionsToken).balanceOf(USER), USER_ASSETS_AFTER_WITHDRAW);
-        assertEq(IERC20(emissionsToken).balanceOf(USER2), USER_ASSETS_AFTER_WITHDRAW);
+        assertEq(IERC20(emissionsToken).balanceOf(USER), USER1_EMISSIONS_AFTER_WITHDRAW);
+        assertEq(IERC20(emissionsToken).balanceOf(USER2), USER2_EMISSIONS_AFTER_WITHDRAW);
+
+        //assert UNDERLYING users balance
+        assertEq(IERC20(UNDERLYING).balanceOf(USER), USER_AMOUNT_AFTER_WITHDRAW);
+        assertEq(IERC20(UNDERLYING).balanceOf(USER2), USER_AMOUNT_AFTER_WITHDRAW);
     }
 }
