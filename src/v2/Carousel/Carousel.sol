@@ -530,6 +530,9 @@ contract Carousel is VaultV2 {
         relayerFee = _relayerFee;
     }
 
+    /** @notice changes deposit fee
+        * @param _depositFee deposit fee
+     */
     function changeDepositFee(uint256 _depositFee) external onlyFactory {
         if(_depositFee > 250) revert BPSToHigh();
         depositFee = _depositFee;
