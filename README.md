@@ -28,7 +28,7 @@
 
 ```
 
-forge test --fork-url https://eth-mainnet.alchemyapi.io/v2/XGDnf9iNvs51rbBp5r07HB7nIBg_Frqm -vv
+forge test --fork-url https://arb1.arbitrum.io/rpc -vv
 
 ```
 
