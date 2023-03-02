@@ -379,6 +379,15 @@ contract Carousel is VaultV2 {
                         queue[index].epochId,
                         queue[index].assets
                     );
+                    // transfer emission tokens out of contract otherwise user could not access them as epoch shares are burned
+                    _burnEmissions(  
+                        queue[index].receiver,
+                        queue[index].epochId,
+                        queue[index].assets
+                    );
+                    // @note emission token is a known token which has now before transfer hooks which makes transfer safer
+                    emissionsToken.safeTransfer(queue[index].receiver, previewEmissionsWithdraw(queue[index].epochId,  queue[index].assets));
+
                     emit Withdraw(
                         msg.sender,
                         queue[index].receiver,
