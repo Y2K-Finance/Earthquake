@@ -327,7 +327,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /**
         @notice Shows assets conversion output from withdrawing assets
         @param  _id uint256 epoch identifier
-        @param _assets amount of assets user wants to withdraw
+        @param _assets amount of user shares to withdraw
      */
     function previewWithdraw(uint256 _id, uint256 _assets)
         public
@@ -338,7 +338,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         // entitledAmount amount is derived from the claimTVL and the finalTVL
         // if user deposited 1000 assets and the claimTVL is 50% lower than finalTVL, the user is entitled to 500 assets
         // if user deposited 1000 assets and the claimTVL is 50% higher than finalTVL, the user is entitled to 1500 assets
-        entitledAmount = _assets.mulDivUp(claimTVL[_id], finalTVL[_id]);
+        entitledAmount = _assets.mulDivDown(claimTVL[_id], finalTVL[_id]);
     }
 
     /** @notice Lookup total epochs length

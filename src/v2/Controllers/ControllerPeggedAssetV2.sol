@@ -326,8 +326,8 @@ contract ControllerPeggedAssetV2 {
         pure
         returns (uint256 feeValue)
     {
-        // 0.5% = multiply by 10000 then divide by 5
-        return amount.mulDivUp(fee, 10000);
+        // 0.5% = multiply by 10000 then divide by 50
+        return amount.mulDivDown(fee, 10000);
     }
 
     /*//////////////////////////////////////////////////////////////

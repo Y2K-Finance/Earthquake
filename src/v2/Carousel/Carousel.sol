@@ -426,7 +426,7 @@ contract Carousel is VaultV2 {
                     // this is because late depositors have an informational advantage
                     uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
                     // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
-                    uint256 feeAmount = _assets.mulDivUp(fee, 10000);
+                    uint256 feeAmount = _assets.mulDivDown(fee, 10000);
                     // 0.5% = multiply by 1000 then divide by 5
                     assetsToDeposit = _assets - feeAmount;
                     _asset().safeTransfer(treasury, feeAmount);
@@ -560,7 +560,7 @@ contract Carousel is VaultV2 {
         view
         returns (uint256 entitledAmount)
     {
-        entitledAmount = _assets.mulDivUp(emissions[_id], emissions[_id]);
+        entitledAmount = _assets.mulDivDown(emissions[_id], finalTVL[_id]);
     }
 
     /** @notice returns the deposit queue length
