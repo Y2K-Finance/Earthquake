@@ -222,6 +222,7 @@ contract TimeLock {
             revert AddressZero();
         }
         policy = _newOwner;
+        emit ChangeOwner(_newOwner);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -295,4 +296,9 @@ contract TimeLock {
         if (msg.sender != policy) revert NotOwner(msg.sender);
         _;
     }
+
+    /** @notice changes owner when emitted
+        @param newOwner new owner
+     */
+    event ChangeOwner(address indexed newOwner);
 }
