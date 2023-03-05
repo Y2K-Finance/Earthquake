@@ -78,6 +78,11 @@ contract ControllerPeggedAssetV2 {
         if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
 
+        // check if epoch qualifies for null epoch
+        if(premiumVault.totalAssets(_epochId) == 0 || collateralVault.totalAssets(_epochId) == 0) {
+           revert VaultZeroTVL();
+        }   
+
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
 
@@ -221,7 +226,7 @@ contract ControllerPeggedAssetV2 {
         if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
 
-        //set claim TVL to 0 if total assets are 0
+        //set claim TVL to final TVL if total assets are 0
         if (premiumVault.totalAssets(_epochId) == 0) {
             premiumVault.resolveEpoch(_epochId);
             collateralVault.resolveEpoch(_epochId);
@@ -347,6 +352,7 @@ contract ControllerPeggedAssetV2 {
     error EpochNotExist();
     error EpochNotExpired();
     error VaultNotZeroTVL();
+    error VaultZeroTVL();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
