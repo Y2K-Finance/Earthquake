@@ -486,13 +486,8 @@ contract VaultFactoryV2 is Ownable {
     error MarketDoesNotExist(uint256 marketId);
     error MarketAlreadyExists();
     error AddressZero();
-    error AddressNotController();
-    error AddressFactoryNotInController();
     error ControllerNotSet();
     error NotTimeLocker();
-    error ControllerAlreadySet();
-    error VaultImplNotSet();
-    error VaultImplNotContract();
     error NotAuthorized();
     error FeeCannotBe0();
 

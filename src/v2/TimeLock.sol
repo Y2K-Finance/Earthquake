@@ -18,6 +18,9 @@ contract TimeLock {
         @param _policy  address of the policy contract;
       */
     constructor(address _policy) {
+        if (_policy == address(0)) {
+            revert AddressZero();
+        }
         policy = _policy;
     }
 
@@ -215,6 +218,9 @@ contract TimeLock {
         *  @param _newOwner new owner
     */
     function changeOwner(address _newOwner) external onlyOwner {
+        if (_newOwner == address(0)) {
+            revert AddressZero();
+        }
         policy = _newOwner;
     }
 
@@ -229,6 +235,7 @@ contract TimeLock {
     error TimestampNotPassedError(uint256 blocktimestamp, uint256 timestamp);
     error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
     error TxFailedError(string func);
+    error AddressZero();
 
     
     /** @notice queues transaction when emitted

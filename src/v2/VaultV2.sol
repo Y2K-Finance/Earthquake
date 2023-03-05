@@ -25,7 +25,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     // Earthquake parameters
     address public token;
     uint256 public strike;
-    uint256 public marketId;
     // Earthquake bussiness logic
     address public treasury;
     address public counterPartyVault;

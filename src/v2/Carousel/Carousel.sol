@@ -373,19 +373,19 @@ contract Carousel is VaultV2 {
                     entitledShares >
                     queue[index].assets
                 ) {
-                    // @note we know that user could not withdraw these shares or transfer them
+                    // @note we know shares were locked up to this point
                     _burn(
                         queue[index].receiver,
                         queue[index].epochId,
                         queue[index].assets
                     );
-                    // transfer emission tokens out of contract otherwise user could not access them as epoch shares are burned
+                    // transfer emission tokens out of contract otherwise user could not access them as vault shares are burned
                     _burnEmissions(  
                         queue[index].receiver,
                         queue[index].epochId,
                         queue[index].assets
                     );
-                    // @note emission token is a known token which has now before transfer hooks which makes transfer safer
+                    // @note emission token is a known token which has no before transfer hooks which makes transfer safer
                     emissionsToken.safeTransfer(queue[index].receiver, previewEmissionsWithdraw(queue[index].epochId,  queue[index].assets));
 
                     emit Withdraw(
@@ -424,6 +424,11 @@ contract Carousel is VaultV2 {
                         INTERNAL MUTATIVE LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /** @notice deposits assets into epoch
+        @param _id epoch id
+        @param _assets amount of assets to deposit
+        @param _receiver address of receiver
+     */
     function _deposit(uint256 _id,  uint256 _assets, address _receiver) internal {
              // mint logic, either in queue or direct deposit
             if(_id != 0){
@@ -431,12 +436,12 @@ contract Carousel is VaultV2 {
 
                 if(depositFee > 0){
                     (uint256 maxX, , uint256 minX)= getEpochConfig(_id);
-                    // depisit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
+                    // deposit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
                     // this is because late depositors have an informational advantage
                     uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
                     // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
+                    // 0.5% = multiply by 10000 then divide by 50
                     uint256 feeAmount = _assets.mulDivDown(fee, 10000);
-                    // 0.5% = multiply by 1000 then divide by 5
                     assetsToDeposit = _assets - feeAmount;
                     _asset().safeTransfer(treasury, feeAmount);
                 }
@@ -454,7 +459,9 @@ contract Carousel is VaultV2 {
     }
 
      /**
-     * Calculate rewards within a specific range.
+        * @notice calculates fee percent based on time
+        * @param minX min x value
+        * @param maxX max x value
      */
     function _calculateFeePercent(
         int256 minX,
@@ -474,6 +481,11 @@ contract Carousel is VaultV2 {
         );        
     }
 
+    /** @notice mints shares of vault for user
+        @param to address of receiver
+        @param id epoch id
+        @param amount amount of shares to mint
+     */
     function _mintShares(
         address to,
         uint256 id,
@@ -483,6 +495,11 @@ contract Carousel is VaultV2 {
         _mintEmissoins(to, id, amount);
     }
 
+    /** @notice mints emission shares based of vault shares for user
+        @param to address of receiver
+        @param id epoch id
+        @param amount amount of shares to mint
+     */
     function _mintEmissoins(
         address to,
         uint256 id,
@@ -494,6 +511,11 @@ contract Carousel is VaultV2 {
         emit TransferSingleEmissions(_msgSender(), address(0), to, id, amount);
     }
 
+    /** @notice burns emission shares of vault for user
+        @param from address of sender
+        @param id epoch id
+        @param amount amount of shares to burn
+     */
     function _burnEmissions(
         address from,
         uint256 id,
@@ -727,21 +749,6 @@ contract Carousel is VaultV2 {
     event RelayerMinted(
         uint256 epochId,
         uint256 operations
-    );
-
-    /** @notice emitted when a deposit is late
-        * @param sender the address of the sender
-        * @param receiver the address of the receiver
-        * @param epochId the epoch id
-        * @param assets the amount of assets
-        * @param depositFee the linear deposit fee
-     */
-    event LateDeposit(
-        address indexed sender,
-        address indexed receiver,
-        uint256 epochId,
-        uint256 assets,
-        uint256 depositFee
     );
 
     /** @notice emitted when a rollover is queued
