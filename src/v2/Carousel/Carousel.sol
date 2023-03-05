@@ -373,6 +373,11 @@ contract Carousel is VaultV2 {
                     entitledShares >
                     queue[index].assets
                 ) {
+                    // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
+                    if(queue[index].assets < relayerFee) {
+                         index++;
+                         continue;
+                    }
                     // @note we know shares were locked up to this point
                     _burn(
                         queue[index].receiver,
