@@ -301,8 +301,9 @@ contract Carousel is VaultV2 {
         // dont allow minting if epochId is 0
         if (_epochId == 0) revert InvalidEpochId();
 
-        // revert if queue is empty or operations are more than queue length
-        if (length == 0 || _operations > length) revert OverflowQueue();
+        if (length == 0) revert OverflowQueue();
+        // relayers can always input a very big number to mint all deposit queues, without the need to read depostQueue length first
+        if(_operations > length) _operations = length;
 
         // queue is executed from the tail to the head
         // get last index of queue
@@ -344,10 +345,9 @@ contract Carousel is VaultV2 {
         uint256 index = rolloverAccounting[_epochId];
 
         // revert if queue is empty or operations are more than queue length
-        if (
-        length == 0 ||
-        _operations > length ||
-        (index + _operations) > length  ) revert OverflowQueue();
+        if ( length == 0  ) revert OverflowQueue();
+
+        if( _operations > length || (index + _operations) > length) _operations = length - index;
 
         // prev epoch is resolved
         if(!epochResolved[epochs[epochs.length - 2]]) revert EpochNotResolved();
@@ -497,7 +497,7 @@ contract Carousel is VaultV2 {
         uint256 amount 
     ) internal {
         _mint(to, id, amount, EMPTY);
-        _mintEmissoins(to, id, amount);
+        _mintEmissions(to, id, amount);
     }
 
     /** @notice mints emission shares based of vault shares for user
@@ -505,7 +505,7 @@ contract Carousel is VaultV2 {
         @param id epoch id
         @param amount amount of shares to mint
      */
-    function _mintEmissoins(
+    function _mintEmissions(
         address to,
         uint256 id,
         uint256 amount
