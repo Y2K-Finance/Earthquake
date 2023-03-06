@@ -19,7 +19,7 @@ contract Carousel is VaultV2 {
     // Earthquake parameters
     uint256 public relayerFee;
     uint256 public depositFee;
-    IERC20 public emissionsToken;
+    IERC20 public immutable emissionsToken;
 
     mapping(address => uint256) public ownerToRollOverQueueIndex;
     QueueItem[] public rolloverQueue;
@@ -197,12 +197,12 @@ contract Carousel is VaultV2 {
      * @dev See {IERC1155-safeBatchTransferFrom}.
      */
     function safeBatchTransferFrom(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) public override {
+        address /*from*/,
+        address /*to*/,
+        uint256[] memory /*ids*/,
+        uint256[] memory /*amounts*/,
+        bytes memory /*data*/
+    ) public pure override {
         revert();
     }
 

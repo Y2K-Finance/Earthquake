@@ -23,8 +23,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     // Earthquake parameters
-    address public token;
-    uint256 public strike;
+    address public immutable token;
+    uint256 public immutable strike;
     // Earthquake bussiness logic
     address public treasury;
     address public counterPartyVault;
@@ -339,7 +339,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         // if user deposited 1000 assets and the claimTVL is 50% higher than finalTVL, the user is entitled to 1500 assets
         entitledAmount = _assets.mulDivDown(claimTVL[_id], finalTVL[_id]);
     }
-
+ 
     /** @notice Lookup total epochs length
      */
     function getEpochsLength() public view returns (uint256) {
