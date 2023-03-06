@@ -18,6 +18,9 @@ contract TimeLock {
         @param _policy  address of the policy contract;
       */
     constructor(address _policy) {
+        if (_policy == address(0)) {
+            revert AddressZero();
+        }
         policy = _policy;
     }
 
@@ -211,25 +214,15 @@ contract TimeLock {
             );
     }
 
-    /** @notice compare strings by bytes
-        *  @param s1 string 1
-        *  @param s2 string 2
-        *  @return bool
-     */
-    function compareStringsbyBytes(string memory s1, string memory s2)
-        public
-        pure
-        returns (bool)
-    {
-        return
-            keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
-    }
-
     /** @notice change owner
         *  @param _newOwner new owner
     */
     function changeOwner(address _newOwner) external onlyOwner {
+        if (_newOwner == address(0)) {
+            revert AddressZero();
+        }
         policy = _newOwner;
+        emit ChangeOwner(_newOwner);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -243,6 +236,7 @@ contract TimeLock {
     error TimestampNotPassedError(uint256 blocktimestamp, uint256 timestamp);
     error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
     error TxFailedError(string func);
+    error AddressZero();
 
     
     /** @notice queues transaction when emitted
@@ -302,4 +296,9 @@ contract TimeLock {
         if (msg.sender != policy) revert NotOwner(msg.sender);
         _;
     }
+
+    /** @notice changes owner when emitted
+        @param newOwner new owner
+     */
+    event ChangeOwner(address indexed newOwner);
 }

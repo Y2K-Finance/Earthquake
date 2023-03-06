@@ -77,9 +77,10 @@ contract CarouselTest is Helper {
         // should revert if epochId is 0 as this epoch is not supposed to minted ever
         vm.expectRevert(Carousel.InvalidEpochId.selector);
         vault.mintDepositInQueue(0, _queueLength);
-        // should revert if operations are not in queue length
-        vm.expectRevert(Carousel.OverflowQueue.selector);
-        vault.mintDepositInQueue(_epochId, 2);
+            // @note deprecated test:
+            // should revert if operations are not in queue length
+            // vm.expectRevert(Carousel.OverflowQueue.selector);
+            // vault.mintDepositInQueue(_epochId, 2);
         // should revert if epoch already started
         vm.warp(_epochBegin + 100);
         vm.expectRevert(VaultV2.EpochAlreadyStarted.selector);
@@ -89,10 +90,16 @@ contract CarouselTest is Helper {
         // should revert if epoch does not exist
         vm.expectRevert(VaultV2.EpochDoesNotExist.selector);
         vault.mintDepositInQueue(3, 1);
-
-        vault.mintDepositInQueue(_epochId, _queueLength);
+        
+        vm.startPrank(relayer);
+        // setting operations to 5 should still only mint 1 as queue length is 1
+        vault.mintDepositInQueue(_epochId, 5);
+        vm.stopPrank();
+        // test user balances
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
+        // test relayer balance
+        assertEq(IERC20(UNDERLYING).balanceOf(relayer), relayerFee * 1);
 
        
 
@@ -119,7 +126,9 @@ contract CarouselTest is Helper {
         _queueLength = 2;
 
         assertEq(vault.getDepositQueueLenght(), _queueLength);
-        vault.mintDepositInQueue(_epochId, _queueLength);
+        // should only do as many operations as queue length 
+        // please check logs: test forge test -m testDepositInQueue  -vvvv
+        vault.mintDepositInQueue(_epochId, 230000);
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER2, _epochId), 10 ether - relayerFee);
@@ -184,7 +193,7 @@ contract CarouselTest is Helper {
         // resolve second epoch
         // let relayer rollover for user
         vm.startPrank(relayer);
-        vault.mintRollovers(_epochId, 1);
+        vault.mintRollovers(_epochId, 5000); // can only mint 1 as queue length is 1
         vm.stopPrank();
 
         assertEq(vault.rolloverAccounting(_epochId), 1);
@@ -302,7 +311,9 @@ contract CarouselTest is Helper {
 
         // mint rollovers again
         // this should mint shares as prev epoch is in profit
-        vault.mintRollovers(_epochId, 6);
+        // should only mint as many positions as there are in queue (6)
+        // check logs: forge test -m testRolloverMultiple -vvvv                            
+        vault.mintRollovers(_epochId, 1000); //  can only mint 6 as queue length is 6
 
         // check balance of relayer
         balanceAfter = IERC20(UNDERLYING).balanceOf(address(this));

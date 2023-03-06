@@ -16,7 +16,7 @@ contract ControllerPeggedAssetV2 {
 
 
     uint16 private constant GRACE_PERIOD_TIME = 3600;
-    address public treasury;
+    address public immutable treasury;
 
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
@@ -77,6 +77,11 @@ contract ControllerPeggedAssetV2 {
         if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
         if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
+
+        // check if epoch qualifies for null epoch
+        if(premiumVault.totalAssets(_epochId) == 0 || collateralVault.totalAssets(_epochId) == 0) {
+           revert VaultZeroTVL();
+        }   
 
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
@@ -221,7 +226,7 @@ contract ControllerPeggedAssetV2 {
         if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
 
-        //set claim TVL to 0 if total assets are 0
+        //set claim TVL to final TVL if total assets are 0
         if (premiumVault.totalAssets(_epochId) == 0) {
             premiumVault.resolveEpoch(_epochId);
             collateralVault.resolveEpoch(_epochId);
@@ -326,8 +331,8 @@ contract ControllerPeggedAssetV2 {
         pure
         returns (uint256 feeValue)
     {
-        // 0.5% = multiply by 10000 then divide by 5
-        return amount.mulDivUp(fee, 10000);
+        // 0.5% = multiply by 10000 then divide by 50
+        return amount.mulDivDown(fee, 10000);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -347,6 +352,7 @@ contract ControllerPeggedAssetV2 {
     error EpochNotExist();
     error EpochNotExpired();
     error VaultNotZeroTVL();
+    error VaultZeroTVL();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -361,8 +367,8 @@ contract ControllerPeggedAssetV2 {
      * @param depegPrice Price that triggered depeg
      */
     event EpochResolved(
-        uint256 epochId,
-        uint256 marketId,
+        uint256 indexed epochId,
+        uint256 indexed marketId,
         VaultTVL tvl,
         bool strikeMet,
         uint256 time,
@@ -376,8 +382,8 @@ contract ControllerPeggedAssetV2 {
         * @param time timestamp
      */
     event NullEpoch(
-        uint256 epochId,
-        uint256 marketId,
+        uint256 indexed epochId,
+        uint256 indexed marketId,
         VaultTVL tvl,
         uint256 time
     );
