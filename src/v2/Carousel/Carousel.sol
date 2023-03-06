@@ -266,14 +266,14 @@ contract Carousel is VaultV2 {
 
         // swich the last item in the queue with the item to be removed
         uint256 index = getRolloverIndex(_owner);
-        uint256 lenght = rolloverQueue.length;
-        if (index == lenght - 1) {
+        uint256 length = rolloverQueue.length;
+        if (index == length - 1) {
             // if only one item in queue
             rolloverQueue.pop();
             delete ownerToRollOverQueueIndex[_owner];
         } else {
             // overwrite the item to be removed with the last item in the queue
-            rolloverQueue[index] = rolloverQueue[lenght - 1];
+            rolloverQueue[index] = rolloverQueue[length - 1];
             // remove the last item in the queue
             rolloverQueue.pop();
             // update the index of prev last user ( mapping index is allways array index + 1)
