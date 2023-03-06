@@ -1,6 +1,7 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
+import "../../../src/V2/TimeLock.sol";
 import "../../../src/V2/Carousel/CarouselFactory.sol";
 import "../../../src/V2/interfaces/ICarousel.sol";
 import "../../../src/V2/Carousel/Carousel.sol";
@@ -45,10 +46,12 @@ contract EndToEndCarouselTest is Helper {
         emissionsToken = address(new MintableToken("Emissions Token", "EMT"));
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new CarouselFactory(
-            ADMIN,
             WETH,
             TREASURY,
+            address(timelock),
             emissionsToken
         );
 

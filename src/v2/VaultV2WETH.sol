@@ -22,6 +22,7 @@ contract VaultV2WETH is VaultV2 {
         @param _treasury  address of the treasury of the vault;
      */
     constructor(
+        bool isWETH,
         address _assetAddress,
         string memory _name,
         string memory _symbol,
@@ -32,6 +33,7 @@ contract VaultV2WETH is VaultV2 {
         address _treasury
     )
         VaultV2(
+            isWETH,
             _assetAddress,
             _name,
             _symbol,
@@ -45,7 +47,7 @@ contract VaultV2WETH is VaultV2 {
 
     /**
         @notice Deposit ETH function
-        @param  _id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
+        @param  _id  uint256 representing the id of the epoch;
         @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */
     function depositETH(uint256 _id, address _receiver)
@@ -55,6 +57,8 @@ contract VaultV2WETH is VaultV2 {
         epochHasNotStarted(_id)
         nonReentrant
     {
+
+        if(!isWETH) revert CanNotDepositETH();
         require(msg.value > 0, "ZeroValue");
         if (_receiver == address(0)) revert AddressZero();
 
@@ -63,4 +67,6 @@ contract VaultV2WETH is VaultV2 {
 
         emit Deposit(msg.sender, _receiver, _id, msg.value);
     }
+
+    error CanNotDepositETH();
 }

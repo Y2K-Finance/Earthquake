@@ -26,6 +26,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     address public immutable token;
     uint256 public immutable strike;
     // Earthquake bussiness logic
+    bool public immutable isWETH;
     address public treasury;
     address public counterPartyVault;
     address public factory;
@@ -56,6 +57,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         @param _treasury  address of the treasury of the vault;
      */
     constructor(
+        bool _isWETH,
         address _assetAddress,
         string memory _name,
         string memory _symbol,
@@ -75,6 +77,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         controller = _controller;
         treasury = _treasury;
         whitelistedAddresses[_treasury] = true;
+        isWETH = _isWETH;
     }
 
     /*///////////////////////////////////////////////////////////////

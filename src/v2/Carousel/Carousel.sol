@@ -39,6 +39,7 @@ contract Carousel is VaultV2 {
         ConstructorArgs memory _data 
     )
         VaultV2(
+            false,
             _data.assetAddress,
             _data.name,
             _data.symbol,

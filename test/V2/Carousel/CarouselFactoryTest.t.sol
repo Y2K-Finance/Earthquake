@@ -3,6 +3,8 @@ pragma solidity 0.8.17;
 
 import "../Helper.sol";
 import "../../../src/V2/Carousel/CarouselFactory.sol";
+import "../../../src/V2/TimeLock.sol";
+
 import "../../../src/V2/interfaces/ICarousel.sol";
 
 
@@ -16,13 +18,16 @@ contract CarouselFactoryTest is Helper {
         uint256 depositFee;
    
         function setUp() public {
+        
+        TimeLock timelock = new TimeLock(ADMIN);
 
         emissionsToken = address(new MintableToken("Emissions Token", "EMT"));
 
+
         factory = new CarouselFactory(
-            ADMIN,
             WETH,
             TREASURY,
+            address(timelock),
             emissionsToken
         );
 

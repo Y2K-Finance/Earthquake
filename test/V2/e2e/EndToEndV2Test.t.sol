@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import "../Helper.sol";
 import "../../../src/v2/VaultFactoryV2.sol";
+import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
@@ -49,10 +50,12 @@ contract EndToEndV2Test is Helper {
         
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new VaultFactoryV2(
-                ADMIN,
                 WETH,
-                TREASURY
+                TREASURY,
+                address(timelock)
             );
         
         controller = new ControllerPeggedAssetV2(address(factory), ARBITRUM_SEQUENCER, TREASURY);

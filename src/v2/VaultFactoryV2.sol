@@ -2,10 +2,8 @@
 pragma solidity 0.8.17;
 
 import {IVaultV2} from "./interfaces/IVaultV2.sol";
-import {VaultV2} from "./VaultV2.sol";
-import {VaultV2WETH} from "./VaultV2WETH.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {TimeLock} from "./TimeLock.sol";
+import {VaultV2Creator} from "./libraries/VaultV2Creator.sol";
 
 /// @author Y2K Finance Team
 
@@ -32,19 +30,18 @@ contract VaultFactoryV2 is Ownable {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
     /** @notice Contract constructor
-     * @param _policy Admin address address
      * @param _weth WETH address
      * @param _treasury Treasury address
+    * @param _timelocker Timelocker address
      */
     constructor(
-        address _policy,
         address _weth,
-        address _treasury
+        address _treasury,
+        address _timelocker
     ) {
-        if (_policy == address(0)) revert AddressZero();
         if (_weth == address(0)) revert AddressZero();
         WETH = _weth;
-        timelocker = address(new TimeLock(_policy));
+        timelocker = _timelocker;
         treasury = _treasury;
     }
 
@@ -81,28 +78,32 @@ contract VaultFactoryV2 is Ownable {
             revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
-        premium = _deployVault(
-            MarketConfiguration(
+        premium = VaultV2Creator.createVaultV2(
+            VaultV2Creator.MarketConfiguration(
+                _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
                 string(PSYMBOL),
                 _marketCalldata.tokenURI,
                 _marketCalldata.token,
                 _marketCalldata.strike,
-                _marketCalldata.controller
+                _marketCalldata.controller,
+                treasury
             )
         );
 
         // y2kUSDC_99*COLLATERAL
-        collateral = _deployVault(
-            MarketConfiguration(
+        collateral =  VaultV2Creator.createVaultV2(
+            VaultV2Creator.MarketConfiguration(
+                _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, COLLAT)),
                 string(CSYMBOL),
                 _marketCalldata.tokenURI,
                 _marketCalldata.token,
                 _marketCalldata.strike,
-                _marketCalldata.controller
+                _marketCalldata.controller,
+                treasury
             )
         );
 
@@ -170,40 +171,6 @@ contract VaultFactoryV2 is Ownable {
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function _deployVault(MarketConfiguration memory _marketConfig)
-        internal
-        returns (address)
-    {
-        if (_marketConfig.underlyingAsset == WETH) {
-            return
-                address(
-                    new VaultV2WETH(
-                        _marketConfig.underlyingAsset,
-                        _marketConfig.name,
-                        _marketConfig.symbol,
-                        _marketConfig.tokenURI,
-                        _marketConfig.token,
-                        _marketConfig.strike,
-                        _marketConfig.controller,
-                        treasury
-                    )
-                );
-        } else {
-            return
-                address(
-                    new VaultV2(
-                        _marketConfig.underlyingAsset,
-                        _marketConfig.name,
-                        _marketConfig.symbol,
-                        _marketConfig.tokenURI,
-                        _marketConfig.token,
-                        _marketConfig.strike,
-                        _marketConfig.controller,
-                        treasury
-                    )
-                );
-        }
-    }
 
     function _setEpoch(EpochConfiguration memory _epochConfig) internal {
         _epochConfig.premium.setEpoch(
@@ -441,16 +408,6 @@ contract VaultFactoryV2 is Ownable {
         address underlyingAsset;
         string name;
         string tokenURI;
-        address controller;
-    }
-
-    struct MarketConfiguration {
-        address underlyingAsset;
-        string name;
-        string symbol;
-        string tokenURI;
-        address token;
-        uint256 strike;
         address controller;
     }
 

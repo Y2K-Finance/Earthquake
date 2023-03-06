@@ -19,17 +19,16 @@ contract CarouselFactory is VaultFactoryV2 {
     IERC20 public emissionsToken;
 
     /** @notice constructor
-    @param _policy admin address
     @param _weth address of the weth contract
     @param _treasury address of the treasury contract
     @param _emissoinsToken address of the emissions token
      */
     constructor(
-        address _policy,
         address _weth,
         address _treasury,
+        address _timelock,
         address _emissoinsToken
-    ) VaultFactoryV2(_policy, _weth, _treasury) {
+    ) VaultFactoryV2(_weth, _treasury, _timelock) {
         if(_emissoinsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_emissoinsToken);
     }
@@ -121,7 +120,7 @@ contract CarouselFactory is VaultFactoryV2 {
     @param _epochEnd uint40 of the epoch end
     @param _withdrawalFee uint16 of the withdrawal fee
     @param _permiumEmissions uint256 of the emissions for the premium vault
-    @param _collatEmissoins uint256 of the emissions for the collateral vault
+    @param _collatEmissions uint256 of the emissions for the collateral vault
     @return epochId uint256 of the epochId
     @return vaults address[2] of the vaults
      */
@@ -131,7 +130,7 @@ contract CarouselFactory is VaultFactoryV2 {
         uint40 _epochEnd,
         uint16 _withdrawalFee,
         uint256 _permiumEmissions,
-        uint256 _collatEmissoins
+        uint256 _collatEmissions
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
         (epochId, vaults) = createEpoch(
@@ -144,8 +143,8 @@ contract CarouselFactory is VaultFactoryV2 {
         emissionsToken.safeTransferFrom(treasury, vaults[0], _permiumEmissions);
         ICarousel(vaults[0]).setEmissions(epochId, _permiumEmissions);
 
-        emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissoins);
-        ICarousel(vaults[1]).setEmissions(epochId, _collatEmissoins);
+        emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
+        ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
     }
 
     /*//////////////////////////////////////////////////////////////

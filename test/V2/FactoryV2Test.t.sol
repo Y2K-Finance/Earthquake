@@ -3,16 +3,21 @@ pragma solidity 0.8.17;
 
 import "./Helper.sol";
 import "../../src/v2/VaultFactoryV2.sol";
+import "../../src/v2/VaultV2.sol";
+import "../../src/v2/TimeLock.sol";
 import "../../src/v2/interfaces/IVaultV2.sol";
 
 contract FactoryV2Test is Helper {
       VaultFactoryV2 factory;
       address controller;
       function setUp() public {
+
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new VaultFactoryV2(
-            ADMIN,
             WETH,
-            TREASURY
+            TREASURY,
+            address(timelock)
         );
 
         controller = address(0x54);
@@ -22,13 +27,15 @@ contract FactoryV2Test is Helper {
 
     function testFactoryCreation() public {
 
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new VaultFactoryV2(
-            ADMIN,
             WETH,
-            TREASURY
+            TREASURY,
+            address(timelock)
         );
        
-        assertEq(address(TimeLock(factory.timelocker()).policy()), ADMIN);
+        assertEq(address(timelock.policy()), ADMIN);
         assertEq(address(factory.WETH()), WETH);
         assertEq(address(factory.treasury()), TREASURY);
         assertEq(address(factory.owner()), address(this));
