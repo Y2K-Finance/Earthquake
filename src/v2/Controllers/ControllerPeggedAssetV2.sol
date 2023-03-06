@@ -16,7 +16,7 @@ contract ControllerPeggedAssetV2 {
 
 
     uint16 private constant GRACE_PERIOD_TIME = 3600;
-    address public treasury;
+    address public immutable treasury;
 
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
@@ -367,8 +367,8 @@ contract ControllerPeggedAssetV2 {
      * @param depegPrice Price that triggered depeg
      */
     event EpochResolved(
-        uint256 epochId,
-        uint256 marketId,
+        uint256 indexed epochId,
+        uint256 indexed marketId,
         VaultTVL tvl,
         bool strikeMet,
         uint256 time,
@@ -382,8 +382,8 @@ contract ControllerPeggedAssetV2 {
         * @param time timestamp
      */
     event NullEpoch(
-        uint256 epochId,
-        uint256 marketId,
+        uint256 indexed epochId,
+        uint256 indexed marketId,
         VaultTVL tvl,
         uint256 time
     );
