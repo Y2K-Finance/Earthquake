@@ -2,8 +2,8 @@
 pragma solidity 0.8.17;
 
 import "../VaultFactoryV2.sol";
-import "./Carousel.sol";
-import "./CarouselWETH.sol";
+// import "./Carousel.sol";
+// import "./CarouselWETH.sol";
 
 import {ICarousel} from "../interfaces/ICarousel.sol";
 
@@ -11,6 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {CarouselCreator} from "../libraries/CarouselCreator.sol";
 
 /// @author Y2K Finance Team
 
@@ -35,15 +36,16 @@ contract CarouselFactory is VaultFactoryV2 {
 
     /**
     @notice Function to create two new vaults, premium and collateral, with the respective params, and storing the oracle for the token provided
-    @param  _marketCalldata MarketConfigurationCalldata struct with the market params
+    @param  _marketCalldata CarouselMarketConfigurationCalldata struct with the market params
     @return premium address of the premium vault
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
      */
-    function createNewCarouselMarket(
-        CarouselMarketConfigurationCalldata memory _marketCalldata
+    function createNewMarket(
+        bytes calldata _marketCalldata
     )
         external
+        override
         onlyOwner
         returns (
             address premium,
@@ -51,46 +53,53 @@ contract CarouselFactory is VaultFactoryV2 {
             uint256 marketId
         )
     {
-        if (!controllers[_marketCalldata.controller]) revert ControllerNotSet();
-        if (_marketCalldata.token == address(0)) revert AddressZero();
-        if (_marketCalldata.oracle == address(0)) revert AddressZero();
-        if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
+        CarouselMarketConfigurationCalldata memory data = abi.decode(_marketCalldata, (CarouselMarketConfigurationCalldata));
+        if (!controllers[data.controller]) revert ControllerNotSet();
+        if (data.token == address(0)) revert AddressZero();
+        if (data.oracle == address(0)) revert AddressZero();
+        if (data.underlyingAsset == address(0)) revert AddressZero();
 
-        if (tokenToOracle[_marketCalldata.token] == address(0)) {
-            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
+        if (tokenToOracle[data.token] == address(0)) {
+            tokenToOracle[data.token] = data.oracle;
         }
 
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
+        marketId = getMarketId(data.token, data.strike);
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
-        premium = _deployCarouselVault(
-            CarouselMarketConfiguration(
-                _marketCalldata.underlyingAsset,
-                string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
+        premium = CarouselCreator.createCarousel(
+            CarouselCreator.CarouselMarketConfiguration(
+                 data.underlyingAsset == WETH,
+                data.underlyingAsset,
+                string(abi.encodePacked(data.name, PREMIUM)),
                 string(PSYMBOL),
-                _marketCalldata.tokenURI,
-                _marketCalldata.token,
-                _marketCalldata.strike,
-                _marketCalldata.controller,
-                _marketCalldata.relayerFee,
-                _marketCalldata.depositFee
+                data.tokenURI,
+                data.token,
+                data.strike,
+                data.controller,
+                treasury,
+                address(emissionsToken),
+                data.relayerFee,
+                data.depositFee
             )
         );
 
         // y2kUSDC_99*COLLATERAL
-        collateral = _deployCarouselVault(
-            CarouselMarketConfiguration(
-                _marketCalldata.underlyingAsset,
-                string(abi.encodePacked(_marketCalldata.name, COLLAT)),
+        collateral =  CarouselCreator.createCarousel(
+            CarouselCreator.CarouselMarketConfiguration(
+                data.underlyingAsset == WETH,
+                data.underlyingAsset,
+                string(abi.encodePacked(data.name, COLLAT)),
                 string(CSYMBOL),
-                _marketCalldata.tokenURI,
-                _marketCalldata.token,
-                _marketCalldata.strike,
-                _marketCalldata.controller,
-                _marketCalldata.relayerFee,
-                _marketCalldata.depositFee
+                data.tokenURI,
+                data.token,
+                data.strike,
+                data.controller,
+                treasury,
+                address(emissionsToken),
+                data.relayerFee,
+                data.depositFee
             )
         );
 
@@ -104,11 +113,11 @@ contract CarouselFactory is VaultFactoryV2 {
             marketId,
             premium,
             collateral,
-            _marketCalldata.underlyingAsset,
-            _marketCalldata.token,
-            _marketCalldata.name,
-            _marketCalldata.strike,
-            _marketCalldata.controller
+            data.underlyingAsset,
+            data.token,
+            data.name,
+            data.strike,
+            data.controller
         );
 
         return (premium, collateral, marketId);
@@ -156,47 +165,35 @@ contract CarouselFactory is VaultFactoryV2 {
     @return address of the new vault
      */
     function _deployCarouselVault(
-        CarouselMarketConfiguration memory _marketConfig
+        CarouselCreator.CarouselMarketConfiguration memory _marketConfig
     ) internal returns (address) {
-        if (_marketConfig.underlyingAsset == WETH) {
-            return
-                address(
-                    new CarouselWETH(
-                        Carousel.ConstructorArgs(
-                        _marketConfig.underlyingAsset,
-                        _marketConfig.name,
-                        _marketConfig.symbol,
-                        _marketConfig.tokenURI,
-                        _marketConfig.token,
-                        _marketConfig.strike,
-                        _marketConfig.controller,
-                        treasury,
-                        address(emissionsToken),
-                        _marketConfig.relayerFee,
-                        _marketConfig.depositFee
-                        )
-                    )
-                );
-        } else {
-            return
-                address(
-                    new Carousel(
-                       Carousel.ConstructorArgs(
-                            _marketConfig.underlyingAsset,
-                            _marketConfig.name,
-                            _marketConfig.symbol,
-                            _marketConfig.tokenURI,
-                            _marketConfig.token,
-                            _marketConfig.strike,
-                            _marketConfig.controller,
-                            treasury,
-                            address(emissionsToken),
-                            _marketConfig.relayerFee,
-                            _marketConfig.depositFee
-                        )
-                    )
-                );
-        }
+        // if (_marketConfig.underlyingAsset == WETH) {
+        //     return
+        //         address(
+        //             new CarouselWETH(
+        //                 Carousel.ConstructorArgs(
+        //                 _marketConfig.underlyingAsset,
+        //                 _marketConfig.name,
+        //                 _marketConfig.symbol,
+        //                 _marketConfig.tokenURI,
+        //                 _marketConfig.token,
+        //                 _marketConfig.strike,
+        //                 _marketConfig.controller,
+        //                 treasury,
+        //                 address(emissionsToken),
+        //                 _marketConfig.relayerFee,
+        //                 _marketConfig.depositFee
+        //                 )
+        //             )
+        //         );
+        // } else {
+        //     return
+        //         address(
+        //             new Carousel(
+                      
+        //             )
+        //         );
+        // }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -249,18 +246,6 @@ contract CarouselFactory is VaultFactoryV2 {
         address underlyingAsset;
         string name;
         string tokenURI;
-        address controller;
-        uint256 relayerFee;
-        uint256 depositFee;
-    }
-
-    struct CarouselMarketConfiguration {
-        address underlyingAsset;
-        string name;
-        string symbol;
-        string tokenURI;
-        address token;
-        uint256 strike;
         address controller;
         uint256 relayerFee;
         uint256 depositFee;

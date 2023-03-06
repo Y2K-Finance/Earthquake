@@ -71,9 +71,8 @@ contract EndToEndCarouselTest is Helper {
             premium,
             collateral,
             marketId
-        ) = factory.createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
-                USDC_TOKEN,
+        ) = factory.createNewMarket(
+            abi.encode(USDC_TOKEN,
                 STRIKE,
                 USDC_CHAINLINK,
                 UNDERLYING,
@@ -81,8 +80,7 @@ contract EndToEndCarouselTest is Helper {
                 symbol,
                 address(controller),
                 relayerFee,
-                depositFee
-            )
+                depositFee)
         );
 
         // deploy epoch

@@ -6,6 +6,7 @@ import {
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./SemiFungibleVault.sol";
 import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
@@ -111,6 +112,29 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         _mint(_receiver, _id, _assets, EMPTY);
 
         emit Deposit(msg.sender, _receiver, _id, _assets);
+    }
+
+     /**
+        @notice Deposit ETH function
+        @param  _id  uint256 representing the id of the epoch;
+        @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
+     */
+    function depositETH(uint256 _id, address _receiver)
+        external
+        payable
+        epochIdExists(_id)
+        epochHasNotStarted(_id)
+        nonReentrant
+    {
+
+        if(!isWETH) revert CanNotDepositETH();
+        require(msg.value > 0, "ZeroValue");
+        if (_receiver == address(0)) revert AddressZero();
+
+        IWETH(address(asset)).deposit{value: msg.value}();
+        _mint(_receiver, _id, msg.value, EMPTY);
+
+        emit Deposit(msg.sender, _receiver, _id, msg.value);
     }
 
     /**
@@ -449,4 +473,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     error AmountExceedsTVL();
     error AlreadyInitialized();
     error InvalidEpoch();
+    error CanNotDepositETH();
+
 }

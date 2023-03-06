@@ -65,15 +65,13 @@ contract FactoryV2Test is Helper {
         vm.startPrank(NOTADMIN);
             vm.expectRevert(bytes("Ownable: caller is not the owner"));
                 factory.createNewMarket(
-                    VaultFactoryV2.MarketConfigurationCalldata(
-                        address(0x1),
+                    abi.encode( address(0x1),
                         uint256(0x2),
                         address(0x3),
                         address(0x4),
                         string(""),
                         string(""),
-                        address(0x7)
-                    )
+                        address(0x7))
                 );
         vm.stopPrank();
 
@@ -146,15 +144,14 @@ contract FactoryV2Test is Helper {
             address collateral,
             uint256 marketId
         ) = factory.createNewMarket(
-            VaultFactoryV2.MarketConfigurationCalldata(
-                token,
+           abi.encode(
+                 token,
                 strike,
                 oracle,
                 underlying,
                 name,
                 symbol,
-                controller
-            )
+                controller)
         );
 
         // test if market is created
@@ -360,15 +357,13 @@ contract FactoryV2Test is Helper {
         string memory symbol = string("tst");
 
         (, ,marketId) = factory.createNewMarket(
-             VaultFactoryV2.MarketConfigurationCalldata(
-                token,
+            abi.encode(token,
                 strike,
                 oracle,
                 underlying,
                 name,
                 symbol,
-                controller
-            )
+                controller)
         );
     }
 }

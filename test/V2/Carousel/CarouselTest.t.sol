@@ -31,7 +31,7 @@ contract CarouselTest is Helper {
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
           vault = new Carousel(
-            Carousel.ConstructorArgs(
+                false,
                 UNDERLYING,
                 "Vault",
                 "v",
@@ -40,10 +40,9 @@ contract CarouselTest is Helper {
                 STRIKE,
                 controller,
                 TREASURY,
-                emissionsToken,
+                abi.encode( emissionsToken,
                 relayerFee,
-                depositFee
-            )
+                depositFee)  
         );
 
         // deal(UNDERLYING, address(this), 100 ether, true);

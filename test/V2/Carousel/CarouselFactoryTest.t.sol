@@ -52,9 +52,8 @@ contract CarouselFactoryTest is Helper {
             address premium,
             address collateral,
             uint256 marketId
-        ) = factory.createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
-                token,
+        ) = factory.createNewMarket(
+            abi.encode(  token,
                 strike,
                 oracle,
                 underlying,
@@ -62,8 +61,7 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                depositFee
-            )
+                depositFee)
         );
 
         // test if market is created
@@ -257,9 +255,8 @@ contract CarouselFactoryTest is Helper {
             ,
             ,
             marketId
-        ) = factory.createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
-                token,
+        ) = factory.createNewMarket(
+           abi.encode(token,
                 strike,
                 oracle,
                 underlying,
@@ -267,8 +264,7 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                depositFee
-            )
+                depositFee)
         );
     }
 

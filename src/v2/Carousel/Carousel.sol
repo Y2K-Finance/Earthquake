@@ -7,6 +7,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {CarouselCreator} from "../libraries/CarouselCreator.sol";
+import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 /// @author Y2K Finance Team
 
@@ -36,26 +38,36 @@ contract Carousel is VaultV2 {
         @param _data  Carousel.ConstructorArgs struct containing the data to be used in the constructor;
      */
     constructor(
-        ConstructorArgs memory _data 
+        bool _isWETH,
+        address _assetAddress,
+        string memory _name,
+        string memory _symbol,
+        string memory _tokenURI,
+        address _token,
+        uint256 _strike,
+        address _controller,
+        address _treasury,
+        bytes memory _data 
     )
         VaultV2(
-            false,
-            _data.assetAddress,
-            _data.name,
-            _data.symbol,
-            _data.tokenURI,
-            _data.token,
-            _data.strike,
-            _data.controller,
-            _data.treasury
+            _isWETH,
+            _assetAddress,
+            _name,
+            _symbol,
+            _tokenURI,
+            _token,
+            _strike,
+            _controller,
+            _treasury
         )
     {
-        if(_data.relayerFee < 10000) revert RelayerFeeToLow();
-        if(_data.depositFee > 250) revert BPSToHigh();
-        if(_data.emissionsToken == address(0)) revert AddressZero();
-        emissionsToken = IERC20(_data.emissionsToken);
-        relayerFee = _data.relayerFee;
-        depositFee = _data.depositFee;
+        (uint256 _relayerFee, uint256 _depositFee, address _emissionsToken) = abi.decode(_data, (uint256, uint256, address));
+        if(_relayerFee < 10000) revert RelayerFeeToLow();
+        if(_depositFee > 250) revert BPSToHigh();
+        if(_emissionsToken == address(0)) revert AddressZero();
+        emissionsToken = IERC20(_emissionsToken);
+        relayerFee = _relayerFee;
+        depositFee = _depositFee;
 
         // set epoch 0 to be allways available to deposit into Queue
         epochExists[0] = true;
@@ -674,20 +686,6 @@ contract Carousel is VaultV2 {
         uint256 assets;
         address receiver;
         uint256 epochId;
-    }
-
-    struct ConstructorArgs {
-        address assetAddress;
-        string name;
-        string symbol;
-        string tokenURI;
-        address token;
-        uint256 strike;
-        address controller;
-        address treasury;
-        address emissionsToken;
-        uint256 relayerFee;
-        uint256 depositFee;
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -22,7 +22,7 @@ contract VaultV2WETH is VaultV2 {
         @param _treasury  address of the treasury of the vault;
      */
     constructor(
-        bool isWETH,
+        bool _isWETH,
         address _assetAddress,
         string memory _name,
         string memory _symbol,
@@ -33,7 +33,7 @@ contract VaultV2WETH is VaultV2 {
         address _treasury
     )
         VaultV2(
-            isWETH,
+            _isWETH,
             _assetAddress,
             _name,
             _symbol,
@@ -50,23 +50,22 @@ contract VaultV2WETH is VaultV2 {
         @param  _id  uint256 representing the id of the epoch;
         @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */
-    function depositETH(uint256 _id, address _receiver)
-        external
-        payable
-        epochIdExists(_id)
-        epochHasNotStarted(_id)
-        nonReentrant
-    {
+    // function depositETH(uint256 _id, address _receiver)
+    //     external
+    //     payable
+    //     epochIdExists(_id)
+    //     epochHasNotStarted(_id)
+    //     nonReentrant
+    // {
 
-        if(!isWETH) revert CanNotDepositETH();
-        require(msg.value > 0, "ZeroValue");
-        if (_receiver == address(0)) revert AddressZero();
+    //     if(!isWETH) revert CanNotDepositETH();
+    //     require(msg.value > 0, "ZeroValue");
+    //     if (_receiver == address(0)) revert AddressZero();
 
-        IWETH(address(asset)).deposit{value: msg.value}();
-        _mint(_receiver, _id, msg.value, EMPTY);
+    //     IWETH(address(asset)).deposit{value: msg.value}();
+    //     _mint(_receiver, _id, msg.value, EMPTY);
 
-        emit Deposit(msg.sender, _receiver, _id, msg.value);
-    }
+    //     emit Deposit(msg.sender, _receiver, _id, msg.value);
+    // }
 
-    error CanNotDepositETH();
 }
