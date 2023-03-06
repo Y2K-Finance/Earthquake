@@ -30,6 +30,7 @@ contract CarouselFactory is VaultFactoryV2 {
         address _treasury,
         address _emissoinsToken
     ) VaultFactoryV2(_policy, _weth, _treasury) {
+        if(_emissoinsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_emissoinsToken);
     }
 
@@ -271,7 +272,6 @@ contract CarouselFactory is VaultFactoryV2 {
     //////////////////////////////////////////////////////////////*/
 
     error InvalidRelayerFee();
-    error InvalidClosingTimeFrame();
     error InvalidVaultIndex();
     error InvalidDepositFee();
 

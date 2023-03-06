@@ -243,9 +243,11 @@ contract VaultFactoryV2 is Ownable {
         if (msg.sender == owner() && !adminSetController) {
             controllers[_controller] = true;
             adminSetController = true;
+            emit ControllerWhitelisted(_controller);
         } else if (msg.sender == timelocker) {
             controllers[_controller] = !controllers[_controller];
             if (!adminSetController) adminSetController = true;
+            emit ControllerWhitelisted(_controller);
         } else {
             revert NotAuthorized();
         }
@@ -486,13 +488,8 @@ contract VaultFactoryV2 is Ownable {
     error MarketDoesNotExist(uint256 marketId);
     error MarketAlreadyExists();
     error AddressZero();
-    error AddressNotController();
-    error AddressFactoryNotInController();
     error ControllerNotSet();
     error NotTimeLocker();
-    error ControllerAlreadySet();
-    error VaultImplNotSet();
-    error VaultImplNotContract();
     error NotAuthorized();
     error FeeCannotBe0();
 
@@ -573,4 +570,11 @@ contract VaultFactoryV2 is Ownable {
      * @param _treasury Treasury address
      */
     event TreasurySet(address _treasury);
-}
+
+    /** @notice New Controller is whitelisted when event is emitted
+     * @param _controller Controller address
+     */
+    event ControllerWhitelisted(address _controller);
+
+
+    }
