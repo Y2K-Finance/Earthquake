@@ -309,6 +309,8 @@ contract Carousel is VaultV2 {
         // get last index of queue
         uint256 i = length - 1;
         while ((length - _operations) <= i) {
+            // this loop impelements FILO (first in last out) stack to reduce gas cost and improve code readability
+            // changing it to FIFO (first in first out) would require more code changes and would be more expensive
             _mintShares(
                 queue[i].receiver,
                 _epochId,
