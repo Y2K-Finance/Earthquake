@@ -55,9 +55,8 @@ contract VaultFactoryV2 is Ownable {
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
      */
-    function createNewMarket(bytes calldata _marketCalldata)
+    function createNewMarket(MarketConfigurationCalldata memory  _marketCalldata)
         external
-        virtual
         onlyOwner
         returns (
             address premium,
@@ -65,34 +64,31 @@ contract VaultFactoryV2 is Ownable {
             uint256 marketId
         )
     {
-        MarketConfigurationCalldata memory data = abi.decode(
-            _marketCalldata,
-            (MarketConfigurationCalldata)
-        );
-        if (!controllers[data.controller]) revert ControllerNotSet();
-        if (data.token == address(0)) revert AddressZero();
-        if (data.oracle == address(0)) revert AddressZero();
-        if (data.underlyingAsset == address(0)) revert AddressZero();
 
-        if (tokenToOracle[data.token] == address(0)) {
-            tokenToOracle[data.token] = data.oracle;
+        if (!controllers[_marketCalldata.controller]) revert ControllerNotSet();
+        if (_marketCalldata.token == address(0)) revert AddressZero();
+        if (_marketCalldata.oracle == address(0)) revert AddressZero();
+        if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
+
+        if (tokenToOracle[_marketCalldata.token] == address(0)) {
+            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
         }
 
-        marketId = getMarketId(data.token, data.strike);
+        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
         premium = VaultV2Creator.createVaultV2(
             VaultV2Creator.MarketConfiguration(
-                data.underlyingAsset == WETH,
-                data.underlyingAsset,
-                string(abi.encodePacked(data.name, PREMIUM)),
+                _marketCalldata.underlyingAsset == WETH,
+                _marketCalldata.underlyingAsset,
+                string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
                 string(PSYMBOL),
-                data.tokenURI,
-                data.token,
-                data.strike,
-                data.controller,
+                _marketCalldata.tokenURI,
+                _marketCalldata.token,
+                _marketCalldata.strike,
+                _marketCalldata.controller,
                 treasury
             )
         );
@@ -100,14 +96,14 @@ contract VaultFactoryV2 is Ownable {
         // y2kUSDC_99*COLLATERAL
         collateral =  VaultV2Creator.createVaultV2(
             VaultV2Creator.MarketConfiguration(
-                data.underlyingAsset == WETH,
-                data.underlyingAsset,
-                string(abi.encodePacked(data.name, COLLAT)),
+                _marketCalldata.underlyingAsset == WETH,
+                _marketCalldata.underlyingAsset,
+                string(abi.encodePacked(_marketCalldata.name, COLLAT)),
                 string(CSYMBOL),
-                data.tokenURI,
-                data.token,
-                data.strike,
-                data.controller,
+                _marketCalldata.tokenURI,
+                _marketCalldata.token,
+                _marketCalldata.strike,
+                _marketCalldata.controller,
                 treasury
             )
         );
@@ -122,11 +118,11 @@ contract VaultFactoryV2 is Ownable {
             marketId,
             premium,
             collateral,
-            data.underlyingAsset,
-            data.token,
-            data.name,
-            data.strike,
-            data.controller
+            _marketCalldata.underlyingAsset,
+            _marketCalldata.token,
+            _marketCalldata.name,
+            _marketCalldata.strike,
+            _marketCalldata.controller
         );
 
         return (premium, collateral, marketId);

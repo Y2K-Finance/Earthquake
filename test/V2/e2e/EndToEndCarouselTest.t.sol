@@ -1,11 +1,11 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
-import "../../../src/V2/TimeLock.sol";
-import "../../../src/V2/Carousel/CarouselFactory.sol";
-import "../../../src/V2/interfaces/ICarousel.sol";
-import "../../../src/V2/Carousel/Carousel.sol";
-import "../../../src/V2/Controllers/ControllerPeggedAssetV2.sol";
+import "../../../src/v2/TimeLock.sol";
+import "../../../src/v2/Carousel/CarouselFactory.sol";
+import "../../../src/v2/interfaces/ICarousel.sol";
+import "../../../src/v2/Carousel/Carousel.sol";
+import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 
 contract EndToEndCarouselTest is Helper {
     using stdStorage for StdStorage;
@@ -71,8 +71,9 @@ contract EndToEndCarouselTest is Helper {
             premium,
             collateral,
             marketId
-        ) = factory.createNewMarket(
-            abi.encode(USDC_TOKEN,
+        ) = factory.createNewCarouselMarket(
+            CarouselFactory.CarouselMarketConfigurationCalldata(
+                USDC_TOKEN,
                 STRIKE,
                 USDC_CHAINLINK,
                 UNDERLYING,

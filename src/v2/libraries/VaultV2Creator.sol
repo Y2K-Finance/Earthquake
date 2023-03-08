@@ -1,6 +1,6 @@
 pragma solidity 0.8.17;
 
-import "../VaultV2WETH.sol";
+import "../VaultV2.sol";
 
 
  library VaultV2Creator {
@@ -19,7 +19,7 @@ import "../VaultV2WETH.sol";
 
     function createVaultV2(MarketConfiguration memory _marketConfig) public returns (address) {
         return address( 
-            new VaultV2WETH(
+            new VaultV2(
                 _marketConfig.isWETH,
                 _marketConfig.underlyingAsset,
                 _marketConfig.name,

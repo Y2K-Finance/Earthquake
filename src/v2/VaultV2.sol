@@ -120,6 +120,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */
     function depositETH(uint256 _id, address _receiver)
+        virtual
         external
         payable
         epochIdExists(_id)

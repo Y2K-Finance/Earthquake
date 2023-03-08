@@ -80,8 +80,7 @@ contract EndToEndV2Test is Helper {
                 UNDERLYING,
                 name,
                 symbol,
-                address(controller)
-            )
+                address(controller))
         );
         
         //create depeg market
@@ -91,7 +90,7 @@ contract EndToEndV2Test is Helper {
             depegCollateral,
             depegMarketId
         ) = factory.createNewMarket(
-            VaultFactoryV2.MarketConfigurationCalldata(
+           VaultFactoryV2.MarketConfigurationCalldata(
                 USDC_TOKEN,
                 depegStrike,
                 USDC_CHAINLINK,

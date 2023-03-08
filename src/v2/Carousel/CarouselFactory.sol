@@ -41,11 +41,10 @@ contract CarouselFactory is VaultFactoryV2 {
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
      */
-    function createNewMarket(
-        bytes calldata _marketCalldata
+    function createNewCarouselMarket(
+        CarouselMarketConfigurationCalldata memory _marketCalldata
     )
         external
-        override
         onlyOwner
         returns (
             address premium,
@@ -53,53 +52,52 @@ contract CarouselFactory is VaultFactoryV2 {
             uint256 marketId
         )
     {
-        CarouselMarketConfigurationCalldata memory data = abi.decode(_marketCalldata, (CarouselMarketConfigurationCalldata));
-        if (!controllers[data.controller]) revert ControllerNotSet();
-        if (data.token == address(0)) revert AddressZero();
-        if (data.oracle == address(0)) revert AddressZero();
-        if (data.underlyingAsset == address(0)) revert AddressZero();
+        if (!controllers[_marketCalldata.controller]) revert ControllerNotSet();
+        if (_marketCalldata.token == address(0)) revert AddressZero();
+        if (_marketCalldata.oracle == address(0)) revert AddressZero();
+        if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
 
-        if (tokenToOracle[data.token] == address(0)) {
-            tokenToOracle[data.token] = data.oracle;
+        if (tokenToOracle[_marketCalldata.token] == address(0)) {
+            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
         }
 
-        marketId = getMarketId(data.token, data.strike);
+        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
         premium = CarouselCreator.createCarousel(
             CarouselCreator.CarouselMarketConfiguration(
-                 data.underlyingAsset == WETH,
-                data.underlyingAsset,
-                string(abi.encodePacked(data.name, PREMIUM)),
+                 _marketCalldata.underlyingAsset == WETH,
+                _marketCalldata.underlyingAsset,
+                string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
                 string(PSYMBOL),
-                data.tokenURI,
-                data.token,
-                data.strike,
-                data.controller,
+                _marketCalldata.tokenURI,
+                _marketCalldata.token,
+                _marketCalldata.strike,
+                _marketCalldata.controller,
                 treasury,
                 address(emissionsToken),
-                data.relayerFee,
-                data.depositFee
+                _marketCalldata.relayerFee,
+                _marketCalldata.depositFee
             )
         );
 
         // y2kUSDC_99*COLLATERAL
         collateral =  CarouselCreator.createCarousel(
             CarouselCreator.CarouselMarketConfiguration(
-                data.underlyingAsset == WETH,
-                data.underlyingAsset,
-                string(abi.encodePacked(data.name, COLLAT)),
+                _marketCalldata.underlyingAsset == WETH,
+                _marketCalldata.underlyingAsset,
+                string(abi.encodePacked(_marketCalldata.name, COLLAT)),
                 string(CSYMBOL),
-                data.tokenURI,
-                data.token,
-                data.strike,
-                data.controller,
+                _marketCalldata.tokenURI,
+                _marketCalldata.token,
+                _marketCalldata.strike,
+                _marketCalldata.controller,
                 treasury,
                 address(emissionsToken),
-                data.relayerFee,
-                data.depositFee
+                _marketCalldata.relayerFee,
+                _marketCalldata.depositFee
             )
         );
 
@@ -113,11 +111,11 @@ contract CarouselFactory is VaultFactoryV2 {
             marketId,
             premium,
             collateral,
-            data.underlyingAsset,
-            data.token,
-            data.name,
-            data.strike,
-            data.controller
+            _marketCalldata.underlyingAsset,
+            _marketCalldata.token,
+            _marketCalldata.name,
+            _marketCalldata.strike,
+            _marketCalldata.controller
         );
 
         return (premium, collateral, marketId);
@@ -154,46 +152,6 @@ contract CarouselFactory is VaultFactoryV2 {
 
         emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
         ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Function to deploy a new Carousel vault
-    @param _marketConfig CarouselMarketConfiguration struct with the vault params
-    @return address of the new vault
-     */
-    function _deployCarouselVault(
-        CarouselCreator.CarouselMarketConfiguration memory _marketConfig
-    ) internal returns (address) {
-        // if (_marketConfig.underlyingAsset == WETH) {
-        //     return
-        //         address(
-        //             new CarouselWETH(
-        //                 Carousel.ConstructorArgs(
-        //                 _marketConfig.underlyingAsset,
-        //                 _marketConfig.name,
-        //                 _marketConfig.symbol,
-        //                 _marketConfig.tokenURI,
-        //                 _marketConfig.token,
-        //                 _marketConfig.strike,
-        //                 _marketConfig.controller,
-        //                 treasury,
-        //                 address(emissionsToken),
-        //                 _marketConfig.relayerFee,
-        //                 _marketConfig.depositFee
-        //                 )
-        //             )
-        //         );
-        // } else {
-        //     return
-        //         address(
-        //             new Carousel(
-                      
-        //             )
-        //         );
-        // }
     }
 
     /*//////////////////////////////////////////////////////////////
