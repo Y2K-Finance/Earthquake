@@ -2,9 +2,10 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
-import "../../../src/V2/Carousel/Carousel.sol";
-import "../../../src/V2/interfaces/ICarousel.sol";
-// import "../../../src/v2/VaultV2.sol";
+import "../../../src/v2/Carousel/Carousel.sol";
+import "../../../src/v2/libraries/CarouselCreator.sol";
+import "../../../src/v2/interfaces/ICarousel.sol";
+import "../../../src/v2/VaultV2.sol";
 
 
 contract CarouselTest is Helper { 
@@ -30,21 +31,23 @@ contract CarouselTest is Helper {
 
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
-          vault = new Carousel(
-            Carousel.ConstructorArgs(
-                UNDERLYING,
-                "Vault",
-                "v",
-                "randomURI",
-                TOKEN,
-                STRIKE,
-                controller,
-                TREASURY,
-                emissionsToken,
-                relayerFee,
-                depositFee
-            )
+        vault = new Carousel(
+                Carousel.ConstructorArgs(
+                        false,
+                        UNDERLYING,
+                        "Vault",
+                        "v",
+                        "randomURI",
+                        TOKEN,
+                        STRIKE,
+                        controller,
+                        TREASURY,
+                        emissionsToken,
+                        relayerFee,
+                        depositFee
+                )
         );
+
 
         // deal(UNDERLYING, address(this), 100 ether, true);
 

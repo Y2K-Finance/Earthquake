@@ -6,6 +6,7 @@ import {
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./SemiFungibleVault.sol";
 import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
@@ -26,6 +27,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     address public immutable token;
     uint256 public immutable strike;
     // Earthquake bussiness logic
+    bool public immutable isWETH;
     address public treasury;
     address public counterPartyVault;
     address public factory;
@@ -56,6 +58,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         @param _treasury  address of the treasury of the vault;
      */
     constructor(
+        bool _isWETH,
         address _assetAddress,
         string memory _name,
         string memory _symbol,
@@ -75,6 +78,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         controller = _controller;
         treasury = _treasury;
         whitelistedAddresses[_treasury] = true;
+        isWETH = _isWETH;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -108,6 +112,29 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         _mint(_receiver, _id, _assets, EMPTY);
 
         emit Deposit(msg.sender, _receiver, _id, _assets);
+    }
+
+    /**
+        @notice Deposit ETH function
+        @param  _id  uint256 representing the id of the epoch;
+        @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
+     */
+    function depositETH(uint256 _id, address _receiver)
+        external
+        payable
+        virtual
+        epochIdExists(_id)
+        epochHasNotStarted(_id)
+        nonReentrant
+    {
+        if (!isWETH) revert CanNotDepositETH();
+        require(msg.value > 0, "ZeroValue");
+        if (_receiver == address(0)) revert AddressZero();
+
+        IWETH(address(asset)).deposit{value: msg.value}();
+        _mint(_receiver, _id, msg.value, EMPTY);
+
+        emit Deposit(msg.sender, _receiver, _id, msg.value);
     }
 
     /**
@@ -303,7 +330,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochIdExists(_id)
         epochHasEnded(_id)
     {
-
         claimTVL[_id] = _claimTVL;
     }
 
@@ -339,7 +365,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         // if user deposited 1000 assets and the claimTVL is 50% higher than finalTVL, the user is entitled to 1500 assets
         entitledAmount = _assets.mulDivDown(claimTVL[_id], finalTVL[_id]);
     }
- 
+
     /** @notice Lookup total epochs length
      */
     function getEpochsLength() public view returns (uint256) {
@@ -358,7 +384,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function getEpochConfig(uint256 _id)
         public
         view
-        returns (uint40 epochBegin, uint40 epochEnd, uint40 epochCreation)
+        returns (
+            uint40 epochBegin,
+            uint40 epochEnd,
+            uint40 epochCreation
+        )
     {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
@@ -446,4 +476,5 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     error AmountExceedsTVL();
     error AlreadyInitialized();
     error InvalidEpoch();
+    error CanNotDepositETH();
 }

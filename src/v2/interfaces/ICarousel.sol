@@ -83,6 +83,7 @@ interface ICarousel {
         returns (uint256);
 
     function getDepositQueueLenght() external view;
+
     function getRolloverQueueLenght() external view;
 
     function emissionsToken() external view returns (address);

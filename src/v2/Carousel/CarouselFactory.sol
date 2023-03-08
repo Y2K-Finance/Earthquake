@@ -2,8 +2,6 @@
 pragma solidity 0.8.17;
 
 import "../VaultFactoryV2.sol";
-import "./Carousel.sol";
-import "./CarouselWETH.sol";
 
 import {ICarousel} from "../interfaces/ICarousel.sol";
 
@@ -11,6 +9,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     SafeERC20
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {CarouselCreator} from "../libraries/CarouselCreator.sol";
 
 /// @author Y2K Finance Team
 
@@ -19,24 +18,23 @@ contract CarouselFactory is VaultFactoryV2 {
     IERC20 public emissionsToken;
 
     /** @notice constructor
-    @param _policy admin address
     @param _weth address of the weth contract
     @param _treasury address of the treasury contract
     @param _emissoinsToken address of the emissions token
      */
     constructor(
-        address _policy,
         address _weth,
         address _treasury,
+        address _timelock,
         address _emissoinsToken
-    ) VaultFactoryV2(_policy, _weth, _treasury) {
-        if(_emissoinsToken == address(0)) revert AddressZero();
+    ) VaultFactoryV2(_weth, _treasury, _timelock) {
+        if (_emissoinsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_emissoinsToken);
     }
 
     /**
     @notice Function to create two new vaults, premium and collateral, with the respective params, and storing the oracle for the token provided
-    @param  _marketCalldata MarketConfigurationCalldata struct with the market params
+    @param  _marketCalldata CarouselMarketConfigurationCalldata struct with the market params
     @return premium address of the premium vault
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
@@ -66,8 +64,9 @@ contract CarouselFactory is VaultFactoryV2 {
             revert MarketAlreadyExists();
 
         //y2kUSDC_99*PREMIUM
-        premium = _deployCarouselVault(
-            CarouselMarketConfiguration(
+        premium = CarouselCreator.createCarousel(
+            CarouselCreator.CarouselMarketConfiguration(
+                _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
                 string(PSYMBOL),
@@ -75,14 +74,17 @@ contract CarouselFactory is VaultFactoryV2 {
                 _marketCalldata.token,
                 _marketCalldata.strike,
                 _marketCalldata.controller,
+                treasury,
+                address(emissionsToken),
                 _marketCalldata.relayerFee,
                 _marketCalldata.depositFee
             )
         );
 
         // y2kUSDC_99*COLLATERAL
-        collateral = _deployCarouselVault(
-            CarouselMarketConfiguration(
+        collateral = CarouselCreator.createCarousel(
+            CarouselCreator.CarouselMarketConfiguration(
+                _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, COLLAT)),
                 string(CSYMBOL),
@@ -90,6 +92,8 @@ contract CarouselFactory is VaultFactoryV2 {
                 _marketCalldata.token,
                 _marketCalldata.strike,
                 _marketCalldata.controller,
+                treasury,
+                address(emissionsToken),
                 _marketCalldata.relayerFee,
                 _marketCalldata.depositFee
             )
@@ -121,7 +125,7 @@ contract CarouselFactory is VaultFactoryV2 {
     @param _epochEnd uint40 of the epoch end
     @param _withdrawalFee uint16 of the withdrawal fee
     @param _permiumEmissions uint256 of the emissions for the premium vault
-    @param _collatEmissoins uint256 of the emissions for the collateral vault
+    @param _collatEmissions uint256 of the emissions for the collateral vault
     @return epochId uint256 of the epochId
     @return vaults address[2] of the vaults
      */
@@ -131,7 +135,7 @@ contract CarouselFactory is VaultFactoryV2 {
         uint40 _epochEnd,
         uint16 _withdrawalFee,
         uint256 _permiumEmissions,
-        uint256 _collatEmissoins
+        uint256 _collatEmissions
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
         (epochId, vaults) = createEpoch(
@@ -144,60 +148,8 @@ contract CarouselFactory is VaultFactoryV2 {
         emissionsToken.safeTransferFrom(treasury, vaults[0], _permiumEmissions);
         ICarousel(vaults[0]).setEmissions(epochId, _permiumEmissions);
 
-        emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissoins);
-        ICarousel(vaults[1]).setEmissions(epochId, _collatEmissoins);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /** @notice Function to deploy a new Carousel vault
-    @param _marketConfig CarouselMarketConfiguration struct with the vault params
-    @return address of the new vault
-     */
-    function _deployCarouselVault(
-        CarouselMarketConfiguration memory _marketConfig
-    ) internal returns (address) {
-        if (_marketConfig.underlyingAsset == WETH) {
-            return
-                address(
-                    new CarouselWETH(
-                        Carousel.ConstructorArgs(
-                        _marketConfig.underlyingAsset,
-                        _marketConfig.name,
-                        _marketConfig.symbol,
-                        _marketConfig.tokenURI,
-                        _marketConfig.token,
-                        _marketConfig.strike,
-                        _marketConfig.controller,
-                        treasury,
-                        address(emissionsToken),
-                        _marketConfig.relayerFee,
-                        _marketConfig.depositFee
-                        )
-                    )
-                );
-        } else {
-            return
-                address(
-                    new Carousel(
-                       Carousel.ConstructorArgs(
-                            _marketConfig.underlyingAsset,
-                            _marketConfig.name,
-                            _marketConfig.symbol,
-                            _marketConfig.tokenURI,
-                            _marketConfig.token,
-                            _marketConfig.strike,
-                            _marketConfig.controller,
-                            treasury,
-                            address(emissionsToken),
-                            _marketConfig.relayerFee,
-                            _marketConfig.depositFee
-                        )
-                    )
-                );
-        }
+        emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
+        ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -224,19 +176,26 @@ contract CarouselFactory is VaultFactoryV2 {
         emit ChangedRelayerFee(_relayerFee, _marketIndex);
     }
 
-    function changeDepositFee(uint256 _depositFee, uint256 _marketIndex, uint256 vaultIndex)
-        public
-        onlyTimeLocker
-    {
-        if(vaultIndex > 1) revert InvalidVaultIndex();
+    function changeDepositFee(
+        uint256 _depositFee,
+        uint256 _marketIndex,
+        uint256 vaultIndex
+    ) public onlyTimeLocker {
+        if (vaultIndex > 1) revert InvalidVaultIndex();
         // _depositFee is in basis points max 0.5%
         if (_depositFee > 250) revert InvalidDepositFee();
         // TODO might need to be able to change individual vaults
         address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if (vaults[vaultIndex] == address(0)) revert MarketDoesNotExist(_marketIndex);
+        if (vaults[vaultIndex] == address(0))
+            revert MarketDoesNotExist(_marketIndex);
         ICarousel(vaults[vaultIndex]).changeDepositFee(_depositFee);
 
-        emit ChangedDepositFee(_depositFee, _marketIndex, vaultIndex, vaults[vaultIndex]);
+        emit ChangedDepositFee(
+            _depositFee,
+            _marketIndex,
+            vaultIndex,
+            vaults[vaultIndex]
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -255,18 +214,6 @@ contract CarouselFactory is VaultFactoryV2 {
         uint256 depositFee;
     }
 
-    struct CarouselMarketConfiguration {
-        address underlyingAsset;
-        string name;
-        string symbol;
-        string tokenURI;
-        address token;
-        uint256 strike;
-        address controller;
-        uint256 relayerFee;
-        uint256 depositFee;
-    }
-
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -274,7 +221,6 @@ contract CarouselFactory is VaultFactoryV2 {
     error InvalidRelayerFee();
     error InvalidVaultIndex();
     error InvalidDepositFee();
-
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -288,6 +234,4 @@ contract CarouselFactory is VaultFactoryV2 {
     );
 
     event ChangedRelayerFee(uint256 relayerFee, uint256 marketIndex);
-
-
 }

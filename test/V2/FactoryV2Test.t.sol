@@ -3,16 +3,21 @@ pragma solidity 0.8.17;
 
 import "./Helper.sol";
 import "../../src/v2/VaultFactoryV2.sol";
+import "../../src/v2/VaultV2.sol";
+import "../../src/v2/TimeLock.sol";
 import "../../src/v2/interfaces/IVaultV2.sol";
 
 contract FactoryV2Test is Helper {
       VaultFactoryV2 factory;
       address controller;
       function setUp() public {
+
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new VaultFactoryV2(
-            ADMIN,
             WETH,
-            TREASURY
+            TREASURY,
+            address(timelock)
         );
 
         controller = address(0x54);
@@ -22,13 +27,15 @@ contract FactoryV2Test is Helper {
 
     function testFactoryCreation() public {
 
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new VaultFactoryV2(
-            ADMIN,
             WETH,
-            TREASURY
+            TREASURY,
+            address(timelock)
         );
        
-        assertEq(address(TimeLock(factory.timelocker()).policy()), ADMIN);
+        assertEq(address(timelock.policy()), ADMIN);
         assertEq(address(factory.WETH()), WETH);
         assertEq(address(factory.treasury()), TREASURY);
         assertEq(address(factory.owner()), address(this));
@@ -58,15 +65,15 @@ contract FactoryV2Test is Helper {
         vm.startPrank(NOTADMIN);
             vm.expectRevert(bytes("Ownable: caller is not the owner"));
                 factory.createNewMarket(
-                    VaultFactoryV2.MarketConfigurationCalldata(
+                   VaultFactoryV2.MarketConfigurationCalldata(
                         address(0x1),
                         uint256(0x2),
                         address(0x3),
                         address(0x4),
                         string(""),
                         string(""),
-                        address(0x7)
-                    )
+                        address(0x7) // wrong controller
+                   )
                 );
         vm.stopPrank();
 
@@ -81,7 +88,7 @@ contract FactoryV2Test is Helper {
                     string(""),
                     string(""),
                     address(0x7) // wrong controller
-                )
+               )
             );
 
         address token = address(0x1);
@@ -93,7 +100,7 @@ contract FactoryV2Test is Helper {
         // wrong token
         vm.expectRevert(VaultFactoryV2.AddressZero.selector);
             factory.createNewMarket(
-                VaultFactoryV2.MarketConfigurationCalldata(
+               VaultFactoryV2.MarketConfigurationCalldata(
                     address(0), // wrong token
                     strike,
                     oracle,
@@ -101,21 +108,20 @@ contract FactoryV2Test is Helper {
                     name,
                     symbol,
                     controller
-                )
+               )
             );
 
        // wrong oracle
         vm.expectRevert(VaultFactoryV2.AddressZero.selector);
             factory.createNewMarket(
                 VaultFactoryV2.MarketConfigurationCalldata(
-                    token,
+                     token,
                     strike,
                     address(0), // wrong oracle
                     underlying,
                     name,
                     symbol,
-                    controller
-                )
+                    controller)
             );
 
         // wrong underlying
@@ -128,8 +134,7 @@ contract FactoryV2Test is Helper {
                     address(0), // wrong underlying
                     name,
                     symbol,
-                    controller
-                )
+                    controller)
             );
 
 
@@ -140,14 +145,13 @@ contract FactoryV2Test is Helper {
             uint256 marketId
         ) = factory.createNewMarket(
             VaultFactoryV2.MarketConfigurationCalldata(
-                token,
+                 token,
                 strike,
                 oracle,
                 underlying,
                 name,
                 symbol,
-                controller
-            )
+                controller)
         );
 
         // test if market is created
@@ -353,15 +357,14 @@ contract FactoryV2Test is Helper {
         string memory symbol = string("tst");
 
         (, ,marketId) = factory.createNewMarket(
-             VaultFactoryV2.MarketConfigurationCalldata(
+            VaultFactoryV2.MarketConfigurationCalldata(
                 token,
                 strike,
                 oracle,
                 underlying,
                 name,
                 symbol,
-                controller
-            )
+                controller)
         );
     }
 }
