@@ -4,7 +4,7 @@
 
 # Earthquake V2 Documentation
 
-- [Notion page with Diagarm and Vidoes](https://y2kfinance.notion.site/Earthquake-V2-Documentation-9766c278d4a14c619ba92017a69853e4)
+- [Notion page with diagram and videos](https://y2kfinance.notion.site/Earthquake-V2-Documentation-9766c278d4a14c619ba92017a69853e4)
 
 # Foundry / Forge
 
