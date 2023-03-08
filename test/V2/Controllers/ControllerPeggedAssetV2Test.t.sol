@@ -7,6 +7,7 @@ import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/interfaces/IVaultV2.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "../../../src/v2/VaultFactoryV2.sol";
+import "../../../src/v2/TimeLock.sol";
 
 contract ControllerPeggedAssetV2Test is Helper {
     VaultV2 vault;
@@ -25,10 +26,13 @@ contract ControllerPeggedAssetV2Test is Helper {
 
 
     function setUp() public {
+        
+        TimeLock timelock = new TimeLock(ADMIN);
+
         factory = new VaultFactoryV2(
-            ADMIN,
             WETH,
-            TREASURY
+            TREASURY,
+            address(timelock)
         );
 
         controller = new ControllerPeggedAssetV2(

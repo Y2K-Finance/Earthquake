@@ -16,6 +16,7 @@ contract VaultV2Test is Helper {
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
         vault = new VaultV2(
+            false,
             UNDERLYING,
             "Vault",
             "v",
@@ -29,6 +30,7 @@ contract VaultV2Test is Helper {
         MintableToken(UNDERLYING).mint(address(this));
 
         counterpartyVault = new VaultV2(
+            false,
             UNDERLYING,
             "Vault",
             "v",
@@ -49,6 +51,7 @@ contract VaultV2Test is Helper {
         // test all revert cases
         vm.expectRevert(VaultV2.AddressZero.selector);
         new VaultV2(
+            false,
             address(0), // wrong underlying
             "Vault",
             "v",
@@ -61,6 +64,7 @@ contract VaultV2Test is Helper {
 
         vm.expectRevert(VaultV2.AddressZero.selector);
         new VaultV2(
+            false,
             UNDERLYING,
             "Vault",
             "v",
@@ -73,6 +77,7 @@ contract VaultV2Test is Helper {
 
         vm.expectRevert(VaultV2.AddressZero.selector);
         new VaultV2(
+            false,
             UNDERLYING,
             "Vault",
             "v",
@@ -85,6 +90,7 @@ contract VaultV2Test is Helper {
 
         vm.expectRevert(VaultV2.AddressZero.selector);
         new VaultV2(
+            false,
             UNDERLYING,
             "Vault",
             "v",
@@ -97,6 +103,7 @@ contract VaultV2Test is Helper {
 
         // test success case
         VaultV2 vault2 = new VaultV2(
+            false,
             UNDERLYING,
             "Vault",
             "v",

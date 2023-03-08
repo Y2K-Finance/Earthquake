@@ -14,7 +14,6 @@ contract ControllerPeggedAssetV2 {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
-
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     address public immutable treasury;
 
@@ -65,7 +64,7 @@ contract ControllerPeggedAssetV2 {
         if (int256(premiumVault.strike()) <= price)
             revert PriceNotAtStrikePrice(price);
 
-        (uint40 epochStart, uint40 epochEnd,) = premiumVault.getEpochConfig(
+        (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
             _epochId
         );
 
@@ -79,9 +78,12 @@ contract ControllerPeggedAssetV2 {
             revert EpochFinishedAlready();
 
         // check if epoch qualifies for null epoch
-        if(premiumVault.totalAssets(_epochId) == 0 || collateralVault.totalAssets(_epochId) == 0) {
-           revert VaultZeroTVL();
-        }   
+        if (
+            premiumVault.totalAssets(_epochId) == 0 ||
+            collateralVault.totalAssets(_epochId) == 0
+        ) {
+            revert VaultZeroTVL();
+        }
 
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
@@ -153,7 +155,7 @@ contract ControllerPeggedAssetV2 {
             collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
 
-        (, uint40 epochEnd,) = premiumVault.getEpochConfig(_epochId);
+        (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
 
         if (block.timestamp <= uint256(epochEnd)) revert EpochNotExpired();
 
@@ -217,7 +219,7 @@ contract ControllerPeggedAssetV2 {
             collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
 
-        (uint40 epochStart, ,) = premiumVault.getEpochConfig(_epochId);
+        (uint40 epochStart, , ) = premiumVault.getEpochConfig(_epochId);
 
         if (block.timestamp < uint256(epochStart)) revert EpochNotStarted();
 
@@ -269,7 +271,7 @@ contract ControllerPeggedAssetV2 {
      * @return nowPrice Current token price
      */
     function getLatestPrice(address _token) public view returns (int256) {
-         (
+        (
             ,
             /*uint80 roundId*/
             int256 answer,
@@ -323,8 +325,8 @@ contract ControllerPeggedAssetV2 {
     }
 
     /** @notice Calculate amount to withdraw after subtracting protocol fee
-        * @param amount Amount of tokens to withdraw
-        * @param fee Fee to be applied
+     * @param amount Amount of tokens to withdraw
+     * @param fee Fee to be applied
      */
     function calculateWithdrawalFeeValue(uint256 amount, uint256 fee)
         public
@@ -376,10 +378,10 @@ contract ControllerPeggedAssetV2 {
     );
 
     /** @notice Sets epoch to null when event is emitted
-        * @param epochId market epoch ID
-        * @param marketId market ID
-        * @param tvl TVL
-        * @param time timestamp
+     * @param epochId market epoch ID
+     * @param marketId market ID
+     * @param tvl TVL
+     * @param time timestamp
      */
     event NullEpoch(
         uint256 indexed epochId,

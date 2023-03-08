@@ -2,8 +2,9 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
-import "../../../src/V2/Carousel/CarouselFactory.sol";
-import "../../../src/V2/interfaces/ICarousel.sol";
+import "../../../src/v2/Carousel/CarouselFactory.sol";
+import "../../../src/v2/TimeLock.sol";
+import "../../../src/v2/interfaces/ICarousel.sol";
 
 
 contract CarouselFactoryTest is Helper { 
@@ -16,13 +17,16 @@ contract CarouselFactoryTest is Helper {
         uint256 depositFee;
    
         function setUp() public {
+        
+        TimeLock timelock = new TimeLock(ADMIN);
 
         emissionsToken = address(new MintableToken("Emissions Token", "EMT"));
 
+
         factory = new CarouselFactory(
-            ADMIN,
             WETH,
             TREASURY,
+            address(timelock),
             emissionsToken
         );
 
@@ -41,14 +45,13 @@ contract CarouselFactoryTest is Helper {
         uint256 strike = uint256(0x2);
         string memory name = string("");
         string memory symbol = string("");
-
         // test success case
         (
             address premium,
             address collateral,
             uint256 marketId
         ) = factory.createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
+            CarouselFactory.CarouselMarketConfigurationCalldata( 
                 token,
                 strike,
                 oracle,
@@ -58,8 +61,9 @@ contract CarouselFactoryTest is Helper {
                 controller,
                 relayerFee,
                 depositFee
-            )
-        );
+                )
+            );
+        
 
         // test if market is created
         assertEq(factory.getVaults(marketId)[0], premium);
@@ -253,7 +257,7 @@ contract CarouselFactoryTest is Helper {
             ,
             marketId
         ) = factory.createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
+          CarouselFactory.CarouselMarketConfigurationCalldata( 
                 token,
                 strike,
                 oracle,
@@ -262,8 +266,7 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                depositFee
-            )
+                depositFee)
         );
     }
 

@@ -41,13 +41,7 @@ contract TimeLock {
         uint256 _timestamp
     ) external onlyOwner {
         //create tx id
-        bytes32 txId = getTxId(
-            _target,
-            _value,
-            _func,
-            _data,
-            _timestamp
-        );
+        bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id unique
         if (queued[txId]) {
@@ -65,14 +59,7 @@ contract TimeLock {
         //queue tx
         queued[txId] = true;
 
-        emit Queue(
-            txId,
-            _target,
-            _value,
-            _func,
-            _data,
-            _timestamp
-        );
+        emit Queue(txId, _target, _value, _func, _data, _timestamp);
     }
 
     /**
@@ -91,13 +78,7 @@ contract TimeLock {
         bytes calldata _data,
         uint256 _timestamp
     ) external onlyOwner returns (bytes memory) {
-        bytes32 txId = getTxId(
-            _target,
-            _value,
-            _func,
-            _data,
-            _timestamp
-        );
+        bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id queued
         if (!queued[txId]) {
@@ -117,7 +98,7 @@ contract TimeLock {
 
         //delete tx from queue
         queued[txId] = false;
-        
+
         // prepare data
         bytes memory data;
         if (bytes(_func).length > 0) {
@@ -133,26 +114,18 @@ contract TimeLock {
         if (!ok) {
             revert TxFailedError(_func);
         }
-    
 
-        emit Execute(
-            txId,
-            _target,
-            _value,
-            _func,
-            _data,
-            _timestamp
-        );
-        
+        emit Execute(txId, _target, _value, _func, _data, _timestamp);
+
         return res;
     }
 
     /** @notice cancels the transaction
-        *  @param _target The target contract
-        *  @param _value The value to send to the function
-        *  @param _func The function to call
-        *  @param _data The data to pass to the function
-        *  @param _timestamp The timestamp after which to execute the transaction
+     *  @param _target The target contract
+     *  @param _value The value to send to the function
+     *  @param _func The function to call
+     *  @param _data The data to pass to the function
+     *  @param _timestamp The timestamp after which to execute the transaction
      */
     function cancel(
         address _target,
@@ -161,13 +134,7 @@ contract TimeLock {
         bytes calldata _data,
         uint256 _timestamp
     ) external onlyOwner {
-        bytes32 txId = getTxId(
-            _target,
-            _value,
-            _func,
-            _data,
-            _timestamp
-        );
+        bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id queued
         if (!queued[txId]) {
@@ -177,23 +144,16 @@ contract TimeLock {
         //delete tx from queue
         queued[txId] = false;
 
-        emit Delete(
-            txId,
-            _target,
-            _value,
-            _func,
-            _data,
-            _timestamp
-        );
+        emit Delete(txId, _target, _value, _func, _data, _timestamp);
     }
 
     /** @notice get transaction id
-        *  @param _target The target contract
-        *  @param _func The function to call
-        *  @param _value The value to send to the function
-        *  @param _data The data to pass to the function
-        *  @param _timestamp The timestamp after which to execute the transaction
-        *  @return txId
+     *  @param _target The target contract
+     *  @param _func The function to call
+     *  @param _value The value to send to the function
+     *  @param _data The data to pass to the function
+     *  @param _timestamp The timestamp after which to execute the transaction
+     *  @return txId
      */
     function getTxId(
         address _target,
@@ -202,21 +162,12 @@ contract TimeLock {
         bytes calldata _data,
         uint256 _timestamp
     ) public pure returns (bytes32 txId) {
-        return
-            keccak256(
-                abi.encode(
-                    _target,
-                    _value,
-                    _func,
-                    _data,
-                    _timestamp
-                )
-            );
+        return keccak256(abi.encode(_target, _value, _func, _data, _timestamp));
     }
 
     /** @notice change owner
-        *  @param _newOwner new owner
-    */
+     *  @param _newOwner new owner
+     */
     function changeOwner(address _newOwner) external onlyOwner {
         if (_newOwner == address(0)) {
             revert AddressZero();
@@ -238,7 +189,6 @@ contract TimeLock {
     error TxFailedError(string func);
     error AddressZero();
 
-    
     /** @notice queues transaction when emitted
         @param txId unique id of the transaction
         @param target contract to call
