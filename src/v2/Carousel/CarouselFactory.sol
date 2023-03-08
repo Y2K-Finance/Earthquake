@@ -2,8 +2,6 @@
 pragma solidity 0.8.17;
 
 import "../VaultFactoryV2.sol";
-// import "./Carousel.sol";
-// import "./CarouselWETH.sol";
 
 import {ICarousel} from "../interfaces/ICarousel.sol";
 
