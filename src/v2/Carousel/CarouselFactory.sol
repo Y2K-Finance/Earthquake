@@ -30,7 +30,7 @@ contract CarouselFactory is VaultFactoryV2 {
         address _timelock,
         address _emissoinsToken
     ) VaultFactoryV2(_weth, _treasury, _timelock) {
-        if(_emissoinsToken == address(0)) revert AddressZero();
+        if (_emissoinsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_emissoinsToken);
     }
 
@@ -68,7 +68,7 @@ contract CarouselFactory is VaultFactoryV2 {
         //y2kUSDC_99*PREMIUM
         premium = CarouselCreator.createCarousel(
             CarouselCreator.CarouselMarketConfiguration(
-                 _marketCalldata.underlyingAsset == WETH,
+                _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
                 string(abi.encodePacked(_marketCalldata.name, PREMIUM)),
                 string(PSYMBOL),
@@ -84,7 +84,7 @@ contract CarouselFactory is VaultFactoryV2 {
         );
 
         // y2kUSDC_99*COLLATERAL
-        collateral =  CarouselCreator.createCarousel(
+        collateral = CarouselCreator.createCarousel(
             CarouselCreator.CarouselMarketConfiguration(
                 _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
@@ -178,19 +178,26 @@ contract CarouselFactory is VaultFactoryV2 {
         emit ChangedRelayerFee(_relayerFee, _marketIndex);
     }
 
-    function changeDepositFee(uint256 _depositFee, uint256 _marketIndex, uint256 vaultIndex)
-        public
-        onlyTimeLocker
-    {
-        if(vaultIndex > 1) revert InvalidVaultIndex();
+    function changeDepositFee(
+        uint256 _depositFee,
+        uint256 _marketIndex,
+        uint256 vaultIndex
+    ) public onlyTimeLocker {
+        if (vaultIndex > 1) revert InvalidVaultIndex();
         // _depositFee is in basis points max 0.5%
         if (_depositFee > 250) revert InvalidDepositFee();
         // TODO might need to be able to change individual vaults
         address[2] memory vaults = marketIdToVaults[_marketIndex];
-        if (vaults[vaultIndex] == address(0)) revert MarketDoesNotExist(_marketIndex);
+        if (vaults[vaultIndex] == address(0))
+            revert MarketDoesNotExist(_marketIndex);
         ICarousel(vaults[vaultIndex]).changeDepositFee(_depositFee);
 
-        emit ChangedDepositFee(_depositFee, _marketIndex, vaultIndex, vaults[vaultIndex]);
+        emit ChangedDepositFee(
+            _depositFee,
+            _marketIndex,
+            vaultIndex,
+            vaults[vaultIndex]
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -217,7 +224,6 @@ contract CarouselFactory is VaultFactoryV2 {
     error InvalidVaultIndex();
     error InvalidDepositFee();
 
-
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -230,6 +236,4 @@ contract CarouselFactory is VaultFactoryV2 {
     );
 
     event ChangedRelayerFee(uint256 relayerFee, uint256 marketIndex);
-
-
 }

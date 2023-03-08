@@ -32,7 +32,7 @@ contract VaultFactoryV2 is Ownable {
     /** @notice Contract constructor
      * @param _weth WETH address
      * @param _treasury Treasury address
-    * @param _timelocker Timelocker address
+     * @param _timelocker Timelocker address
      */
     constructor(
         address _weth,
@@ -55,7 +55,7 @@ contract VaultFactoryV2 is Ownable {
     @return collateral address of the collateral vault
     @return marketId uint256 of the marketId
      */
-    function createNewMarket(MarketConfigurationCalldata memory  _marketCalldata)
+    function createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
         external
         onlyOwner
         returns (
@@ -64,7 +64,6 @@ contract VaultFactoryV2 is Ownable {
             uint256 marketId
         )
     {
-
         if (!controllers[_marketCalldata.controller]) revert ControllerNotSet();
         if (_marketCalldata.token == address(0)) revert AddressZero();
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
@@ -94,7 +93,7 @@ contract VaultFactoryV2 is Ownable {
         );
 
         // y2kUSDC_99*COLLATERAL
-        collateral =  VaultV2Creator.createVaultV2(
+        collateral = VaultV2Creator.createVaultV2(
             VaultV2Creator.MarketConfiguration(
                 _marketCalldata.underlyingAsset == WETH,
                 _marketCalldata.underlyingAsset,
@@ -533,6 +532,4 @@ contract VaultFactoryV2 is Ownable {
      * @param _controller Controller address
      */
     event ControllerWhitelisted(address _controller);
-
-
-    }
+}

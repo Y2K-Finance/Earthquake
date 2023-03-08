@@ -36,9 +36,7 @@ contract Carousel is VaultV2 {
     /** @notice constructor
         @param _data  Carousel.ConstructorArgs struct containing the data to be used in the constructor;
      */
-    constructor(
-       ConstructorArgs memory _data
-    )
+    constructor(ConstructorArgs memory _data)
         VaultV2(
             _data.isWETH,
             _data.assetAddress,
@@ -51,9 +49,9 @@ contract Carousel is VaultV2 {
             _data.treasury
         )
     {
-       if(_data.relayerFee < 10000) revert RelayerFeeToLow();
-        if(_data.depositFee > 250) revert BPSToHigh();
-        if(_data.emissionsToken == address(0)) revert AddressZero();
+        if (_data.relayerFee < 10000) revert RelayerFeeToLow();
+        if (_data.depositFee > 250) revert BPSToHigh();
+        if (_data.emissionsToken == address(0)) revert AddressZero();
         emissionsToken = IERC20(_data.emissionsToken);
         relayerFee = _data.relayerFee;
         depositFee = _data.depositFee;
@@ -61,8 +59,8 @@ contract Carousel is VaultV2 {
         // set epoch 0 to be allways available to deposit into Queue
         epochExists[0] = true;
         epochConfig[0] = EpochConfig({
-            epochBegin: 10**10*40 - 7 days,
-            epochEnd: 10**10*40,
+            epochBegin: 10**10 * 40 - 7 days,
+            epochEnd: 10**10 * 40,
             epochCreation: uint40(block.timestamp)
         });
         epochs.push(0);
@@ -100,16 +98,16 @@ contract Carousel is VaultV2 {
         _deposit(_id, _assets, _receiver);
     }
 
-      function depositETH(uint256 _id, address _receiver)
+    function depositETH(uint256 _id, address _receiver)
         external
-        override(VaultV2)
         payable
+        override(VaultV2)
         minRequiredDeposit(msg.value)
         epochIdExists(_id)
         epochHasNotStarted(_id)
         nonReentrant
     {
-        if(!isWETH) revert CanNotDepositETH();
+        if (!isWETH) revert CanNotDepositETH();
         if (_receiver == address(0)) revert AddressZero();
 
         IWETH(address(asset)).deposit{value: msg.value}();
@@ -218,10 +216,10 @@ contract Carousel is VaultV2 {
      * @dev See {IERC1155-safeBatchTransferFrom}.
      */
     function safeBatchTransferFrom(
-        address /*from*/,
-        address /*to*/,
-        uint256[] memory /*ids*/,
-        uint256[] memory /*amounts*/,
+        address, /*from*/
+        address, /*to*/
+        uint256[] memory, /*ids*/
+        uint256[] memory, /*amounts*/
         bytes memory /*data*/
     ) public pure override {
         revert();
@@ -277,8 +275,7 @@ contract Carousel is VaultV2 {
      */
     function delistInRollover(address _owner) public {
         // check if user has already queued up a rollover
-        if (ownerToRollOverQueueIndex[_owner] == 0)
-            revert NoRolloverQueued();
+        if (ownerToRollOverQueueIndex[_owner] == 0) revert NoRolloverQueued();
         // check if sender is approved by owner
         if (
             msg.sender != _owner &&
@@ -298,7 +295,9 @@ contract Carousel is VaultV2 {
             // remove the last item in the queue
             rolloverQueue.pop();
             // update the index of prev last user ( mapping index is allways array index + 1)
-            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] = index+ 1;
+            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] =
+                index +
+                1;
             // remove receiver from index mapping
             delete ownerToRollOverQueueIndex[_owner];
         }
@@ -324,7 +323,7 @@ contract Carousel is VaultV2 {
 
         if (length == 0) revert OverflowQueue();
         // relayers can always input a very big number to mint all deposit queues, without the need to read depostQueue length first
-        if(_operations > length) _operations = length;
+        if (_operations > length) _operations = length;
 
         // queue is executed from the tail to the head
         // get last index of queue
@@ -337,9 +336,14 @@ contract Carousel is VaultV2 {
                 _epochId,
                 queue[i].assets - relayerFee
             );
-            emit Deposit(msg.sender,  queue[i].receiver, _epochId,  queue[i].assets - relayerFee);
+            emit Deposit(
+                msg.sender,
+                queue[i].receiver,
+                _epochId,
+                queue[i].assets - relayerFee
+            );
             depositQueue.pop();
-            if( i == 0 ) break;
+            if (i == 0) break;
             unchecked {
                 i--;
             }
@@ -368,38 +372,37 @@ contract Carousel is VaultV2 {
         uint256 index = rolloverAccounting[_epochId];
 
         // revert if queue is empty or operations are more than queue length
-        if ( length == 0  ) revert OverflowQueue();
+        if (length == 0) revert OverflowQueue();
 
-        if( _operations > length || (index + _operations) > length) _operations = length - index;
+        if (_operations > length || (index + _operations) > length)
+            _operations = length - index;
 
         // prev epoch is resolved
-        if(!epochResolved[epochs[epochs.length - 2]]) revert EpochNotResolved();
+        if (!epochResolved[epochs[epochs.length - 2]])
+            revert EpochNotResolved();
 
         // make sure epoch is next epoch
-        if (epochs[epochs.length - 1] != _epochId) revert InvalidEpochId();   
+        if (epochs[epochs.length - 1] != _epochId) revert InvalidEpochId();
 
         QueueItem[] memory queue = rolloverQueue;
 
         // account for how many operations have been done
         uint256 prevIndex = index;
         uint256 executions = 0;
-        
-        while ((index-prevIndex) < (_operations)) {    
+
+        while ((index - prevIndex) < (_operations)) {
             // only roll over if last epoch is resolved
-            if(epochResolved[queue[index].epochId]) {
+            if (epochResolved[queue[index].epochId]) {
                 uint256 entitledShares = previewWithdraw(
                     queue[index].epochId,
                     queue[index].assets
                 );
                 // mint only if user won epoch he is rolling over
-                if (
-                    entitledShares >
-                    queue[index].assets
-                ) {
+                if (entitledShares > queue[index].assets) {
                     // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-                    if(queue[index].assets < relayerFee) {
-                         index++;
-                         continue;
+                    if (queue[index].assets < relayerFee) {
+                        index++;
+                        continue;
                     }
                     // @note we know shares were locked up to this point
                     _burn(
@@ -408,13 +411,19 @@ contract Carousel is VaultV2 {
                         queue[index].assets
                     );
                     // transfer emission tokens out of contract otherwise user could not access them as vault shares are burned
-                    _burnEmissions(  
+                    _burnEmissions(
                         queue[index].receiver,
                         queue[index].epochId,
                         queue[index].assets
                     );
                     // @note emission token is a known token which has no before transfer hooks which makes transfer safer
-                    emissionsToken.safeTransfer(queue[index].receiver, previewEmissionsWithdraw(queue[index].epochId,  queue[index].assets));
+                    emissionsToken.safeTransfer(
+                        queue[index].receiver,
+                        previewEmissionsWithdraw(
+                            queue[index].epochId,
+                            queue[index].assets
+                        )
+                    );
 
                     emit Withdraw(
                         msg.sender,
@@ -425,12 +434,13 @@ contract Carousel is VaultV2 {
                         entitledShares
                     );
                     uint256 assetsToMint = queue[index].assets - relayerFee;
-                    _mintShares(
+                    _mintShares(queue[index].receiver, _epochId, assetsToMint);
+                    emit Deposit(
+                        msg.sender,
                         queue[index].receiver,
                         _epochId,
                         assetsToMint
                     );
-                    emit Deposit(msg.sender,  queue[index].receiver, _epochId, assetsToMint);
                     rolloverQueue[index].assets = assetsToMint;
                     rolloverQueue[index].epochId = _epochId;
                     // only pay relayer for successful mints
@@ -440,12 +450,12 @@ contract Carousel is VaultV2 {
             index++;
         }
 
-        if(executions > 0) rolloverAccounting[_epochId] = index;
+        if (executions > 0) rolloverAccounting[_epochId] = index;
 
-        if(executions * relayerFee > 0) asset.safeTransfer(msg.sender, executions * relayerFee);
-       
+        if (executions * relayerFee > 0)
+            asset.safeTransfer(msg.sender, executions * relayerFee);
+
         emit RelayerMinted(_epochId, executions);
-    
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -457,26 +467,30 @@ contract Carousel is VaultV2 {
         @param _assets amount of assets to deposit
         @param _receiver address of receiver
      */
-    function _deposit(uint256 _id,  uint256 _assets, address _receiver) internal {
-             // mint logic, either in queue or direct deposit
-            if(_id != 0){
-                uint256 assetsToDeposit = _assets;
+    function _deposit(
+        uint256 _id,
+        uint256 _assets,
+        address _receiver
+    ) internal {
+        // mint logic, either in queue or direct deposit
+        if (_id != 0) {
+            uint256 assetsToDeposit = _assets;
 
-                if(depositFee > 0){
-                    (uint256 maxX, , uint256 minX)= getEpochConfig(_id);
-                    // deposit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
-                    // this is because late depositors have an informational advantage
-                    uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
-                    // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
-                    // 0.5% = multiply by 10000 then divide by 50
-                    uint256 feeAmount = _assets.mulDivDown(fee, 10000);
-                    assetsToDeposit = _assets - feeAmount;
-                    _asset().safeTransfer(treasury, feeAmount);
-                }
+            if (depositFee > 0) {
+                (uint256 maxX, , uint256 minX) = getEpochConfig(_id);
+                // deposit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
+                // this is because late depositors have an informational advantage
+                uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
+                // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
+                // 0.5% = multiply by 10000 then divide by 50
+                uint256 feeAmount = _assets.mulDivDown(fee, 10000);
+                assetsToDeposit = _assets - feeAmount;
+                _asset().safeTransfer(treasury, feeAmount);
+            }
 
-                _mintShares(_receiver, _id, assetsToDeposit);
+            _mintShares(_receiver, _id, assetsToDeposit);
 
-                emit Deposit(msg.sender, _receiver, _id, _assets);
+            emit Deposit(msg.sender, _receiver, _id, _assets);
         } else {
             depositQueue.push(
                 QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
@@ -486,27 +500,27 @@ contract Carousel is VaultV2 {
         }
     }
 
-     /**
-        * @notice calculates fee percent based on time
-        * @param minX min x value
-        * @param maxX max x value
+    /**
+     * @notice calculates fee percent based on time
+     * @param minX min x value
+     * @param maxX max x value
      */
-    function _calculateFeePercent(
-        int256 minX,
-        int256 maxX
-    ) internal view returns (uint256 _y) {
+    function _calculateFeePercent(int256 minX, int256 maxX)
+        internal
+        view
+        returns (uint256 _y)
+    {
         /**
          * Two Point Form
          * https://www.cuemath.com/geometry/two-point-form/
          * https://ethereum.stackexchange.com/a/143172
          */
-         // minY will always be 0 thats why is (maxY - minY) shorten to maxY
+        // minY will always be 0 thats why is (maxY - minY) shorten to maxY
         int256 maxY = int256(depositFee) * int256(FixedPointMathLib.WAD);
-        _y = 
-        uint256( // cast to uint256
-            ((((maxY) / (maxX - minX)) * (int256(block.timestamp) - maxX)) + maxY) // two point math
-            / (int256(FixedPointMathLib.WAD)) // scale down 
-        );        
+        _y = uint256( // cast to uint256
+            ((((maxY) / (maxX - minX)) * (int256(block.timestamp) - maxX)) +
+                maxY) / (int256(FixedPointMathLib.WAD)) // two point math // scale down
+        );
     }
 
     /** @notice mints shares of vault for user
@@ -517,7 +531,7 @@ contract Carousel is VaultV2 {
     function _mintShares(
         address to,
         uint256 id,
-        uint256 amount 
+        uint256 amount
     ) internal {
         _mint(to, id, amount, EMPTY);
         _mintEmissions(to, id, amount);
@@ -571,8 +585,8 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice sets emissions
-        * @param _epochId epoch id
-        * @param _emissionsRate emissions rate
+     * @param _epochId epoch id
+     * @param _emissionsRate emissions rate
      */
     function setEmissions(uint256 _epochId, uint256 _emissionsRate)
         external
@@ -583,14 +597,14 @@ contract Carousel is VaultV2 {
     }
 
     /** @notice changes relayer fee
-        * @param _relayerFee relayer fee
+     * @param _relayerFee relayer fee
      */
     function changeRelayerFee(uint256 _relayerFee) external onlyFactory {
         relayerFee = _relayerFee;
     }
 
     /** @notice changes deposit fee
-        * @param _depositFee deposit fee
+     * @param _depositFee deposit fee
      */
     function changeDepositFee(uint256 _depositFee) external onlyFactory {
         depositFee = _depositFee;
@@ -601,17 +615,17 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice returns the rollover index
-        * @param _owner address of the owner
-        * @return rollover index
+     * @param _owner address of the owner
+     * @return rollover index
      */
     function getRolloverIndex(address _owner) public view returns (uint256) {
         return ownerToRollOverQueueIndex[_owner] - 1;
     }
 
     /** @notice returns the emissions to withdraw
-        * @param _id epoch id
-        * @param _assets amount of assets to withdraw
-        * @return entitledAmount amount of emissions to withdraw
+     * @param _id epoch id
+     * @param _assets amount of assets to withdraw
+     * @return entitledAmount amount of emissions to withdraw
      */
     function previewEmissionsWithdraw(uint256 _id, uint256 _assets)
         public
@@ -622,40 +636,44 @@ contract Carousel is VaultV2 {
     }
 
     /** @notice returns the deposit queue length
-        * @return queue length for the deposit
+     * @return queue length for the deposit
      */
     function getDepositQueueLenght() public view returns (uint256) {
         return depositQueue.length;
     }
 
     /** @notice returns the queue length for the rollover
-        * @return queue length for the rollover
+     * @return queue length for the rollover
      */
     function getRolloverQueueLenght() public view returns (uint256) {
         return rolloverQueue.length;
     }
 
     /** @notice returns the total value locked in the rollover queue
-      * @return tvl total value locked in the rollover queue
+     * @return tvl total value locked in the rollover queue
      */
-    function getRolloverTVL( uint256 _epochId ) public view returns(uint256 tvl) {
+    function getRolloverTVL(uint256 _epochId)
+        public
+        view
+        returns (uint256 tvl)
+    {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
-            if(
-                rolloverQueue[i].epochId == _epochId && 
-                (previewWithdraw(rolloverQueue[i].epochId, rolloverQueue[i].assets) >
-                rolloverQueue[i].assets
-            )
+            if (
+                rolloverQueue[i].epochId == _epochId &&
+                (previewWithdraw(
+                    rolloverQueue[i].epochId,
+                    rolloverQueue[i].assets
+                ) > rolloverQueue[i].assets)
             ) {
-                 tvl += rolloverQueue[i].assets;
+                tvl += rolloverQueue[i].assets;
             }
-           
         }
     }
 
-     /** @notice returns users rollover balance and epoch which is rolling over
-        * @param _owner address of the user
-        * @return balance balance of the user
-        * @return epochId epoch id 
+    /** @notice returns users rollover balance and epoch which is rolling over
+     * @param _owner address of the user
+     * @return balance balance of the user
+     * @return epochId epoch id
      */
     function getRolloverBalance(address _owner)
         public
@@ -667,17 +685,17 @@ contract Carousel is VaultV2 {
     }
 
     /** @notice returns the total value locked in the deposit queue
-      * @return tvl total value locked in the deposit queue
+     * @return tvl total value locked in the deposit queue
      */
-    function getDepositQueueTVL() public view returns(uint256 tvl) {
+    function getDepositQueueTVL() public view returns (uint256 tvl) {
         for (uint256 i = 0; i < depositQueue.length; i++) {
             tvl += depositQueue[i].assets;
         }
     }
 
     /** @notice returns the total emissions balance
-      * @return totalEmissions total emissions balance
-    */
+     * @return totalEmissions total emissions balance
+     */
     function balanceOfEmissions(address _owner, uint256 _id)
         public
         view
@@ -716,7 +734,7 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice checks if deposit is greater than relayer fee
-      * @param _assets amount of assets to deposit
+     * @param _assets amount of assets to deposit
      */
     modifier minRequiredDeposit(uint256 _assets) {
         if (_assets < relayerFee) revert MinDeposit();
@@ -724,9 +742,9 @@ contract Carousel is VaultV2 {
     }
 
     /** @notice checks if not rolling over
-        * @param _receiver address of the receiver
-        * @param _epochId epoch id
-        * @param _assets amount of assets to deposit
+     * @param _receiver address of the receiver
+     * @param _epochId epoch id
+     * @param _assets amount of assets to deposit
      */
     modifier notRollingOver(
         address _receiver,
@@ -735,8 +753,10 @@ contract Carousel is VaultV2 {
     ) {
         if (ownerToRollOverQueueIndex[_receiver] != 0) {
             QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
-            if (item.epochId == _epochId && (balanceOf(_receiver, _epochId) - item.assets) < _assets)
-                revert AlreadyRollingOver();
+            if (
+                item.epochId == _epochId &&
+                (balanceOf(_receiver, _epochId) - item.assets) < _assets
+            ) revert AlreadyRollingOver();
         }
         _;
     }
@@ -758,10 +778,10 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice emitted when a deposit is queued
-      * @param sender the address of the sender
-      * @param receiver the address of the receiver
-      * @param epochId the epoch id
-      * @param assets the amount of assets
+     * @param sender the address of the sender
+     * @param receiver the address of the receiver
+     * @param epochId the epoch id
+     * @param assets the amount of assets
      */
     event DepositInQueue(
         address indexed sender,
@@ -771,18 +791,15 @@ contract Carousel is VaultV2 {
     );
 
     /** @notice emitted when shares are minted by relayer
-      * @param epochId the epoch id
-      * @param operations how many positions were minted
+     * @param epochId the epoch id
+     * @param operations how many positions were minted
      */
-    event RelayerMinted(
-        uint256 epochId,
-        uint256 operations
-    );
+    event RelayerMinted(uint256 epochId, uint256 operations);
 
     /** @notice emitted when a rollover is queued
-        * @param sender the address of the sender
-        * @param assets the amount of assets
-        * @param epochId the epoch id
+     * @param sender the address of the sender
+     * @param assets the amount of assets
+     * @param epochId the epoch id
      */
     event RolloverQueued(
         address indexed sender,
@@ -791,11 +808,11 @@ contract Carousel is VaultV2 {
     );
 
     /** @notice emitted when emissions are transfered
-        * @param operator the address of the operator
-        * @param from the address of the sender
-        * @param to the address of the receiver
-        * @param id the id of the emissions
-        * @param value the amount of emissions
+     * @param operator the address of the operator
+     * @param from the address of the sender
+     * @param to the address of the receiver
+     * @param id the id of the emissions
+     * @param value the amount of emissions
      */
     event TransferSingleEmissions(
         address indexed operator,

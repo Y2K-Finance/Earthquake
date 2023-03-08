@@ -114,21 +114,20 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         emit Deposit(msg.sender, _receiver, _id, _assets);
     }
 
-     /**
+    /**
         @notice Deposit ETH function
         @param  _id  uint256 representing the id of the epoch;
         @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */
     function depositETH(uint256 _id, address _receiver)
-        virtual
         external
         payable
+        virtual
         epochIdExists(_id)
         epochHasNotStarted(_id)
         nonReentrant
     {
-
-        if(!isWETH) revert CanNotDepositETH();
+        if (!isWETH) revert CanNotDepositETH();
         require(msg.value > 0, "ZeroValue");
         if (_receiver == address(0)) revert AddressZero();
 
@@ -331,7 +330,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochIdExists(_id)
         epochHasEnded(_id)
     {
-
         claimTVL[_id] = _claimTVL;
     }
 
@@ -367,7 +365,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         // if user deposited 1000 assets and the claimTVL is 50% higher than finalTVL, the user is entitled to 1500 assets
         entitledAmount = _assets.mulDivDown(claimTVL[_id], finalTVL[_id]);
     }
- 
+
     /** @notice Lookup total epochs length
      */
     function getEpochsLength() public view returns (uint256) {
@@ -386,7 +384,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     function getEpochConfig(uint256 _id)
         public
         view
-        returns (uint40 epochBegin, uint40 epochEnd, uint40 epochCreation)
+        returns (
+            uint40 epochBegin,
+            uint40 epochEnd,
+            uint40 epochCreation
+        )
     {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
@@ -475,5 +477,4 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     error AlreadyInitialized();
     error InvalidEpoch();
     error CanNotDepositETH();
-
 }
