@@ -6,10 +6,10 @@
         "marketsIds": [],
         "newEpochs": true,
         "amountOfNewEpochs": 7,
-        "epochsIds": [6, 7, 8, 12, 13, 14, 15, 16, 17],
+        "epochsIds": [6, 7, 8, 13, 14, 16, 17],
         "amountOfNewFarms": 7,
         "newFarms": true,
-        "farmsIds" : [6, 7, 8, 12, 13, 14, 15, 16, 17]
+        "farmsIds" : [6, 7, 8, 13, 14, 16, 17]
     },
 
     "markets":[
