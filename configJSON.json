@@ -3,25 +3,25 @@
     "variables":{
         "newMarkets": true,
         "amountOfNewMarkets": 2,
-        "marketsIds": [20,21],
+        "marketsIds": [21,22],
         "newEpochs": true,
         "amountOfNewEpochs": 8,
-        "epochsIds": [6, 8, 11, 16, 17, 19, 20, 21],
+        "epochsIds": [6, 8, 11, 16, 17, 19, 21, 22],
         "amountOfNewFarms": 8,
         "newFarms": true,
-        "farmsIds" : [6, 8, 11, 16, 17, 19, 20, 21]
+        "farmsIds" : [6, 8, 11, 16, 17, 19, 21, 22]
     },
 
     "markets":[
         {
-            "marketId": 20,
+            "marketId": 21,
             "name":"y2kFRAX_980*",
             "strikePrice": 980000000000000000,
             "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
             "oracle": "0x0809e3d38d1b4214958faf06d8b1b1a2b73f2ab8"       
         },
         {
-            "marketId": 21,
+            "marketId": 22,
             "name":"y2kDAI_980*",
             "strikePrice": 980000000000000000,
             "token": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
@@ -67,13 +67,13 @@
             "epochFee":50
         },
         {
-            "marketId": 20,
+            "marketId": 21,
             "epochBegin":1678838400,
             "epochEnd":1679270400,
             "epochFee":50
         },
         {
-            "marketId": 21,
+            "marketId": 22,
             "epochBegin":1678838400,
             "epochEnd":1679270400,
             "epochFee":50
@@ -118,13 +118,13 @@
             "farmRewardsRISK" :"156250000000000000000"
         },
         {
-            "marketId": 20,
+            "marketId": 21,
             "epochEnd":1679270400,
             "farmRewardsHEDGE":"1406250000000000000000",
             "farmRewardsRISK" :"156250000000000000000"
         },
         {
-            "marketId": 21,
+            "marketId": 22,
             "epochEnd":1679270400,
             "farmRewardsHEDGE":"1406250000000000000000",
             "farmRewardsRISK" :"156250000000000000000"
