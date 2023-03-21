@@ -1,14 +1,11 @@
 // SPDX-License-Identifier;
-pragma solidity ^0.8.17;
-
-
-import "forge-std/Script.sol";
-import "forge-std/StdJson.sol";
-import "forge-std/Test.sol";
+pragma solidity 0.8.17;
 
 import "../../src/v2/VaultFactoryV2.sol";
 import "../../src/v2/Carousel/CarouselFactory.sol";
 import "../../src/v2/TimeLock.sol";
+import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
+import "./HelperV2.sol";
 
 
 //forge script V2DeploymentScript --rpc-url $ARBITRUM_RPC_URL --broadcast --verify -slow -vv
@@ -16,13 +13,13 @@ import "../../src/v2/TimeLock.sol";
 // forge verify-contract --chain-id 42161 --num-of-optimizations 1000000 --watch --constructor-args $(cast abi-encode "constructor(address,address,address,address,uint256)" 0xaC0D2cF77a8F8869069fc45821483701A264933B 0xaC0D2cF77a8F8869069fc45821483701A264933B 0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f 0x447deddf312ad609e2f85fd23130acd6ba48e8b7 1668384000) --compiler-version v0.8.15+commit.e14f2714 0x69b614f03554c7e0da34645c65852cc55400d0f9 src/rewards/StakingRewards.sol:StakingRewards $arbiscanApiKey 
 
 // forge script script/v2/V2DeploymentScript.s.sol --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --skip-simulation --slow -vvvv 
-contract V2DeploymentScript is Script {
+contract V2DeploymentScript is HelperV2 {
     using stdJson for string;
 
     function run() public {
 
 
-        // ConfigAddresses memory addresses = getConfigAddresses(false);
+        ConfigAddresses memory addresses = getConfigAddresses(false);
         // console2.log("Address admin", addresses.admin);
         // console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
         // console2.log("Address oracleDAI", addresses.oracleDAI);
@@ -50,17 +47,31 @@ contract V2DeploymentScript is Script {
 
         console2.log("Broadcast sender", msg.sender);
 
-        address policy = 0xaC0D2cF77a8F8869069fc45821483701A264933B;
-        address weth = 0xaC0D2cF77a8F8869069fc45821483701A264933B;
-        address treasury = 0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f;
-        address emissionToken = 0xaC0D2cF77a8F8869069fc45821483701A264933B;
+        address admin = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
+
+        address policy = 0x5c84CF4d91Dc0acDe638363ec804792bB2108258;
+        address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+        address treasury = 0x5c84CF4d91Dc0acDe638363ec804792bB2108258;
+        address emissionToken = 0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f;
 
 
-        address timeLock = address(new TimeLock(policy));
+        // address timeLock = address(new TimeLock(policy));
+        address timelock =  address(new TimeLock(admin));
 
         // CarouselFactory vaultFactory = new CarouselFactory(policy, weth, treasury, emissionToken);
 
-        VaultFactoryV2 vaultFactory = new VaultFactoryV2(weth, treasury, timeLock);
+        // VaultFactoryV2 vaultFactory = new VaultFactoryV2(weth, treasury, timelock);
+        CarouselFactory vaultFactory = new CarouselFactory(weth, treasury, timelock, emissionToken);
+        console2.log("VaultFactoryV2 address", address(vaultFactory));
+
+        // deploy controller and set it to vaultFactory
+        ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer, treasury);
+        console2.log("ControllerPeggedAssetV2 address", address(controller));
+
+        // set controller to vaultFactory
+        vaultFactory.whitelistController(address(controller));
+        console2.log("VaultFactoryV2 controller set", vaultFactory.controllers(address(controller)));
+
         // console2.log("Broadcast admin ", addresses.admin);
         // console2.log("Broadcast policy", addresses.policy);
         //start setUp();

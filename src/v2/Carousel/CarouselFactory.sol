@@ -150,6 +150,14 @@ contract CarouselFactory is VaultFactoryV2 {
 
         emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
         ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
+
+        emit EpochEmissions(
+            epochId,
+            _marketId,
+            _permiumEmissions,
+            _collatEmissions
+        );
+        
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -168,10 +176,10 @@ contract CarouselFactory is VaultFactoryV2 {
 
         address[2] memory vaults = marketIdToVaults[_marketIndex];
         if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
-        ICarousel insr = ICarousel(vaults[0]);
-        ICarousel risk = ICarousel(vaults[1]);
-        insr.changeRelayerFee(_relayerFee);
-        risk.changeRelayerFee(_relayerFee);
+        ICarousel premium = ICarousel(vaults[0]);
+        ICarousel collat = ICarousel(vaults[1]);
+        premium.changeRelayerFee(_relayerFee);
+        collat.changeRelayerFee(_relayerFee);
 
         emit ChangedRelayerFee(_relayerFee, _marketIndex);
     }
@@ -234,4 +242,11 @@ contract CarouselFactory is VaultFactoryV2 {
     );
 
     event ChangedRelayerFee(uint256 relayerFee, uint256 marketIndex);
+
+    event EpochEmissions(
+        uint256 epochId,
+        uint256 marketId,
+        uint256 premiumEmissions,
+        uint256 collateralEmissions
+    );
 }
