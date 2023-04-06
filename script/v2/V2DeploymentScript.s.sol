@@ -50,7 +50,7 @@ contract V2DeploymentScript is HelperV2 {
         address admin = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
 
         address policy = 0x5c84CF4d91Dc0acDe638363ec804792bB2108258;
-        address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+        address weth = 0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1;
         address treasury = 0x5c84CF4d91Dc0acDe638363ec804792bB2108258;
         address emissionToken = 0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f;
 
@@ -61,16 +61,26 @@ contract V2DeploymentScript is HelperV2 {
         // CarouselFactory vaultFactory = new CarouselFactory(policy, weth, treasury, emissionToken);
 
         // VaultFactoryV2 vaultFactory = new VaultFactoryV2(weth, treasury, timelock);
-        CarouselFactory vaultFactory = new CarouselFactory(weth, treasury, timelock, emissionToken);
+        // CarouselFactory vaultFactory = new CarouselFactory(weth, treasury, timelock, emissionToken);
+        CarouselFactory vaultFactory =  CarouselFactory(0xA681aD19A188bC5A554f40C99113bbD5ee7469A8);
         console2.log("VaultFactoryV2 address", address(vaultFactory));
 
+        vaultFactory.createEpochWithEmissions(
+             34259268145907332489486801687590120375936794759268477622746099060325256836145,
+        1680873180,
+        1681391580,
+        50,
+        0,
+        0
+        );
+
         // deploy controller and set it to vaultFactory
-        ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer, treasury);
-        console2.log("ControllerPeggedAssetV2 address", address(controller));
+        // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer, treasury);
+        // console2.log("ControllerPeggedAssetV2 address", address(controller));
 
         // set controller to vaultFactory
-        vaultFactory.whitelistController(address(controller));
-        console2.log("VaultFactoryV2 controller set", vaultFactory.controllers(address(controller)));
+        // vaultFactory.whitelistController(address(controller));
+        // console2.log("VaultFactoryV2 controller set", vaultFactory.controllers(address(controller)));
 
         // console2.log("Broadcast admin ", addresses.admin);
         // console2.log("Broadcast policy", addresses.policy);
