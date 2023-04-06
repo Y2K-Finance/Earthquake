@@ -81,7 +81,8 @@ contract EndToEndCarouselTest is Helper {
                 symbol,
                 address(controller),
                 relayerFee,
-                depositFee)
+                depositFee,
+                1 ether)
         );
 
         // deploy epoch
@@ -168,13 +169,16 @@ contract EndToEndCarouselTest is Helper {
         Carousel(collateral).mintDepositInQueue(epochId, collateralQueueLength);
         Carousel(premium).mintDepositInQueue(epochId, premiumQueueLength);
 
+        (,uint256 collatBalanceAfterFee) = Carousel(collateral).getEpochDepositFee(epochId, 10 ether);
+        (,uint256 premiumBalanceAfterFee) = Carousel(premium).getEpochDepositFee(epochId, 2 ether);
+
         //assert balance and emissions
-        assertEq(Carousel(collateral).balanceOf(USER, epochId), 10 ether - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER, epochId), 10 ether - relayerFee);
-        assertEq(Carousel(collateral).balanceOf(USER2, epochId), 10 ether - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER2, epochId), 10 ether - relayerFee);
-        assertEq(Carousel(premium).balanceOf(USER, epochId), 2 ether - relayerFee);
-        assertEq(Carousel(premium).balanceOfEmissions(USER, epochId), 2 ether - relayerFee);
+        assertEq(Carousel(collateral).balanceOf(USER, epochId), collatBalanceAfterFee - relayerFee);
+        assertEq(Carousel(collateral).balanceOfEmissions(USER, epochId), collatBalanceAfterFee - relayerFee);
+        assertEq(Carousel(collateral).balanceOf(USER2, epochId), collatBalanceAfterFee - relayerFee);
+        assertEq(Carousel(collateral).balanceOfEmissions(USER2, epochId), collatBalanceAfterFee - relayerFee);
+        assertEq(Carousel(premium).balanceOf(USER, epochId), premiumBalanceAfterFee - relayerFee);
+        assertEq(Carousel(premium).balanceOfEmissions(USER, epochId), premiumBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER2, epochId), 0);
         assertEq(Carousel(premium).balanceOfEmissions(USER2, epochId), 0);
 

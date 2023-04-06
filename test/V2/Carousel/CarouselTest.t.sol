@@ -44,7 +44,8 @@ contract CarouselTest is Helper {
                         TREASURY,
                         emissionsToken,
                         relayerFee,
-                        depositFee
+                        depositFee,
+                        1 ether
                 )
         );
 

@@ -60,7 +60,8 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                depositFee
+                depositFee,
+                1 ether
                 )
             );
         
@@ -266,7 +267,8 @@ contract CarouselFactoryTest is Helper {
                 symbol,
                 controller,
                 relayerFee,
-                depositFee)
+                depositFee,
+                1 ether)
         );
     }
 
