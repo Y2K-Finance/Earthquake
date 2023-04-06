@@ -71,7 +71,8 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     /** @notice Deposit function
-        @param  _id epoch id
+        @dev if receiver intends to deposit into queue and is contract, it must implement 1155 receiver interface otherwise funds will be stuck
+        @param  _id epoch id, if 0 deposit will be queued;
         @param _assets   uint256 of how many assets you want to deposit;
         @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
      */

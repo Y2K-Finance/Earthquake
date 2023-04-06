@@ -126,7 +126,15 @@ contract CarouselTest is Helper {
         vault.deposit(0, 10 ether, USER2);
         vm.stopPrank();
 
-        _queueLength = 2;
+        // test deposit into queue with non 1155 complient receiver
+        // queue should not revert 
+        vm.startPrank(USER2);
+        address faultyReceiver = address(new MintableToken("faulty contract", "faulty"));
+        IERC20(UNDERLYING).approve(address(vault), 10 ether);
+        vault.deposit(0, 10 ether, faultyReceiver);
+        vm.stopPrank();
+
+        _queueLength = 3;
 
         assertEq(vault.getDepositQueueLenght(), _queueLength);
         // should only do as many operations as queue length 
