@@ -320,6 +320,9 @@ contract CarouselTest is Helper {
 
         console.log("rollover queue length", vault.getRolloverQueueLenght());
 
+        // get value of prev epoch sahres for user
+        uint256 prevEpochShareValue = vault.previewWithdraw(prevEpoch,  vault.balanceOf(USER, prevEpoch));
+
         // mint rollovers again
         // this should mint shares as prev epoch is in profit
         // should only mint as many positions as there are in queue (6)
@@ -332,6 +335,10 @@ contract CarouselTest is Helper {
         // check relayer fee
         uint256 _relayerFee = (balanceAfter - balanceBefore) / 6;
         assertEq(_relayerFee, relayerFee);
+
+        //@note after rollover, prev value of shares should subtract by original deposit value
+        uint256 prevEpochSharesValueAfterRollover = vault.previewWithdraw(prevEpoch,  vault.balanceOf(USER, prevEpoch));
+        assertEq(((prevEpochSharesValueAfterRollover >> 1) << 1) , ((prevEpochShareValue - prevEpochUserBalance) >> 1) << 1); // zero out last bit to avoid rounding errors
 
         // check balances
         assertEq(vault.balanceOf(USER, _epochId), prevEpochUserBalance - relayerFee);
