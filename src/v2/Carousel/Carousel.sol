@@ -267,10 +267,10 @@ contract Carousel is VaultV2 {
                     epochId: _epochId
                 })
             );
+            // index will allways be higher than 0
+            ownerToRollOverQueueIndex[_receiver] = rolloverQueue.length;
         }
-        // index will allways be higher than 0
-        ownerToRollOverQueueIndex[_receiver] = rolloverQueue.length;
-
+    
         emit RolloverQueued(_receiver, _assets, _epochId);
     }
 
