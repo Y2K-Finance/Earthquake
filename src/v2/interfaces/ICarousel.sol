@@ -93,4 +93,6 @@ interface ICarousel {
     function depositFee() external view returns (uint256);
 
     function emissions(uint256 _epochId) external view returns (uint256);
+
+    function cleanupRolloverQueue(address[] memory) external;
 }

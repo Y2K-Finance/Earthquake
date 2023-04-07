@@ -187,6 +187,12 @@ contract EndToEndCarouselTest is Helper {
         //enlist in rollover for next epoch
         Carousel(collateral).enlistInRollover(epochId, 8 ether, USER);
 
+        bool isEnlisted = Carousel(collateral).isEnlistedInRolloverQueue(USER);
+        (uint256 enlistedAmount, uint256 id) = Carousel(collateral).getRolloverPosition(USER);
+
+        assertEq(isEnlisted, true);
+        assertEq(enlistedAmount, 8 ether);
+
         vm.stopPrank();
 
         vm.startPrank(USER2);
@@ -254,9 +260,11 @@ contract EndToEndCarouselTest is Helper {
         uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
         Carousel(collateral).delistInRollover(USER);
 
-        //assert rollover queue length
-        uint256 afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
-        assertEq(afterQueueLength, beforeQueueLength - 1);
+        //assert delisted rollover position in queue assets are 0
+        bool ie = Carousel(collateral).isEnlistedInRolloverQueue(USER);
+        ( uint256 amountAfterDelisting,) = Carousel(collateral).getRolloverPosition(USER);
+        assertTrue(!ie);
+        assertEq(amountAfterDelisting, 0);        
 
         //assert balance in next epoch
         uint256 balanceInNextEpoch = Carousel(collateral).balanceOf(USER, nextEpochId);
@@ -270,19 +278,26 @@ contract EndToEndCarouselTest is Helper {
 
         vm.stopPrank();
 
+        // cleanup queue from delisted users
+        vm.startPrank(address(factory));
+        uint256 beforeQueueLength2 = Carousel(collateral).getRolloverQueueLenght();
+        assertEq(beforeQueueLength2, 2);
+        address[] memory addressesToDelist = new address[](1);
+        addressesToDelist[0] = USER;
+        Carousel(collateral).cleanUpRolloverQueue(addressesToDelist);
+        uint256 afterQueueLength2 = Carousel(collateral).getRolloverQueueLenght();
+        assertEq(afterQueueLength2, 1);
+        vm.stopPrank();
+
         //withdraw USER2
         vm.startPrank(USER2);
 
-        //assert rollover index
+        //assert rollover index, should be 0 since USER1 lising was cleaned up
         assertTrue(Carousel(collateral).getRolloverIndex(USER2) == 0);
 
         //delist rollover
         beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
         Carousel(collateral).delistInRollover(USER2);
-
-        //assert rollover queue length
-        afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
-        assertEq(afterQueueLength, beforeQueueLength - 1);
 
         //assert balance in next epoch
         balanceInNextEpoch = Carousel(collateral).balanceOf(USER2, nextEpochId);

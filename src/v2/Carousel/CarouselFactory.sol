@@ -200,6 +200,15 @@ contract CarouselFactory is VaultFactoryV2 {
         );
     }
 
+    // admin function to cleanup rollover queue by passing in array of addresses and vault address
+    function cleanupRolloverQueue(address[] memory _addresses, address _vault)
+        public
+        onlyTimeLocker
+    {
+         ICarousel(_vault).cleanupRolloverQueue(_addresses);
+    }
+
+
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/

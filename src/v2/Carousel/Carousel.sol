@@ -251,11 +251,11 @@ contract Carousel is VaultV2 {
         // check if user has enough balance
         if (balanceOf(_receiver, _epochId) < _assets)
             revert InsufficientBalance();
-
+        
         // check if user has already queued up a rollover
-        if (ownerToRollOverQueueIndex[_receiver] != 0) {
-            // if so, update the queue
+        if (isEnlistedInRolloverQueue(_receiver)) {
             uint256 index = getRolloverIndex(_receiver);
+            // if so, update the queue
             rolloverQueue[index].assets = _assets;
             rolloverQueue[index].epochId = _epochId;
         } else {
@@ -268,6 +268,7 @@ contract Carousel is VaultV2 {
                 })
             );
         }
+        // index will allways be higher than 0
         ownerToRollOverQueueIndex[_receiver] = rolloverQueue.length;
 
         emit RolloverQueued(_receiver, _assets, _epochId);
@@ -277,33 +278,25 @@ contract Carousel is VaultV2 {
         @param _owner address that is delisting from rollover queue
      */
     function delistInRollover(address _owner) public {
-        // check if user has already queued up a rollover
-        if (ownerToRollOverQueueIndex[_owner] == 0) revert NoRolloverQueued();
+        // @note 
+        // its not possible for users to delete the QueueItem from the array because
+        // during rollover, earlier users in rollover queue, can grief attack later users by deleting their queue item
+        // instead we just set the assets to 0 and the epochId to 0 as a flag to indicate that the user is no longer in the queue
+  
+
+        // check if user is enlisted in rollover queue
+        if (!isEnlistedInRolloverQueue(_owner)) revert NoRolloverQueued();
         // check if sender is approved by owner
         if (
             msg.sender != _owner &&
             isApprovedForAll(_owner, msg.sender) == false
         ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
-        // swich the last item in the queue with the item to be removed
+        // set assets to 0 but keep the queue item
         uint256 index = getRolloverIndex(_owner);
-        uint256 length = rolloverQueue.length;
-        if (index == length - 1) {
-            // if only one item in queue
-            rolloverQueue.pop();
-            delete ownerToRollOverQueueIndex[_owner];
-        } else {
-            // overwrite the item to be removed with the last item in the queue
-            rolloverQueue[index] = rolloverQueue[length - 1];
-            // remove the last item in the queue
-            rolloverQueue.pop();
-            // update the index of prev last user ( mapping index is allways array index + 1)
-            ownerToRollOverQueueIndex[rolloverQueue[index].receiver] =
-                index +
-                1;
-            // remove receiver from index mapping
-            delete ownerToRollOverQueueIndex[_owner];
-        }
+        rolloverQueue[index].assets = 0;
+        rolloverQueue[index].epochId = 0;
+        
     }
 
     /** @notice mints deposit in rollover queue
@@ -334,7 +327,7 @@ contract Carousel is VaultV2 {
         while ((length - _operations) <= i) {
             // this loop impelements FILO (first in last out) stack to reduce gas cost and improve code readability
             // changing it to FIFO (first in first out) would require more code changes and would be more expensive
-            // @note non neglectable mint deposit creates barriers for attackers to DDOS the queue
+            // @note non neglectable min-deposit creates barriers for attackers to DDOS the queue
 
             uint256 assetsToDeposit = queue[i].assets;
 
@@ -378,7 +371,7 @@ contract Carousel is VaultV2 {
         nonReentrant
     {
         // epoch has not started
-        // dont allow minting if epochId is 0
+        // dont allow rollover if epochId is 0
         if (_epochId == 0) revert InvalidEpochId();
 
         uint256 length = rolloverQueue.length;
@@ -404,8 +397,8 @@ contract Carousel is VaultV2 {
         uint256 executions = 0;
 
         while ((index - prevIndex) < (_operations)) {
-            // only roll over if last epoch is resolved
-            if (epochResolved[queue[index].epochId]) {
+            // only roll over if last epoch is resolved and user rollover position is valid
+            if (epochResolved[queue[index].epochId] && queue[index].assets > 0) {
                 uint256 entitledAmount = previewWithdraw(
                     queue[index].epochId,
                     queue[index].assets
@@ -512,29 +505,6 @@ contract Carousel is VaultV2 {
         }
     }
 
-    /**
-     * @notice calculates fee percent based on time
-     * @param minX min x value
-     * @param maxX max x value
-     */
-    function _calculateFeePercent(int256 minX, int256 maxX)
-        internal
-        view
-        returns (uint256 _y)
-    {
-        /**
-         * Two Point Form
-         * https://www.cuemath.com/geometry/two-point-form/
-         * https://ethereum.stackexchange.com/a/143172
-         */
-        // minY will always be 0 thats why is (maxY - minY) shorten to maxY
-        int256 maxY = int256(depositFee) * int256(FixedPointMathLib.WAD);
-        _y = uint256( // cast to uint256
-            ((((maxY) / (maxX - minX)) * (int256(block.timestamp) - maxX)) +
-                maxY) / (int256(FixedPointMathLib.WAD)) // two point math // scale down
-        );
-    }
-
     /** @notice mints shares of vault for user
         @param to address of receiver
         @param id epoch id
@@ -622,16 +592,65 @@ contract Carousel is VaultV2 {
         depositFee = _depositFee;
     }
 
+    /** @notice cleans up rollover queue
+     * @dev this function can only be called if there is no active deposit window
+     * @param _addressesToDelist addresses to delist
+     */
+    function cleanUpRolloverQueue(address[] memory _addressesToDelist ) external onlyFactory epochHasStarted(epochs[epochs.length - 1]) {
+        // check that there is no active deposit window;
+        for (uint256 i = 0; i < _addressesToDelist.length; i++) {
+            address owner = _addressesToDelist[i];
+            uint256 index = ownerToRollOverQueueIndex[owner];
+            if (index == 0) continue;
+            uint256 queueIndex = index - 1;
+            if (rolloverQueue[queueIndex].assets == 0) {
+                // overwrite the item to be removed with the last item in the queue
+                rolloverQueue[queueIndex] = rolloverQueue[rolloverQueue.length - 1];
+                // remove the last item in the queue
+                rolloverQueue.pop();
+                // update the index of prev last user ( mapping index is allways array index + 1)
+                ownerToRollOverQueueIndex[rolloverQueue[queueIndex].receiver] = queueIndex + 1;
+                // remove receiver from index mapping
+                delete ownerToRollOverQueueIndex[owner];
+            }
+        }
+    }
+
     /*///////////////////////////////////////////////////////////////
                         Getter Functions
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice calculates fee percent based on time
+     * @param minX min x value
+     * @param maxX max x value
+     */
+    function calculateFeePercent(int256 minX, int256 maxX)
+        public
+        view
+        returns (uint256 _y)
+    {
+        /**
+         * Two Point Form
+         * https://www.cuemath.com/geometry/two-point-form/
+         * https://ethereum.stackexchange.com/a/143172
+         */
+        // minY will always be 0 thats why is (maxY - minY) shorten to maxY
+        int256 maxY = int256(depositFee) * int256(FixedPointMathLib.WAD);
+        _y = uint256( // cast to uint256
+            ((((maxY) / (maxX - minX)) * (int256(block.timestamp) - maxX)) +
+                maxY) / (int256(FixedPointMathLib.WAD)) // two point math // scale down
+        );
+    }
+
+
     /** @notice returns the rollover index
+     * @dev will revert if user is not in rollover queue
      * @param _owner address of the owner
      * @return rollover index
      */
     function getRolloverIndex(address _owner) public view returns (uint256) {
-        return ownerToRollOverQueueIndex[_owner] - 1;
+       return ownerToRollOverQueueIndex[_owner] - 1;
     }
 
     /** @notice retruns deposit fee at this time
@@ -648,7 +667,7 @@ contract Carousel is VaultV2 {
         (uint256 maxX, , uint256 minX) = getEpochConfig(_id);
         // deposit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
         // this is because late depositors have an informational advantage
-        uint256 fee = _calculateFeePercent(int256(minX), int256(maxX));
+        uint256 fee = calculateFeePercent(int256(minX), int256(maxX));
         // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
         // 0.5% = multiply by 10000 then divide by 50
         feeAmount = _assets.mulDivDown(fee, 10000);
@@ -703,18 +722,52 @@ contract Carousel is VaultV2 {
         }
     }
 
+    function getRolloverQueueItem(uint256 _index)
+        public
+        view
+        returns (
+            address receiver,
+            uint256 assets,
+            uint256 epochId
+        )
+    {
+        receiver = rolloverQueue[_index].receiver;
+        assets = rolloverQueue[_index].assets;
+        epochId = rolloverQueue[_index].epochId;
+    }
+
     /** @notice returns users rollover balance and epoch which is rolling over
      * @param _owner address of the user
      * @return balance balance of the user
      * @return epochId epoch id
      */
-    function getRolloverBalance(address _owner)
+    function getRolloverPosition(address _owner)
         public
         view
         returns (uint256 balance, uint256 epochId)
     {
-        balance = rolloverQueue[getRolloverIndex(_owner)].assets;
-        epochId = rolloverQueue[getRolloverIndex(_owner)].epochId;
+        if (!isEnlistedInRolloverQueue(_owner)) {
+            return (0, 0);
+        }
+        uint256 index = getRolloverIndex(_owner);
+        balance = rolloverQueue[index].assets;
+        epochId = rolloverQueue[index].epochId;
+    }
+
+
+    /** @notice returns is user is enlisted in the rollover queue
+     * @param _owner address of the user
+     * @return bool is user enlisted in the rollover queue
+     */
+    function isEnlistedInRolloverQueue(address _owner)
+        public
+        view
+        returns (bool)
+    {   
+        if(ownerToRollOverQueueIndex[_owner] == 0) {
+            return false;
+        }
+        return rolloverQueue[getRolloverIndex(_owner)].assets != 0;
     }
 
     /** @notice returns the total value locked in the deposit queue
@@ -785,7 +838,7 @@ contract Carousel is VaultV2 {
         uint256 _epochId,
         uint256 _assets
     ) {
-        if (ownerToRollOverQueueIndex[_receiver] != 0) {
+        if (isEnlistedInRolloverQueue(_receiver)) {
             QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
             if (
                 item.epochId == _epochId &&
