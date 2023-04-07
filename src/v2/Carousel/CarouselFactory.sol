@@ -121,6 +121,19 @@ contract CarouselFactory is VaultFactoryV2 {
         return (premium, collateral, marketId);
     }
 
+
+     function createNewMarket(MarketConfigurationCalldata memory)
+        override
+        external
+        returns (
+            address ,
+            address ,
+            uint256 
+        )
+    {
+        revert();
+    }
+
     /** @notice Function to create a new epoch with emissions
     @param _marketId uint256 of the marketId
     @param _epochBegin uint40 of the epoch begin
@@ -140,7 +153,7 @@ contract CarouselFactory is VaultFactoryV2 {
         uint256 _collatEmissions
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
-        (epochId, vaults) = createEpoch(
+        (epochId, vaults) = _createEpoch(
             _marketId,
             _epochBegin,
             _epochEnd,
@@ -152,6 +165,17 @@ contract CarouselFactory is VaultFactoryV2 {
 
         emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
         ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
+    }
+
+    // to prevent the creation of epochs without emissions
+    // this function is not used
+    function createEpoch(
+       uint256 /*_marketId*/,
+        uint40 /*_epochBegin*/,
+        uint40 /*_epochEnd*/,
+        uint16 /*_withdrawalFee*/
+    ) override public returns (uint256, address[2] memory) {
+        revert();
     }
 
     /*//////////////////////////////////////////////////////////////

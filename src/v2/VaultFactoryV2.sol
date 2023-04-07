@@ -56,8 +56,20 @@ contract VaultFactoryV2 is Ownable {
     @return marketId uint256 of the marketId
      */
     function createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
+        virtual
         external
         onlyOwner
+        returns (
+            address premium,
+            address collateral,
+            uint256 marketId
+        )
+    {
+        return _createNewMarket(_marketCalldata);
+    }
+
+    function _createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
+        internal
         returns (
             address premium,
             address collateral,
@@ -127,6 +139,7 @@ contract VaultFactoryV2 is Ownable {
         return (premium, collateral, marketId);
     }
 
+
     /**    
     @notice Function set epoch for market,
     @param  _marketId uint256 of the market index to create more assets in
@@ -139,7 +152,22 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee
-    ) public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
+    ) virtual public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
+        return
+            _createEpoch(
+                _marketId,
+                _epochBegin,
+                _epochEnd,
+                _withdrawalFee
+            );
+    }
+
+    function _createEpoch(
+        uint256 _marketId,
+        uint40 _epochBegin,
+        uint40 _epochEnd,
+        uint16 _withdrawalFee
+    ) internal returns (uint256 epochId, address[2] memory vaults) {
         vaults = marketIdToVaults[_marketId];
 
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
@@ -167,7 +195,6 @@ contract VaultFactoryV2 is Ownable {
             )
         );
     }
-
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
