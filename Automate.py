@@ -18,7 +18,7 @@ now = datetime.now()
 
 def checkIfMidnight():
     now = datetime.now(pytz.utc).timestamp()
-    strike = datetime.now(pytz.utc).replace(hour=10, minute=00, second=00).timestamp()
+    strike = datetime.now(pytz.utc).replace(hour=23, minute=59, second=00).timestamp()
     print(now)
     print(strike)
     if now > strike:
