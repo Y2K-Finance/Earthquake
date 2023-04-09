@@ -11,6 +11,7 @@ contract DeployScript is Script, HelperConfig {
         ConfigAddresses memory addresses = getConfigAddresses(false); //true if test env
         contractToAddresses(addresses);
         setVariables();
+
     }
 
     function run() public {

@@ -1,12 +1,13 @@
 import time
-from datetime import datetime
+from datetime import datetime   
+import pytz
 
 import os
 from decouple import config
 
 rpc = config("ARBITRUM_RPC_URL")
 pk = config("PRIVATE_KEY")
-cmd = "forge script DeployScript --rpc-url %s --private-key %s --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv" %(rpc, pk)
+cmd = "forge script DeployScript --rpc-url %s --private-key %s --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow --resume -vv " %(rpc, pk)
 
 def action():
     print("Running action")
@@ -16,13 +17,20 @@ now = datetime.now()
 
 
 def checkIfMidnight():
-    now = datetime.now()
-    strike_time = now.replace(hour=0, minute=0)
-    print("Current time: ", now)
-    print("Strike time: ", strike_time)
-    return strike_time == now
+    now = datetime.now(pytz.utc).timestamp()
+    strike = datetime.now(pytz.utc).replace(hour=10, minute=00, second=00).timestamp()
+    print(now)
+    print(strike)
+    if now > strike:
+        return True
+    else:
+        return False
+
+
 
 while True:
+    time.sleep(2)
     if checkIfMidnight():
         action()
         break
+   
