@@ -77,7 +77,7 @@ contract TimeLock {
         string calldata _func,
         bytes calldata _data,
         uint256 _timestamp
-    ) external onlyOwner returns (bytes memory) {
+     ) external payable onlyOwner returns (bytes memory) {
         bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id queued
@@ -109,6 +109,9 @@ contract TimeLock {
             data = _data;
         }
 
+        if(msg.value != _value) {
+            revert ValueNotMatchError(msg.value, _value);
+        }
         // call target
         (bool ok, bytes memory res) = _target.call{value: _value}(data);
         if (!ok) {
@@ -188,6 +191,7 @@ contract TimeLock {
     error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
     error TxFailedError(string func);
     error AddressZero();
+    error ValueNotMatchError(uint256 msgValue, uint256 value);
 
     /** @notice queues transaction when emitted
         @param txId unique id of the transaction
