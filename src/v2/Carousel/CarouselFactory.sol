@@ -59,7 +59,7 @@ contract CarouselFactory is VaultFactoryV2 {
             tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
         }
 
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
+        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike, _marketCalldata.underlyingAsset);
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
 

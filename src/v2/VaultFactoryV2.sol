@@ -22,6 +22,7 @@ contract VaultFactoryV2 is Ownable {
 
     mapping(uint256 => address[2]) public marketIdToVaults; //[0] premium and [1] collateral vault
     mapping(uint256 => uint256[]) public marketIdToEpochs; //all epochs in the market
+    mapping(uint256 => MarketInfo) public marketIdInfo; // marketId configuration
     mapping(uint256 => uint16) public epochFee; // epochId to fee
     mapping(address => address) public tokenToOracle; //token address to respective oracle smart contract address
     mapping(address => bool) public controllers;
@@ -85,7 +86,13 @@ contract VaultFactoryV2 is Ownable {
             tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
         }
 
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
+        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike, _marketCalldata.underlyingAsset);
+        marketIdInfo[marketId] = MarketInfo(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
+
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
 
@@ -395,16 +402,33 @@ contract VaultFactoryV2 is Ownable {
 
     /**
     @notice Function to compute the marketId from a token and a strike price
-    @param token Address of the token
-    @param strikePrice uint256 of the strike price
+    @param _token Address of the token
+    @param _strikePrice uint256 of the strike price
+    @param _underlying Address of the underlying
     @return marketId uint256 of the marketId
      */
-    function getMarketId(address token, uint256 strikePrice)
+    function getMarketId(address _token, uint256 _strikePrice, address _underlying)
         public
         pure
         returns (uint256 marketId)
     {
-        return uint256(keccak256(abi.encodePacked(token, strikePrice)));
+        return uint256(keccak256(abi.encodePacked(_token, _strikePrice, _underlying)));
+    }
+
+
+    // get marketInfo
+    function getMarketInfo(uint256 _marketId)
+        public
+        view
+        returns (
+            address token,
+            uint256 strike,
+            address underlyingAsset
+        )
+    {
+       token = marketIdInfo[_marketId].token;
+        strike = marketIdInfo[_marketId].strike;
+        underlyingAsset = marketIdInfo[_marketId].underlyingAsset;
     }
 
     /**
@@ -446,6 +470,13 @@ contract VaultFactoryV2 is Ownable {
         uint256 epochId;
         IVaultV2 premium;
         IVaultV2 collateral;
+    }
+
+
+    struct MarketInfo {
+        address token;
+        uint256 strike;
+        address underlyingAsset;
     }
 
     /*//////////////////////////////////////////////////////////////
