@@ -11,6 +11,8 @@ interface IVaultFactoryV2 {
         string memory name
     ) external returns (address);
 
+    function treasury() external view returns (address);
+
     function getVaults(uint256) external view returns (address[2] memory);
 
     function getEpochFee(uint256) external view returns (uint16);

@@ -236,7 +236,7 @@ contract VaultFactoryV2 is Ownable {
 
     /**
     @notice Function to whitelist controller smart contract, only owner or timelocker can add more controllers. 
-    owner can set controller once, all future controllers must be set by timelocker.
+    @dev owner can set controller once, all future controllers must be set by timelocker.
     @param  _controller Address of the controller smart contract
      */
     function whitelistController(address _controller) public {
@@ -252,31 +252,6 @@ contract VaultFactoryV2 is Ownable {
         } else {
             revert NotAuthorized();
         }
-    }
-
-    /**
-    @notice Admin function, whitelists an address on vault for sendTokens function
-    @param _treasury Treasury address
-    @param  _marketId Target market index
-     */
-    function changeTreasury(uint256 _marketId, address _treasury)
-        public
-        onlyTimeLocker
-    {
-        if (_treasury == address(0)) revert AddressZero();
-
-        address[2] memory vaults = marketIdToVaults[_marketId];
-
-        if (vaults[0] == address(0) || vaults[1] == address(0)) {
-            revert MarketDoesNotExist(_marketId);
-        }
-
-        IVaultV2(vaults[0]).whiteListAddress(_treasury);
-        IVaultV2(vaults[1]).whiteListAddress(_treasury);
-        IVaultV2(vaults[0]).setTreasury(_treasury);
-        IVaultV2(vaults[1]).setTreasury(_treasury);
-
-        emit AddressWhitelisted(_treasury, _marketId);
     }
 
     /**

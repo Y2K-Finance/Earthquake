@@ -264,27 +264,6 @@ contract FactoryV2Test is Helper {
         assertEq(epochs[1], epochId2);
 
     }
-
-    function testChangeTreasuryOnVault() public  {
-        // test revert cases
-        uint256 marketId = createMarketHelper();
-
-        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-            factory.changeTreasury(uint256(0x2), address(0x20));
-
-        vm.startPrank(address(factory.timelocker()));
-            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0x2)));
-                factory.changeTreasury(uint256(0x2), address(0x20));
-            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeTreasury(marketId, address(0));
-
-            // test success case
-            factory.changeTreasury(marketId, address(0x20));
-            address[2] memory vaults = factory.getVaults(marketId);
-            assertTrue(IVaultV2(vaults[0]).whitelistedAddresses(address(0x20)));
-            assertTrue(IVaultV2(vaults[1]).whitelistedAddresses(address(0x20)));
-        vm.stopPrank();
-    }
     
     function testSetTreasury() public {
         // test revert cases

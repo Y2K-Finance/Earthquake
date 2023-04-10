@@ -62,5 +62,4 @@ interface IVaultV2 {
         view
         returns (bool);
 
-    function setTreasury(address _treasury) external;
 }

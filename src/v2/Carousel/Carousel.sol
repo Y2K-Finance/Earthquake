@@ -46,8 +46,7 @@ contract Carousel is VaultV2 {
             _data.tokenURI,
             _data.token,
             _data.strike,
-            _data.controller,
-            _data.treasury
+            _data.controller
         )
     {
         if (_data.relayerFee < 10000) revert RelayerFeeToLow();
@@ -334,7 +333,7 @@ contract Carousel is VaultV2 {
             if (depositFee > 0) {
                 (uint256 feeAmount, uint256 assetsAfterFee) = getEpochDepositFee(_epochId, assetsToDeposit);
                 assetsToDeposit = assetsAfterFee;
-                _asset().safeTransfer(treasury, feeAmount);
+                _asset().safeTransfer(treasury(), feeAmount);
             }
 
             _mintShares(
@@ -496,7 +495,7 @@ contract Carousel is VaultV2 {
             if (depositFee > 0) {
                 (uint256 feeAmount, uint256 assetsAfterFee) = getEpochDepositFee(_id, _assets);
                 assetsToDeposit = assetsAfterFee;
-                _asset().safeTransfer(treasury, feeAmount);
+                _asset().safeTransfer(treasury(), feeAmount);
             }
 
             _mintShares(_receiver, _id, assetsToDeposit);
@@ -834,7 +833,6 @@ contract Carousel is VaultV2 {
         address token;
         uint256 strike;
         address controller;
-        address treasury;
         address emissionsToken;
         uint256 relayerFee;
         uint256 depositFee;
