@@ -398,12 +398,6 @@ contract Carousel is VaultV2 {
 
         while ((index - prevIndex) < (_operations)) {
 
-            // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-            if (queue[index].assets < relayerFee) {
-                index++;
-                continue;
-            }
-
             // only roll over if last epoch is resolved and user rollover position is valid
             if (epochResolved[queue[index].epochId] && queue[index].assets > 0) {
 
@@ -411,13 +405,22 @@ contract Carousel is VaultV2 {
                     queue[index].epochId,
                     queue[index].assets
                 );
+
                 // mint only if user won epoch he is rolling over
                 if (entitledAmount > queue[index].assets) {
-                uint256 diff = entitledAmount - queue[index].assets;
-                // get diff amount in assets 
-                uint256 diffInAssets = diff.mulDivUp(finalTVL[queue[index].epochId], claimTVL[queue[index].epochId]);
-                  
-                    uint256 originalDepositValue = queue[index].assets - diffInAssets;
+                    // @note previewAmountInShares can only be called if epoch is in profit
+                    uint256 relayerFeeInShares = previewAmountInShares(queue[index].epochId, relayerFee);
+
+                    // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
+                    if (queue[index].assets < relayerFeeInShares) {
+                        index++;
+                        continue;
+                    }
+
+                    // to calculate originalDepositValue get the diff between shares and value of shares 
+                    // convert this value amount value back to shares  
+                    // subtract from assets
+                    uint256 originalDepositValue = queue[index].assets - previewAmountInShares(queue[index].epochId, (entitledAmount - queue[index].assets));
                     // @note we know shares were locked up to this point
                     _burn(
                         queue[index].receiver,
@@ -447,7 +450,7 @@ contract Carousel is VaultV2 {
                         originalDepositValue,
                         entitledAmount
                     );
-                    uint256 assetsToMint = queue[index].assets - relayerFee;
+                    uint256 assetsToMint = queue[index].assets - relayerFeeInShares;
                     _mintShares(queue[index].receiver, _epochId, assetsToMint);
                     emit Deposit(
                         msg.sender,
@@ -689,6 +692,25 @@ contract Carousel is VaultV2 {
     {
         entitledAmount = _assets.mulDivDown(emissions[_id], finalTVL[_id]);
     }
+
+     /** @notice returns the emissions to withdraw
+     * @param _id epoch id
+     * @param _assets amount of shares
+     * @return entitledShareAmount amount of emissions to withdraw
+     */
+    function previewAmountInShares(uint256 _id, uint256 _assets)
+        public
+        view
+        returns (uint256 entitledShareAmount)
+    {
+        if(claimTVL[_id] != 0) {
+            entitledShareAmount = _assets.mulDivDown(finalTVL[_id], claimTVL[_id]);
+        } else {
+            entitledShareAmount = 0;
+        }
+        
+    }
+
 
     /** @notice returns the deposit queue length
      * @return queue length for the deposit

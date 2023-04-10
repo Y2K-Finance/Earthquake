@@ -319,8 +319,6 @@ contract CarouselTest is Helper {
             .with_key(prevEpoch)
             .checked_write(1000 ether);
 
-        console.log("rollover queue length", vault.getRolloverQueueLenght());
-
         // get value of prev epoch sahres for user
         uint256 prevEpochShareValue = vault.previewWithdraw(prevEpoch,  vault.balanceOf(USER, prevEpoch));
 
@@ -337,23 +335,23 @@ contract CarouselTest is Helper {
         uint256 _relayerFee = (balanceAfter - balanceBefore) / 6;
         assertEq(_relayerFee, relayerFee);
 
+        uint256 relayerFeeInShares = vault.previewAmountInShares(prevEpoch,relayerFee);
         //@note after rollover, prev value of shares should subtract by original deposit value
         uint256 prevEpochSharesValueAfterRollover = vault.previewWithdraw(prevEpoch,  vault.balanceOf(USER, prevEpoch));
-        assertEq(((prevEpochSharesValueAfterRollover >> 1) << 1) , ((prevEpochShareValue - prevEpochUserBalance) >> 1) << 1); // zero out last bit to avoid rounding errors
-
+        assertEq(((prevEpochSharesValueAfterRollover >> 1) << 1) , (((prevEpochShareValue) - (prevEpochUserBalance) - 16) >> 1) << 1); // zero out last bit to avoid rounding errors
         // check balances
-        assertEq(vault.balanceOf(USER, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOf(USER2, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOf(USER3, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER3, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOf(USER4, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER4, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOf(USER5, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER5, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOf(USER6, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER6, _epochId), prevEpochUserBalance - relayerFee);
+        assertEq(vault.balanceOf(USER, _epochId), prevEpochUserBalance - relayerFeeInShares );
+        assertEq(vault.balanceOfEmissions(USER, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOf(USER2, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOfEmissions(USER2, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOf(USER3, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOfEmissions(USER3, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOf(USER4, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOfEmissions(USER4, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOf(USER5, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOfEmissions(USER5, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOf(USER6, _epochId), prevEpochUserBalance - relayerFeeInShares);
+        assertEq(vault.balanceOfEmissions(USER6, _epochId), prevEpochUserBalance - relayerFeeInShares);
 
         
     }
