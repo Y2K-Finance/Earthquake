@@ -397,8 +397,16 @@ contract Carousel is VaultV2 {
         uint256 executions = 0;
 
         while ((index - prevIndex) < (_operations)) {
+
+            // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
+            if (queue[index].assets < relayerFee) {
+                index++;
+                continue;
+            }
+
             // only roll over if last epoch is resolved and user rollover position is valid
             if (epochResolved[queue[index].epochId] && queue[index].assets > 0) {
+
                 uint256 entitledAmount = previewWithdraw(
                     queue[index].epochId,
                     queue[index].assets
@@ -408,12 +416,7 @@ contract Carousel is VaultV2 {
                 uint256 diff = entitledAmount - queue[index].assets;
                 // get diff amount in assets 
                 uint256 diffInAssets = diff.mulDivUp(finalTVL[queue[index].epochId], claimTVL[queue[index].epochId]);
-                    // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-                    if (queue[index].assets < relayerFee) {
-                        index++;
-                        continue;
-                    }
-
+                  
                     uint256 originalDepositValue = queue[index].assets - diffInAssets;
                     // @note we know shares were locked up to this point
                     _burn(
