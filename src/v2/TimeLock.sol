@@ -10,7 +10,7 @@ contract TimeLock {
 
     address public policy;
 
-    uint32 public constant MIN_DELAY = 3 days;
+    uint32 public constant MIN_DELAY = 7 days;
     uint32 public constant MAX_DELAY = 30 days;
     uint32 public constant GRACE_PERIOD = 14 days;
 
