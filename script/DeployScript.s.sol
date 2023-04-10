@@ -25,7 +25,8 @@ contract DeployScript is Script, HelperConfig {
         vm.stopBroadcast();
     }
 
-    function deploy() public {
+    function deploy() payable public {
+        // fundKeepers(5000000000000000); // uncomment to fund keepers
         if(configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();

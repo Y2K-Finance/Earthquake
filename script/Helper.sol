@@ -109,6 +109,11 @@ contract HelperConfig is Script {
         keeperEndEpoch.startTask(_marketIndex, _epochEnd);
     }
 
+     function fundKeepers(uint _amount) public payable{
+        keeperDepeg.deposit{value: _amount}(_amount);
+        keeperEndEpoch.deposit{value: _amount}(_amount);
+    }
+
     function getConfigAddresses(bool isTestEnv) public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();
         string memory path;
