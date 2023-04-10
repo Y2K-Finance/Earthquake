@@ -41,7 +41,6 @@ contract CarouselTest is Helper {
                         TOKEN,
                         STRIKE,
                         controller,
-                        TREASURY,
                         emissionsToken,
                         relayerFee,
                         depositFee,
@@ -391,5 +390,9 @@ contract CarouselTest is Helper {
         vm.stopPrank();   
     }
 
+    // deployer contract acts as factory and must emulate VaultFactoryV2.treasury()
+    function treasury() public view returns (address) {
+        return TREASURY;
+    }
 
 }

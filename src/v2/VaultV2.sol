@@ -6,6 +6,7 @@ import {
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./SemiFungibleVault.sol";
 import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IVaultFactoryV2} from "./interfaces/IVaultFactoryV2.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
@@ -28,7 +29,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     uint256 public immutable strike;
     // Earthquake bussiness logic
     bool public immutable isWETH;
-    address public treasury;
     address public counterPartyVault;
     address public factory;
     address public controller;
@@ -55,7 +55,6 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         @param _token  address of the token that will be used as collateral;
         @param _strike  uint256 representing the strike price of the vault;
         @param _controller  address of the controller of the vault;
-        @param _treasury  address of the treasury of the vault;
      */
     constructor(
         bool _isWETH,
@@ -65,19 +64,15 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         string memory _tokenURI,
         address _token,
         uint256 _strike,
-        address _controller,
-        address _treasury
+        address _controller
     ) SemiFungibleVault(IERC20(_assetAddress), _name, _symbol, _tokenURI) {
         if (_controller == address(0)) revert AddressZero();
         if (_token == address(0)) revert AddressZero();
         if (_assetAddress == address(0)) revert AddressZero();
-        if (_treasury == address(0)) revert AddressZero();
         token = _token;
         strike = _strike;
         factory = msg.sender;
         controller = _controller;
-        treasury = _treasury;
-        whitelistedAddresses[_treasury] = true;
         isWETH = _isWETH;
     }
 
@@ -251,20 +246,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
 
     /**
     @notice Factory function, whitelist address
-    @param _wAddress New treasury address
-     */
+    @param _wAddress whitelist destination address 
+    */
     function whiteListAddress(address _wAddress) public onlyFactory {
         if (_wAddress == address(0)) revert AddressZero();
         whitelistedAddresses[_wAddress] = !whitelistedAddresses[_wAddress];
-    }
-
-    /**
-    @notice Factory function, changes treasury address
-    @param _treasury New treasury address
-     */
-    function setTreasury(address _treasury) public onlyFactory {
-        if (_treasury == address(0)) revert AddressZero();
-        treasury = _treasury;
     }
 
     /**
@@ -313,7 +299,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         if (_amount > finalTVL[_id]) revert AmountExceedsTVL();
         if (epochAccounting[_id] + _amount > finalTVL[_id])
             revert AmountExceedsTVL();
-        if (!whitelistedAddresses[_receiver] && _receiver != counterPartyVault)
+        if (!whitelistedAddresses[_receiver] && _receiver != counterPartyVault && _receiver != treasury())
             revert DestinationNotAuthorized(_receiver);
         epochAccounting[_id] += _amount;
         SemiFungibleVault.asset.safeTransfer(_receiver, _amount);
@@ -393,6 +379,10 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochBegin = epochConfig[_id].epochBegin;
         epochEnd = epochConfig[_id].epochEnd;
         epochCreation = epochConfig[_id].epochCreation;
+    }
+
+    function treasury() public returns (address) {
+        return IVaultFactoryV2(factory).treasury();
     }
 
     function _asset() internal view returns (IERC20) {

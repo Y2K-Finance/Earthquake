@@ -23,8 +23,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
         vm.warp(120000);
         MintableToken(UNDERLYING).mint(address(this));
@@ -37,8 +36,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         vault.setCounterPartyVault(address(counterpartyVault));
@@ -58,8 +56,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         vm.expectRevert(VaultV2.AddressZero.selector);
@@ -71,8 +68,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             address(0), // wrong token
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         vm.expectRevert(VaultV2.AddressZero.selector);
@@ -84,21 +80,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            address(0), // wrong controller
-            TREASURY
-        );
-
-        vm.expectRevert(VaultV2.AddressZero.selector);
-        new VaultV2(
-            false,
-            UNDERLYING,
-            "Vault",
-            "v",
-            "randomURI",
-            TOKEN,
-            STRIKE,
-            controller,
-            address(0) // wrong treasury
+            address(0) // wrong controller
         );
 
         // test success case
@@ -110,8 +92,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         assertEq(address(vault2.asset()), UNDERLYING);
@@ -120,7 +101,6 @@ contract VaultV2Test is Helper {
         assertEq(vault2.token(), TOKEN);
         assertEq(vault2.strike(), STRIKE);
         assertEq(vault2.controller(), controller);
-        assertTrue(vault2.whitelistedAddresses(TREASURY));
         assertEq(vault2.factory(), address(this));
     }
 
@@ -539,5 +519,10 @@ contract VaultV2Test is Helper {
     ) public {
         vault.setEpoch(_epochBegin, _epochEnd, _epochId);
         counterpartyVault.setEpoch(_epochBegin, _epochEnd, _epochId);
+    }
+
+    // deployer contract acts as factory and must emulate VaultFactoryV2.treasury()
+    function treasury() public view returns (address) {
+        return TREASURY;
     }
 }
