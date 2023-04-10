@@ -325,6 +325,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
      */
     function setEpochNull(uint256 _id)
         public
+        virtual
         onlyController
         epochIdExists(_id)
         epochHasEnded(_id)

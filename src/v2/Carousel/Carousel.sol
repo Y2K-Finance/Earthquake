@@ -571,16 +571,35 @@ contract Carousel is VaultV2 {
                         ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+     /**
+    @notice This function is called by the controller if the epoch has started, but the counterparty vault has no value. In this case the users can withdraw their deposit. Additionally, emissions are transferred to the treasury. 
+    @param  _id uint256 identifier of the epoch
+     */
+    function setEpochNull(uint256 _id)
+        public
+        override
+        onlyController
+        epochIdExists(_id)
+        epochHasEnded(_id)
+    {
+        epochNull[_id] = true;
+        if(emissions[_id] > 0)  {
+            emissionsToken.safeTransfer(treasury(), emissions[_id]);
+            emissions[_id] = 0;
+        }
+    }
+
+
     /** @notice sets emissions
      * @param _epochId epoch id
-     * @param _emissionsRate emissions rate
+     * @param _emissionAmount emissions rate
      */
-    function setEmissions(uint256 _epochId, uint256 _emissionsRate)
+    function setEmissions(uint256 _epochId, uint256 _emissionAmount)
         external
         onlyFactory
         epochIdExists(_epochId)
     {
-        emissions[_epochId] = _emissionsRate;
+        emissions[_epochId] = _emissionAmount;
     }
 
     /** @notice changes relayer fee
