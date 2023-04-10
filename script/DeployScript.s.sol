@@ -11,6 +11,7 @@ contract DeployScript is Script, HelperConfig {
         ConfigAddresses memory addresses = getConfigAddresses(false); //true if test env
         contractToAddresses(addresses);
         setVariables();
+
     }
 
     function run() public {
@@ -24,7 +25,8 @@ contract DeployScript is Script, HelperConfig {
         vm.stopBroadcast();
     }
 
-    function deploy() public {
+    function deploy() payable public {
+        // fundKeepers(5000000000000000); // uncomment to fund keepers
         if(configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();
