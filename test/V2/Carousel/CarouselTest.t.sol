@@ -75,7 +75,7 @@ contract CarouselTest is Helper {
         vm.stopPrank();
 
         uint256 _queueLength = 1;
-        assertEq(vault.getDepositQueueLenght(), _queueLength);
+        assertEq(vault.getDepositQueueLength(), _queueLength);
         // test revert cases
         // should revert if epochId is 0 as this epoch is not supposed to minted ever
         vm.expectRevert(Carousel.InvalidEpochId.selector);
@@ -136,7 +136,7 @@ contract CarouselTest is Helper {
 
         _queueLength = 3;
 
-        assertEq(vault.getDepositQueueLenght(), _queueLength);
+        assertEq(vault.getDepositQueueLength(), _queueLength);
         // should only do as many operations as queue length 
         // please check logs: test forge test -m testDepositInQueue  -vvvv
         vault.mintDepositInQueue(_epochId, 230000);
@@ -228,7 +228,7 @@ contract CarouselTest is Helper {
         helperDepositInEpochs(_epochId,USER5, true);
         helperDepositInEpochs(_epochId,USER6, true);
 
-        assertEq(vault.getDepositQueueLenght(), 6);
+        assertEq(vault.getDepositQueueLength(), 6);
         
         // check balance of relayer
         uint256 balanceBefore = IERC20(UNDERLYING).balanceOf(address(this));

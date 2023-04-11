@@ -733,14 +733,14 @@ contract Carousel is VaultV2 {
     /** @notice returns the deposit queue length
      * @return queue length for the deposit
      */
-    function getDepositQueueLenght() public view returns (uint256) {
+    function getDepositQueueLength() public view returns (uint256) {
         return depositQueue.length;
     }
 
     /** @notice returns the queue length for the rollover
      * @return queue length for the rollover
      */
-    function getRolloverQueueLenght() public view returns (uint256) {
+    function getRolloverQueueLength() public view returns (uint256) {
         return rolloverQueue.length;
     }
 

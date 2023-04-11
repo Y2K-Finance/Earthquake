@@ -194,10 +194,15 @@ contract CarouselFactory is VaultFactoryV2 {
 
         address[2] memory vaults = marketIdToVaults[_marketIndex];
         if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
-        ICarousel insr = ICarousel(vaults[0]);
-        ICarousel risk = ICarousel(vaults[1]);
-        insr.changeRelayerFee(_relayerFee);
-        risk.changeRelayerFee(_relayerFee);
+
+        ICarousel premium = ICarousel(vaults[0]);
+        ICarousel collat = ICarousel(vaults[1]);
+
+        if(premium.getDepositQueueLength() > 0) revert QueueNotEmpty();
+        if(collat.getDepositQueueLength() > 0) revert QueueNotEmpty();
+
+        premium.changeRelayerFee(_relayerFee);
+        collat.changeRelayerFee(_relayerFee);
 
         emit ChangedRelayerFee(_relayerFee, _marketIndex);
     }
@@ -257,6 +262,7 @@ contract CarouselFactory is VaultFactoryV2 {
     error InvalidRelayerFee();
     error InvalidVaultIndex();
     error InvalidDepositFee();
+    error QueueNotEmpty();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
