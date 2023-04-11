@@ -14,6 +14,7 @@ contract ControllerPeggedAssetV2 {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
+    uint256 private constant MAX_UPDATE_TRESHOLD = 2 days;
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     address public immutable treasury;
 
@@ -282,7 +283,8 @@ contract ControllerPeggedAssetV2 {
             ,
             /*uint80 roundId*/
             int256 answer,
-            uint256 startedAt, /*uint256 updatedAt*/ /*uint80 answeredInRound*/
+            uint256 startedAt, 
+            /*uint256 updatedAt*/ /*uint80 answeredInRound*/
             ,
 
         ) = sequencerUptimeFeed.latestRoundData();
@@ -303,8 +305,11 @@ contract ControllerPeggedAssetV2 {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             vaultFactory.tokenToOracle(_token)
         );
-        (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
+        (uint80 roundID, int256 price, ,uint256 updatedAt, uint80 answeredInRound) = priceFeed
             .latestRoundData();
+
+        if (updatedAt < block.timestamp - MAX_UPDATE_TRESHOLD) revert PriceOutdated();
+
         uint256 decimals = priceFeed.decimals();
 
         if (decimals < 18) {
@@ -362,6 +367,7 @@ contract ControllerPeggedAssetV2 {
     error EpochNotExpired();
     error VaultNotZeroTVL();
     error VaultZeroTVL();
+    error PriceOutdated();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
