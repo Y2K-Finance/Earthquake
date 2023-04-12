@@ -1,0 +1,19 @@
+pragma solidity 0.8.17;
+
+import "./IDepegCondition.sol";
+import "./IPriceProvider.sol";
+
+contract PriceBasedDepegCondition is IDepegCondition {
+    IPriceProvider public priceProvider;
+    uint256 public targetPrice;
+
+    constructor(IPriceProvider _priceProvider, uint256 _targetPrice) {
+        priceProvider = _priceProvider;
+        targetPrice = _targetPrice;
+    }
+
+    function checkDepegCondition() external view override returns (bool) {
+        uint256 currentPrice = priceProvider.getPrice();
+        return currentPrice <= targetPrice;
+    }
+}
