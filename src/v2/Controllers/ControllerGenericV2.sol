@@ -8,17 +8,31 @@ import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import "./IDepegCondition.sol";
 import "./IPriceProvider.sol";
+import "forge-std/console.sol";
+
 
 /// @author Y2K Finance Team
 
 contract ControllerGenericV2 {
+
     using FixedPointMathLib for uint256;
     IVaultFactoryV2 public immutable vaultFactory;
     address public immutable treasury;
-
-
-    // Soon . . . IDepegCondition[] public depegConditions;
+    bool public locked = false;
+    address public admin;
+    
+    IDepegCondition[] public depegConditions;
     IPriceProvider public priceProvider;
+    
+    modifier onlyAdmin {
+        require(msg.sender == admin, "Only the admin can perform this action");
+        _;
+    }
+
+    modifier notLocked {
+        require(!locked, "The system is locked, no new depeg conditions can be added");
+        _;
+    }
 
     constructor(
         address _factory,
@@ -31,17 +45,31 @@ contract ControllerGenericV2 {
         
         if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
+        admin = msg.sender; 
+        // So we can add depegs, (which could have circular dependencies, i.e., may need to read ControllerGenericV2 in their constructor) 
         
         treasury = _treasury;        
     }
     /*//////////////////////////////////////////////////////////////
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /** @notice Add a Depeg Condition
+     * @param _condition The Condition that must be true to trigger liquidation
+     */    
+    function addDepegCondition(IDepegCondition _condition) external onlyAdmin notLocked {
+        if (address(_condition) == address(0)) revert ZeroAddress();
+        depegConditions.push(_condition);
+    }
 
+    /** @notice Lockdown the system so no more conditions can be added 
+    */
+    function lockdownSystem() external onlyAdmin {
+        locked = true;
+    }
     /** @notice Trigger depeg event
      * @param _marketId Target market index
      * @param _epochId End of epoch set for market
-     */
+    */
     function triggerDepeg(uint256 _marketId, uint256 _epochId) public {
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
@@ -54,9 +82,21 @@ contract ControllerGenericV2 {
         if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
 
         int256 price = priceProvider.getLatestPrice(premiumVault.token());
-
-        if (int256(premiumVault.strike()) <= price)
-            revert PriceNotAtStrikePrice(price);
+        console.log("premiumVault");
+        console.log(address(premiumVault));
+        console.log(uint256(premiumVault.strike()));
+        console.log(uint256(price));
+        
+        
+        for (uint256 i = 0; i < depegConditions.length; i++) {
+            if (!depegConditions[i].checkDepegCondition( _marketId, _epochId)) {
+                revert NotMetDepegConditions(address(depegConditions[i]));
+            }
+        }
+        
+        
+        if (int256(premiumVault.strike()) <= price) ////x 
+            revert PriceNotAtStrikePrice(price); ////x 
 
         (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
             _epochId
@@ -292,6 +332,7 @@ contract ControllerGenericV2 {
     error ZeroAddress();
     error EpochFinishedAlready();
     error PriceNotAtStrikePrice(int256 price);
+    error NotMetDepegConditions(address cond);
     error EpochNotStarted();
     error EpochExpired();
     error OraclePriceZero();
