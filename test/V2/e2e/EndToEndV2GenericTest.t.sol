@@ -7,7 +7,9 @@ import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/Controllers/ControllerGenericV2.sol";
 import "../../../src/v2/Controllers/ChainlinkPriceProvider.sol";
+import "../../../src/v2/Controllers/PriceBasedDepegCondition.sol";
 import "../../../src/v2/Controllers/IPriceProvider.sol";
+import "../../../src/v2/Controllers/IDepegCondition.sol";
 
 
 
@@ -69,11 +71,18 @@ contract EndToEndV2Test is Helper {
             ARBITRUM_SEQUENCER,
             address(factory)
             ));
+            
+            
         controller = new ControllerGenericV2(
                 address(factory), 
                 ARBITRUM_SEQUENCER, 
                 TREASURY,
                 address(priceProvider));
+                
+                
+           
+                
+                
         factory.whitelistController(address(controller));
         
         //create end epoch market
@@ -134,7 +143,18 @@ contract EndToEndV2Test is Helper {
                 end,
                 fee
        );
-
+       
+       // TODO: Have this logic reviewed by 3rd party
+       //IVaultFactoryV2 vaultFactory = IVaultFactoryV2(factory);
+       address[2] memory vaults = factory.getVaults(depegMarketId);
+        
+       IVaultV2 premiumVault = IVaultV2(vaults[0]);
+        
+       IDepegCondition depegCondition = new PriceBasedDepegCondition(
+            address(priceProvider),
+            address(premiumVault));
+       controller.addDepegCondition(depegCondition);       
+       controller.lockdownSystem();      
        MintableToken(UNDERLYING).mint(USER);
     }
 
@@ -164,6 +184,8 @@ contract EndToEndV2Test is Helper {
         //warp to epoch end
         vm.warp(end + 1 days);
         
+        
+
         //trigger end of epoch
         controller.triggerEndEpoch(marketId, epochId);
 
@@ -185,7 +207,7 @@ contract EndToEndV2Test is Helper {
         vm.stopPrank();
     }
 
-    function testEndToEndDepeg() public {
+    function testGenericEndToEndDepeg() public {
         vm.startPrank(USER);
 
         vm.warp(begin - 10 days);
