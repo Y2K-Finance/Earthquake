@@ -27,7 +27,6 @@ contract Carousel is VaultV2 {
     QueueItem[] public rolloverQueue;
     QueueItem[] public depositQueue;
     mapping(uint256 => uint256) public rolloverAccounting;
-    mapping(uint256 => mapping(address => uint256)) public _emissionsBalances;
     mapping(uint256 => uint256) public emissions;
 
     /*//////////////////////////////////////////////////////////////
@@ -154,7 +153,6 @@ contract Carousel is VaultV2 {
         ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
         _burn(_owner, _id, _assets);
-        _burnEmissions(_owner, _id, _assets);
         uint256 entitledShares;
         uint256 entitledEmissions = previewEmissionsWithdraw(_id, _assets);
         if (epochNull[_id] == false) {
@@ -169,13 +167,14 @@ contract Carousel is VaultV2 {
             emissionsToken.safeTransfer(_receiver, entitledEmissions);
         }
 
-        emit Withdraw(
+        emit WithdrawWithEmissions(
             msg.sender,
             _receiver,
             _owner,
             _id,
             _assets,
-            entitledShares
+            entitledShares,
+            entitledEmissions
         );
 
         return entitledShares;
@@ -201,17 +200,6 @@ contract Carousel is VaultV2 {
             "ERC1155: caller is not owner nor approved"
         );
         _safeTransferFrom(from, to, id, amount, data);
-        // emissions transfer
-        uint256 fromBalance = _emissionsBalances[id][from];
-        require(
-            fromBalance >= amount,
-            "ERC1155: insufficient balance for transfer"
-        );
-        unchecked {
-            _emissionsBalances[id][from] = fromBalance - amount;
-        }
-        _emissionsBalances[id][to] += amount;
-        emit TransferSingleEmissions(_msgSender(), from, to, id, amount);
     }
 
     /**
@@ -426,12 +414,6 @@ contract Carousel is VaultV2 {
                         queue[index].epochId,
                         originalDepositValue
                     );
-                    // transfer emission tokens out of contract otherwise user could not access them as vault shares are burned
-                    _burnEmissions(
-                        queue[index].receiver,
-                        queue[index].epochId,
-                        originalDepositValue
-                    );
                     // @note emission token is a known token which has no before transfer hooks which makes transfer safer
                     emissionsToken.safeTransfer(
                         queue[index].receiver,
@@ -441,13 +423,17 @@ contract Carousel is VaultV2 {
                         )
                     );
 
-                    emit Withdraw(
+                    emit WithdrawWithEmissions(
                         msg.sender,
                         queue[index].receiver,
                         queue[index].receiver,
                         _epochId,
                         originalDepositValue,
-                        entitledAmount
+                        entitledAmount,
+                        previewEmissionsWithdraw(
+                            queue[index].epochId,
+                            originalDepositValue
+                        )
                     );
                     uint256 assetsToMint = queue[index].assets - relayerFeeInShares;
                     _mintShares(queue[index].receiver, _epochId, assetsToMint);
@@ -521,51 +507,8 @@ contract Carousel is VaultV2 {
         uint256 amount
     ) internal {
         _mint(to, id, amount, EMPTY);
-        _mintEmissions(to, id, amount);
     }
 
-    /** @notice mints emission shares based of vault shares for user
-        @param to address of receiver
-        @param id epoch id
-        @param amount amount of shares to mint
-     */
-    function _mintEmissions(
-        address to,
-        uint256 id,
-        uint256 amount
-    ) internal {
-        require(to != address(0), "ERC1155: mint to the zero address");
-
-        _emissionsBalances[id][to] += amount;
-        emit TransferSingleEmissions(_msgSender(), address(0), to, id, amount);
-    }
-
-    /** @notice burns emission shares of vault for user
-        @param from address of sender
-        @param id epoch id
-        @param amount amount of shares to burn
-     */
-    function _burnEmissions(
-        address from,
-        uint256 id,
-        uint256 amount
-    ) internal {
-        require(from != address(0), "ERC1155: burn from the zero address");
-
-        uint256 fromBalance = _emissionsBalances[id][from];
-        require(fromBalance >= amount, "ERC1155: burn amount exceeds balance");
-        unchecked {
-            _emissionsBalances[id][from] = fromBalance - amount;
-        }
-
-        emit TransferSingleEmissions(
-            _msgSender(),
-            from,
-            address(0),
-            id,
-            amount
-        );
-    }
 
     /*///////////////////////////////////////////////////////////////
                         ADMIN FUNCTIONS
@@ -822,17 +765,6 @@ contract Carousel is VaultV2 {
         }
     }
 
-    /** @notice returns the total emissions balance
-     * @return totalEmissions total emissions balance
-     */
-    function balanceOfEmissions(address _owner, uint256 _id)
-        public
-        view
-        returns (uint256)
-    {
-        return _emissionsBalances[_id][_owner];
-    }
-
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
@@ -906,6 +838,16 @@ contract Carousel is VaultV2 {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    event WithdrawWithEmissions(
+        address caller,
+        address receiver,
+        address indexed owner,
+        uint256 indexed id,
+        uint256 assets,
+        uint256 shares,
+        uint256 emissions
+    );
+
     /** @notice emitted when a deposit is queued
      * @param sender the address of the sender
      * @param receiver the address of the receiver
@@ -936,18 +878,4 @@ contract Carousel is VaultV2 {
         uint256 epochId
     );
 
-    /** @notice emitted when emissions are transfered
-     * @param operator the address of the operator
-     * @param from the address of the sender
-     * @param to the address of the receiver
-     * @param id the id of the emissions
-     * @param value the amount of emissions
-     */
-    event TransferSingleEmissions(
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256 id,
-        uint256 value
-    );
 }

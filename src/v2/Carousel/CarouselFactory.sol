@@ -165,6 +165,16 @@ contract CarouselFactory is VaultFactoryV2 {
 
         emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
         ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
+
+        emit EpochCreatedWithEmissions(
+            epochId,
+            _marketId,
+            _epochBegin,
+            _epochEnd,
+            _withdrawalFee,
+            _permiumEmissions,
+            _collatEmissions
+        );
     }
 
     // to prevent the creation of epochs without emissions
@@ -276,4 +286,14 @@ contract CarouselFactory is VaultFactoryV2 {
     );
 
     event ChangedRelayerFee(uint256 relayerFee, uint256 marketIndex);
+
+    event EpochCreatedWithEmissions(
+        uint256 epochId,
+        uint256 marketId,
+        uint40 epochBegin,
+        uint40 epochEnd,
+        uint16 withdrawalFee,
+        uint256 premiumEmissions,
+        uint256 collateralEmissions
+    );
 }

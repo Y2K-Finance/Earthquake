@@ -134,7 +134,7 @@ contract ControllerPeggedAssetV2 {
             ),
             true,
             block.timestamp,
-            price
+            uint256(price)
         );
     }
 
@@ -379,7 +379,7 @@ contract ControllerPeggedAssetV2 {
      * @param tvl TVL
      * @param strikeMet Flag if event isDisaster
      * @param time time
-     * @param depegPrice Price that triggered depeg
+     * @param strikeData Data that triggered depeg
      */
     event EpochResolved(
         uint256 indexed epochId,
@@ -387,7 +387,7 @@ contract ControllerPeggedAssetV2 {
         VaultTVL tvl,
         bool strikeMet,
         uint256 time,
-        int256 depegPrice
+        uint256 strikeData
     );
 
     /** @notice Sets epoch to null when event is emitted
