@@ -7,7 +7,7 @@ from decouple import config
 
 rpc = config("ARBITRUM_RPC_URL")
 pk = config("PRIVATE_KEY")
-cmd = "forge script DeployScript --rpc-url %s --private-key %s --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow --resume -vv " %(rpc, pk)
+cmd = "forge script DeployScript --rpc-url %s --private-key %s --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv " %(rpc, pk)
 
 def action():
     print("Running action")
