@@ -2,18 +2,15 @@
 NOTE: Development in progress by JG. Reached functional milestone; Live VST data is accessible. 
 ***/
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity ^0.8.4;
+
+import "@chainlink/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/RapidDemoConsumerBase.sol";
 
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IVaultV2} from "../interfaces/IVaultV2.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV2V3Interface.sol";
-
 import "./IPriceProvider.sol";
-
-
-pragma solidity ^0.8.4;
-
-import "@redstone-finance/evm-connector/contracts/data-services/RapidDemoConsumerBase.sol";
 
 contract RedstonePriceProvider is RapidDemoConsumerBase {
     uint16 private constant GRACE_PERIOD_TIME = 3600;
@@ -22,10 +19,10 @@ contract RedstonePriceProvider is RapidDemoConsumerBase {
  
     constructor(address _sequencer, address _factory) {
         // TODO enable after testing
-        //if (_factory == address(0)) revert ZeroAddress();
+        if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
         
-        //if (_sequencer == address(0)) revert ZeroAddress();
+        if (_sequencer == address(0)) revert ZeroAddress();
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
 
     }
