@@ -12,13 +12,12 @@ import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import "./IPriceProvider.sol";
 
-contract RedstonePriceProvider is RapidDemoConsumerBase {
+contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
  
     constructor(address _sequencer, address _factory) {
-        // TODO enable after testing
         if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
         
@@ -26,7 +25,18 @@ contract RedstonePriceProvider is RapidDemoConsumerBase {
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
 
     }
-
+    
+    function getLatestRawPrice(address _token) public virtual view returns (int256) {    
+       uint256 priceIn = getOracleNumericValueFromTxMsg(bytes32("VST")); 
+       int256 price = int256(priceIn); // TODO Check this for errors
+       return price;
+    }
+    
+    function getLatestRawDecimals(address _token) public  virtual view returns (uint256) {
+       return 18;
+    }
+    
+    
     /** @notice Lookup token price
      * @param _token Target token address
      * @return nowPrice Current token price
@@ -51,9 +61,9 @@ contract RedstonePriceProvider is RapidDemoConsumerBase {
         
         }
         
-        uint256 priceIn = getOracleNumericValueFromTxMsg(bytes32("VST")); 
-        int256 price = int256(priceIn); 
-        uint256 decimals = 18;
+        int256 price = getLatestRawPrice(_token); 
+        uint256 decimals = getLatestRawDecimals(_token);
+        
         if (decimals < 18) {
             decimals = 10**(18 - decimals);
             price = price * int256(decimals);
@@ -91,49 +101,3 @@ contract RedstonePriceProvider is RapidDemoConsumerBase {
     error VaultNotZeroTVL();
     error VaultZeroTVL();
 }
-
-
-/******************************************************* 
-NOTE: Development in progress by JG. Reached functional milestone; Live VST data is accessible. 
-Below was the testing script used to access live data using this contract. 
-The Smart Contract below has been tested via https://github.com/redstone-finance/redstone-evm-examples
---- To conduct a test, one can (a) pull the repo (b) add the contract into contracts, and (c) this test script into tests. Then run yarn test, and oobserve the VST data. 
-
-TODO / Puzzles:
-- Y2K: How do we simulate Historical Data for this VST service 
-- RedStone: How do we replicate the function of "usingDataService" on chain?
-
-
-const { WrapperBuilder } = require("@redstone-finance/evm-connector");
-//const { ethers } = require("ethers");
-
-
-describe("RedstonePriceProvider", function () {
-  let contract;
-
-  beforeEach(async () => {
-    // Deploy contract
-    const RedstonePriceProvider = await ethers.getContractFactory("RedstonePriceProvider");
-    //contract = await RedstonePriceProvider.deploy();
-    const sequencerAddress = ethers.constants.AddressZero;
-    const factoryAddress = ethers.constants.AddressZero;
-    contract = await RedstonePriceProvider.deploy(sequencerAddress, factoryAddress);
-      
-  });
-
-  it("Get VST price securely", async function () {
-    // Wrapping the contract
-    const wrappedContract = WrapperBuilder.wrap(contract).usingDataService({
-      dataServiceId: "redstone-rapid-demo",
-      uniqueSignersCount: 1,
-      dataFeeds: ["VST"],
-    }, ["https://d33trozg86ya9x.cloudfront.net"]);
-
-    // Interact with the contract (getting oracle value securely)
-    const ethPriceFromContract = await wrappedContract.getLatestPrice(ethers.constants.AddressZero);
-    console.log({ ethPriceFromContract });
-  });
-});
-
-
-**************************************/

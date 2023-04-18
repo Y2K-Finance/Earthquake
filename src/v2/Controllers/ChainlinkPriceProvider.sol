@@ -55,6 +55,7 @@ contract ChainlinkPriceProvider is IPriceProvider {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             vaultFactory.tokenToOracle(_token)
         );
+        
         (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
             .latestRoundData();
         uint256 decimals = priceFeed.decimals();
