@@ -7,6 +7,7 @@ import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/Controllers/ControllerGenericV2.sol";
 import "../../../src/v2/Controllers/ChainlinkPriceProvider.sol";
+import "../../../src/v2/Controllers/RedstoneMockPriceProvider.sol";
 import "../../../src/v2/Controllers/PriceBasedDepegCondition.sol";
 import "../../../src/v2/Controllers/IPriceProvider.sol";
 import "../../../src/v2/Controllers/IDepegCondition.sol";
@@ -67,7 +68,11 @@ contract EndToEndV2Test is Helper {
                 address(timelock)
             );
         
-        priceProvider = IPriceProvider(new ChainlinkPriceProvider(
+        //priceProvider = IPriceProvider(new ChainlinkPriceProvider(
+        //    ARBITRUM_SEQUENCER,
+        //    address(factory)
+        //    ));
+        priceProvider = IPriceProvider(new RedstoneMockPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory)
             ));
