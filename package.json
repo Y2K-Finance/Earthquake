@@ -15,7 +15,7 @@
     "solhint": "^3.3.7"
   },
   "dependencies": {
-    "@redstone-finance/evm-connector": "^0.0.22",
+    "solc": "^0.8.19",
     "solhint-plugin-prettier": "^0.0.5"
   }
 }
