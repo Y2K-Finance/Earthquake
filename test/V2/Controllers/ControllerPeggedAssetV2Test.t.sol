@@ -92,8 +92,8 @@ contract ControllerPeggedAssetV2Test is Helper {
         // revert cases
         stdstore
             .target(address(factory))
-            .sig("tokenToOracle(address)")
-            .with_key(TOKEN)
+            .sig("marketToOracle(uint256)")
+            .with_key(marketId)
             .checked_write(address(this)); // set oracle with faulty updated at time
 
         vm.warp(begin + 1);

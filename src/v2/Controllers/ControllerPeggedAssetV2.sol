@@ -60,7 +60,7 @@ contract ControllerPeggedAssetV2 {
 
         if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
 
-        int256 price = getLatestPrice(premiumVault.token());
+        int256 price = getLatestPrice(_marketId);
 
         if (int256(premiumVault.strike()) <= price)
             revert PriceNotAtStrikePrice(price);
@@ -275,10 +275,10 @@ contract ControllerPeggedAssetV2 {
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
     /** @notice Lookup token price
-     * @param _token Target token address
+     * @param _marketId Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token) public view returns (int256) {
+    function getLatestPrice(uint256 _marketId) public view returns (int256) {
         (
             ,
             /*uint80 roundId*/
@@ -303,7 +303,7 @@ contract ControllerPeggedAssetV2 {
         }
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.tokenToOracle(_token)
+            vaultFactory.marketToOracle(_marketId)
         );
         (uint80 roundID, int256 price, ,uint256 updatedAt, uint80 answeredInRound) = priceFeed
             .latestRoundData();

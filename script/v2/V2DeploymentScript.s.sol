@@ -66,6 +66,9 @@ contract V2DeploymentScript is Script, HelperV2 {
         treasury  = msg.sender;
 
 
+        console2.log("Broadcast policy", policy);
+        console2.log("Broadcast treasury", treasury);
+
 
         // address timeLock = address(new TimeLock(policy));
 
@@ -86,14 +89,37 @@ contract V2DeploymentScript is Script, HelperV2 {
 
         //  IERC20(emissionToken).approve(0x1A5151C53bb041A7f70B40adfAEFe0FDfE05b2d8, 200 ether);
 
-         CarouselFactory(0x1A5151C53bb041A7f70B40adfAEFe0FDfE05b2d8).createEpochWithEmissions(
-            uint256(79901062978974686921194727646590599359178698799258240092258231289348051120802),
-            1681494640,
-            1681581040,
+         
+        ( address prem, address collat, uint256 marketId) =  CarouselFactory(0x3BDB1eA3912121627da97F574d1Cb5E82FeF353B).createNewCarouselMarket(
+            CarouselFactory.CarouselMarketConfigurationCalldata(
+                addresses.tokenDAI,
+                1 ether - 1,
+                addresses.oracleDAI,
+                weth,
+                "y2kDAI_999*",
+                "https://y2k.finance",
+                0x01964e70ED9bA452c99932f46f302B10d2dAb2C9,
+                1 gwei,
+                10,
+                1 ether
+            )
+        );
+
+        console.log("Prem", prem);
+        console.log("Collat", collat);
+        console.log("marketId", marketId);
+
+
+        (uint256 eId, ) = CarouselFactory(0x3BDB1eA3912121627da97F574d1Cb5E82FeF353B).createEpochWithEmissions(
+            marketId,
+            1681841850,
+            1682187450,
             50,
             0,
             0
         );
+
+        console.log("eId", eId);
 
         //stop setUp();
                         

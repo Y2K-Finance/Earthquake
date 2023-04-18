@@ -7,272 +7,6 @@ import "../../src/v2/VaultV2.sol";
 import "../../src/v2/TimeLock.sol";
 import "../../src/v2/interfaces/IVaultV2.sol";
 
-contract TimeLockV1 {
-    mapping(bytes32 => bool) public queued;
-
-    address public policy;
-
-    uint256 public constant MIN_DELAY = 7 days;
-    uint256 public constant MAX_DELAY = 30 days;
-    uint256 public constant GRACE_PERIOD = 14 days;
-
-    error NotOwner(address sender);
-    error AlreadyQueuedError(bytes32 txId);
-    error TimestampNotInRangeError(uint256 blocktimestamp, uint256 timestamp);
-    error NotQueuedError(bytes32 txId);
-    error TimestampNotPassedError(uint256 blocktimestamp, uint256 timestamp);
-    error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
-    error TxFailedError(string func);
-
-    event Queue(
-        bytes32 indexed txId,
-        address indexed target,
-        string func,
-        uint256 index,
-        uint256 data,
-        address to,
-        address token,
-        uint256 timestamp
-    );
-
-    event Execute(
-        bytes32 indexed txId,
-        address indexed target,
-        string func,
-        uint256 index,
-        uint256 data,
-        address to,
-        address token,
-        uint256 timestamp
-    );
-
-    event Delete(
-        bytes32 indexed txId,
-        address indexed target,
-        string func,
-        uint256 index,
-        uint256 data,
-        address to,
-        address token,
-        uint256 timestamp
-    );
-
-    modifier onlyOwner() {
-        if (msg.sender != policy) revert NotOwner(msg.sender);
-        _;
-    }
-
-    constructor(address _policy) {
-        policy = _policy;
-    }
-
-    /**
-     * @dev leave params zero if not using them
-     * @notice Queue a transaction
-     * @param _target The target contract
-     * @param _func The function to call
-     * @param _index The market index of the vault to call the function on
-     * @param _data The data to pass to the function
-     * @param _to The address to change the params to
-     * @param _token The token to change the params to
-     * @param _timestamp The timestamp to execute the transaction
-     */
-    function queue(
-        address _target,
-        string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
-        uint256 _timestamp
-    ) external onlyOwner {
-        //create tx id
-        bytes32 txId = getTxId(
-            _target,
-            _func,
-            _index,
-            _data,
-            _to,
-            _token,
-            _timestamp
-        );
-
-        //check tx id unique
-        if (queued[txId]) {
-            revert AlreadyQueuedError(txId);
-        }
-
-        //check timestamp
-        if (
-            _timestamp < block.timestamp + MIN_DELAY ||
-            _timestamp > block.timestamp + MAX_DELAY
-        ) {
-            revert TimestampNotInRangeError(block.timestamp, _timestamp);
-        }
-
-        //queue tx
-        queued[txId] = true;
-
-        emit Queue(
-            txId,
-            _target,
-            _func,
-            _index,
-            _data,
-            _to,
-            _token,
-            _timestamp
-        );
-    }
-
-    /**
-     * @dev leave params zero if not using them
-     * @notice Execute a Queued a transaction
-     * @param _target The target contract
-     * @param _func The function to call
-     * @param _index The market index of the vault to call the function on
-     * @param _data The data to pass to the function
-     * @param _to The address to change the params to
-     * @param _token The token to change the params to
-     * @param _timestamp The timestamp after which to execute the transaction
-     */
-    function execute(
-        address _target,
-        string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
-        uint256 _timestamp
-    ) external onlyOwner {
-        bytes32 txId = getTxId(
-            _target,
-            _func,
-            _index,
-            _data,
-            _to,
-            _token,
-            _timestamp
-        );
-
-        //check tx id queued
-        if (!queued[txId]) {
-            revert NotQueuedError(txId);
-        }
-
-        //check block.timestamp > timestamp
-        if (block.timestamp < _timestamp) {
-            revert TimestampNotPassedError(block.timestamp, _timestamp);
-        }
-        if (block.timestamp > _timestamp + GRACE_PERIOD) {
-            revert TimestampExpiredError(
-                block.timestamp,
-                _timestamp + GRACE_PERIOD
-            );
-        }
-
-        //delete tx from queue
-        queued[txId] = false;
-
-        //execute tx
-        if (compareStringsbyBytes(_func, "changeTreasury")) {
-            // VaultFactoryV2(_target).changeTreasury(_to, _index);
-        } else if (compareStringsbyBytes(_func, "changeController")) {
-            VaultFactoryV2(_target).changeController(_index, _to);
-        } else if (compareStringsbyBytes(_func, "changeOracle")) {
-            VaultFactoryV2(_target).changeOracle(_token, _to);
-        } else {
-            revert TxFailedError(_func);
-        }
-
-        emit Execute(
-            txId,
-            _target,
-            _func,
-            _index,
-            _data,
-            _to,
-            _token,
-            _timestamp
-        );
-    }
-
-    function cancel(
-        address _target,
-        string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
-        uint256 _timestamp
-    ) external onlyOwner {
-        bytes32 txId = getTxId(
-            _target,
-            _func,
-            _index,
-            _data,
-            _to,
-            _token,
-            _timestamp
-        );
-
-        //check tx id queued
-        if (!queued[txId]) {
-            revert NotQueuedError(txId);
-        }
-
-        //delete tx from queue
-        queued[txId] = false;
-
-        emit Delete(
-            txId,
-            _target,
-            _func,
-            _index,
-            _data,
-            _to,
-            _token,
-            _timestamp
-        );
-    }
-
-    function getTxId(
-        address _target,
-        string calldata _func,
-        uint256 _index,
-        uint256 _data,
-        address _to,
-        address _token,
-        uint256 _timestamp
-    ) public pure returns (bytes32 txId) {
-        return
-            keccak256(
-                abi.encode(
-                    _target,
-                    _func,
-                    _index,
-                    _data,
-                    _to,
-                    _token,
-                    _timestamp
-                )
-            );
-    }
-
-    function compareStringsbyBytes(string memory s1, string memory s2)
-        public
-        pure
-        returns (bool)
-    {
-        return
-            keccak256(abi.encodePacked(s1)) == keccak256(abi.encodePacked(s2));
-    }
-
-    function changeOwner(address _newOwner) external onlyOwner {
-        policy = _newOwner;
-    }
-}
-
 contract FactoryV2Test is Helper {
       VaultFactoryV2 factory;
       address controller;
@@ -289,67 +23,6 @@ contract FactoryV2Test is Helper {
         controller = address(0x54);
         factory.whitelistController(address(controller));
      }
-
-    function testOneTimelock() public {
-        string memory arbitrumRpcUrl = vm.envString("ARBITRUM_RPC_URL");
-        uint256 arbForkId = vm.createFork(arbitrumRpcUrl);
-        vm.selectFork(arbForkId);
-
-        TimeLockV1 t = TimeLockV1(0xdf468f3FCCa9FC6Cb51241A139a2Eb53971D8f81);
-        factory = VaultFactoryV2(0x984E0EB8fB687aFa53fc8B33E12E04967560E092);
-        bytes memory data = bytes("0x4dc809ce0000000000000000000000005979d7b546e38e414f7e9822514be443a4800529000000000000000000000000ded2c52b75b24732e9107377b7ba93ec1ffa4baf");
-        // immulate timelocker address 
-        vm.startPrank(0x16cBaDA408F7523452fF91c8387b1784d00d10D8);
-
-        uint256 timestamp = block.timestamp + 7 days + 1 seconds;
-
-        t.queue(
-            address(factory),
-            "changeOracle",
-            0,
-            0,
-            0xded2c52b75B24732e9107377B7Ba93eC1fFa4BAf,
-            0x5979D7b546E38E414F7E9822514be443A4800529,
-            timestamp
-        );
-
-        bytes32 txId = t.getTxId(
-             address(factory),
-            "changeOracle",
-            0,
-            0,
-            0xded2c52b75B24732e9107377B7Ba93eC1fFa4BAf,
-            0x5979D7b546E38E414F7E9822514be443A4800529,
-            timestamp
-        );
-
-        vm.warp(timestamp - 1 seconds);
-
-        console.logBytes32(txId);
-
-        t.execute(
-            address(factory),
-            "changeOracle",
-            0,
-            0,
-            0xded2c52b75B24732e9107377B7Ba93eC1fFa4BAf,
-            0x5979D7b546E38E414F7E9822514be443A4800529,
-            timestamp
-        );
-
-        address newOracle = factory.tokenToOracle(0x5979D7b546E38E414F7E9822514be443A4800529);
-
-        console.log(newOracle);
-
-        
-        assertTrue(newOracle == 0xded2c52b75B24732e9107377B7Ba93eC1fFa4BAf);
-
-
-        // t.executeTransaction(address(factory), 0, data);
-        // 0xdf468f3fcca9fc6cb51241a139a2eb53971d8f81 
-        
-
-    }
 
     function testFactoryCreation() public {
 
@@ -485,7 +158,7 @@ contract FactoryV2Test is Helper {
         assertEq(factory.getVaults(marketId)[1], collateral);
 
         // test oracle is set
-        assertTrue(factory.tokenToOracle(token) == oracle);
+        assertTrue(factory.marketToOracle(marketId) == oracle);
         assertEq(marketId, factory.getMarketId(token, strike, underlying));
 
         // test if counterparty is set
@@ -635,21 +308,23 @@ contract FactoryV2Test is Helper {
         // address oldOracle = address(0x3);
         address newOracle = address(0x4);
 
-        createMarketHelper();
+        uint256 marketId = createMarketHelper();
         vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-            factory.changeOracle(token,newOracle);
+            factory.changeOracle(marketId,newOracle);
 
         vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0)));
+                factory.changeOracle(uint256(0), newOracle);
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(1)));
+                factory.changeOracle(uint256(1), newOracle);
             vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeOracle(address(0), newOracle);
-            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeOracle(token, address(0));
+                factory.changeOracle(marketId, address(0));
        
 
             // test success case
-            factory.changeOracle(token, newOracle);
+            factory.changeOracle(marketId, newOracle);
         vm.stopPrank();
-        assertEq(factory.tokenToOracle(token), newOracle); 
+        assertEq(factory.marketToOracle(marketId), newOracle); 
     }
 
     function createMarketHelper() public returns(uint256 marketId){
