@@ -18,10 +18,10 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
     AggregatorV2V3Interface internal sequencerUptimeFeed;
  
     constructor(address _sequencer, address _factory) {
-        if (_factory == address(0)) revert ZeroAddress();
+        //if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
         
-        if (_sequencer == address(0)) revert ZeroAddress();
+        //if (_sequencer == address(0)) revert ZeroAddress();
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
 
     }
@@ -101,3 +101,4 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
     error VaultNotZeroTVL();
     error VaultZeroTVL();
 }
+
