@@ -74,7 +74,7 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
             price = price / int256(decimals);
         }
 
-        if (price <= 0) revert OraclePriceZero();
+        //if (price <= 0) revert OraclePriceZero();
 
         //(uint80 roundID, int256 price, , , uint80 answeredInRound) = 
         //if (answeredInRound < roundID) revert RoundIDOutdated();

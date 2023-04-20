@@ -15,3 +15,4 @@ arbitrum = { key = "${ETHERSCAN_API_KEY}" }
 
 [rpc_endpoints]
 arbitrum = "${ARBITRUM_RPC_URL}"
+goerli = "${GOERLI_RPC_URL}"
