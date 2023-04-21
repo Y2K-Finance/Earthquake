@@ -1,8 +1,4 @@
-/******************************************************* 
-NOTE: Development in progress by JG. Reached functional milestone; Live VST data is accessible. 
-***/
 // SPDX-License-Identifier: MIT
-//pragma solidity ^0.8.4;
 pragma solidity ^0.8.0;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
@@ -17,7 +13,7 @@ import "./RedstonePriceProvider.sol";
 
 contract RedstoneMockPriceProvider is RedstonePriceProvider {
 
-    constructor(address _sequencer, address _factory) RedstonePriceProvider(_sequencer, _factory) {
+    constructor(address _sequencer, address _factory, string memory _symbol) RedstonePriceProvider(_sequencer, _factory, _symbol) {
        
     }
 

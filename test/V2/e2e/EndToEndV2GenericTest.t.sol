@@ -74,7 +74,8 @@ contract EndToEndV2Test is Helper {
         //    ));
         priceProvider = IPriceProvider(new RedstoneMockPriceProvider(
             ARBITRUM_SEQUENCER,
-            address(factory)
+            address(factory),
+            "VST"
             ));
             
             
