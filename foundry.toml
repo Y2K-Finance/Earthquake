@@ -11,7 +11,8 @@ fs_permissions = [{ access = "read", path = "./"}]
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
 
 [etherscan]
-arbitrum = { key = "${ETHERSCAN_API_KEY}" }
+#arbitrum = { key = "${ETHERSCAN_API_KEY}" }
+#goerli = { key = "${ETHERSCAN_API_KEY}" }
 
 [rpc_endpoints]
 arbitrum = "${ARBITRUM_RPC_URL}"

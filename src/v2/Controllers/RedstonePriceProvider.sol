@@ -16,19 +16,74 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
- 
-    constructor(address _sequencer, address _factory) {
+    bytes32 symbol;
+    
+    constructor(address _sequencer, address _factory, string memory _symbol) {
+        //TODO: re-enable these checks after oracle validation
+        
         //if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
         
         //if (_sequencer == address(0)) revert ZeroAddress();
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
-
+        symbol = stringToBytes32(_symbol);
     }
     
+    function stringToBytes32(string memory _symbol) public pure returns (bytes32 result) {
+        require(bytes(_symbol).length <= 32, "String too long for bytes32 conversion");
+        assembly {
+            result := mload(add(_symbol, 32))
+        }
+    }    
+    
+    /**
+     * @notice Get the oracle numeric value from the transaction message
+     * @param dataFeedId The identifier of the data feed to retrieve the value from
+     * @return The numeric value from the oracle
+     */    
+    function extGetOracleNumericValueFromTxMsg(bytes32 dataFeedId)
+        public
+        view
+        returns (uint256)
+    {
+        return getOracleNumericValueFromTxMsg(dataFeedId);
+    }
+    
+    /**
+     * @notice Get the unique signers threshold
+     * @return The threshold number of unique signers
+     */
+    function getUniqueSignersThreshold() public view virtual override returns (uint8) {
+        return 1;
+    }
+
+    /**
+     * @notice Get the authorized signer index for a given signer address
+     * @param signerAddress The address of the signer
+     * @return The index of the authorized signer
+     */
+    function getAuthorisedSignerIndex(address signerAddress)
+        public
+        view
+        virtual
+        override
+        returns (uint8)
+    {
+       if (signerAddress == 0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9) {
+          return 0;
+       } 
+       if (signerAddress == 0xbe1E971E8e5E50F7698C74656520F0E788a0518D) {
+          return 0;
+       } 
+       revert SignerNotAuthorised(signerAddress);
+
+    }    
+    
     function getLatestRawPrice(address _token) public virtual view returns (int256) {    
-       uint256 priceIn = getOracleNumericValueFromTxMsg(bytes32("VST")); 
-       int256 price = int256(priceIn); // TODO Check this for errors
+       // Accepts _token to be backwards compatible with ChainlinkOracle
+       // TODO consider implementing token based symbol lookup
+       uint256 priceIn = getOracleNumericValueFromTxMsg(symbol); 
+       int256 price = int256(priceIn); 
        return price;
     }
     
@@ -74,11 +129,7 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
             price = price / int256(decimals);
         }
 
-        //if (price <= 0) revert OraclePriceZero();
-
-        //(uint80 roundID, int256 price, , , uint80 answeredInRound) = 
-        //if (answeredInRound < roundID) revert RoundIDOutdated();
-
+        if (price <= 0) revert OraclePriceZero();
         return price;
     }
     
