@@ -29,6 +29,7 @@ contract V2DeploymentScript is Script, HelperV2 {
     address weth = 0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1;
     address treasury = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
     address emissionToken = 0x5D59e5837F7e5d0F710178Eda34d9eCF069B36D2;
+    address factory;
 
     address controller;
     function run() public {
@@ -73,6 +74,9 @@ contract V2DeploymentScript is Script, HelperV2 {
         // address timeLock = address(new TimeLock(policy));
 
         // CarouselFactory vaultFactory = new CarouselFactory(weth, treasury, policy, emissionToken);
+        factory = 0xAd2f15ff7d167c800281ef52fa098Fae33429cc6;
+
+        controller = 0xDf878548b17429a6e6a3ff66Fb629e347738aA56;
 
         // VaultFactoryV2 vaultFactory = new VaultFactoryV2(weth, treasury, timeLock);
         // console2.log("Broadcast admin ", addresses.admin);
@@ -82,44 +86,47 @@ contract V2DeploymentScript is Script, HelperV2 {
         // vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
         // controller = address(new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer, treasury));
 
-        // vaultFactory.whitelistController(address(controller));
+        // vaultFactory.whitelistController(controller);
+
+        console.log("factory", factory);
+        console.log("controller", controller);
 
 
         // deployMarketsV2(address(vaultFactory));
 
-        //  IERC20(emissionToken).approve(0x1A5151C53bb041A7f70B40adfAEFe0FDfE05b2d8, 200 ether);
+        //  IERC20(emissionToken).approve(factory, 100 ether);
 
          
-        ( address prem, address collat, uint256 marketId) =  CarouselFactory(0x3BDB1eA3912121627da97F574d1Cb5E82FeF353B).createNewCarouselMarket(
+        ( address prem, address collat, uint256 marketId) =  CarouselFactory(factory).createNewCarouselMarket(
             CarouselFactory.CarouselMarketConfigurationCalldata(
-                addresses.tokenDAI,
-                1 ether - 1,
-                addresses.oracleDAI,
+                addresses.tokenMIM,
+                999000000000000000,
+                addresses.oracleMIM,
                 weth,
-                "y2kDAI_999*",
+                "y2kMIM_999*",
                 "https://y2k.finance",
-                0x01964e70ED9bA452c99932f46f302B10d2dAb2C9,
+                controller,
                 1 gwei,
                 10,
                 1 ether
             )
         );
 
-        console.log("Prem", prem);
-        console.log("Collat", collat);
-        console.log("marketId", marketId);
+        // console.log("Prem", prem);
+        // console.log("Collat", collat);
+        // console.log("marketId", marketId);
 
 
-        (uint256 eId, ) = CarouselFactory(0x3BDB1eA3912121627da97F574d1Cb5E82FeF353B).createEpochWithEmissions(
-            marketId,
-            1681841850,
-            1682187450,
-            50,
-            0,
-            0
-        );
+        // (uint256 eId, ) = CarouselFactory(factory).createEpochWithEmissions(
+        //     marketId,
+        //     1682532658,
+        //     1682705458,
+        //     50,
+        //     1 ether,
+        //     10 ether
+        // );
 
-        console.log("eId", eId);
+        // console.log("eId", eId);
 
         //stop setUp();
                         
