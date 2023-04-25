@@ -2,6 +2,7 @@
     "variables": {
       "newMarkets": true,
       "amountOfNewMarkets": 1,
+      "marketsIds": [27],
       "newEpochs": true,
       "amountOfNewEpochs": 10,
       "epochsIds": [
