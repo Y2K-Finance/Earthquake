@@ -47,7 +47,8 @@ contract TestRedstoneVST is Script {
     }
     
     /*
-    TODO: Update, to include a deploy which can fully test this oracle
+    TODO: Update, to include a deploy which can fully test this oracle in a streamlined manner.
+    Y2K paused on this custom oracle work, so Justin stopped developing here.
     function deploy() internal returns (address){
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);        
@@ -105,22 +106,7 @@ contract TestRedstoneVST is Script {
     
     
     function run() public{        
-        //TODO: CURRENT JG - this is in active development
-        // At present, the RedstoneConsumerNumericBase.getOracleNumericValueFromTxMsg seems to:
-        // 1. works when invoked via the dApp wrapper class (test_RedstonePrice.js)
-        // WORKS:  string memory newPrice  = getJsPrice(redstoneOracleAddress) invokes test_RedstonePrice.js;
-        // 2. fails when invoked via this forge process wrapper class RedstonePriceProvider.extGetOracleNumericValueFromTxMsg(symbol)
-        // FAIL:  rpp.extGetOracleNumericValueFromTxMsg(symbol)
-        // 3.
-        // Expected:  rpp.extGetOracleNumericValueFromTxMsg(symbol) ~(similar to)= getJsPrice(redstoneOracleAddress)
-        //////
-        // Related Files / Classes
-        // ./test_RedstonePrice.js
-        // src/v2/Controllers/RedstonePriceProvider.sol (y2k)
-        // --RedstoneConsumerNumericBase (RedStone API)
-        // ----RedstoneConsumerBase (RedStone API)
-        
-        address redstoneOracle = 0x2f697A11f84Bd520Bf99D63Ef9c4038238c9423E; // Cleaned up code and uses variable symbol
+        address redstoneOracle = 0x2f697A11f84Bd520Bf99D63Ef9c4038238c9423E; // Hard coded just to save on fees w.r.t redeployment.
         string memory redstoneOracleAddress = addressToString(redstoneOracle);
         console.log("redstoneOracleAddress");
         console.log(redstoneOracleAddress);
@@ -147,15 +133,6 @@ contract TestRedstoneVST is Script {
             }
         }
         console.log("Finishing");
-        // TODO: Add in deploy:
-        // address redstoneOracle = deploy();
-        
-        // TODO: Info: Previous addresses and attempts on Goerli.
-        // address redstoneOracle = 0x5684D53aD5babcC19e2a219B1625E4AaF97E33cA; // Full Broken Oracle
-        // 0. address redstoneOracle = 0xB2727C8cdFc41a8F2653917A3Bf783956C90845A; // Returns just a number
-        // 1. address redstoneOracle = 0xF6662ddF35A123630b6E665bc753A670e7a277d8; // Returns a deeper number
-        // 2. address redstoneOracle = 0x0758474d78e8cD2D2D75AcAA0E088546449FC268; // Updated to include custom signer (did not help)
-
     }
     
     /*//////////////////////////////////////////////////////////////
