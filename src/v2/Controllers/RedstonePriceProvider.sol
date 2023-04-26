@@ -17,7 +17,7 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
     bytes32 symbol;
-    
+    int256 latestPrice;
     constructor(address _sequencer, address _factory, string memory _symbol) {
         //TODO: re-enable these checks after oracle validation
         
@@ -72,9 +72,6 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
        if (signerAddress == 0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9) {
           return 0;
        } 
-       if (signerAddress == 0xbe1E971E8e5E50F7698C74656520F0E788a0518D) {
-          return 0;
-       } 
        revert SignerNotAuthorised(signerAddress);
 
     }    
@@ -96,7 +93,7 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
      * @param _token Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token) public view returns (int256) {
+    function validateLatestPrice(address _token) public view returns (int256) {
         if (address(sequencerUptimeFeed) != address(0))
         {
             (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed.latestRoundData();
@@ -132,7 +129,26 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
         if (price <= 0) revert OraclePriceZero();
         return price;
     }
+
+
+    /** @notice Lookup token price
+     * @param _token Target token address
+     * @return nowPrice Current token price
+     */
+    function storeLatestPrice(address _token) public returns (int256) {
+      latestPrice = validateLatestPrice(_token);
+      return latestPrice;
+    }
     
+    /** @notice Lookup token price
+     * @param _token Target token address
+     * @return nowPrice Current token price
+     */
+    function getLatestPrice(address _token) public view returns (int256) {
+      return latestPrice;
+    }
+    
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/

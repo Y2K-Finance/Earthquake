@@ -120,7 +120,7 @@ contract TestRedstoneVST is Script {
         // --RedstoneConsumerNumericBase (RedStone API)
         // ----RedstoneConsumerBase (RedStone API)
         
-        address redstoneOracle = 0x3b5E01817359968A7cB145A6700776D760700f03; // Cleaned up code and uses variable symbol
+        address redstoneOracle = 0x2f697A11f84Bd520Bf99D63Ef9c4038238c9423E; // Cleaned up code and uses variable symbol
         string memory redstoneOracleAddress = addressToString(redstoneOracle);
         console.log("redstoneOracleAddress");
         console.log(redstoneOracleAddress);
@@ -135,18 +135,6 @@ contract TestRedstoneVST is Script {
             console.log("newPrice");        
             console.log(newPrice);
             RedstonePriceProvider rpp = RedstonePriceProvider(redstoneOracle);
-            
-            try rpp.extGetOracleNumericValueFromTxMsg(symbol) returns (uint256 rawPrice) {
-                console.log("rawPrice");
-                console.log(uint256(rawPrice));
-                
-            } catch Error(string memory reason) {
-                console.log("Error calling GetOracleNumericValueFromTxMsg:");
-                console.log(reason);
-            
-            } catch (bytes memory /*lowLevelData*/) {
-                console.log("Unknown error calling GetOracleNumericValueFromTxMsg");
-            }
             
             try rpp.getLatestPrice(address(0)) returns (int256 vstPrice) {
                 console.log("vstPrice");

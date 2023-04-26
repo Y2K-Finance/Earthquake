@@ -53,8 +53,14 @@ async function main() {
     dataFeeds: ["VST"],
   }, ["https://d33trozg86ya9x.cloudfront.net"]);
 
+  const storeTx = await wrappedContract.storeLatestPrice(ethers.constants.AddressZero);
+  //console.log(priceFromContract);   
+  //BLOCK ON TX
+  await storeTx.wait();
+
   const priceFromContract = await wrappedContract.getLatestPrice(ethers.constants.AddressZero);
   //console.log(priceFromContract);   
+    
   const priceAsBigNumber = ethers.BigNumber.from(priceFromContract._hex);
   console.log(`P`+priceAsBigNumber.toString());  
     
