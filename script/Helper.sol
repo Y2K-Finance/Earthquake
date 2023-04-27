@@ -6,7 +6,7 @@ import "forge-std/StdJson.sol";
 import "../src/VaultFactory.sol";
 import "../src/Controller.sol";
 //TODO change this after deploy  y2k token
-import "../src/rewards/PausableRewardsFactory.sol";
+import "../src/rewards/RewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./keepers/KeeperDepeg.sol";

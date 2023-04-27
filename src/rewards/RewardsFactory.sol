@@ -11,6 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract RewardsFactory is Ownable {
     address public govToken;
     address public factory;
+    mapping(bytes32 => address[2]) public stakingRewards; // marketEpochId => [insr, risk]
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -88,6 +89,9 @@ contract RewardsFactory is Ownable {
             _epochEnd
         );
 
+        bytes32 farmEpochId = getFarmEpochId(_marketIndex,  Vault(_insrToken).idEpochBegin(_epochEnd), _epochEnd);
+        stakingRewards[farmEpochId] = [address(insrStake), address(riskStake)] ;
+
         emit CreatedStakingReward(
             keccak256(
                 abi.encodePacked(
@@ -102,5 +106,41 @@ contract RewardsFactory is Ownable {
         );
 
         return (address(insrStake), address(riskStake));
+    }
+
+    /** @notice Get farm epoch ID
+     * @param _marketIndex Target market index
+     * @param _epochStart Start of epoch set for market
+     * @param _epochEnd End of epoch set for market
+     * @return farmEpochId Farm epoch ID
+     */
+    function getFarmEpochId(uint256 _marketIndex,  uint256 _epochStart,uint256 _epochEnd)
+        public
+        pure
+        returns (bytes32 farmEpochId)
+    {
+        return
+            keccak256(
+                abi.encodePacked(
+                    _marketIndex,
+                    _epochStart,
+                    _epochEnd
+                )
+            );
+    }
+
+
+    /** @notice Get farm addresses
+     * @param _marketIndex Target market index
+     * @param _epochStart Start of epoch set for market
+     * @param _epochEnd End of epoch set for market
+     * @return farmAddresses Farm addresses
+     */
+    function getFarmAddresses(uint256 _marketIndex,  uint256 _epochStart,uint256 _epochEnd)
+        public
+        view
+        returns (address[2] memory farmAddresses)
+    {
+        return stakingRewards[getFarmEpochId(_marketIndex, _epochStart, _epochEnd)];
     }
 }
