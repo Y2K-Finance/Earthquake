@@ -57,8 +57,8 @@ contract VaultFactoryV2 is Ownable {
     @return marketId uint256 of the marketId
      */
     function createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
-        virtual
         external
+        virtual
         onlyOwner
         returns (
             address premium,
@@ -69,7 +69,9 @@ contract VaultFactoryV2 is Ownable {
         return _createNewMarket(_marketCalldata);
     }
 
-    function _createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
+    function _createNewMarket(
+        MarketConfigurationCalldata memory _marketCalldata
+    )
         internal
         returns (
             address premium,
@@ -82,9 +84,11 @@ contract VaultFactoryV2 is Ownable {
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
         if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
 
-    
-
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike, _marketCalldata.underlyingAsset);
+        marketId = getMarketId(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
         marketIdInfo[marketId] = MarketInfo(
             _marketCalldata.token,
             _marketCalldata.strike,
@@ -93,7 +97,7 @@ contract VaultFactoryV2 is Ownable {
 
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
-        
+
         // set oracle for the market
         marketToOracle[marketId] = _marketCalldata.oracle;
 
@@ -147,7 +151,6 @@ contract VaultFactoryV2 is Ownable {
         return (premium, collateral, marketId);
     }
 
-
     /**    
     @notice Function set epoch for market,
     @param  _marketId uint256 of the market index to create more assets in
@@ -160,14 +163,13 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee
-    ) virtual public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
-        return
-            _createEpoch(
-                _marketId,
-                _epochBegin,
-                _epochEnd,
-                _withdrawalFee
-            );
+    )
+        public
+        virtual
+        onlyOwner
+        returns (uint256 epochId, address[2] memory vaults)
+    {
+        return _createEpoch(_marketId, _epochBegin, _epochEnd, _withdrawalFee);
     }
 
     function _createEpoch(
@@ -203,6 +205,7 @@ contract VaultFactoryV2 is Ownable {
             )
         );
     }
+
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -322,8 +325,9 @@ contract VaultFactoryV2 is Ownable {
         onlyTimeLocker
     {
         if (_oracle == address(0)) revert AddressZero();
-        if(_marketId == 0) revert MarketDoesNotExist(_marketId);
-        if (marketToOracle[_marketId] == address(0)) revert MarketDoesNotExist(_marketId);
+        if (_marketId == 0) revert MarketDoesNotExist(_marketId);
+        if (marketToOracle[_marketId] == address(0))
+            revert MarketDoesNotExist(_marketId);
 
         marketToOracle[_marketId] = _oracle;
         emit OracleChanged(_marketId, _oracle);
@@ -384,14 +388,16 @@ contract VaultFactoryV2 is Ownable {
     @param _underlying Address of the underlying
     @return marketId uint256 of the marketId
      */
-    function getMarketId(address _token, uint256 _strikePrice, address _underlying)
-        public
-        pure
-        returns (uint256 marketId)
-    {
-        return uint256(keccak256(abi.encodePacked(_token, _strikePrice, _underlying)));
+    function getMarketId(
+        address _token,
+        uint256 _strikePrice,
+        address _underlying
+    ) public pure returns (uint256 marketId) {
+        return
+            uint256(
+                keccak256(abi.encodePacked(_token, _strikePrice, _underlying))
+            );
     }
-
 
     // get marketInfo
     function getMarketInfo(uint256 _marketId)
@@ -403,7 +409,7 @@ contract VaultFactoryV2 is Ownable {
             address underlyingAsset
         )
     {
-       token = marketIdInfo[_marketId].token;
+        token = marketIdInfo[_marketId].token;
         strike = marketIdInfo[_marketId].strike;
         underlyingAsset = marketIdInfo[_marketId].underlyingAsset;
     }
@@ -448,7 +454,6 @@ contract VaultFactoryV2 is Ownable {
         IVaultV2 premium;
         IVaultV2 collateral;
     }
-
 
     struct MarketInfo {
         address token;

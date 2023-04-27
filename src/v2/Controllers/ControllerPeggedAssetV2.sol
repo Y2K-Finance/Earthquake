@@ -156,7 +156,7 @@ contract ControllerPeggedAssetV2 {
             collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
 
-         if (
+        if (
             premiumVault.totalAssets(_epochId) == 0 ||
             collateralVault.totalAssets(_epochId) == 0
         ) {
@@ -283,11 +283,12 @@ contract ControllerPeggedAssetV2 {
             ,
             /*uint80 roundId*/
             int256 answer,
-            uint256 startedAt, 
-            /*uint256 updatedAt*/ /*uint80 answeredInRound*/
+            uint256 startedAt,
             ,
 
-        ) = sequencerUptimeFeed.latestRoundData();
+        ) = /*uint256 updatedAt*/
+            /*uint80 answeredInRound*/
+            sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down
@@ -305,10 +306,16 @@ contract ControllerPeggedAssetV2 {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
             vaultFactory.marketToOracle(_marketId)
         );
-        (uint80 roundID, int256 price, ,uint256 updatedAt, uint80 answeredInRound) = priceFeed
-            .latestRoundData();
+        (
+            uint80 roundID,
+            int256 price,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
 
-        if (updatedAt < block.timestamp - MAX_UPDATE_TRESHOLD) revert PriceOutdated();
+        if (updatedAt < block.timestamp - MAX_UPDATE_TRESHOLD)
+            revert PriceOutdated();
 
         uint256 decimals = priceFeed.decimals();
 

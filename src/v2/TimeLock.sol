@@ -77,7 +77,7 @@ contract TimeLock {
         string calldata _func,
         bytes calldata _data,
         uint256 _timestamp
-     ) external payable onlyOwner returns (bytes memory) {
+    ) external payable onlyOwner returns (bytes memory) {
         bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id queued
@@ -109,7 +109,7 @@ contract TimeLock {
             data = _data;
         }
 
-        if(msg.value != _value) {
+        if (msg.value != _value) {
             revert ValueNotMatchError(msg.value, _value);
         }
         // call target

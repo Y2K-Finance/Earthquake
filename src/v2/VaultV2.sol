@@ -299,8 +299,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         if (_amount > finalTVL[_id]) revert AmountExceedsTVL();
         if (epochAccounting[_id] + _amount > finalTVL[_id])
             revert AmountExceedsTVL();
-        if (!whitelistedAddresses[_receiver] && _receiver != counterPartyVault && _receiver != treasury())
-            revert DestinationNotAuthorized(_receiver);
+        if (
+            !whitelistedAddresses[_receiver] &&
+            _receiver != counterPartyVault &&
+            _receiver != treasury()
+        ) revert DestinationNotAuthorized(_receiver);
         epochAccounting[_id] += _amount;
         SemiFungibleVault.asset.safeTransfer(_receiver, _amount);
     }

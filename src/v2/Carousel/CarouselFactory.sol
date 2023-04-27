@@ -54,12 +54,16 @@ contract CarouselFactory is VaultFactoryV2 {
         if (_marketCalldata.token == address(0)) revert AddressZero();
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
         if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
-        
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike, _marketCalldata.underlyingAsset);
-                
+
+        marketId = getMarketId(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
+
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
-        
+
         marketIdInfo[marketId] = MarketInfo(
             _marketCalldata.token,
             _marketCalldata.strike,
@@ -68,7 +72,7 @@ contract CarouselFactory is VaultFactoryV2 {
 
         // set oracle for the market
         marketToOracle[marketId] = _marketCalldata.oracle;
-        
+
         //y2kUSDC_99*PREMIUM
         premium = CarouselCreator.createCarousel(
             CarouselCreator.CarouselMarketConfiguration(
@@ -127,14 +131,13 @@ contract CarouselFactory is VaultFactoryV2 {
         return (premium, collateral, marketId);
     }
 
-
-     function createNewMarket(MarketConfigurationCalldata memory)
-        override
+    function createNewMarket(MarketConfigurationCalldata memory)
         external
+        override
         returns (
-            address ,
-            address ,
-            uint256 
+            address,
+            address,
+            uint256
         )
     {
         revert();
@@ -186,11 +189,11 @@ contract CarouselFactory is VaultFactoryV2 {
     // to prevent the creation of epochs without emissions
     // this function is not used
     function createEpoch(
-       uint256 /*_marketId*/,
-        uint40 /*_epochBegin*/,
-        uint40 /*_epochEnd*/,
+        uint256, /*_marketId*/
+        uint40, /*_epochBegin*/
+        uint40, /*_epochEnd*/
         uint16 /*_withdrawalFee*/
-    ) override public returns (uint256, address[2] memory) {
+    ) public override returns (uint256, address[2] memory) {
         revert();
     }
 
@@ -214,8 +217,8 @@ contract CarouselFactory is VaultFactoryV2 {
         ICarousel premium = ICarousel(vaults[0]);
         ICarousel collat = ICarousel(vaults[1]);
 
-        if(premium.getDepositQueueLength() > 0) revert QueueNotEmpty();
-        if(collat.getDepositQueueLength() > 0) revert QueueNotEmpty();
+        if (premium.getDepositQueueLength() > 0) revert QueueNotEmpty();
+        if (collat.getDepositQueueLength() > 0) revert QueueNotEmpty();
 
         premium.changeRelayerFee(_relayerFee);
         collat.changeRelayerFee(_relayerFee);
@@ -250,9 +253,8 @@ contract CarouselFactory is VaultFactoryV2 {
         public
         onlyTimeLocker
     {
-         ICarousel(_vault).cleanupRolloverQueue(_addresses);
+        ICarousel(_vault).cleanupRolloverQueue(_addresses);
     }
-
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS

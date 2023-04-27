@@ -61,5 +61,4 @@ interface IVaultV2 {
         external
         view
         returns (bool);
-
 }
