@@ -14,22 +14,27 @@ contract ChainlinkPriceProvider is IPriceProvider {
     
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
+    uint256 marketId = 0;
 
-    constructor(address _sequencer,address _factory) {
+    constructor(address _sequencer, address _factory) {
+        
         if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
     
         if (_sequencer == address(0)) revert ZeroAddress();
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
+    }
         
-
+    function setMarket(uint256 _marketId) public {
+        if (_marketId == 0) revert ZeroAddress();
+        if (marketId != 0) revert AlreadyAssignedMarket();
+        marketId = _marketId;
     }
 
     /** @notice Lookup token price
-     * @param _token Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token) public view returns (int256) {
+    function getLatestPrice() public view returns (int256) {
         (
             ,
             /*uint80 roundId*/
@@ -53,7 +58,7 @@ contract ChainlinkPriceProvider is IPriceProvider {
         }
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.tokenToOracle(_token)
+            vaultFactory.marketToOracle(marketId)
         );
         
         (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
@@ -81,11 +86,12 @@ contract ChainlinkPriceProvider is IPriceProvider {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
-
+git 
     error MarketDoesNotExist(uint256 marketId);
     error SequencerDown();
     error GracePeriodNotOver();
     error ZeroAddress();
+    error AlreadyAssignedMarket();
     error EpochFinishedAlready();
     error PriceNotAtStrikePrice(int256 price);
     error EpochNotStarted();

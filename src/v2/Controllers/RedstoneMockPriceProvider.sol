@@ -13,14 +13,21 @@ import "./RedstonePriceProvider.sol";
 
 contract RedstoneMockPriceProvider is RedstonePriceProvider {
 
+    uint256 marketId;
+
     constructor(address _sequencer, address _factory, string memory _symbol) RedstonePriceProvider(_sequencer, _factory, _symbol) {
        
     }
+        
+    function setMarket(uint256 _marketId) public {
+        marketId = _marketId;
+    }
 
-    function getLatestRawPrice(address _token) public override view returns (int256) {
+    function getLatestRawPrice() public override view returns (int256) {
+        if (marketId == 0) revert ZeroAddress();
     
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.tokenToOracle(_token)
+            vaultFactory.marketToOracle(marketId)
         );
         
         (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
@@ -29,9 +36,9 @@ contract RedstoneMockPriceProvider is RedstonePriceProvider {
     }
     
     
-    function getLatestRawDecimals(address _token) public override view returns (uint256) {
+    function getLatestRawDecimals() public override view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.tokenToOracle(_token)
+            vaultFactory.marketToOracle(marketId)
         );
         
         (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed

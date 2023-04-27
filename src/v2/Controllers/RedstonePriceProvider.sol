@@ -76,24 +76,22 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
 
     }    
     
-    function getLatestRawPrice(address _token) public virtual view returns (int256) {    
-       // Accepts _token to be backwards compatible with ChainlinkOracle
+    function getLatestRawPrice() public virtual view returns (int256) {    
        // TODO consider implementing token based symbol lookup
        uint256 priceIn = getOracleNumericValueFromTxMsg(symbol); 
        int256 price = int256(priceIn); 
        return price;
     }
     
-    function getLatestRawDecimals(address _token) public  virtual view returns (uint256) {
+    function getLatestRawDecimals() public  virtual view returns (uint256) {
        return 18;
     }
     
     
     /** @notice Lookup token price
-     * @param _token Target token address
      * @return nowPrice Current token price
      */
-    function validateLatestPrice(address _token) public view returns (int256) {
+    function validateLatestPrice() public view returns (int256) {
         if (address(sequencerUptimeFeed) != address(0))
         {
             (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed.latestRoundData();
@@ -113,8 +111,8 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
         
         }
         
-        int256 price = getLatestRawPrice(_token); 
-        uint256 decimals = getLatestRawDecimals(_token);
+        int256 price = getLatestRawPrice(); 
+        uint256 decimals = getLatestRawDecimals();
         
         if (decimals < 18) {
             decimals = 10**(18 - decimals);
@@ -132,19 +130,17 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
 
 
     /** @notice Lookup token price
-     * @param _token Target token address
      * @return nowPrice Current token price
      */
-    function storeLatestPrice(address _token) public returns (int256) {
-      latestPrice = validateLatestPrice(_token);
+    function storeLatestPrice() public returns (int256) {
+      latestPrice = validateLatestPrice();
       return latestPrice;
     }
     
     /** @notice Lookup token price
-     * @param _token Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token) public view returns (int256) {
+    function getLatestPrice() public view returns (int256) {
       return latestPrice;
     }
     

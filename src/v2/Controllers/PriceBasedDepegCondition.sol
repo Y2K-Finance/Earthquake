@@ -23,7 +23,7 @@ contract PriceBasedDepegCondition is IDepegCondition {
             //return false;  //TODO -- decide between reverts and bools here (benifits / drawbacks)
         }
 
-        int256 price = priceProvider.getLatestPrice(premiumVault.token());
+        int256 price = priceProvider.getLatestPrice();
         console.log("premiumVault 2");
         console.log(address(premiumVault));
         console.log(uint256(premiumVault.strike()));

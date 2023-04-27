@@ -68,26 +68,21 @@ contract EndToEndV2Test is Helper {
                 address(timelock)
             );
         
-        //priceProvider = IPriceProvider(new ChainlinkPriceProvider(
-        //    ARBITRUM_SEQUENCER,
-        //    address(factory)
-        //    ));
-        priceProvider = IPriceProvider(new RedstoneMockPriceProvider(
+        ChainlinkPriceProvider cpp = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
-            address(factory),
-            "VST"
-            ));
-            
+            address(factory));        
+        RedstoneMockPriceProvider rpp = new RedstoneMockPriceProvider(
+                    ARBITRUM_SEQUENCER,
+                    address(factory),
+                    "VST"
+                    );         
+        priceProvider = IPriceProvider(rpp);
             
         controller = new ControllerGenericV2(
                 address(factory), 
                 ARBITRUM_SEQUENCER, 
                 TREASURY,
                 address(priceProvider));
-                
-                
-           
-                
                 
         factory.whitelistController(address(controller));
         
@@ -141,6 +136,8 @@ contract EndToEndV2Test is Helper {
                 end,
                 fee
        );
+        cpp.setMarket(marketId);
+        rpp.setMarket(marketId);
 
        //create epoch for depeg
         (depegEpochId, ) = factory.createEpoch(

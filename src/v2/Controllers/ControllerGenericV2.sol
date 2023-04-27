@@ -81,7 +81,7 @@ contract ControllerGenericV2 {
 
         if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
 
-        int256 price = priceProvider.getLatestPrice(premiumVault.token());
+        int256 price = priceProvider.getLatestPrice();
         console.log("premiumVault");
         console.log(address(premiumVault));
         console.log(uint256(premiumVault.strike()));
