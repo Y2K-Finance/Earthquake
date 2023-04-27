@@ -1,0 +1,51 @@
+(temp) Active Useful notes about Gains:
+
+
+1) Gains Has a list of active Contracts
+- https://gains-network.gitbook.io/docs-home/what-is-gains-network/contract-addresses#active-contracts
+
+
+2) the contract for gDAI, the (The GToken)
+- GToken: 
+-- https://polygonscan.com/address/0x65dff67b62652dab94a8be6a5c1b3df993525fcc#code
+
+2) The P/L Feed
+-- p/l feed: https://polygonscan.com/address/0x8d687276543b92819F2f2B5C3faad4AD27F4440c#code
+
+3) GNS staking contract:
+-- https://polygonscan.com/address/0xFb06a737f549Eb2512Eb6082A808fc7F16C0819D#code
+
+4) ERC20 Bridge:
+-- https://polygonscan.com/address/0xDF774A4F3EA5095535f5B8f5b9149caF90FF75Bd#code
+
+----------------
+
+Active Contracts:
+1. Polygon Mainnet
+GNS Token
+0xE5417Af564e4bFDA1c483642db72007871397896
+GNS NFTs
+GFARM2 NFT 1: 0xF9A4c522E327935BD1F5a338c121E14e4cc1f898
+GFARM2 NFT 2: 0x77cd42B925e1A82f41d852D6BE727CFc88fddBbC
+GFARM2 NFT 3: 0x3378AD81D09DE23725Ee9B9270635c97Ed601921
+GFARM2 NFT 4: 0x02e2c5825C1a3b69C0417706DbE1327C2Af3e6C2
+GFARM2 NFT 5: 0x2D266A94469d05C9e06D52A4D0d9C23b157767c2
+ProxyAdmin & Timelocks
+ProxyAdmin: 0xdbCd002f96F62781BBe65FBe24f4d6265d416BaD
+GNSTimelockOwner: 0x322e18FdB5d0B0221E4724dcC5883c4B7896dA0E
+GNSTimelockManager: 0xf0A8531505F96B8deCce7857CA3AB57490f44A40
+Bridges
+ERC20Bridge: 0xDF774A4F3EA5095535f5B8f5b9149caF90FF75Bd
+ERC721LockingBridge: 0xa33f7069f075A54481868e4C0b8D26925A218362
+GFARM2 -> GNS migration: 0xd285f881886505b9Ef6684E1aaa7949a56B0C7Da
+V6.3.1 Contracts
+Callbacks: 0x82e59334da8C667797009BBe82473B55c7A6b311
+NFT rewards:  0x8103C0665A544201BBF606d90845d1B2D8005F1c
+Trading: 0x4ba64a81ca50D8B66684C664d75b55eaCcFaCAEb
+V6.3 Contracts
+Aggregator: 0x631e885028E75fCbB34C06d8ecB8e20eA18f6632
+gDAI: 0x91993f2101cc758D0dEB7279d41e880F7dEFe827
+gDAI OpenPnlFeed: 0x8d687276543b92819F2f2B5C3faad4AD27F4440c
+gDAI LockedDepositNftDesign: 0xfc28Bb5F103fbFAe241f07Bdbe4196C5bc8FBea4
+gDAI LockedDepositNft: 0xDd42AA3920C1d5b5FD95055d852135416369Bcc1
+V6.2 Contracts
