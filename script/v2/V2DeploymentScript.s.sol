@@ -97,34 +97,34 @@ contract V2DeploymentScript is Script, HelperV2 {
         //  IERC20(emissionToken).approve(factory, 100 ether);
 
          
-        ( address prem, address collat, uint256 marketId) =  CarouselFactory(factory).createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
-                addresses.tokenMIM,
-                999000000000000000,
-                addresses.oracleMIM,
-                weth,
-                "y2kMIM_999*",
-                "https://y2k.finance",
-                controller,
-                1 gwei,
-                10,
-                1 ether
-            )
-        );
+        // ( address prem, address collat, uint256 marketId) =  CarouselFactory(factory).createNewCarouselMarket(
+        //     CarouselFactory.CarouselMarketConfigurationCalldata(
+        //         addresses.tokenMIM,
+        //         999000000000000000,
+        //         addresses.oracleMIM,
+        //         weth,
+        //         "y2kMIM_999*",
+        //         "https://y2k.finance",
+        //         controller,
+        //         1 gwei,
+        //         10,
+        //         1 ether
+        //     )
+        // );
 
         // console.log("Prem", prem);
         // console.log("Collat", collat);
         // console.log("marketId", marketId);
 
 
-        // (uint256 eId, ) = CarouselFactory(factory).createEpochWithEmissions(
-        //     marketId,
-        //     1682532658,
-        //     1682705458,
-        //     50,
-        //     1 ether,
-        //     10 ether
-        // );
+        (uint256 eId, ) = CarouselFactory(factory).createEpochWithEmissions(
+            50136727949622076191748106171773774901339026601219072444023567158965921292263,
+            1682575989,
+            1682748789,
+            50,
+            1 ether,
+            2 ether
+        );
 
         // console.log("eId", eId);
 

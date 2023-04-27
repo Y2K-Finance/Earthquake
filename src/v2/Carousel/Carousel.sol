@@ -311,6 +311,7 @@ contract Carousel is VaultV2 {
         // queue is executed from the tail to the head
         // get last index of queue
         uint256 i = length - 1;
+        uint256 relayerFeeShortfall;
         while ((length - _operations) <= i) {
             // this loop impelements FILO (first in last out) stack to reduce gas cost and improve code readability
             // changing it to FIFO (first in first out) would require more code changes and would be more expensive
@@ -324,16 +325,25 @@ contract Carousel is VaultV2 {
                 _asset().safeTransfer(treasury(), feeAmount);
             }
 
+            // remove minDeposit has chagned during QueueItem is in the queue and relayerFee is now higher than deposit amount
+            // mint 0 and pay relayerFeeShortfall to relayer
+            if(assetsToDeposit > relayerFee) {
+              assetsToDeposit -= relayerFee;  
+            } else {
+                relayerFeeShortfall += (relayerFee - assetsToDeposit);
+                assetsToDeposit = 0;
+            }
+
             _mintShares(
                 queue[i].receiver,
                 _epochId,
-                assetsToDeposit - relayerFee
+                assetsToDeposit
             );
             emit Deposit(
                 msg.sender,
                 queue[i].receiver,
                 _epochId,
-                assetsToDeposit - relayerFee
+                assetsToDeposit
             );
             depositQueue.pop();
             if (i == 0) break;
@@ -344,7 +354,7 @@ contract Carousel is VaultV2 {
 
         emit RelayerMinted(_epochId, _operations);
 
-        asset.safeTransfer(msg.sender, _operations * relayerFee);
+        asset.safeTransfer(msg.sender, (_operations * relayerFee) - relayerFeeShortfall);
     }
 
     /** @notice mints for rollovers
