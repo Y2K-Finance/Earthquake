@@ -86,7 +86,7 @@ contract ChainlinkPriceProvider is IPriceProvider {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
-git 
+ 
     error MarketDoesNotExist(uint256 marketId);
     error SequencerDown();
     error GracePeriodNotOver();
