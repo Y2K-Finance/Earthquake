@@ -655,7 +655,7 @@ contract Carousel is VaultV2 {
     function getEpochDepositFee(uint256 _id, uint256 _assets)
         public
         view
-        returns (uint256 feeAmount, uint256 _assetsAfterFee)
+        returns (uint256 feeAmount, uint256 assetsAfterFee)
     {
         (uint256 maxX, , uint256 minX) = getEpochConfig(_id);
         // deposit fee is calcualted linearly between time of epoch creation and epoch starting (deposit window)
@@ -664,7 +664,7 @@ contract Carousel is VaultV2 {
         // min minRequiredDeposit modifier ensures that _assets has high enough value to not devide by 0
         // 0.5% = multiply by 10000 then divide by 50
         feeAmount = _assets.mulDivDown(fee, 10000);
-        _assetsAfterFee = _assets - feeAmount;
+        assetsAfterFee = _assets - feeAmount;
     }
 
     /** @notice returns the emissions to withdraw
