@@ -24,7 +24,6 @@ contract FactoryV2Test is Helper {
         factory.whitelistController(address(controller));
      }
 
-
     function testFactoryCreation() public {
 
         TimeLock timelock = new TimeLock(ADMIN);
@@ -159,7 +158,7 @@ contract FactoryV2Test is Helper {
         assertEq(factory.getVaults(marketId)[1], collateral);
 
         // test oracle is set
-        assertTrue(factory.tokenToOracle(token) == oracle);
+        assertTrue(factory.marketToOracle(marketId) == oracle);
         assertEq(marketId, factory.getMarketId(token, strike, underlying));
 
         // test if counterparty is set
@@ -309,21 +308,23 @@ contract FactoryV2Test is Helper {
         // address oldOracle = address(0x3);
         address newOracle = address(0x4);
 
-        createMarketHelper();
+        uint256 marketId = createMarketHelper();
         vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-            factory.changeOracle(token,newOracle);
+            factory.changeOracle(marketId,newOracle);
 
         vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0)));
+                factory.changeOracle(uint256(0), newOracle);
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(1)));
+                factory.changeOracle(uint256(1), newOracle);
             vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeOracle(address(0), newOracle);
-            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeOracle(token, address(0));
+                factory.changeOracle(marketId, address(0));
        
 
             // test success case
-            factory.changeOracle(token, newOracle);
+            factory.changeOracle(marketId, newOracle);
         vm.stopPrank();
-        assertEq(factory.tokenToOracle(token), newOracle); 
+        assertEq(factory.marketToOracle(marketId), newOracle); 
     }
 
     function createMarketHelper() public returns(uint256 marketId){

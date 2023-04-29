@@ -24,7 +24,7 @@ contract VaultFactoryV2 is Ownable {
     mapping(uint256 => uint256[]) public marketIdToEpochs; //all epochs in the market
     mapping(uint256 => MarketInfo) public marketIdInfo; // marketId configuration
     mapping(uint256 => uint16) public epochFee; // epochId to fee
-    mapping(address => address) public tokenToOracle; //token address to respective oracle smart contract address
+    mapping(uint256 => address) public marketToOracle; //token address to respective oracle smart contract address
     mapping(address => bool) public controllers;
 
     /*//////////////////////////////////////////////////////////////
@@ -57,8 +57,8 @@ contract VaultFactoryV2 is Ownable {
     @return marketId uint256 of the marketId
      */
     function createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
-        virtual
         external
+        virtual
         onlyOwner
         returns (
             address premium,
@@ -69,7 +69,9 @@ contract VaultFactoryV2 is Ownable {
         return _createNewMarket(_marketCalldata);
     }
 
-    function _createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
+    function _createNewMarket(
+        MarketConfigurationCalldata memory _marketCalldata
+    )
         internal
         returns (
             address premium,
@@ -82,11 +84,11 @@ contract VaultFactoryV2 is Ownable {
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
         if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
 
-        if (tokenToOracle[_marketCalldata.token] == address(0)) {
-            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
-        }
-
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike, _marketCalldata.underlyingAsset);
+        marketId = getMarketId(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
         marketIdInfo[marketId] = MarketInfo(
             _marketCalldata.token,
             _marketCalldata.strike,
@@ -95,6 +97,9 @@ contract VaultFactoryV2 is Ownable {
 
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
+
+        // set oracle for the market
+        marketToOracle[marketId] = _marketCalldata.oracle;
 
         //y2kUSDC_99*PREMIUM
         premium = VaultV2Creator.createVaultV2(
@@ -146,7 +151,6 @@ contract VaultFactoryV2 is Ownable {
         return (premium, collateral, marketId);
     }
 
-
     /**    
     @notice Function set epoch for market,
     @param  _marketId uint256 of the market index to create more assets in
@@ -159,14 +163,13 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee
-    ) virtual public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
-        return
-            _createEpoch(
-                _marketId,
-                _epochBegin,
-                _epochEnd,
-                _withdrawalFee
-            );
+    )
+        public
+        virtual
+        onlyOwner
+        returns (uint256 epochId, address[2] memory vaults)
+    {
+        return _createEpoch(_marketId, _epochBegin, _epochEnd, _withdrawalFee);
     }
 
     function _createEpoch(
@@ -202,6 +205,7 @@ contract VaultFactoryV2 is Ownable {
             )
         );
     }
+
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -313,18 +317,20 @@ contract VaultFactoryV2 is Ownable {
 
     /**
     @notice Timelocker function, changes oracle address for a given token
-    @param _token Target token address
+    @param _marketId Target token address
     @param  _oracle Oracle address
      */
-    function changeOracle(address _token, address _oracle)
+    function changeOracle(uint256 _marketId, address _oracle)
         public
         onlyTimeLocker
     {
         if (_oracle == address(0)) revert AddressZero();
-        if (_token == address(0)) revert AddressZero();
+        if (_marketId == 0) revert MarketDoesNotExist(_marketId);
+        if (marketToOracle[_marketId] == address(0))
+            revert MarketDoesNotExist(_marketId);
 
-        tokenToOracle[_token] = _oracle;
-        emit OracleChanged(_token, _oracle);
+        marketToOracle[_marketId] = _oracle;
+        emit OracleChanged(_marketId, _oracle);
     }
 
     /**
@@ -382,14 +388,16 @@ contract VaultFactoryV2 is Ownable {
     @param _underlying Address of the underlying
     @return marketId uint256 of the marketId
      */
-    function getMarketId(address _token, uint256 _strikePrice, address _underlying)
-        public
-        pure
-        returns (uint256 marketId)
-    {
-        return uint256(keccak256(abi.encodePacked(_token, _strikePrice, _underlying)));
+    function getMarketId(
+        address _token,
+        uint256 _strikePrice,
+        address _underlying
+    ) public pure returns (uint256 marketId) {
+        return
+            uint256(
+                keccak256(abi.encodePacked(_token, _strikePrice, _underlying))
+            );
     }
-
 
     // get marketInfo
     function getMarketInfo(uint256 _marketId)
@@ -401,7 +409,7 @@ contract VaultFactoryV2 is Ownable {
             address underlyingAsset
         )
     {
-       token = marketIdInfo[_marketId].token;
+        token = marketIdInfo[_marketId].token;
         strike = marketIdInfo[_marketId].strike;
         underlyingAsset = marketIdInfo[_marketId].underlyingAsset;
     }
@@ -446,7 +454,6 @@ contract VaultFactoryV2 is Ownable {
         IVaultV2 premium;
         IVaultV2 collateral;
     }
-
 
     struct MarketInfo {
         address token;
@@ -545,10 +552,10 @@ contract VaultFactoryV2 is Ownable {
     );
 
     /** @notice Oracle is changed when event is emitted
-     * @param _token Target token address
+     * @param _marketId Target token address
      * @param _oracle Target oracle address
      */
-    event OracleChanged(address indexed _token, address _oracle);
+    event OracleChanged(uint256 indexed _marketId, address _oracle);
 
     /** @notice Address whitelisted is changed when event is emitted
      * @param _wAddress whitelisted address
