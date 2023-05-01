@@ -279,16 +279,13 @@ contract ControllerPeggedAssetV2 {
      * @return nowPrice Current token price
      */
     function getLatestPrice(uint256 _marketId) public view returns (int256) {
-        (
-            ,
-            /*uint80 roundId*/
+         (
+            /*uint80 roundId*/,
             int256 answer,
-            uint256 startedAt,
-            ,
-
-        ) = /*uint256 updatedAt*/
+            uint256 startedAt, 
+            /*uint256 updatedAt*/,
             /*uint80 answeredInRound*/
-            sequencerUptimeFeed.latestRoundData();
+        ) = sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down

@@ -181,9 +181,12 @@ contract TimeLock {
     }
 
     /** @notice change owner on factory
-    *  @param _newOwner new owner
-    */
-     function changeOwnerOnFactory(address _newOwner, address _factory) external onlyOwner {
+     *  @param _newOwner new owner
+     */
+    function changeOwnerOnFactory(address _newOwner, address _factory)
+        external
+        onlyOwner
+    {
         IVaultFactoryV2(_factory).transferOwnership(_newOwner);
     }
 
