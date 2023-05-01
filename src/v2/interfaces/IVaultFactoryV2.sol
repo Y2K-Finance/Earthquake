@@ -18,4 +18,6 @@ interface IVaultFactoryV2 {
     function getEpochFee(uint256) external view returns (uint16);
 
     function marketToOracle(uint256 _marketId) external view returns (address);
+
+    function transferOwnership(address newOwner) external;
 }

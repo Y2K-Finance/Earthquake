@@ -650,7 +650,7 @@ contract Carousel is VaultV2 {
      * @param _id epoch id
      * @param _assets amount of assets
      * @return feeAmount fee amount
-     * @return _assetsAfterFee assets after fee
+     * @return assetsAfterFee assets after fee
      */
     function getEpochDepositFee(uint256 _id, uint256 _assets)
         public

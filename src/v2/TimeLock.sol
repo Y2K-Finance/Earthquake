@@ -9,6 +9,7 @@ contract TimeLock {
     mapping(bytes32 => bool) public queued;
 
     address public policy;
+    address public factory;
 
     uint32 public constant MIN_DELAY = 7 days;
     uint32 public constant MAX_DELAY = 30 days;
@@ -177,6 +178,13 @@ contract TimeLock {
         }
         policy = _newOwner;
         emit ChangeOwner(_newOwner);
+    }
+
+    /** @notice change owner on factory
+    *  @param _newOwner new owner
+    */
+     function changeOwnerOnFactory(address _newOwner, address _factory) external onlyOwner {
+        IVaultFactoryV2(_factory).transferOwnership(_newOwner);
     }
 
     /*///////////////////////////////////////////////////////////////

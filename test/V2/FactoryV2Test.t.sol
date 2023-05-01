@@ -9,10 +9,11 @@ import "../../src/v2/interfaces/IVaultV2.sol";
 
 contract FactoryV2Test is Helper {
       VaultFactoryV2 factory;
+      TimeLock timelock;
       address controller;
       function setUp() public {
 
-        TimeLock timelock = new TimeLock(ADMIN);
+        timelock = new TimeLock(ADMIN);
 
         factory = new VaultFactoryV2(
             WETH,
@@ -325,6 +326,35 @@ contract FactoryV2Test is Helper {
             factory.changeOracle(marketId, newOracle);
         vm.stopPrank();
         assertEq(factory.marketToOracle(marketId), newOracle); 
+    }
+
+     function testTransferOwnership() public {
+        // test revert cases
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+            factory.transferOwnership(address(0x20));
+
+        // imitate timelocker
+        vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
+                factory.transferOwnership(address(0));
+
+            // test success case
+            factory.transferOwnership(address(0x20));
+            assertEq(factory.owner(), address(0x20));
+        vm.stopPrank();
+
+       // interact through timelocker
+        vm.startPrank(address(0x222222));
+            // test revert cases
+            vm.expectRevert(abi.encodeWithSelector(TimeLock.NotOwner.selector, address(0x222222)));
+                timelock.changeOwnerOnFactory(address(0x222222), address(factory));
+         vm.stopPrank();
+        
+        vm.startPrank(ADMIN);
+            // test success case
+            timelock.changeOwnerOnFactory(address(0x21), address(factory));
+            assertEq(factory.owner(), address(0x21));
+        vm.stopPrank();
     }
 
     function createMarketHelper() public returns(uint256 marketId){
