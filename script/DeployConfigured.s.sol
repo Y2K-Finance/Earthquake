@@ -14,7 +14,7 @@ contract ConfigScript is Script, HelperConfig {
 
     function run() public {
 
-        ConfigAddresses memory addresses = getConfigAddresses(true);
+        ConfigAddresses memory addresses = getConfigAddresses(false);
         contractToAddresses(addresses);
         setVariables();
         
