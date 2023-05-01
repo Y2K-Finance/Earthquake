@@ -1,25 +1,28 @@
-/******************************************************* 
-NOTE: Development in progress by JG. Reached functional milestone; Live VST data is accessible. 
-***/
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
-import "@redstone-finance/evm-connector/contracts/data-services/RapidDemoConsumerBase.sol";
+import "./IRedstoneCore.sol";
+//import "@redstone-finance/evm-connector/contracts/data-services/RapidDemoConsumerBase.sol";
 
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import "./IPriceProvider.sol";
+import {vstOracle} from "../../oracles/vstOracle.sol";
 
-contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
+contract RedstonePriceProvider is IPriceProvider {
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
     bytes32 symbol;
     int256 latestPrice;
-    constructor(address _sequencer, address _factory, string memory _symbol) {
-        //TODO: re-enable these checks after oracle validation
+    vstOracle redstoneOracle;
+    uint256 marketId;
+    
+    constructor(address _sequencer, address _factory, string memory _symbol, address _redstoneOracle) {
+        if (_factory == address(0)) revert ZeroAddress();
+        redstoneOracle = vstOracle(_redstoneOracle);
         
         //if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
@@ -36,6 +39,10 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
         }
     }    
     
+    function setMarket(uint256 _marketId) public {
+        marketId = _marketId;
+    }    
+    
     /**
      * @notice Get the oracle numeric value from the transaction message
      * @param dataFeedId The identifier of the data feed to retrieve the value from
@@ -46,39 +53,13 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
         view
         returns (uint256)
     {
-        return getOracleNumericValueFromTxMsg(dataFeedId);
-    }
-    
-    /**
-     * @notice Get the unique signers threshold
-     * @return The threshold number of unique signers
-     */
-    function getUniqueSignersThreshold() public view virtual override returns (uint8) {
-        return 1;
+        return redstoneOracle.getValue();
     }
 
-    /**
-     * @notice Get the authorized signer index for a given signer address
-     * @param signerAddress The address of the signer
-     * @return The index of the authorized signer
-     */
-    function getAuthorisedSignerIndex(address signerAddress)
-        public
-        view
-        virtual
-        override
-        returns (uint8)
-    {
-       if (signerAddress == 0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9) {
-          return 0;
-       } 
-       revert SignerNotAuthorised(signerAddress);
-
-    }    
     
     function getLatestRawPrice() public virtual view returns (int256) {    
        // TODO consider implementing token based symbol lookup
-       uint256 priceIn = getOracleNumericValueFromTxMsg(symbol); 
+       uint256 priceIn = extGetOracleNumericValueFromTxMsg(symbol); 
        int256 price = int256(priceIn); 
        return price;
     }
@@ -163,5 +144,7 @@ contract RedstonePriceProvider is RapidDemoConsumerBase,IPriceProvider {
     error EpochNotExpired();
     error VaultNotZeroTVL();
     error VaultZeroTVL();
+    error SignerNotAuthorised(address signerAddress);
+
 }
 

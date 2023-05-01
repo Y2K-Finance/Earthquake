@@ -1,1 +1,0 @@
-{"version":3,"file":"DataPackagesWrapper.d.ts","sourceRoot":"","sources":["../../../src/wrappers/DataPackagesWrapper.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,oBAAoB,EAAE,MAAM,cAAc,CAAC;AAEpD,OAAO,EAAE,WAAW,EAAE,MAAM,eAAe,CAAC;AAG5C,qBAAa,mBAAoB,SAAQ,WAAW;IACtC,OAAO,CAAC,YAAY;gBAAZ,YAAY,EAAE,oBAAoB;IAItD,mBAAmB,IAAI,MAAM;IAKvB,wBAAwB,IAAI,OAAO,CAAC,MAAM,CAAC;IAIjD,kBAAkB;CASnB"}

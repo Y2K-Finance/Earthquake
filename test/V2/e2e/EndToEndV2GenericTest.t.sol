@@ -7,7 +7,11 @@ import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/Controllers/ControllerGenericV2.sol";
 import "../../../src/v2/Controllers/ChainlinkPriceProvider.sol";
-import "../../../src/v2/Controllers/RedstoneMockPriceProvider.sol";
+import "../../../src/v2/Controllers/RedstonePriceProvider.sol";
+import "../../../src/oracles/vstOracle.sol";
+
+
+
 import "../../../src/v2/Controllers/PriceBasedDepegCondition.sol";
 import "../../../src/v2/Controllers/IPriceProvider.sol";
 import "../../../src/v2/Controllers/IDepegCondition.sol";
@@ -71,10 +75,14 @@ contract EndToEndV2Test is Helper {
         ChainlinkPriceProvider cpp = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory));        
-        RedstoneMockPriceProvider rpp = new RedstoneMockPriceProvider(
+            
+            
+        vstOracle vst = vstOracle(0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
+        RedstonePriceProvider rpp = new RedstonePriceProvider(
                     ARBITRUM_SEQUENCER,
                     address(factory),
-                    "VST"
+                    "VST",
+                    address(vst)
                     );         
         priceProvider = IPriceProvider(rpp);
             
