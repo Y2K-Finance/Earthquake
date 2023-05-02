@@ -119,16 +119,16 @@ contract Carousel is VaultV2 {
     }
 
     /**
-    @notice Withdraw entitled deposited assets, checking if a depeg event
-    @param  _id uint256 identifier of the epoch you want to withdraw from;
-    @param _assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according the vaults claimTVL;
-    @param _receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
-    @param _owner    Address of the owner of these said assets;
-    @return shares How many shares the owner is entitled to, according to the conditions;
+    @notice Withdraw entitled assets and burn shares of epoch
+    @param  _id uint256 identifier of the epoch;
+    @param _shares uint256 amount of shares to withdraw, this value will be used to calculate how many assets you are entitle to according the vaults claimTVL;
+    @param _receiver Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
+    @param _owner Address of the _shares owner;
+    @return assets How many assets the owner is entitled to, according to the epoch outcome;
      */
     function withdraw(
         uint256 _id,
-        uint256 _assets,
+        uint256 _shares,
         address _receiver,
         address _owner
     )
@@ -137,9 +137,9 @@ contract Carousel is VaultV2 {
         override(VaultV2)
         epochIdExists(_id)
         epochHasEnded(_id)
-        notRollingOver(_owner, _id, _assets)
+        notRollingOver(_owner, _id, _shares)
         nonReentrant
-        returns (uint256 shares)
+        returns (uint256 assets)
     {
         // make sure that epoch exists
         // epoch is resolved
@@ -152,19 +152,18 @@ contract Carousel is VaultV2 {
             isApprovedForAll(_owner, msg.sender) == false
         ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
-        _burn(_owner, _id, _assets);
-        uint256 entitledShares;
-        uint256 entitledEmissions = previewEmissionsWithdraw(_id, _assets);
+        _burn(_owner, _id, _shares);
+        uint256 entitledEmissions = previewEmissionsWithdraw(_id, _shares);
         if (epochNull[_id] == false) {
-            entitledShares = previewWithdraw(_id, _assets);
+            assets = previewWithdraw(_id, _shares);
         } else {
-            entitledShares = _assets;
+            assets = _shares;
         }
-        if (entitledShares > 0) {
-            SemiFungibleVault.asset.safeTransfer(_receiver, entitledShares);
+        if (assets > 0) {
+            SemiFungibleVault.asset.safeTransfer(_receiver, assets);
         }
         if (entitledEmissions > 0) {
-            emissionsToken.safeTransfer(_receiver, entitledEmissions);
+            emissionsToken.safeTransfer(_receiver, assets);
         }
 
         emit WithdrawWithEmissions(
@@ -172,12 +171,12 @@ contract Carousel is VaultV2 {
             _receiver,
             _owner,
             _id,
-            _assets,
-            entitledShares,
+            _shares,
+            assets,
             entitledEmissions
         );
 
-        return entitledShares;
+        return assets;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -222,34 +221,34 @@ contract Carousel is VaultV2 {
     /** @notice enlists in rollover queue
         @dev user needs to have >= _assets in epoch (_epochId)
         @param  _epochId epoch id
-        @param _assets   uint256 of how many assets deposited;
+        @param _shares   uint256 amount of shares to rollover;
         @param _receiver  address of the receiver of the emissions;
      */
     function enlistInRollover(
         uint256 _epochId,
-        uint256 _assets,
+        uint256 _shares,
         address _receiver
-    ) public epochIdExists(_epochId) minRequiredDeposit(_assets, _epochId) {
+    ) public epochIdExists(_epochId) minRequiredDeposit(_shares, _epochId) {
         // check if sender is approved by owner
         if (
             msg.sender != _receiver &&
             isApprovedForAll(_receiver, msg.sender) == false
         ) revert OwnerDidNotAuthorize(msg.sender, _receiver);
         // check if user has enough balance
-        if (balanceOf(_receiver, _epochId) < _assets)
+        if (balanceOf(_receiver, _epochId) < _shares)
             revert InsufficientBalance();
 
         // check if user has already queued up a rollover
         if (isEnlistedInRolloverQueue(_receiver)) {
             uint256 index = getRolloverIndex(_receiver);
             // if so, update the queue
-            rolloverQueue[index].assets = _assets;
+            rolloverQueue[index].shares = _shares;
             rolloverQueue[index].epochId = _epochId;
         } else {
             // if not, add to queue
             rolloverQueue.push(
                 QueueItem({
-                    assets: _assets,
+                    shares: _shares,
                     receiver: _receiver,
                     epochId: _epochId
                 })
@@ -258,7 +257,7 @@ contract Carousel is VaultV2 {
             ownerToRollOverQueueIndex[_receiver] = rolloverQueue.length;
         }
 
-        emit RolloverQueued(_receiver, _assets, _epochId);
+        emit RolloverQueued(_receiver, _shares, _epochId);
     }
 
     /** @notice delists from rollover queue
@@ -280,7 +279,7 @@ contract Carousel is VaultV2 {
 
         // set assets to 0 but keep the queue item
         uint256 index = getRolloverIndex(_owner);
-        rolloverQueue[index].assets = 0;
+        rolloverQueue[index].shares = 0;
         rolloverQueue[index].epochId = 0;
     }
 
@@ -315,7 +314,7 @@ contract Carousel is VaultV2 {
             // changing it to FIFO (first in first out) would require more code changes and would be more expensive
             // @note non neglectable min-deposit creates barriers for attackers to DDOS the queue
 
-            uint256 assetsToDeposit = queue[i].assets;
+            uint256 assetsToDeposit = queue[i].shares;
 
             if (depositFee > 0) {
                 (
@@ -396,15 +395,15 @@ contract Carousel is VaultV2 {
         while ((index - prevIndex) < (_operations)) {
             // only roll over if last epoch is resolved and user rollover position is valid
             if (
-                epochResolved[queue[index].epochId] && queue[index].assets > 0
+                epochResolved[queue[index].epochId] && queue[index].shares > 0
             ) {
                 uint256 entitledAmount = previewWithdraw(
                     queue[index].epochId,
-                    queue[index].assets
+                    queue[index].shares
                 );
 
                 // mint only if user won epoch he is rolling over
-                if (entitledAmount > queue[index].assets) {
+                if (entitledAmount > queue[index].shares) {
                     // @note previewAmountInShares can only be called if epoch is in profit
                     uint256 relayerFeeInShares = previewAmountInShares(
                         queue[index].epochId,
@@ -412,7 +411,7 @@ contract Carousel is VaultV2 {
                     );
 
                     // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-                    if (queue[index].assets < relayerFeeInShares) {
+                    if (queue[index].shares < relayerFeeInShares) {
                         index++;
                         continue;
                     }
@@ -420,10 +419,10 @@ contract Carousel is VaultV2 {
                     // to calculate originalDepositValue get the diff between shares and value of shares
                     // convert this value amount value back to shares
                     // subtract from assets
-                    uint256 originalDepositValue = queue[index].assets -
+                    uint256 originalDepositValue = queue[index].shares -
                         previewAmountInShares(
                             queue[index].epochId,
-                            (entitledAmount - queue[index].assets)
+                            (entitledAmount - queue[index].shares) // subtract profit from share value
                         );
                     // @note we know shares were locked up to this point
                     _burn(
@@ -452,16 +451,16 @@ contract Carousel is VaultV2 {
                             originalDepositValue
                         )
                     );
-                    uint256 assetsToMint = queue[index].assets -
+                    uint256 amountToMint = queue[index].shares -
                         relayerFeeInShares;
-                    _mintShares(queue[index].receiver, _epochId, assetsToMint);
+                    _mintShares(queue[index].receiver, _epochId, amountToMint); // amountToMint == shares
                     emit Deposit(
                         msg.sender,
                         queue[index].receiver,
                         _epochId,
-                        assetsToMint
+                        amountToMint
                     );
-                    rolloverQueue[index].assets = assetsToMint;
+                    rolloverQueue[index].shares = amountToMint;
                     rolloverQueue[index].epochId = _epochId;
                     // only pay relayer for successful mints
                     executions++;
@@ -510,7 +509,7 @@ contract Carousel is VaultV2 {
             emit Deposit(msg.sender, _receiver, _id, _assets);
         } else {
             depositQueue.push(
-                QueueItem({assets: _assets, receiver: _receiver, epochId: _id})
+                QueueItem({shares: _assets, receiver: _receiver, epochId: _id})
             );
 
             emit DepositInQueue(msg.sender, _receiver, _id, _assets);
@@ -593,7 +592,7 @@ contract Carousel is VaultV2 {
             uint256 index = ownerToRollOverQueueIndex[owner];
             if (index == 0) continue;
             uint256 queueIndex = index - 1;
-            if (rolloverQueue[queueIndex].assets == 0) {
+            if (rolloverQueue[queueIndex].shares == 0) {
                 // overwrite the item to be removed with the last item in the queue
                 rolloverQueue[queueIndex] = rolloverQueue[
                     rolloverQueue.length - 1
@@ -717,22 +716,39 @@ contract Carousel is VaultV2 {
     /** @notice returns the total value locked in the rollover queue
      * @return tvl total value locked in the rollover queue
      */
-    function getRolloverTVL(uint256 _epochId)
+    function getRolloverTVLByEpochId(uint256 _epochId)
         public
         view
         returns (uint256 tvl)
     {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
+            uint256 assets = previewWithdraw(
+                    rolloverQueue[i].epochId,
+                    rolloverQueue[i].shares
+                );
             if (
                 rolloverQueue[i].epochId == _epochId &&
-                (previewWithdraw(
-                    rolloverQueue[i].epochId,
-                    rolloverQueue[i].assets
-                ) > rolloverQueue[i].assets)
+                (assets > rolloverQueue[i].shares) // check if position is in profit and getting rollover
             ) {
-                tvl += rolloverQueue[i].assets;
+                tvl += assets;
             }
         }
+    }
+
+    function getRolloverTVL() public
+        view
+        returns (uint256 tvl) {
+            for (uint256 i = 0; i < rolloverQueue.length; i++) {
+            uint256 assets = previewWithdraw(
+                    rolloverQueue[i].epochId,
+                    rolloverQueue[i].shares
+                );
+            if (
+                (assets > rolloverQueue[i].shares) // check if position is in profit and getting rollover
+            ) {
+                tvl += assets;
+            }
+         }
     }
 
     function getRolloverQueueItem(uint256 _index)
@@ -740,30 +756,30 @@ contract Carousel is VaultV2 {
         view
         returns (
             address receiver,
-            uint256 assets,
+            uint256 shares,
             uint256 epochId
         )
     {
         receiver = rolloverQueue[_index].receiver;
-        assets = rolloverQueue[_index].assets;
+        shares = rolloverQueue[_index].shares;
         epochId = rolloverQueue[_index].epochId;
     }
 
     /** @notice returns users rollover balance and epoch which is rolling over
      * @param _owner address of the user
-     * @return balance balance of the user
+     * @return shares balance of the user in rollover position
      * @return epochId epoch id
      */
     function getRolloverPosition(address _owner)
         public
         view
-        returns (uint256 balance, uint256 epochId)
+        returns (uint256 shares, uint256 epochId)
     {
         if (!isEnlistedInRolloverQueue(_owner)) {
             return (0, 0);
         }
         uint256 index = getRolloverIndex(_owner);
-        balance = rolloverQueue[index].assets;
+        shares = rolloverQueue[index].shares;
         epochId = rolloverQueue[index].epochId;
     }
 
@@ -779,7 +795,7 @@ contract Carousel is VaultV2 {
         if (ownerToRollOverQueueIndex[_owner] == 0) {
             return false;
         }
-        return rolloverQueue[getRolloverIndex(_owner)].assets != 0;
+        return rolloverQueue[getRolloverIndex(_owner)].shares != 0;
     }
 
     /** @notice returns the total value locked in the deposit queue
@@ -787,7 +803,7 @@ contract Carousel is VaultV2 {
      */
     function getDepositQueueTVL() public view returns (uint256 tvl) {
         for (uint256 i = 0; i < depositQueue.length; i++) {
-            tvl += depositQueue[i].assets;
+            tvl += depositQueue[i].shares;
         }
     }
 
@@ -796,7 +812,7 @@ contract Carousel is VaultV2 {
     //////////////////////////////////////////////////////////////*/
 
     struct QueueItem {
-        uint256 assets;
+        uint256 shares;
         address receiver;
         uint256 epochId;
     }
@@ -831,18 +847,18 @@ contract Carousel is VaultV2 {
     /** @notice checks if not rolling over
      * @param _receiver address of the receiver
      * @param _epochId epoch id
-     * @param _assets amount of assets to deposit
+     * @param _shares amount of assets to deposit
      */
     modifier notRollingOver(
         address _receiver,
         uint256 _epochId,
-        uint256 _assets
+        uint256 _shares
     ) {
         if (isEnlistedInRolloverQueue(_receiver)) {
             QueueItem memory item = rolloverQueue[getRolloverIndex(_receiver)];
             if (
                 item.epochId == _epochId &&
-                (balanceOf(_receiver, _epochId) - item.assets) < _assets
+                (balanceOf(_receiver, _epochId) - item.shares) < _shares
             ) revert AlreadyRollingOver();
         }
         _;
