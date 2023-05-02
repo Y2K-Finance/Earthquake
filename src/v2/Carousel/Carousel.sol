@@ -163,7 +163,7 @@ contract Carousel is VaultV2 {
             SemiFungibleVault.asset.safeTransfer(_receiver, assets);
         }
         if (entitledEmissions > 0) {
-            emissionsToken.safeTransfer(_receiver, assets);
+            emissionsToken.safeTransfer(_receiver, entitledEmissions);
         }
 
         emit WithdrawWithEmissions(
