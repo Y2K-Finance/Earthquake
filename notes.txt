@@ -1,6 +1,47 @@
 (temp) Active Useful notes about Gains:
 //@redstone-finance
 
+//TODOs:
+[X] Set up config vars properly 
+[X] Kill dead files
+[X] Add in decimals
+
+[X] Assert correct values
+[X] Combine both oracle test files
+[X] Fix Camel case
+---------------------------
+[X] Draw Architecture / user map of tools
+[X] Isolate PnL of Gains GNS
+[ ] Wire up decimals to be accurate
+[ ] remove old RedStone oracle mentions
+[ ] Push Code
+[ ] Gdai pulls gDAI/DAI price from chain
+
+---------------------------
+----- Tomorrow ------------
+---------------------------
+[ ] GDAI uses collateralization ratio
+[ ] Gdai can trigger depegs via unit test
+[ ] Remove console.log values
+[ ] Simplify Oracle implementation
+[X] Verify Knot Meeting time
+
+
+-----------------------------
+[ ] Write Docs
+[ ] Test DeployRedstone.vst + Those docs
+[ ] Locate sutable past testing point
+
+
+
+[ ] Test deployment of custom RedStone Oracle
+
+
+
+
+grep -rl "getConfigAddresses" .
+
+
 1) Gains Has a list of active Contracts
 - https://gains-network.gitbook.io/docs-home/what-is-gains-network/contract-addresses#active-contracts
 

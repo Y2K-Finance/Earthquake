@@ -25,4 +25,12 @@ contract Helper is Test {
     address public constant RELAYER = address(0x55);
     address public UNDERLYING = address(0x123);
     address public TOKEN = address(new MintableToken("Token", "tkn"));
+    
+    
+    address public GDAI_GNS_MAIN =     address(0xd85E038593d7A098614721EaE955EC2022B9B91B);
+    address public REDSTONE_VST_MAIN=  address(0x0000000000000000000000000000000000000000);
+                
+    address public GDAI_GNS_TEST =     address(0x0000000000000000000000000000000000000000);
+    address public REDSTONE_VST_TEST=  address(0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
+      
 }

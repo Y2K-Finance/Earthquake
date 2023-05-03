@@ -9,7 +9,7 @@ import "./IRedstoneCore.sol";
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import "./IPriceProvider.sol";
-import {vstOracle} from "../../oracles/vstOracle.sol";
+import {VstOracle} from "../../oracles/VstOracle.sol";
 
 contract RedstonePriceProvider is IPriceProvider {
     uint16 private constant GRACE_PERIOD_TIME = 3600;
@@ -17,12 +17,12 @@ contract RedstonePriceProvider is IPriceProvider {
     AggregatorV2V3Interface internal sequencerUptimeFeed;
     bytes32 symbol;
     int256 latestPrice;
-    vstOracle redstoneOracle;
+    VstOracle redstoneOracle;
     uint256 marketId;
     
     constructor(address _sequencer, address _factory, string memory _symbol, address _redstoneOracle) {
         if (_factory == address(0)) revert ZeroAddress();
-        redstoneOracle = vstOracle(_redstoneOracle);
+        redstoneOracle = VstOracle(_redstoneOracle);
         
         //if (_factory == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
