@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 import "forge-std/console.sol";
-
+    
 interface IGNS {
     function tvl() external view returns (uint256);
     function totalSupply() external view returns (uint256);    
@@ -24,31 +24,23 @@ contract GdaiOracle {
     IUniswapV3Pool public uniswapPool;
     uint8 public decimals;
 
-    constructor(address _gnsTokenAddress) {
-        address _daiTokenAddress = address(0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1);
-
+    constructor(address _gnsTokenAddress, address _daiTokenAddress, address _uniswapPoolV3) {
+    
+        address _daiTokenAddress = address(_daiTokenAddress);
         gnsToken = IGNS(_gnsTokenAddress);
-        // Was having a hard time finding the pair, until JG grabbed it manually. Should likely add back in at some point.
-        //address _uniswapFactoryAddress = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
-        //uint24 poolFee = 3000; // 0.3% fee tier, update if necessary
-        //IUniswapV3Factory uniswapFactory = IUniswapV3Factory(_uniswapFactoryAddress);
-        //address _uniswapPoolAddress = uniswapFactory.getPool(_gnsTokenAddress, _daiTokenAddress, poolFee);
-        //require(_uniswapPoolAddress != address(0), "Uniswap pool not found");
-        //uniswapPool = IUniswapV3Pool(_uniswapPoolAddress);
-        
-        uniswapPool = IUniswapV3Pool(address(0x3bFE2e1745c586FeA5BcBEAB418F6544960944e6));
-        decimals = 18;
+        uniswapPool = IUniswapV3Pool(_uniswapPoolV3);
+        decimals = 18; //TODO - Look up this number
     }
 
-    function getPNL() public view returns (uint256) {
+    function getTVL() public view returns (uint256) {
         return gnsToken.tvl();
     }
-
-    function getValue() public view returns (uint256) {
-        return gnsToken.tvl();
+    
+    function getDecimals() public view returns (uint8){
+        return decimals;
     }
-
-    function getDecimals() public view returns (uint8) {
+    
+    function getTotalSupply() public view returns (uint8) {
         return decimals;
     }
 

@@ -20,6 +20,7 @@ contract Helper is Test {
     address public constant USER = address(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
     address public constant USER2 = address(0x12312);
     address public constant ARBITRUM_SEQUENCER = address(0xFdB631F5EE196F0ed6FAa767959853A9F217697D);
+    address public constant REDSTONE_HOSTED_VST_ORACLE = address (0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
     address public constant USDC_CHAINLINK = address(0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3);
     address public constant USDC_TOKEN = address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
     address public constant RELAYER = address(0x55);
@@ -27,10 +28,15 @@ contract Helper is Test {
     address public TOKEN = address(new MintableToken("Token", "tkn"));
     
     
-    address public GDAI_GNS_MAIN =     address(0xd85E038593d7A098614721EaE955EC2022B9B91B);
-    address public REDSTONE_VST_MAIN=  address(0x0000000000000000000000000000000000000000);
+    address public constant GDAI_GNS_MAIN =     address(0xd85E038593d7A098614721EaE955EC2022B9B91B);
+    address public constant REDSTONE_VST_MAIN=  address(0x0000000000000000000000000000000000000000);
                 
-    address public GDAI_GNS_TEST =     address(0x0000000000000000000000000000000000000000);
-    address public REDSTONE_VST_TEST=  address(0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
-      
+    address public constant GDAI_GNS_TEST =     address(0x0000000000000000000000000000000000000000);
+    address public constant REDSTONE_VST_TEST=  address(0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
+    
+    address public constant DAI_TOKEN_MAIN = address(0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1);
+    address public constant UNISWAP_DAIGDAI_POOL_MAIN = address(0x3bFE2e1745c586FeA5BcBEAB418F6544960944e6);
+    
+    
+    
 }

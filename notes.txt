@@ -9,6 +9,11 @@
 [X] Assert correct values
 [X] Combine both oracle test files
 [X] Fix Camel case
+[X] Refactor         --- VstOracle vst = VstOracle(0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
+[X] Oracles implement IPriceProvider
+[X] IPriceProvider moved to Interfaces
+
+
 ---------------------------
 [X] Draw Architecture / user map of tools
 [X] Isolate PnL of Gains GNS

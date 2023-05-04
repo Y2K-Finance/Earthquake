@@ -2,22 +2,24 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
+import "../../../src/v2/Controllers/ControllerGenericV2.sol";
+
+import "../../../src/v2/interfaces/IPriceProvider.sol";
+import "../../../src/v2/interfaces/IDepegCondition.sol";
+
+
 import "../../../src/v2/VaultFactoryV2.sol";
 import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/VaultV2.sol";
-import "../../../src/v2/Controllers/ControllerGenericV2.sol";
-import "../../../src/v2/Controllers/ChainlinkPriceProvider.sol";
-import "../../../src/v2/Controllers/RedstonePriceProvider.sol";
+
+
+import "../../../src/oracles/ChainlinkPriceProvider.sol";
+import "../../../src/oracles/RedstonePriceProvider.sol";
 import "../../../src/oracles/VstOracle.sol";
 
 
 
-import "../../../src/v2/Controllers/PriceBasedDepegCondition.sol";
-import "../../../src/v2/Controllers/IPriceProvider.sol";
-import "../../../src/v2/Controllers/IDepegCondition.sol";
-
-
-
+import "../../../src/oracles/PriceBasedDepegCondition.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
 
@@ -77,7 +79,7 @@ contract EndToEndV2Test is Helper {
             address(factory));        
             
             
-        VstOracle vst = VstOracle(0x86392aF1fB288f49b8b8fA2495ba201084C70A13);
+        VstOracle vst = VstOracle(REDSTONE_HOSTED_VST_ORACLE);
         RedstonePriceProvider rpp = new RedstonePriceProvider(
                     ARBITRUM_SEQUENCER,
                     address(factory),

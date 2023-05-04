@@ -6,8 +6,8 @@ import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-import "./IDepegCondition.sol";
-import "./IPriceProvider.sol";
+import "../interfaces/IDepegCondition.sol";
+import "../interfaces/IPriceProvider.sol";
 import "forge-std/console.sol";
 
 
