@@ -37,9 +37,7 @@ contract ControllerPeggedAssetV2Test is Helper {
 
         controller = new ControllerPeggedAssetV2(
            address(factory),
-           address(0x1),
-            TREASURY
-        );
+           address(0x1)        );
 
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
 
