@@ -412,7 +412,7 @@ contract Carousel is VaultV2 {
                     uint256 relayerFeeInShares = previewAmountInShares(queue[index].epochId, relayerFee);
 
                     // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-                    if (queue[index].assets < relayerFeeInShares) {
+                    if (queue[index].assets <= relayerFeeInShares) {
                         index++;
                         continue;
                     }
