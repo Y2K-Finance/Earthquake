@@ -253,7 +253,7 @@ contract Carousel is VaultV2 {
             revert InsufficientBalance();
         
         // check if user has already queued up a rollover
-        if (isEnlistedInRolloverQueue(_receiver)) {
+        if (ownerToRollOverQueueIndex[_receiver] != 0) {
             uint256 index = getRolloverIndex(_receiver);
             // if so, update the queue
             rolloverQueue[index].assets = _assets;

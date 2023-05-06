@@ -170,6 +170,16 @@ contract CarouselTest is Helper {
         vm.startPrank(USER);
         //_epochId == epoch user is depositing in / amount of shares he wants to rollover
         vault.enlistInRollover(_epochId, 8 ether, USER);
+        vault.delistInRollover(USER);
+        vault.enlistInRollover(_epochId, 2 ether, USER);
+
+        assertEq(vault.getRolloverQueueLenght(), 1);
+
+        bool isEnlisted = vault.isEnlistedInRolloverQueue(USER);
+        (uint256 enlistedAmount,) = vault.getRolloverPosition(USER);
+        assertEq(isEnlisted, true);
+        assertEq(enlistedAmount, 2 ether);
+
         vm.stopPrank();
 
         // resolve first epoch
