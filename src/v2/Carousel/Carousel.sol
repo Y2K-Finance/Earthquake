@@ -399,7 +399,7 @@ contract Carousel is VaultV2 {
         while ((index - prevIndex) < (_operations)) {
 
             // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-            if (queue[index].assets < relayerFee) {
+            if (queue[index].assets <= relayerFee) {
                 index++;
                 continue;
             }
