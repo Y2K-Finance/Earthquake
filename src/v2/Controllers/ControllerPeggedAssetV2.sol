@@ -15,7 +15,6 @@ contract ControllerPeggedAssetV2 {
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
     uint16 private constant GRACE_PERIOD_TIME = 3600;
-    address public immutable treasury;
 
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
@@ -24,12 +23,10 @@ contract ControllerPeggedAssetV2 {
     /** @notice Contract constructor
      * @param _factory VaultFactory address
      * @param _l2Sequencer Arbitrum sequencer address
-     * @param _treasury Treasury address
      */
     constructor(
         address _factory,
-        address _l2Sequencer,
-        address _treasury
+        address _l2Sequencer
     ) {
         if (_factory == address(0)) revert ZeroAddress();
 
@@ -37,7 +34,6 @@ contract ControllerPeggedAssetV2 {
 
         vaultFactory = IVaultFactoryV2(_factory);
         sequencerUptimeFeed = AggregatorV2V3Interface(_l2Sequencer);
-        treasury = _treasury;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -108,14 +104,14 @@ contract ControllerPeggedAssetV2 {
 
         // send fees to treasury and remaining TVL to respective counterparty vault
         // strike price reached so premium is entitled to collateralTVL - collateralFee
-        premiumVault.sendTokens(_epochId, premiumFee, treasury);
+        premiumVault.sendTokens(_epochId, premiumFee,  IVaultFactoryV2(vaultFactory).treasury());
         premiumVault.sendTokens(
             _epochId,
             premiumTVL - premiumFee,
             address(collateralVault)
         );
         // strike price is reached so collateral is still entitled to premiumTVL - premiumFee but looses collateralTVL
-        collateralVault.sendTokens(_epochId, collateralFee, treasury);
+        collateralVault.sendTokens(_epochId, collateralFee,  IVaultFactoryV2(vaultFactory).treasury());
         collateralVault.sendTokens(
             _epochId,
             collateralTVL - collateralFee,
@@ -183,7 +179,7 @@ contract ControllerPeggedAssetV2 {
         collateralVault.setClaimTVL(_epochId, collateralTVLAfterFee);
 
         // send premium fees to treasury and remaining TVL to collateral vault
-        premiumVault.sendTokens(_epochId, premiumFee, treasury);
+        premiumVault.sendTokens(_epochId, premiumFee,  IVaultFactoryV2(vaultFactory).treasury());
         // strike price reached so collateral is entitled to collateralTVLAfterFee
         premiumVault.sendTokens(
             _epochId,
