@@ -6,6 +6,8 @@ import "forge-std/StdJson.sol";
 import "forge-std/Test.sol";
 //TODO change this after deploy  y2k token
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "../../src/v2/Carousel/CarouselFactory.sol";
+import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 // import "../keepers/KeeperDepeg.sol";
 // import "../keepers/KeeperEndEpoch.sol";
 
@@ -49,6 +51,8 @@ contract HelperV2 is Script {
         address tokenUSDT;
         address treasury;
         address vaultFactory;
+        address carouselFactoryV2;
+        address controllerV2;
         address weth;
         address y2k;
     }
@@ -78,7 +82,9 @@ contract HelperV2 is Script {
 
 
     ConfigVariables configVariables;
-
+    CarouselFactory vaultFactory;
+    ControllerPeggedAssetV2 controller;
+    address y2k;
     function setVariables() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON.json");
@@ -88,14 +94,14 @@ contract HelperV2 is Script {
         // console2.log("ConfigVariables ", rawConstants.amountOfNewMarkets);
     }
 
-    // function contractToAddresses(ConfigAddresses memory configAddresses) public {
-    //     vaultFactory = VaultFactory(configAddresses.vaultFactory);
-    //     controller = Controller(configAddresses.controller);
-    //     rewardsFactory = RewardsFactory(configAddresses.rewardsFactory);
-    //     y2k = Y2K(configAddresses.y2k);
-    //     keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
-    //     keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
-    // }
+    function contractToAddresses(ConfigAddresses memory configAddresses) public {
+        vaultFactory = CarouselFactory(configAddresses.carouselFactoryV2);
+        controller = ControllerPeggedAssetV2(configAddresses.controllerV2);
+        // rewardsFactory = RewardsFactory(configAddresses.rewardsFactory);
+        y2k = address(configAddresses.y2k);
+        // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
+        // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
+    }
 
     // function startKeepers(uint _marketIndex, uint _epochEnd) public {
     //     keeperDepeg.startTask(_marketIndex, _epochEnd);
@@ -106,7 +112,7 @@ contract HelperV2 is Script {
         string memory root = vm.projectRoot();
         string memory path;
         if(isTestEnv){
-            path = string.concat(root, "/configTestEnv.json");
+            path = string.concat(root, "/configTestEnvV2.json");
         }
         else{
             path = string.concat(root, "/configAddresses.json");

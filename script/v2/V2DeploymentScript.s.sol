@@ -8,7 +8,6 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../src/v2/VaultFactoryV2.sol";
-import "../../src/v2/Carousel/CarouselFactory.sol";
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "../../src/v2/TimeLock.sol";
 
@@ -29,12 +28,10 @@ contract V2DeploymentScript is Script, HelperV2 {
     address weth = 0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1;
     address treasury = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
     address emissionToken = 0x5D59e5837F7e5d0F710178Eda34d9eCF069B36D2;
-    address factory;
 
-    address controller;
     function run() public {
         
-        ConfigAddresses memory addresses = getConfigAddresses(false);
+        ConfigAddresses memory addresses = getConfigAddresses(true);
         // console2.log("Address admin", addresses.admin);
         // console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
         // console2.log("Address oracleDAI", addresses.oracleDAI);
@@ -57,8 +54,8 @@ contract V2DeploymentScript is Script, HelperV2 {
         
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         require(privateKey != 0, "PRIVATE_KEY is not set");
-        console2.log("Broadcast privateKey", privateKey);
-        vm.startBroadcast(privateKey);
+        // console2.log("Broadcast privateKey", privateKey);
+        // vm.startBroadcast(privateKey);
 
         console2.log("Broadcast sender", msg.sender);
         
@@ -70,26 +67,27 @@ contract V2DeploymentScript is Script, HelperV2 {
         console2.log("Broadcast policy", policy);
         console2.log("Broadcast treasury", treasury);
 
+        vm.startBroadcast();   
 
         // address timeLock = address(new TimeLock(policy));
 
-        // CarouselFactory vaultFactory = new CarouselFactory(weth, treasury, policy, emissionToken);
-        factory = 0xAd2f15ff7d167c800281ef52fa098Fae33429cc6;
+        // CarouselFactory vaultFactory = new CarouselFactory(addresses.weth, treasury, policy, addresses.y2k);
+        // vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
+        // factory = 0xAd2f15ff7d167c800281ef52fa098Fae33429cc6;
 
-        controller = 0xDf878548b17429a6e6a3ff66Fb629e347738aA56;
+        // controller = 0xDf878548b17429a6e6a3ff66Fb629e347738aA56;
 
         // VaultFactoryV2 vaultFactory = new VaultFactoryV2(weth, treasury, timeLock);
         // console2.log("Broadcast admin ", addresses.admin);
         // console2.log("Broadcast policy", addresses.policy);
         //start setUp();
 
-        // vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
         // controller = address(new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer, treasury));
 
         // vaultFactory.whitelistController(controller);
 
-        console.log("factory", factory);
-        console.log("controller", controller);
+        // console.log("factory", address(vaultFactory));
+        // console.log("controller", controller);
 
 
         // deployMarketsV2(address(vaultFactory));
@@ -97,34 +95,35 @@ contract V2DeploymentScript is Script, HelperV2 {
         //  IERC20(emissionToken).approve(factory, 100 ether);
 
          
-        // ( address prem, address collat, uint256 marketId) =  CarouselFactory(factory).createNewCarouselMarket(
-        //     CarouselFactory.CarouselMarketConfigurationCalldata(
-        //         addresses.tokenMIM,
-        //         999000000000000000,
-        //         addresses.oracleMIM,
-        //         weth,
-        //         "y2kMIM_999*",
-        //         "https://y2k.finance",
-        //         controller,
-        //         1 gwei,
-        //         10,
-        //         1 ether
-        //     )
-        // );
+        ( address prem, address collat, uint256 marketId) =  CarouselFactory(0xFd3DB836C652F80402398A9AdE2d3F3C5EEB22B1).createNewCarouselMarket(
+            CarouselFactory.CarouselMarketConfigurationCalldata(
+                addresses.tokenUSDC,
+                999000000000000000,
+                addresses.oracleUSDC,
+                addresses.weth,
+                "y2kUSDC_999*",
+                "https://y2k.finance",
+                0xb4B8FDD25AC2dad1B681891BB8563a7Fe187da42,
+                100000000,
+                10,
+                1 ether
+            )
+        );
 
         // console.log("Prem", prem);
         // console.log("Collat", collat);
         // console.log("marketId", marketId);
 
 
-        (uint256 eId, ) = CarouselFactory(factory).createEpochWithEmissions(
-            50136727949622076191748106171773774901339026601219072444023567158965921292263,
-            1682575989,
-            1682748789,
-            50,
-            1 ether,
-            2 ether
-        );
+        console2.log("CarouselFactory address", addresses.carouselFactoryV2);
+
+        // IERC20(addresses.y2k).approve(spender, amount);(addresses.carouselFactoryV2, 200 ether);
+
+        console.log("addresses.y2k", addresses.y2k);
+        console.log("msg.sender", msg.sender);
+
+        console.log("balance y2k", IERC20(addresses.y2k).balanceOf(msg.sender));
+        console.log("approval", IERC20(addresses.y2k).allowance(msg.sender, 0xFd3DB836C652F80402398A9AdE2d3F3C5EEB22B1));
 
         // console.log("eId", eId);
 

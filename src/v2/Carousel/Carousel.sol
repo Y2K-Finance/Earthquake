@@ -894,13 +894,13 @@ contract Carousel is VaultV2 {
      * @param sender the address of the sender
      * @param receiver the address of the receiver
      * @param epochId the epoch id
-     * @param assets the amount of assets
+     * @param shares the amount of assets
      */
     event DepositInQueue(
         address indexed sender,
         address indexed receiver,
         uint256 epochId,
-        uint256 assets
+        uint256 shares
     );
 
     /** @notice emitted when shares are minted by relayer
@@ -911,12 +911,12 @@ contract Carousel is VaultV2 {
 
     /** @notice emitted when a rollover is queued
      * @param sender the address of the sender
-     * @param assets the amount of assets
+     * @param shares the amount of assets
      * @param epochId the epoch id
      */
     event RolloverQueued(
         address indexed sender,
-        uint256 assets,
+        uint256 shares,
         uint256 epochId
     );
 }

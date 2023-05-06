@@ -225,6 +225,8 @@ contract CarouselTest is Helper {
         helperDepositInEpochs(_epochId,USER5, true);
         helperDepositInEpochs(_epochId,USER6, true);
 
+        assertEq(vault.getDepositQueueTVL(), 60 ether);
+
         assertEq(vault.getDepositQueueLength(), 6);
         
         // check balance of relayer

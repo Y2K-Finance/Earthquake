@@ -6,7 +6,8 @@ import "forge-std/StdJson.sol";
 import "../src/legacy_v1/VaultFactory.sol";
 import "../src/legacy_v1/Controller.sol";
 //TODO change this after deploy  y2k token
-import "../src/legacy_v1/rewards/PausableRewardsFactory.sol";
+// import "../src/legacy_v1/rewards/PausableRewardsFactory.sol";
+import "../src/legacy_v1/rewards/RewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./keepers/KeeperDepeg.sol";
