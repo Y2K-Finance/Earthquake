@@ -11,7 +11,7 @@ contract TimeLock {
     address public policy;
     address public factory;
 
-    uint32 public constant MIN_DELAY = 7 days;
+    uint32 public constant MIN_DELAY = 3 days; // short timeframe to not discriminate against epoch lenght but rather focus on transprancy of critical operations
     uint32 public constant MAX_DELAY = 30 days;
     uint32 public constant GRACE_PERIOD = 14 days;
 
