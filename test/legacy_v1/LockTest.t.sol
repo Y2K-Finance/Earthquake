@@ -2,7 +2,7 @@
 pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
-import {LockRewards} from "../src/lock-rewards/LockRewards.sol";
+import {LockRewards} from "../../src/lock-rewards/LockRewards.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 /// @author MiguelBits

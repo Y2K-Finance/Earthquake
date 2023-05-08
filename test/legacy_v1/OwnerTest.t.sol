@@ -2,13 +2,13 @@
 pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
-import {Vault} from "../src/Vault.sol";
-import {VaultFactory} from "../src/VaultFactory.sol";
-import {Controller} from "../src/Controller.sol";
+import {Vault} from "../../src/legacy_v1/Vault.sol";
+import {VaultFactory} from "../../src/legacy_v1/VaultFactory.sol";
+import {Controller} from "../../src/legacy_v1/Controller.sol";
 import {OwnerHelper} from "./OwnerHelper.sol";
-import {FakeOracle} from "./oracles/FakeOracle.sol";
+import {FakeOracle} from "../oracles/FakeOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {Owned} from "../src/rewards/Owned.sol"; 
+import {Owned} from "../../src/legacy_v1/rewards/Owned.sol"; 
 
 /// @author nexusflip
 /// @author MiguelBits
