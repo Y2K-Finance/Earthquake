@@ -81,9 +81,9 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-        @param  _id  uint256 in UNIX timestamp, representing the end date of the epoch. Example: Epoch ends in 30th June 2022 at 00h 00min 00sec: 1654038000;
-        @param  _assets  uint256 representing how many assets the user wants to deposit, a fee will be taken from this value;
-        @param _receiver  address of the receiver of the assets provided by this function, that represent the ownership of the deposited asset;
+        @param  _id uint256 epoch identifier;
+        @param  _assets uint256 amount of assets the user wants to deposit denominated in underlying asset decimals;
+        @param _receiver address of the receiver of the shares minted;
      */
     function deposit(
         uint256 _id,
@@ -112,7 +112,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /**
         @notice Deposit ETH function
         @param  _id  uint256 representing the id of the epoch;
-        @param _receiver  address of the receiver of the shares provided by this function, that represent the ownership of the deposited asset;
+       @param _receiver address of the receiver of the shares minted;
      */
     function depositETH(uint256 _id, address _receiver)
         external
@@ -133,16 +133,16 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     }
 
     /**
-    @notice Withdraw entitled deposited assets, checking if a depeg event
-    @param  _id uint256 identifier of the epoch you want to withdraw from;
-    @param _assets   uint256 of how many assets you want to withdraw, this value will be used to calculate how many assets you are entitle to according the vaults claimTVL;
-    @param _receiver  Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
-    @param _owner    Address of the owner of these said assets;
-    @return shares How many shares the owner is entitled to, according to the conditions;
+    @notice Withdraw entitled assets and burn shares of epoch
+    @param  _id uint256 identifier of the epoch;
+    @param _shares uint256 amount of shares to withdraw, this value will be used to calculate how many assets you are entitle to according the vaults claimTVL;
+    @param _receiver Address of the receiver of the assets provided by this function, that represent the ownership of the transfered asset;
+    @param _owner Address of the _shares owner;
+    @return assets How many assets the owner is entitled to, according to the epoch outcome;
      */
     function withdraw(
         uint256 _id,
-        uint256 _assets,
+        uint256 _shares,
         address _receiver,
         address _owner
     )
@@ -152,7 +152,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochIdExists(_id)
         epochHasEnded(_id)
         nonReentrant
-        returns (uint256 shares)
+        returns (uint256 assets)
     {
         if (_receiver == address(0)) revert AddressZero();
 
@@ -161,17 +161,15 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
             isApprovedForAll(_owner, msg.sender) == false
         ) revert OwnerDidNotAuthorize(msg.sender, _owner);
 
-        _burn(_owner, _id, _assets);
-
-        uint256 entitledShares;
+        _burn(_owner, _id, _shares);
 
         if (epochNull[_id] == false) {
-            entitledShares = previewWithdraw(_id, _assets);
+            assets = previewWithdraw(_id, _shares);
         } else {
-            entitledShares = _assets;
+            assets = _shares;
         }
-        if (entitledShares > 0) {
-            SemiFungibleVault.asset.safeTransfer(_receiver, entitledShares);
+        if (assets > 0) {
+            SemiFungibleVault.asset.safeTransfer(_receiver, assets);
         }
 
         emit Withdraw(
@@ -179,11 +177,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
             _receiver,
             _owner,
             _id,
-            _assets,
-            entitledShares
+            _shares,
+            assets
         );
 
-        return entitledShares;
+        return assets;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -299,8 +297,11 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         if (_amount > finalTVL[_id]) revert AmountExceedsTVL();
         if (epochAccounting[_id] + _amount > finalTVL[_id])
             revert AmountExceedsTVL();
-        if (!whitelistedAddresses[_receiver] && _receiver != counterPartyVault && _receiver != treasury())
-            revert DestinationNotAuthorized(_receiver);
+        if (
+            !whitelistedAddresses[_receiver] &&
+            _receiver != counterPartyVault &&
+            _receiver != treasury()
+        ) revert DestinationNotAuthorized(_receiver);
         epochAccounting[_id] += _amount;
         SemiFungibleVault.asset.safeTransfer(_receiver, _amount);
     }
@@ -325,6 +326,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
      */
     function setEpochNull(uint256 _id)
         public
+        virtual
         onlyController
         epochIdExists(_id)
         epochHasEnded(_id)
@@ -338,18 +340,18 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     /**
         @notice Shows assets conversion output from withdrawing assets
         @param  _id uint256 epoch identifier
-        @param _assets amount of user shares to withdraw
+        @param _shares amount of user shares to withdraw
      */
-    function previewWithdraw(uint256 _id, uint256 _assets)
+    function previewWithdraw(uint256 _id, uint256 _shares)
         public
         view
         override(SemiFungibleVault)
-        returns (uint256 entitledAmount)
+        returns (uint256 entitledAssets)
     {
         // entitledAmount amount is derived from the claimTVL and the finalTVL
         // if user deposited 1000 assets and the claimTVL is 50% lower than finalTVL, the user is entitled to 500 assets
         // if user deposited 1000 assets and the claimTVL is 50% higher than finalTVL, the user is entitled to 1500 assets
-        entitledAmount = _assets.mulDivDown(claimTVL[_id], finalTVL[_id]);
+        entitledAssets = _shares.mulDivDown(claimTVL[_id], finalTVL[_id]);
     }
 
     /** @notice Lookup total epochs length

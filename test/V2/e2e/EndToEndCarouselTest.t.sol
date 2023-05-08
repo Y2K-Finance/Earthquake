@@ -162,8 +162,8 @@ contract EndToEndCarouselTest is Helper {
         //assert queue length
         collateralQueueLength = 2;
         premiumQueueLength = 1;
-        assertEq(Carousel(collateral).getDepositQueueLenght(), collateralQueueLength);
-        assertEq(Carousel(premium).getDepositQueueLenght(), premiumQueueLength);
+        assertEq(Carousel(collateral).getDepositQueueLength(), collateralQueueLength);
+        assertEq(Carousel(premium).getDepositQueueLength(), premiumQueueLength);
 
         //mint deposit in queue
         Carousel(collateral).mintDepositInQueue(epochId, collateralQueueLength);
@@ -174,13 +174,9 @@ contract EndToEndCarouselTest is Helper {
 
         //assert balance and emissions
         assertEq(Carousel(collateral).balanceOf(USER, epochId), collatBalanceAfterFee - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER, epochId), collatBalanceAfterFee - relayerFee);
         assertEq(Carousel(collateral).balanceOf(USER2, epochId), collatBalanceAfterFee - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER2, epochId), collatBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER, epochId), premiumBalanceAfterFee - relayerFee);
-        assertEq(Carousel(premium).balanceOfEmissions(USER, epochId), premiumBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER2, epochId), 0);
-        assertEq(Carousel(premium).balanceOfEmissions(USER2, epochId), 0);
 
         vm.startPrank(USER);
 
@@ -257,7 +253,7 @@ contract EndToEndCarouselTest is Helper {
         vm.startPrank(USER);
 
         //delist rollover
-        uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLength();
         Carousel(collateral).delistInRollover(USER);
 
         //assert delisted rollover position in queue assets are 0
@@ -280,12 +276,12 @@ contract EndToEndCarouselTest is Helper {
 
         // cleanup queue from delisted users
         vm.startPrank(address(factory));
-        uint256 beforeQueueLength2 = Carousel(collateral).getRolloverQueueLenght();
+        uint256 beforeQueueLength2 = Carousel(collateral).getRolloverQueueLength();
         assertEq(beforeQueueLength2, 2);
         address[] memory addressesToDelist = new address[](1);
         addressesToDelist[0] = USER;
         Carousel(collateral).cleanUpRolloverQueue(addressesToDelist);
-        uint256 afterQueueLength2 = Carousel(collateral).getRolloverQueueLenght();
+        uint256 afterQueueLength2 = Carousel(collateral).getRolloverQueueLength();
         assertEq(afterQueueLength2, 1);
         vm.stopPrank();
 
@@ -296,7 +292,7 @@ contract EndToEndCarouselTest is Helper {
         assertTrue(Carousel(collateral).getRolloverIndex(USER2) == 0);
 
         //delist rollover
-        beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        beforeQueueLength = Carousel(collateral).getRolloverQueueLength();
         Carousel(collateral).delistInRollover(USER2);
 
         //assert balance in next epoch

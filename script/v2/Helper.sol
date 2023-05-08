@@ -1,21 +1,19 @@
 // SPDX-License-Identifier;
-pragma solidity ^0.8.13;
+pragma solidity 0.8.17;
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
-import "../src/legacy_v1/VaultFactory.sol";
-import "../src/legacy_v1/Controller.sol";
+import "forge-std/Test.sol";
 //TODO change this after deploy  y2k token
-// import "../src/legacy_v1/rewards/PausableRewardsFactory.sol";
-import "../src/legacy_v1/rewards/RewardsFactory.sol";
-import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./keepers/KeeperDepeg.sol";
-import "./keepers/KeeperEndEpoch.sol";
+import "../../src/v2/Carousel/CarouselFactory.sol";
+import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
+// import "../keepers/KeeperDepeg.sol";
+// import "../keepers/KeeperEndEpoch.sol";
 
 /// @author MiguelBits
 
-contract HelperConfig is Script {
+contract HelperV2 is Script {
     using stdJson for string;
 
     struct ConfigVariables{
@@ -53,6 +51,8 @@ contract HelperConfig is Script {
         address tokenUSDT;
         address treasury;
         address vaultFactory;
+        address carouselFactoryV2;
+        address controllerV2;
         address weth;
         address y2k;
     }
@@ -79,14 +79,12 @@ contract HelperConfig is Script {
         uint marketId;
     }
 
-    VaultFactory vaultFactory;
-    Controller controller;
-    RewardsFactory rewardsFactory;
-    Y2K y2k;
-    KeeperGelatoDepeg keeperDepeg;
-    KeeperGelatoEndEpoch keeperEndEpoch;
-    ConfigVariables configVariables;
 
+
+    ConfigVariables configVariables;
+    CarouselFactory vaultFactory;
+    ControllerPeggedAssetV2 controller;
+    address y2k;
     function setVariables() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON.json");
@@ -97,24 +95,24 @@ contract HelperConfig is Script {
     }
 
     function contractToAddresses(ConfigAddresses memory configAddresses) public {
-        vaultFactory = VaultFactory(configAddresses.vaultFactory);
-        controller = Controller(configAddresses.controller);
-        rewardsFactory = RewardsFactory(configAddresses.rewardsFactory);
-        y2k = Y2K(configAddresses.y2k);
-        keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
-        keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
+        vaultFactory = CarouselFactory(configAddresses.carouselFactoryV2);
+        controller = ControllerPeggedAssetV2(configAddresses.controllerV2);
+        // rewardsFactory = RewardsFactory(configAddresses.rewardsFactory);
+        y2k = address(configAddresses.y2k);
+        // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
+        // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
 
-    function startKeepers(uint _marketIndex, uint _epochEnd) public {
-        keeperDepeg.startTask(_marketIndex, _epochEnd);
-        keeperEndEpoch.startTask(_marketIndex, _epochEnd);
-    }
+    // function startKeepers(uint _marketIndex, uint _epochEnd) public {
+    //     keeperDepeg.startTask(_marketIndex, _epochEnd);
+    //     keeperEndEpoch.startTask(_marketIndex, _epochEnd);
+    // }
 
     function getConfigAddresses(bool isTestEnv) public returns (ConfigAddresses memory) {
         string memory root = vm.projectRoot();
         string memory path;
         if(isTestEnv){
-            path = string.concat(root, "/configTestEnv.json");
+            path = string.concat(root, "/configTestEnvV2.json");
         }
         else{
             path = string.concat(root, "/configAddresses.json");
