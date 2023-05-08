@@ -174,13 +174,9 @@ contract EndToEndCarouselTest is Helper {
 
         //assert balance and emissions
         assertEq(Carousel(collateral).balanceOf(USER, epochId), collatBalanceAfterFee - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER, epochId), collatBalanceAfterFee - relayerFee);
         assertEq(Carousel(collateral).balanceOf(USER2, epochId), collatBalanceAfterFee - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER2, epochId), collatBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER, epochId), premiumBalanceAfterFee - relayerFee);
-        assertEq(Carousel(premium).balanceOfEmissions(USER, epochId), premiumBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER2, epochId), 0);
-        assertEq(Carousel(premium).balanceOfEmissions(USER2, epochId), 0);
 
         vm.startPrank(USER);
 

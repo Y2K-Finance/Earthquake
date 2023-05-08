@@ -9,6 +9,7 @@ contract TimeLock {
     mapping(bytes32 => bool) public queued;
 
     address public policy;
+    address public factory;
 
     uint32 public constant MIN_DELAY = 7 days;
     uint32 public constant MAX_DELAY = 30 days;
@@ -77,7 +78,7 @@ contract TimeLock {
         string calldata _func,
         bytes calldata _data,
         uint256 _timestamp
-     ) external payable onlyOwner returns (bytes memory) {
+    ) external payable onlyOwner returns (bytes memory) {
         bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id queued
@@ -109,7 +110,7 @@ contract TimeLock {
             data = _data;
         }
 
-        if(msg.value != _value) {
+        if (msg.value != _value) {
             revert ValueNotMatchError(msg.value, _value);
         }
         // call target
@@ -177,6 +178,16 @@ contract TimeLock {
         }
         policy = _newOwner;
         emit ChangeOwner(_newOwner);
+    }
+
+    /** @notice change owner on factory
+     *  @param _newOwner new owner
+     */
+    function changeOwnerOnFactory(address _newOwner, address _factory)
+        external
+        onlyOwner
+    {
+        IVaultFactoryV2(_factory).transferOwnership(_newOwner);
     }
 
     /*///////////////////////////////////////////////////////////////
