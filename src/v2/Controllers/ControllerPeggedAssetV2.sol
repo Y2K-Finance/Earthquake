@@ -14,6 +14,7 @@ contract ControllerPeggedAssetV2 {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
+    uint256 private constant MAX_UPDATE_TRESHOLD = 2 days;
     uint16 private constant GRACE_PERIOD_TIME = 3600;
     address public immutable treasury;
 
@@ -59,7 +60,7 @@ contract ControllerPeggedAssetV2 {
 
         if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
 
-        int256 price = getLatestPrice(premiumVault.token());
+        int256 price = getLatestPrice(_marketId);
 
         if (int256(premiumVault.strike()) <= price)
             revert PriceNotAtStrikePrice(price);
@@ -133,7 +134,7 @@ contract ControllerPeggedAssetV2 {
             ),
             true,
             block.timestamp,
-            price
+            uint256(price)
         );
     }
 
@@ -155,7 +156,7 @@ contract ControllerPeggedAssetV2 {
             collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
 
-         if (
+        if (
             premiumVault.totalAssets(_epochId) == 0 ||
             collateralVault.totalAssets(_epochId) == 0
         ) {
@@ -274,17 +275,16 @@ contract ControllerPeggedAssetV2 {
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
     /** @notice Lookup token price
-     * @param _token Target token address
+     * @param _marketId Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token) public view returns (int256) {
-        (
-            ,
-            /*uint80 roundId*/
+    function getLatestPrice(uint256 _marketId) public view returns (int256) {
+         (
+            /*uint80 roundId*/,
             int256 answer,
-            uint256 startedAt, /*uint256 updatedAt*/ /*uint80 answeredInRound*/
-            ,
-
+            uint256 startedAt, 
+            /*uint256 updatedAt*/,
+            /*uint80 answeredInRound*/
         ) = sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
@@ -301,10 +301,19 @@ contract ControllerPeggedAssetV2 {
         }
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.tokenToOracle(_token)
+            vaultFactory.marketToOracle(_marketId)
         );
-        (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
-            .latestRoundData();
+        (
+            uint80 roundID,
+            int256 price,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+
+        if (updatedAt < block.timestamp - MAX_UPDATE_TRESHOLD)
+            revert PriceOutdated();
+
         uint256 decimals = priceFeed.decimals();
 
         if (decimals < 18) {
@@ -362,6 +371,7 @@ contract ControllerPeggedAssetV2 {
     error EpochNotExpired();
     error VaultNotZeroTVL();
     error VaultZeroTVL();
+    error PriceOutdated();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -373,7 +383,7 @@ contract ControllerPeggedAssetV2 {
      * @param tvl TVL
      * @param strikeMet Flag if event isDisaster
      * @param time time
-     * @param depegPrice Price that triggered depeg
+     * @param strikeData Data that triggered depeg
      */
     event EpochResolved(
         uint256 indexed epochId,
@@ -381,7 +391,7 @@ contract ControllerPeggedAssetV2 {
         VaultTVL tvl,
         bool strikeMet,
         uint256 time,
-        int256 depegPrice
+        uint256 strikeData
     );
 
     /** @notice Sets epoch to null when event is emitted
