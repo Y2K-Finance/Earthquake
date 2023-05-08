@@ -41,7 +41,6 @@ contract CarouselTest is Helper {
                         TOKEN,
                         STRIKE,
                         controller,
-                        TREASURY,
                         emissionsToken,
                         relayerFee,
                         depositFee,
@@ -76,7 +75,7 @@ contract CarouselTest is Helper {
         vm.stopPrank();
 
         uint256 _queueLength = 1;
-        assertEq(vault.getDepositQueueLenght(), _queueLength);
+        assertEq(vault.getDepositQueueLength(), _queueLength);
         // test revert cases
         // should revert if epochId is 0 as this epoch is not supposed to minted ever
         vm.expectRevert(Carousel.InvalidEpochId.selector);
@@ -101,7 +100,6 @@ contract CarouselTest is Helper {
         vm.stopPrank();
         // test user balances
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         // test relayer balance
         assertEq(IERC20(UNDERLYING).balanceOf(relayer), relayerFee * 1);
 
@@ -137,14 +135,12 @@ contract CarouselTest is Helper {
 
         _queueLength = 3;
 
-        assertEq(vault.getDepositQueueLenght(), _queueLength);
+        assertEq(vault.getDepositQueueLength(), _queueLength);
         // should only do as many operations as queue length 
         // please check logs: test forge test -m testDepositInQueue  -vvvv
         vault.mintDepositInQueue(_epochId, 230000);
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER2, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), 10 ether - relayerFee);
     }
 
     function testEnListInRollover() public {
@@ -229,7 +225,9 @@ contract CarouselTest is Helper {
         helperDepositInEpochs(_epochId,USER5, true);
         helperDepositInEpochs(_epochId,USER6, true);
 
-        assertEq(vault.getDepositQueueLenght(), 6);
+        assertEq(vault.getDepositQueueTVL(), 60 ether);
+
+        assertEq(vault.getDepositQueueLength(), 6);
         
         // check balance of relayer
         uint256 balanceBefore = IERC20(UNDERLYING).balanceOf(address(this));
@@ -246,17 +244,11 @@ contract CarouselTest is Helper {
 
         // check balances
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER2, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER3, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER3, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER4, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER4, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER5, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER5, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER6, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER6, _epochId), 10 ether - relayerFee);
     }
 
     function testRolloverMultiple() public {
@@ -308,9 +300,7 @@ contract CarouselTest is Helper {
 
         // check balances
         assertEq(vault.balanceOf(USER, _epochId), 0);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 0);
         assertEq(vault.balanceOf(USER2, _epochId), 0);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), 0);
 
         // simulate prev epoch win
         stdstore
@@ -341,19 +331,11 @@ contract CarouselTest is Helper {
         assertEq(((prevEpochSharesValueAfterRollover >> 1) << 1) , (((prevEpochShareValue) - (prevEpochUserBalance) - 16) >> 1) << 1); // zero out last bit to avoid rounding errors
         // check balances
         assertEq(vault.balanceOf(USER, _epochId), prevEpochUserBalance - relayerFeeInShares );
-        assertEq(vault.balanceOfEmissions(USER, _epochId), prevEpochUserBalance - relayerFeeInShares);
         assertEq(vault.balanceOf(USER2, _epochId), prevEpochUserBalance - relayerFeeInShares);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), prevEpochUserBalance - relayerFeeInShares);
         assertEq(vault.balanceOf(USER3, _epochId), prevEpochUserBalance - relayerFeeInShares);
-        assertEq(vault.balanceOfEmissions(USER3, _epochId), prevEpochUserBalance - relayerFeeInShares);
         assertEq(vault.balanceOf(USER4, _epochId), prevEpochUserBalance - relayerFeeInShares);
-        assertEq(vault.balanceOfEmissions(USER4, _epochId), prevEpochUserBalance - relayerFeeInShares);
         assertEq(vault.balanceOf(USER5, _epochId), prevEpochUserBalance - relayerFeeInShares);
-        assertEq(vault.balanceOfEmissions(USER5, _epochId), prevEpochUserBalance - relayerFeeInShares);
-        assertEq(vault.balanceOf(USER6, _epochId), prevEpochUserBalance - relayerFeeInShares);
-        assertEq(vault.balanceOfEmissions(USER6, _epochId), prevEpochUserBalance - relayerFeeInShares);
-
-        
+        assertEq(vault.balanceOf(USER6, _epochId), prevEpochUserBalance - relayerFeeInShares);        
     }
 
     
@@ -391,5 +373,9 @@ contract CarouselTest is Helper {
         vm.stopPrank();   
     }
 
+    // deployer contract acts as factory and must emulate VaultFactoryV2.treasury()
+    function treasury() public view returns (address) {
+        return TREASURY;
+    }
 
 }

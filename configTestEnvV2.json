@@ -32,7 +32,9 @@
         "controller": "0x1ae6ca8892d7F0DaCBd3f282eaabDFbDbee3DE43",
         "rewardsFactory": "0x22351212C4066d65F7B02f6f75Bc3347Ab17b870",
         "keeperDepeg": "0x4208cd74b0dE2880d7B69700B749c2962381bD80",
-        "keeperEndEpoch": "0xcDf0Bda38eb465EC17Eda5B25830197075F4cabc"
+        "keeperEndEpoch": "0xcDf0Bda38eb465EC17Eda5B25830197075F4cabc",
+        "carouselFactoryV2": "0xFd3DB836C652F80402398A9AdE2d3F3C5EEB22B1",
+        "controllerV2": "0xb4B8FDD25AC2dad1B681891BB8563a7Fe187da42"
     }]
 }
 
