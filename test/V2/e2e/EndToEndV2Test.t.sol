@@ -220,7 +220,7 @@ contract EndToEndV2Test is Helper {
         vm.stopPrank();
     }
 
-    function helperCalculateFeeAdjustedValue(uint256 amount, uint16 fee) internal pure returns (uint256) {
-        return amount - amount.mulDivUp(fee, 10000);
+    function helperCalculateFeeAdjustedValue(uint256 _amount, uint16 _fee) internal pure returns (uint256) {
+        return _amount - _amount.mulDivUp(_fee, 10000);
     }
 }

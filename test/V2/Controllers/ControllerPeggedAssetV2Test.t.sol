@@ -122,7 +122,7 @@ contract ControllerPeggedAssetV2Test is Helper {
         return (100, int256(STRIKE) - int256(1), 0, block.timestamp - 3 days, 100);
     }
 
-    function decimals() public view returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return 18;
     }
 

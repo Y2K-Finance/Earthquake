@@ -25,10 +25,7 @@ contract ControllerPeggedAssetV2 {
      * @param _factory VaultFactory address
      * @param _l2Sequencer Arbitrum sequencer address
      */
-    constructor(
-        address _factory,
-        address _l2Sequencer
-    ) {
+    constructor(address _factory, address _l2Sequencer) {
         if (_factory == address(0)) revert ZeroAddress();
 
         if (_l2Sequencer == address(0)) revert ZeroAddress();
@@ -105,14 +102,22 @@ contract ControllerPeggedAssetV2 {
 
         // send fees to treasury and remaining TVL to respective counterparty vault
         // strike price reached so premium is entitled to collateralTVL - collateralFee
-        premiumVault.sendTokens(_epochId, premiumFee,  IVaultFactoryV2(vaultFactory).treasury());
+        premiumVault.sendTokens(
+            _epochId,
+            premiumFee,
+            IVaultFactoryV2(vaultFactory).treasury()
+        );
         premiumVault.sendTokens(
             _epochId,
             premiumTVL - premiumFee,
             address(collateralVault)
         );
         // strike price is reached so collateral is still entitled to premiumTVL - premiumFee but looses collateralTVL
-        collateralVault.sendTokens(_epochId, collateralFee,  IVaultFactoryV2(vaultFactory).treasury());
+        collateralVault.sendTokens(
+            _epochId,
+            collateralFee,
+            IVaultFactoryV2(vaultFactory).treasury()
+        );
         collateralVault.sendTokens(
             _epochId,
             collateralTVL - collateralFee,
@@ -187,7 +192,11 @@ contract ControllerPeggedAssetV2 {
         collateralVault.setClaimTVL(_epochId, collateralTVLAfterFee);
 
         // send premium fees to treasury and remaining TVL to collateral vault
-        premiumVault.sendTokens(_epochId, premiumFee,  IVaultFactoryV2(vaultFactory).treasury());
+        premiumVault.sendTokens(
+            _epochId,
+            premiumFee,
+            IVaultFactoryV2(vaultFactory).treasury()
+        );
         // strike price reached so collateral is entitled to collateralTVLAfterFee
         premiumVault.sendTokens(
             _epochId,
@@ -275,13 +284,15 @@ contract ControllerPeggedAssetV2 {
      * @return nowPrice Current token price
      */
     function getLatestPrice(uint256 _marketId) public view returns (int256) {
-         (
-            /*uint80 roundId*/,
+        (
+            ,
+            /*uint80 roundId*/
             int256 answer,
-            uint256 startedAt, 
-            /*uint256 updatedAt*/,
-            /*uint80 answeredInRound*/
-        ) = sequencerUptimeFeed.latestRoundData();
+            uint256 startedAt, /*uint256 updatedAt*/
+            ,
+
+        ) = /*uint80 answeredInRound*/
+            sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down

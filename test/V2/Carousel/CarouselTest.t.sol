@@ -389,7 +389,7 @@ contract CarouselTest is Helper {
     }
 
     // deployer contract acts as factory and must emulate VaultFactoryV2.treasury()
-    function treasury() public view returns (address) {
+    function treasury() public pure returns (address) {
         return TREASURY;
     }
 

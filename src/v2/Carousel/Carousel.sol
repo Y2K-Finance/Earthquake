@@ -239,8 +239,12 @@ contract Carousel is VaultV2 {
             revert InsufficientBalance();
         // to prevent spamming rollover queue and to ensure relayerFee can be payed,
         // shares rolled over must be worth at least minQueueDeposit
-        if (!epochResolved[_epochId] && (_shares < minQueueDeposit)) revert MinDeposit();
-        else if (epochResolved[_epochId] && (previewWithdraw(_epochId, _shares) < minQueueDeposit)) revert MinDeposit(); 
+        if (!epochResolved[_epochId] && (_shares < minQueueDeposit))
+            revert MinDeposit();
+        else if (
+            epochResolved[_epochId] &&
+            (previewWithdraw(_epochId, _shares) < minQueueDeposit)
+        ) revert MinDeposit();
 
         // check if user has already queued up a rollover
         if (ownerToRollOverQueueIndex[_receiver] != 0) {
@@ -408,7 +412,6 @@ contract Carousel is VaultV2 {
 
                 // mint only if user won epoch he is rolling over
                 if (entitledAmount > queue[index].shares) {
-
                     // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
                     if (entitledAmount <= relayerFee) {
                         index++;
@@ -721,9 +724,9 @@ contract Carousel is VaultV2 {
     {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
             uint256 assets = previewWithdraw(
-                    rolloverQueue[i].epochId,
-                    rolloverQueue[i].shares
-                );
+                rolloverQueue[i].epochId,
+                rolloverQueue[i].shares
+            );
             if (
                 rolloverQueue[i].epochId == _epochId &&
                 (assets > rolloverQueue[i].shares) // check if position is in profit and getting rollover
@@ -733,20 +736,18 @@ contract Carousel is VaultV2 {
         }
     }
 
-    function getRolloverTVL() public
-        view
-        returns (uint256 tvl) {
-            for (uint256 i = 0; i < rolloverQueue.length; i++) {
+    function getRolloverTVL() public view returns (uint256 tvl) {
+        for (uint256 i = 0; i < rolloverQueue.length; i++) {
             uint256 assets = previewWithdraw(
-                    rolloverQueue[i].epochId,
-                    rolloverQueue[i].shares
-                );
+                rolloverQueue[i].epochId,
+                rolloverQueue[i].shares
+            );
             if (
                 (assets > rolloverQueue[i].shares) // check if position is in profit and getting rollover
             ) {
                 tvl += assets;
             }
-         }
+        }
     }
 
     function getRolloverQueueItem(uint256 _index)

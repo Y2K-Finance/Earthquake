@@ -172,14 +172,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
             SemiFungibleVault.asset.safeTransfer(_receiver, assets);
         }
 
-        emit Withdraw(
-            msg.sender,
-            _receiver,
-            _owner,
-            _id,
-            _shares,
-            assets
-        );
+        emit Withdraw(msg.sender, _receiver, _owner, _id, _shares, assets);
 
         return assets;
     }
@@ -383,7 +376,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         epochCreation = epochConfig[_id].epochCreation;
     }
 
-    function treasury() public returns (address) {
+    function treasury() public view returns (address) {
         return IVaultFactoryV2(factory).treasury();
     }
 
