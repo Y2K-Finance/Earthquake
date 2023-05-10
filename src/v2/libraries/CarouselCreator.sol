@@ -35,7 +35,6 @@ library CarouselCreator {
                         _marketConfig.token,
                         _marketConfig.strike,
                         _marketConfig.controller,
-                        _marketConfig.treasury,
                         _marketConfig.emissionsToken,
                         _marketConfig.relayerFee,
                         _marketConfig.depositFee,

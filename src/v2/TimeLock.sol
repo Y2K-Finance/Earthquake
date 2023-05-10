@@ -9,8 +9,9 @@ contract TimeLock {
     mapping(bytes32 => bool) public queued;
 
     address public policy;
+    address public factory;
 
-    uint32 public constant MIN_DELAY = 3 days;
+    uint32 public constant MIN_DELAY = 3 days; // short timeframe to not discriminate against epoch lenght but rather focus on transprancy of critical operations
     uint32 public constant MAX_DELAY = 30 days;
     uint32 public constant GRACE_PERIOD = 14 days;
 
@@ -77,7 +78,7 @@ contract TimeLock {
         string calldata _func,
         bytes calldata _data,
         uint256 _timestamp
-    ) external onlyOwner returns (bytes memory) {
+    ) external payable onlyOwner returns (bytes memory) {
         bytes32 txId = getTxId(_target, _value, _func, _data, _timestamp);
 
         //check tx id queued
@@ -109,6 +110,9 @@ contract TimeLock {
             data = _data;
         }
 
+        if (msg.value != _value) {
+            revert ValueNotMatchError(msg.value, _value);
+        }
         // call target
         (bool ok, bytes memory res) = _target.call{value: _value}(data);
         if (!ok) {
@@ -176,6 +180,16 @@ contract TimeLock {
         emit ChangeOwner(_newOwner);
     }
 
+    /** @notice change owner on factory
+     *  @param _newOwner new owner
+     */
+    function changeOwnerOnFactory(address _newOwner, address _factory)
+        external
+        onlyOwner
+    {
+        IVaultFactoryV2(_factory).transferOwnership(_newOwner);
+    }
+
     /*///////////////////////////////////////////////////////////////
                                ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -188,6 +202,7 @@ contract TimeLock {
     error TimestampExpiredError(uint256 blocktimestamp, uint256 timestamp);
     error TxFailedError(string func);
     error AddressZero();
+    error ValueNotMatchError(uint256 msgValue, uint256 value);
 
     /** @notice queues transaction when emitted
         @param txId unique id of the transaction
