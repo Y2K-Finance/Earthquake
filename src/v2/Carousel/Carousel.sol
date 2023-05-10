@@ -228,7 +228,7 @@ contract Carousel is VaultV2 {
         uint256 _epochId,
         uint256 _shares,
         address _receiver
-    ) public epochIdExists(_epochId) minRequiredDeposit(_shares, _epochId) {
+    ) public epochIdExists(_epochId) {
         // check if sender is approved by owner
         if (
             msg.sender != _receiver &&
@@ -237,6 +237,10 @@ contract Carousel is VaultV2 {
         // check if user has enough balance
         if (balanceOf(_receiver, _epochId) < _shares)
             revert InsufficientBalance();
+        // to prevent spamming rollover queue and to ensure relayerFee can be payed,
+        // shares rolled over must be worth at least minQueueDeposit
+        if (!epochResolved[_epochId] && (_shares < minQueueDeposit)) revert MinDeposit();
+        else if (epochResolved[_epochId] && (previewWithdraw(_epochId, _shares) < minQueueDeposit)) revert MinDeposit(); 
 
         // check if user has already queued up a rollover
         if (ownerToRollOverQueueIndex[_receiver] != 0) {
@@ -830,8 +834,9 @@ contract Carousel is VaultV2 {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    /** @notice checks if deposit is greater than relayer fee
+    /** @notice checks if deposit is at least min required
      * @param _assets amount of assets to deposit
+     * @param _epochId epoch id
      */
     modifier minRequiredDeposit(uint256 _assets, uint256 _epochId) {
         if (_epochId == 0 && _assets < minQueueDeposit) revert MinDeposit();

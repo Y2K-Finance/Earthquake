@@ -71,6 +71,9 @@ contract CarouselTest is Helper {
 
         vm.startPrank(USER);
         IERC20(UNDERLYING).approve(address(vault), 10 ether);
+        vm.expectRevert(Carousel.MinDeposit.selector);
+        vault.deposit(0, 900000000000000000, USER); // 0.9 ether
+        
         vault.deposit(0, 10 ether, USER);
         vm.stopPrank();
 
@@ -165,11 +168,14 @@ contract CarouselTest is Helper {
         // enlist in rollover for next epoch
         vm.startPrank(USER);
         //_epochId == epoch user is depositing in / amount of shares he wants to rollover
+        vm.expectRevert(Carousel.MinDeposit.selector);
+        vault.enlistInRollover(_epochId, 900000000000000000, USER); // 0.9 ether
+
         vault.enlistInRollover(_epochId, 8 ether, USER);
         vault.delistInRollover(USER);
         vault.enlistInRollover(_epochId, 2 ether, USER);
 
-        assertEq(vault.getRolloverQueueLenght(), 1);
+        assertEq(vault.getRolloverQueueLength(), 1);
 
         bool isEnlisted = vault.isEnlistedInRolloverQueue(USER);
         (uint256 enlistedAmount,) = vault.getRolloverPosition(USER);
