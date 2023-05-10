@@ -55,7 +55,7 @@ contract EndToEndCarouselTest is Helper {
             emissionsToken
         );
 
-        controller = new ControllerPeggedAssetV2(address(factory), ARBITRUM_SEQUENCER, TREASURY);
+        controller = new ControllerPeggedAssetV2(address(factory), ARBITRUM_SEQUENCER);
         factory.whitelistController(address(controller));
 
         relayerFee = 2 gwei;
@@ -162,8 +162,8 @@ contract EndToEndCarouselTest is Helper {
         //assert queue length
         collateralQueueLength = 2;
         premiumQueueLength = 1;
-        assertEq(Carousel(collateral).getDepositQueueLenght(), collateralQueueLength);
-        assertEq(Carousel(premium).getDepositQueueLenght(), premiumQueueLength);
+        assertEq(Carousel(collateral).getDepositQueueLength(), collateralQueueLength);
+        assertEq(Carousel(premium).getDepositQueueLength(), premiumQueueLength);
 
         //mint deposit in queue
         Carousel(collateral).mintDepositInQueue(epochId, collateralQueueLength);
@@ -174,18 +174,20 @@ contract EndToEndCarouselTest is Helper {
 
         //assert balance and emissions
         assertEq(Carousel(collateral).balanceOf(USER, epochId), collatBalanceAfterFee - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER, epochId), collatBalanceAfterFee - relayerFee);
         assertEq(Carousel(collateral).balanceOf(USER2, epochId), collatBalanceAfterFee - relayerFee);
-        assertEq(Carousel(collateral).balanceOfEmissions(USER2, epochId), collatBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER, epochId), premiumBalanceAfterFee - relayerFee);
-        assertEq(Carousel(premium).balanceOfEmissions(USER, epochId), premiumBalanceAfterFee - relayerFee);
         assertEq(Carousel(premium).balanceOf(USER2, epochId), 0);
-        assertEq(Carousel(premium).balanceOfEmissions(USER2, epochId), 0);
 
         vm.startPrank(USER);
 
         //enlist in rollover for next epoch
         Carousel(collateral).enlistInRollover(epochId, 8 ether, USER);
+
+        bool isEnlisted = Carousel(collateral).isEnlistedInRolloverQueue(USER);
+        (uint256 enlistedAmount,) = Carousel(collateral).getRolloverPosition(USER);
+
+        assertEq(isEnlisted, true);
+        assertEq(enlistedAmount, 8 ether);
 
         vm.stopPrank();
 
@@ -251,18 +253,20 @@ contract EndToEndCarouselTest is Helper {
         vm.startPrank(USER);
 
         //delist rollover
-        uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        uint256 beforeQueueLength = Carousel(collateral).getRolloverQueueLength();
         Carousel(collateral).delistInRollover(USER);
 
-        //assert rollover queue length
-        uint256 afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
-        assertEq(afterQueueLength, beforeQueueLength - 1);
+        //assert delisted rollover position in queue assets are 0
+        bool ie = Carousel(collateral).isEnlistedInRolloverQueue(USER);
+        ( uint256 amountAfterDelisting,) = Carousel(collateral).getRolloverPosition(USER);
+        assertTrue(!ie);
+        assertEq(amountAfterDelisting, 0);        
 
         //assert balance in next epoch
         uint256 balanceInNextEpoch = Carousel(collateral).balanceOf(USER, nextEpochId);
 
-        //assert rollover minus relayer fee
-        assertEq(balanceInNextEpoch, 8 ether - relayerFee);
+        //assert rollover minus relayer fee which is subtracted based on the value of the shares of the prev epoch
+        assertEq(balanceInNextEpoch, (8 ether - relayerFee));
 
         //withdraw after rollover
         Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER, USER);
@@ -270,24 +274,31 @@ contract EndToEndCarouselTest is Helper {
 
         vm.stopPrank();
 
+        // cleanup queue from delisted users
+        vm.startPrank(address(factory));
+        uint256 beforeQueueLength2 = Carousel(collateral).getRolloverQueueLength();
+        assertEq(beforeQueueLength2, 2);
+        address[] memory addressesToDelist = new address[](1);
+        addressesToDelist[0] = USER;
+        Carousel(collateral).cleanUpRolloverQueue(addressesToDelist);
+        uint256 afterQueueLength2 = Carousel(collateral).getRolloverQueueLength();
+        assertEq(afterQueueLength2, 1);
+        vm.stopPrank();
+
         //withdraw USER2
         vm.startPrank(USER2);
 
-        //assert rollover index
+        //assert rollover index, should be 0 since USER1 lising was cleaned up
         assertTrue(Carousel(collateral).getRolloverIndex(USER2) == 0);
 
         //delist rollover
-        beforeQueueLength = Carousel(collateral).getRolloverQueueLenght();
+        beforeQueueLength = Carousel(collateral).getRolloverQueueLength();
         Carousel(collateral).delistInRollover(USER2);
-
-        //assert rollover queue length
-        afterQueueLength = Carousel(collateral).getRolloverQueueLenght();
-        assertEq(afterQueueLength, beforeQueueLength - 1);
 
         //assert balance in next epoch
         balanceInNextEpoch = Carousel(collateral).balanceOf(USER2, nextEpochId);
 
-        //assert rollover minus relayer fee
+        //assert rollover minus relayer fee which is subtracted based on the value of the shares of the prev epoch
         assertTrue(balanceInNextEpoch == 8 ether - relayerFee); 
 
         //withdraw after rollover
