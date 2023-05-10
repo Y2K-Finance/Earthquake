@@ -137,6 +137,14 @@ contract ControllerPeggedAssetV2 {
             block.timestamp,
             uint256(price)
         );
+
+        emit ProtocolFeeCollected(
+            _epochId,
+            _marketId,
+            premiumFee,
+            collateralFee,
+            block.timestamp
+        );
     }
 
     /** @notice Trigger epoch end without depeg event
@@ -211,6 +219,14 @@ contract ControllerPeggedAssetV2 {
             false,
             block.timestamp,
             0
+        );
+
+        emit ProtocolFeeCollected(
+            _epochId,
+            _marketId,
+            premiumFee,
+            0,
+            block.timestamp
         );
     }
 
@@ -288,11 +304,10 @@ contract ControllerPeggedAssetV2 {
             ,
             /*uint80 roundId*/
             int256 answer,
-            uint256 startedAt, /*uint256 updatedAt*/
+            uint256 startedAt, /*uint256 updatedAt*/ /*uint80 answeredInRound*/
             ,
 
-        ) = /*uint80 answeredInRound*/
-            sequencerUptimeFeed.latestRoundData();
+        ) = sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down
@@ -399,6 +414,21 @@ contract ControllerPeggedAssetV2 {
         bool strikeMet,
         uint256 time,
         uint256 strikeData
+    );
+
+    /** @notice Indexes protocol fees collected
+     * @param epochId market epoch ID
+     * @param marketId market ID
+     * @param premiumFee premium fee
+     * @param collateralFee collateral fee
+     * @param time timestamp
+     */
+    event ProtocolFeeCollected(
+        uint256 indexed epochId,
+        uint256 indexed marketId,
+        uint256 premiumFee,
+        uint256 collateralFee,
+        uint256 time
     );
 
     /** @notice Sets epoch to null when event is emitted

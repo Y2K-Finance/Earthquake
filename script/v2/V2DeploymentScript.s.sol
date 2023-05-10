@@ -71,7 +71,7 @@ contract V2DeploymentScript is Script, HelperV2 {
 
         // address timeLock = address(new TimeLock(policy));
 
-        // CarouselFactory vaultFactory = new CarouselFactory(addresses.weth, treasury, policy, addresses.y2k);
+        CarouselFactory vaultFactory = new CarouselFactory(addresses.weth, treasury, policy, addresses.y2k);
         // vaultFactory = new VaultFactory(addresses.treasury, addresses.weth, addresses.policy);
         // factory = 0xAd2f15ff7d167c800281ef52fa098Fae33429cc6;
 
@@ -82,7 +82,7 @@ contract V2DeploymentScript is Script, HelperV2 {
         // console2.log("Broadcast policy", addresses.policy);
         //start setUp();
 
-        // controller = address(new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer, treasury));
+        controller = new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer);
 
         // vaultFactory.whitelistController(controller);
 
@@ -103,7 +103,7 @@ contract V2DeploymentScript is Script, HelperV2 {
                 addresses.weth,
                 "y2kUSDC_999*",
                 "https://y2k.finance",
-                0xb4B8FDD25AC2dad1B681891BB8563a7Fe187da42,
+                address(controller),
                 100000000,
                 10,
                 1 ether
