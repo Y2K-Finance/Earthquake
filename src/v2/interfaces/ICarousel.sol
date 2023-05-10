@@ -82,10 +82,6 @@ interface ICarousel {
         view
         returns (uint256);
 
-    function getDepositQueueLenght() external view;
-
-    function getRolloverQueueLenght() external view;
-
     function emissionsToken() external view returns (address);
 
     function relayerFee() external view returns (uint256);
@@ -93,4 +89,10 @@ interface ICarousel {
     function depositFee() external view returns (uint256);
 
     function emissions(uint256 _epochId) external view returns (uint256);
+
+    function cleanupRolloverQueue(address[] memory) external;
+
+    function getDepositQueueLength() external view returns (uint256);
+
+    function getRolloverQueueLength() external view returns (uint256);
 }
