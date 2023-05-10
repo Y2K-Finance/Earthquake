@@ -29,8 +29,7 @@ library VaultV2Creator {
                     _marketConfig.tokenURI,
                     _marketConfig.token,
                     _marketConfig.strike,
-                    _marketConfig.controller,
-                    _marketConfig.treasury
+                    _marketConfig.controller
                 )
             );
     }
