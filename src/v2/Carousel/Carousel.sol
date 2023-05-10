@@ -404,14 +404,9 @@ contract Carousel is VaultV2 {
 
                 // mint only if user won epoch he is rolling over
                 if (entitledAmount > queue[index].shares) {
-                    // @note previewAmountInShares can only be called if epoch is in profit
-                    uint256 relayerFeeInShares = previewAmountInShares(
-                        queue[index].epochId,
-                        relayerFee
-                    );
 
                     // skip the rollover for the user if the assets cannot cover the relayer fee instead of revert.
-                    if (queue[index].assets <= relayerFeeInShares) {
+                    if (entitledAmount <= relayerFee) {
                         index++;
                         continue;
                     }
@@ -451,9 +446,8 @@ contract Carousel is VaultV2 {
                             originalDepositValue
                         )
                     );
-                    uint256 amountToMint = queue[index].shares -
-                        relayerFeeInShares;
-                    _mintShares(queue[index].receiver, _epochId, amountToMint); // amountToMint == shares
+                    uint256 amountToMint = queue[index].shares - relayerFee;
+                    _mintShares(queue[index].receiver, _epochId, amountToMint);
                     emit Deposit(
                         msg.sender,
                         queue[index].receiver,
