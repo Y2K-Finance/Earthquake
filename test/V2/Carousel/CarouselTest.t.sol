@@ -41,10 +41,10 @@ contract CarouselTest is Helper {
                         TOKEN,
                         STRIKE,
                         controller,
-                        TREASURY,
                         emissionsToken,
                         relayerFee,
-                        depositFee
+                        depositFee,
+                        1 ether
                 )
         );
 
@@ -71,11 +71,14 @@ contract CarouselTest is Helper {
 
         vm.startPrank(USER);
         IERC20(UNDERLYING).approve(address(vault), 10 ether);
+        vm.expectRevert(Carousel.MinDeposit.selector);
+        vault.deposit(0, 900000000000000000, USER); // 0.9 ether
+        
         vault.deposit(0, 10 ether, USER);
         vm.stopPrank();
 
         uint256 _queueLength = 1;
-        assertEq(vault.getDepositQueueLenght(), _queueLength);
+        assertEq(vault.getDepositQueueLength(), _queueLength);
         // test revert cases
         // should revert if epochId is 0 as this epoch is not supposed to minted ever
         vm.expectRevert(Carousel.InvalidEpochId.selector);
@@ -100,7 +103,6 @@ contract CarouselTest is Helper {
         vm.stopPrank();
         // test user balances
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         // test relayer balance
         assertEq(IERC20(UNDERLYING).balanceOf(relayer), relayerFee * 1);
 
@@ -136,14 +138,12 @@ contract CarouselTest is Helper {
 
         _queueLength = 3;
 
-        assertEq(vault.getDepositQueueLenght(), _queueLength);
+        assertEq(vault.getDepositQueueLength(), _queueLength);
         // should only do as many operations as queue length 
         // please check logs: test forge test -m testDepositInQueue  -vvvv
         vault.mintDepositInQueue(_epochId, 230000);
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER2, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), 10 ether - relayerFee);
     }
 
     function testEnListInRollover() public {
@@ -168,7 +168,20 @@ contract CarouselTest is Helper {
         // enlist in rollover for next epoch
         vm.startPrank(USER);
         //_epochId == epoch user is depositing in / amount of shares he wants to rollover
+        vm.expectRevert(Carousel.MinDeposit.selector);
+        vault.enlistInRollover(_epochId, 900000000000000000, USER); // 0.9 ether
+
         vault.enlistInRollover(_epochId, 8 ether, USER);
+        vault.delistInRollover(USER);
+        vault.enlistInRollover(_epochId, 2 ether, USER);
+
+        assertEq(vault.getRolloverQueueLength(), 1);
+
+        bool isEnlisted = vault.isEnlistedInRolloverQueue(USER);
+        (uint256 enlistedAmount,) = vault.getRolloverPosition(USER);
+        assertEq(isEnlisted, true);
+        assertEq(enlistedAmount, 2 ether);
+
         vm.stopPrank();
 
         // resolve first epoch
@@ -228,7 +241,9 @@ contract CarouselTest is Helper {
         helperDepositInEpochs(_epochId,USER5, true);
         helperDepositInEpochs(_epochId,USER6, true);
 
-        assertEq(vault.getDepositQueueLenght(), 6);
+        assertEq(vault.getDepositQueueTVL(), 60 ether);
+
+        assertEq(vault.getDepositQueueLength(), 6);
         
         // check balance of relayer
         uint256 balanceBefore = IERC20(UNDERLYING).balanceOf(address(this));
@@ -245,17 +260,11 @@ contract CarouselTest is Helper {
 
         // check balances
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER2, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER3, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER3, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER4, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER4, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER5, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER5, _epochId), 10 ether - relayerFee);
         assertEq(vault.balanceOf(USER6, _epochId), 10 ether - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER6, _epochId), 10 ether - relayerFee);
     }
 
     function testRolloverMultiple() public {
@@ -307,9 +316,7 @@ contract CarouselTest is Helper {
 
         // check balances
         assertEq(vault.balanceOf(USER, _epochId), 0);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), 0);
         assertEq(vault.balanceOf(USER2, _epochId), 0);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), 0);
 
         // simulate prev epoch win
         stdstore
@@ -318,7 +325,8 @@ contract CarouselTest is Helper {
             .with_key(prevEpoch)
             .checked_write(1000 ether);
 
-        console.log("rollover queue length", vault.getRolloverQueueLenght());
+        // get value of prev epoch sahres for user
+        uint256 prevEpochShareValue = vault.previewWithdraw(prevEpoch,  vault.balanceOf(USER, prevEpoch));
 
         // mint rollovers again
         // this should mint shares as prev epoch is in profit
@@ -333,21 +341,16 @@ contract CarouselTest is Helper {
         uint256 _relayerFee = (balanceAfter - balanceBefore) / 6;
         assertEq(_relayerFee, relayerFee);
 
+        //@note after rollover, prev value of shares should subtract by original deposit value
+        uint256 prevEpochSharesValueAfterRollover = vault.previewWithdraw(prevEpoch,  vault.balanceOf(USER, prevEpoch));
+        assertEq(((prevEpochSharesValueAfterRollover >> 1) << 1) , (((prevEpochShareValue) - (prevEpochUserBalance) - 16) >> 1) << 1); // zero out last bit to avoid rounding errors
         // check balances
-        assertEq(vault.balanceOf(USER, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER, _epochId), prevEpochUserBalance - relayerFee);
+        assertEq(vault.balanceOf(USER, _epochId), prevEpochUserBalance - relayerFee );
         assertEq(vault.balanceOf(USER2, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER2, _epochId), prevEpochUserBalance - relayerFee);
         assertEq(vault.balanceOf(USER3, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER3, _epochId), prevEpochUserBalance - relayerFee);
         assertEq(vault.balanceOf(USER4, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER4, _epochId), prevEpochUserBalance - relayerFee);
         assertEq(vault.balanceOf(USER5, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER5, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOf(USER6, _epochId), prevEpochUserBalance - relayerFee);
-        assertEq(vault.balanceOfEmissions(USER6, _epochId), prevEpochUserBalance - relayerFee);
-
-        
+        assertEq(vault.balanceOf(USER6, _epochId), prevEpochUserBalance - relayerFee);        
     }
 
     
@@ -385,5 +388,9 @@ contract CarouselTest is Helper {
         vm.stopPrank();   
     }
 
+    // deployer contract acts as factory and must emulate VaultFactoryV2.treasury()
+    function treasury() public view returns (address) {
+        return TREASURY;
+    }
 
 }

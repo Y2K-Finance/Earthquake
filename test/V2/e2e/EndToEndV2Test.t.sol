@@ -58,7 +58,7 @@ contract EndToEndV2Test is Helper {
                 address(timelock)
             );
         
-        controller = new ControllerPeggedAssetV2(address(factory), ARBITRUM_SEQUENCER, TREASURY);
+        controller = new ControllerPeggedAssetV2(address(factory), ARBITRUM_SEQUENCER);
 
         factory.whitelistController(address(controller));
         
