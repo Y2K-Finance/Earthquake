@@ -2,14 +2,14 @@
 pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
-import {Vault} from "../src/Vault.sol";
-import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
-import {Controller} from "../src/Controller.sol";
+import {Vault} from "../../src/legacy_v1/Vault.sol";
+import {VaultFactory, TimeLock} from "../../src/legacy_v1/VaultFactory.sol";
+import {Controller} from "../../src/legacy_v1/Controller.sol";
 import {OracleHelper} from "./OracleHelper.sol";
-import {FakeOracle} from "./oracles/FakeOracle.sol";
+import {FakeOracle} from "../oracles/FakeOracle.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {PegOracle} from "../src/oracles/PegOracle.sol";
-import {FakeFakeOracle} from "../test/oracles/FakeFakeOracle.sol";
+import {PegOracle} from "../../src/oracles/PegOracle.sol";
+import {FakeFakeOracle} from "../oracles/FakeFakeOracle.sol";
 import "@chainlink/interfaces/AggregatorV3Interface.sol";
 
 /// @author nexusflip

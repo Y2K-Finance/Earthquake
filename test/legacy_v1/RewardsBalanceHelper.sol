@@ -2,11 +2,11 @@
 pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
-import {Vault} from "../src/Vault.sol";
-import {VaultFactory, TimeLock} from "../src/VaultFactory.sol";
-import {Controller} from "../src/Controller.sol";
-import {RewardsFactory} from "../src/rewards/RewardsFactory.sol";
-import {RewardBalances} from "../src/rewards/RewardBalances.sol";
+import {Vault} from "../../src/legacy_v1/Vault.sol";
+import {VaultFactory, TimeLock} from "../../src/legacy_v1/VaultFactory.sol";
+import {Controller} from "../../src/legacy_v1/Controller.sol";
+import {RewardsFactory} from "../../src/legacy_v1/rewards/RewardsFactory.sol";
+import {RewardBalances} from "../../src/legacy_v1/rewards/RewardBalances.sol";
 import {GovToken} from "./GovToken.sol";
 
 /// @author nexusflip
