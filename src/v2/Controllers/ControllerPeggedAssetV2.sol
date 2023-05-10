@@ -14,8 +14,8 @@ contract ControllerPeggedAssetV2 {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface internal sequencerUptimeFeed;
 
+    uint256 private constant MAX_UPDATE_TRESHOLD = 2 days;
     uint16 private constant GRACE_PERIOD_TIME = 3600;
-    address public immutable treasury;
 
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
@@ -24,12 +24,10 @@ contract ControllerPeggedAssetV2 {
     /** @notice Contract constructor
      * @param _factory VaultFactory address
      * @param _l2Sequencer Arbitrum sequencer address
-     * @param _treasury Treasury address
      */
     constructor(
         address _factory,
-        address _l2Sequencer,
-        address _treasury
+        address _l2Sequencer
     ) {
         if (_factory == address(0)) revert ZeroAddress();
 
@@ -37,7 +35,6 @@ contract ControllerPeggedAssetV2 {
 
         vaultFactory = IVaultFactoryV2(_factory);
         sequencerUptimeFeed = AggregatorV2V3Interface(_l2Sequencer);
-        treasury = _treasury;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -59,7 +56,7 @@ contract ControllerPeggedAssetV2 {
 
         if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
 
-        int256 price = getLatestPrice(premiumVault.token());
+        int256 price = getLatestPrice(_marketId);
 
         if (int256(premiumVault.strike()) <= price)
             revert PriceNotAtStrikePrice(price);
@@ -108,14 +105,14 @@ contract ControllerPeggedAssetV2 {
 
         // send fees to treasury and remaining TVL to respective counterparty vault
         // strike price reached so premium is entitled to collateralTVL - collateralFee
-        premiumVault.sendTokens(_epochId, premiumFee, treasury);
+        premiumVault.sendTokens(_epochId, premiumFee,  IVaultFactoryV2(vaultFactory).treasury());
         premiumVault.sendTokens(
             _epochId,
             premiumTVL - premiumFee,
             address(collateralVault)
         );
         // strike price is reached so collateral is still entitled to premiumTVL - premiumFee but looses collateralTVL
-        collateralVault.sendTokens(_epochId, collateralFee, treasury);
+        collateralVault.sendTokens(_epochId, collateralFee,  IVaultFactoryV2(vaultFactory).treasury());
         collateralVault.sendTokens(
             _epochId,
             collateralTVL - collateralFee,
@@ -133,7 +130,7 @@ contract ControllerPeggedAssetV2 {
             ),
             true,
             block.timestamp,
-            price
+            uint256(price)
         );
     }
 
@@ -154,6 +151,13 @@ contract ControllerPeggedAssetV2 {
             premiumVault.epochExists(_epochId) == false ||
             collateralVault.epochExists(_epochId) == false
         ) revert EpochNotExist();
+
+        if (
+            premiumVault.totalAssets(_epochId) == 0 ||
+            collateralVault.totalAssets(_epochId) == 0
+        ) {
+            revert VaultZeroTVL();
+        }
 
         (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
 
@@ -183,7 +187,7 @@ contract ControllerPeggedAssetV2 {
         collateralVault.setClaimTVL(_epochId, collateralTVLAfterFee);
 
         // send premium fees to treasury and remaining TVL to collateral vault
-        premiumVault.sendTokens(_epochId, premiumFee, treasury);
+        premiumVault.sendTokens(_epochId, premiumFee,  IVaultFactoryV2(vaultFactory).treasury());
         // strike price reached so collateral is entitled to collateralTVLAfterFee
         premiumVault.sendTokens(
             _epochId,
@@ -267,17 +271,16 @@ contract ControllerPeggedAssetV2 {
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
     /** @notice Lookup token price
-     * @param _token Target token address
+     * @param _marketId Target token address
      * @return nowPrice Current token price
      */
-    function getLatestPrice(address _token) public view returns (int256) {
-        (
-            ,
-            /*uint80 roundId*/
+    function getLatestPrice(uint256 _marketId) public view returns (int256) {
+         (
+            /*uint80 roundId*/,
             int256 answer,
-            uint256 startedAt, /*uint256 updatedAt*/ /*uint80 answeredInRound*/
-            ,
-
+            uint256 startedAt, 
+            /*uint256 updatedAt*/,
+            /*uint80 answeredInRound*/
         ) = sequencerUptimeFeed.latestRoundData();
 
         // Answer == 0: Sequencer is up
@@ -294,10 +297,19 @@ contract ControllerPeggedAssetV2 {
         }
 
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.tokenToOracle(_token)
+            vaultFactory.marketToOracle(_marketId)
         );
-        (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
-            .latestRoundData();
+        (
+            uint80 roundID,
+            int256 price,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+
+        if (updatedAt < block.timestamp - MAX_UPDATE_TRESHOLD)
+            revert PriceOutdated();
+
         uint256 decimals = priceFeed.decimals();
 
         if (decimals < 18) {
@@ -355,6 +367,7 @@ contract ControllerPeggedAssetV2 {
     error EpochNotExpired();
     error VaultNotZeroTVL();
     error VaultZeroTVL();
+    error PriceOutdated();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -366,7 +379,7 @@ contract ControllerPeggedAssetV2 {
      * @param tvl TVL
      * @param strikeMet Flag if event isDisaster
      * @param time time
-     * @param depegPrice Price that triggered depeg
+     * @param strikeData Data that triggered depeg
      */
     event EpochResolved(
         uint256 indexed epochId,
@@ -374,7 +387,7 @@ contract ControllerPeggedAssetV2 {
         VaultTVL tvl,
         bool strikeMet,
         uint256 time,
-        int256 depegPrice
+        uint256 strikeData
     );
 
     /** @notice Sets epoch to null when event is emitted

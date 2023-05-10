@@ -71,7 +71,7 @@ contract CarouselFactoryTest is Helper {
         assertEq(factory.getVaults(marketId)[1], collateral);
 
         // test oracle is set
-        assertTrue(factory.tokenToOracle(token) == oracle);
+        assertTrue(factory.marketToOracle(marketId) == oracle);
         assertEq(marketId, factory.getMarketId(token, strike, underlying));
 
         // test if counterparty is set
