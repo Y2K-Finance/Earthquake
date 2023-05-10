@@ -84,7 +84,7 @@ contract Vault is SemiFungibleVault, ReentrancyGuard {
     /** @notice You can only call functions that use this modifier before the current epoch has started
      */
     modifier epochHasNotStarted(uint256 id) {
-        if (block.timestamp > idEpochBegin[id]) revert EpochAlreadyStarted();
+        if (block.timestamp >= idEpochBegin[id]) revert EpochAlreadyStarted();
         _;
     }
 
