@@ -9,10 +9,11 @@ import "../../src/v2/interfaces/IVaultV2.sol";
 
 contract FactoryV2Test is Helper {
       VaultFactoryV2 factory;
+      TimeLock timelock;
       address controller;
       function setUp() public {
 
-        TimeLock timelock = new TimeLock(ADMIN);
+        timelock = new TimeLock(ADMIN);
 
         factory = new VaultFactoryV2(
             WETH,
@@ -23,7 +24,6 @@ contract FactoryV2Test is Helper {
         controller = address(0x54);
         factory.whitelistController(address(controller));
      }
-
 
     function testFactoryCreation() public {
 
@@ -159,8 +159,8 @@ contract FactoryV2Test is Helper {
         assertEq(factory.getVaults(marketId)[1], collateral);
 
         // test oracle is set
-        assertTrue(factory.tokenToOracle(token) == oracle);
-        assertEq(marketId, factory.getMarketId(token, strike));
+        assertTrue(factory.marketToOracle(marketId) == oracle);
+        assertEq(marketId, factory.getMarketId(token, strike, underlying));
 
         // test if counterparty is set
         assertEq(IVaultV2(premium).counterPartyVault(), collateral);
@@ -264,27 +264,6 @@ contract FactoryV2Test is Helper {
         assertEq(epochs[1], epochId2);
 
     }
-
-    function testChangeTreasuryOnVault() public  {
-        // test revert cases
-        uint256 marketId = createMarketHelper();
-
-        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-            factory.changeTreasury(uint256(0x2), address(0x20));
-
-        vm.startPrank(address(factory.timelocker()));
-            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0x2)));
-                factory.changeTreasury(uint256(0x2), address(0x20));
-            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeTreasury(marketId, address(0));
-
-            // test success case
-            factory.changeTreasury(marketId, address(0x20));
-            address[2] memory vaults = factory.getVaults(marketId);
-            assertTrue(IVaultV2(vaults[0]).whitelistedAddresses(address(0x20)));
-            assertTrue(IVaultV2(vaults[1]).whitelistedAddresses(address(0x20)));
-        vm.stopPrank();
-    }
     
     function testSetTreasury() public {
         // test revert cases
@@ -330,21 +309,52 @@ contract FactoryV2Test is Helper {
         // address oldOracle = address(0x3);
         address newOracle = address(0x4);
 
-        createMarketHelper();
+        uint256 marketId = createMarketHelper();
         vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
-            factory.changeOracle(token,newOracle);
+            factory.changeOracle(marketId,newOracle);
 
         vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(0)));
+                factory.changeOracle(uint256(0), newOracle);
+            vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, uint256(1)));
+                factory.changeOracle(uint256(1), newOracle);
             vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeOracle(address(0), newOracle);
-            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
-                factory.changeOracle(token, address(0));
+                factory.changeOracle(marketId, address(0));
        
 
             // test success case
-            factory.changeOracle(token, newOracle);
+            factory.changeOracle(marketId, newOracle);
         vm.stopPrank();
-        assertEq(factory.tokenToOracle(token), newOracle); 
+        assertEq(factory.marketToOracle(marketId), newOracle); 
+    }
+
+     function testTransferOwnership() public {
+        // test revert cases
+        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+            factory.transferOwnership(address(0x20));
+
+        // imitate timelocker
+        vm.startPrank(address(factory.timelocker()));
+            vm.expectRevert(VaultFactoryV2.AddressZero.selector);
+                factory.transferOwnership(address(0));
+
+            // test success case
+            factory.transferOwnership(address(0x20));
+            assertEq(factory.owner(), address(0x20));
+        vm.stopPrank();
+
+       // interact through timelocker
+        vm.startPrank(address(0x222222));
+            // test revert cases
+            vm.expectRevert(abi.encodeWithSelector(TimeLock.NotOwner.selector, address(0x222222)));
+                timelock.changeOwnerOnFactory(address(0x222222), address(factory));
+         vm.stopPrank();
+        
+        vm.startPrank(ADMIN);
+            // test success case
+            timelock.changeOwnerOnFactory(address(0x21), address(factory));
+            assertEq(factory.owner(), address(0x21));
+        vm.stopPrank();
     }
 
     function createMarketHelper() public returns(uint256 marketId){

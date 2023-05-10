@@ -22,8 +22,9 @@ contract VaultFactoryV2 is Ownable {
 
     mapping(uint256 => address[2]) public marketIdToVaults; //[0] premium and [1] collateral vault
     mapping(uint256 => uint256[]) public marketIdToEpochs; //all epochs in the market
+    mapping(uint256 => MarketInfo) public marketIdInfo; // marketId configuration
     mapping(uint256 => uint16) public epochFee; // epochId to fee
-    mapping(address => address) public tokenToOracle; //token address to respective oracle smart contract address
+    mapping(uint256 => address) public marketToOracle; //token address to respective oracle smart contract address
     mapping(address => bool) public controllers;
 
     /*//////////////////////////////////////////////////////////////
@@ -57,7 +58,21 @@ contract VaultFactoryV2 is Ownable {
      */
     function createNewMarket(MarketConfigurationCalldata memory _marketCalldata)
         external
+        virtual
         onlyOwner
+        returns (
+            address premium,
+            address collateral,
+            uint256 marketId
+        )
+    {
+        return _createNewMarket(_marketCalldata);
+    }
+
+    function _createNewMarket(
+        MarketConfigurationCalldata memory _marketCalldata
+    )
+        internal
         returns (
             address premium,
             address collateral,
@@ -69,13 +84,22 @@ contract VaultFactoryV2 is Ownable {
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
         if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
 
-        if (tokenToOracle[_marketCalldata.token] == address(0)) {
-            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
-        }
+        marketId = getMarketId(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
+        marketIdInfo[marketId] = MarketInfo(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
 
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
+
+        // set oracle for the market
+        marketToOracle[marketId] = _marketCalldata.oracle;
 
         //y2kUSDC_99*PREMIUM
         premium = VaultV2Creator.createVaultV2(
@@ -139,7 +163,21 @@ contract VaultFactoryV2 is Ownable {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee
-    ) public onlyOwner returns (uint256 epochId, address[2] memory vaults) {
+    )
+        public
+        virtual
+        onlyOwner
+        returns (uint256 epochId, address[2] memory vaults)
+    {
+        return _createEpoch(_marketId, _epochBegin, _epochEnd, _withdrawalFee);
+    }
+
+    function _createEpoch(
+        uint256 _marketId,
+        uint40 _epochBegin,
+        uint40 _epochEnd,
+        uint16 _withdrawalFee
+    ) internal returns (uint256 epochId, address[2] memory vaults) {
         vaults = marketIdToVaults[_marketId];
 
         if (vaults[0] == address(0) || vaults[1] == address(0)) {
@@ -202,7 +240,7 @@ contract VaultFactoryV2 is Ownable {
 
     /**
     @notice Function to whitelist controller smart contract, only owner or timelocker can add more controllers. 
-    owner can set controller once, all future controllers must be set by timelocker.
+    @dev owner can set controller once, all future controllers must be set by timelocker.
     @param  _controller Address of the controller smart contract
      */
     function whitelistController(address _controller) public {
@@ -218,31 +256,6 @@ contract VaultFactoryV2 is Ownable {
         } else {
             revert NotAuthorized();
         }
-    }
-
-    /**
-    @notice Admin function, whitelists an address on vault for sendTokens function
-    @param _treasury Treasury address
-    @param  _marketId Target market index
-     */
-    function changeTreasury(uint256 _marketId, address _treasury)
-        public
-        onlyTimeLocker
-    {
-        if (_treasury == address(0)) revert AddressZero();
-
-        address[2] memory vaults = marketIdToVaults[_marketId];
-
-        if (vaults[0] == address(0) || vaults[1] == address(0)) {
-            revert MarketDoesNotExist(_marketId);
-        }
-
-        IVaultV2(vaults[0]).whiteListAddress(_treasury);
-        IVaultV2(vaults[1]).whiteListAddress(_treasury);
-        IVaultV2(vaults[0]).setTreasury(treasury);
-        IVaultV2(vaults[1]).setTreasury(treasury);
-
-        emit AddressWhitelisted(_treasury, _marketId);
     }
 
     /**
@@ -304,25 +317,27 @@ contract VaultFactoryV2 is Ownable {
 
     /**
     @notice Timelocker function, changes oracle address for a given token
-    @param _token Target token address
+    @param _marketId Target token address
     @param  _oracle Oracle address
      */
-    function changeOracle(address _token, address _oracle)
+    function changeOracle(uint256 _marketId, address _oracle)
         public
         onlyTimeLocker
     {
         if (_oracle == address(0)) revert AddressZero();
-        if (_token == address(0)) revert AddressZero();
+        if (_marketId == 0) revert MarketDoesNotExist(_marketId);
+        if (marketToOracle[_marketId] == address(0))
+            revert MarketDoesNotExist(_marketId);
 
-        tokenToOracle[_token] = _oracle;
-        emit OracleChanged(_token, _oracle);
+        marketToOracle[_marketId] = _oracle;
+        emit OracleChanged(_marketId, _oracle);
     }
 
     /**
     @notice Timelocker function, changes owner address
     @param _owner Address of the new _owner
      */
-    function changeOwner(address _owner) public onlyTimeLocker {
+    function transferOwnership(address _owner) public override onlyTimeLocker {
         if (_owner == address(0)) revert AddressZero();
         _transferOwnership(_owner);
     }
@@ -368,16 +383,35 @@ contract VaultFactoryV2 is Ownable {
 
     /**
     @notice Function to compute the marketId from a token and a strike price
-    @param token Address of the token
-    @param strikePrice uint256 of the strike price
+    @param _token Address of the token
+    @param _strikePrice uint256 of the strike price
+    @param _underlying Address of the underlying
     @return marketId uint256 of the marketId
      */
-    function getMarketId(address token, uint256 strikePrice)
+    function getMarketId(
+        address _token,
+        uint256 _strikePrice,
+        address _underlying
+    ) public pure returns (uint256 marketId) {
+        return
+            uint256(
+                keccak256(abi.encodePacked(_token, _strikePrice, _underlying))
+            );
+    }
+
+    // get marketInfo
+    function getMarketInfo(uint256 _marketId)
         public
-        pure
-        returns (uint256 marketId)
+        view
+        returns (
+            address token,
+            uint256 strike,
+            address underlyingAsset
+        )
     {
-        return uint256(keccak256(abi.encodePacked(token, strikePrice)));
+        token = marketIdInfo[_marketId].token;
+        strike = marketIdInfo[_marketId].strike;
+        underlyingAsset = marketIdInfo[_marketId].underlyingAsset;
     }
 
     /**
@@ -419,6 +453,12 @@ contract VaultFactoryV2 is Ownable {
         uint256 epochId;
         IVaultV2 premium;
         IVaultV2 collateral;
+    }
+
+    struct MarketInfo {
+        address token;
+        uint256 strike;
+        address underlyingAsset;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -512,10 +552,10 @@ contract VaultFactoryV2 is Ownable {
     );
 
     /** @notice Oracle is changed when event is emitted
-     * @param _token Target token address
+     * @param _marketId Target token address
      * @param _oracle Target oracle address
      */
-    event OracleChanged(address indexed _token, address _oracle);
+    event OracleChanged(uint256 indexed _marketId, address _oracle);
 
     /** @notice Address whitelisted is changed when event is emitted
      * @param _wAddress whitelisted address
