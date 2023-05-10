@@ -184,7 +184,7 @@ contract EndToEndCarouselTest is Helper {
         Carousel(collateral).enlistInRollover(epochId, 8 ether, USER);
 
         bool isEnlisted = Carousel(collateral).isEnlistedInRolloverQueue(USER);
-        (uint256 enlistedAmount, uint256 id) = Carousel(collateral).getRolloverPosition(USER);
+        (uint256 enlistedAmount,) = Carousel(collateral).getRolloverPosition(USER);
 
         assertEq(isEnlisted, true);
         assertEq(enlistedAmount, 8 ether);
@@ -266,7 +266,7 @@ contract EndToEndCarouselTest is Helper {
         uint256 balanceInNextEpoch = Carousel(collateral).balanceOf(USER, nextEpochId);
 
         //assert rollover minus relayer fee which is subtracted based on the value of the shares of the prev epoch
-        assertEq(balanceInNextEpoch, (8 ether - Carousel(collateral).previewAmountInShares(epochId, relayerFee)));
+        assertEq(balanceInNextEpoch, (8 ether - relayerFee));
 
         //withdraw after rollover
         Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER, USER);
@@ -299,7 +299,7 @@ contract EndToEndCarouselTest is Helper {
         balanceInNextEpoch = Carousel(collateral).balanceOf(USER2, nextEpochId);
 
         //assert rollover minus relayer fee which is subtracted based on the value of the shares of the prev epoch
-        assertTrue(balanceInNextEpoch == 8 ether - Carousel(collateral).previewAmountInShares(epochId, relayerFee)); 
+        assertTrue(balanceInNextEpoch == 8 ether - relayerFee); 
 
         //withdraw after rollover
         Carousel(collateral).withdraw(nextEpochId, balanceInNextEpoch, USER2, USER2);
