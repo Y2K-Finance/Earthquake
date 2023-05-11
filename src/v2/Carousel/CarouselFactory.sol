@@ -148,7 +148,7 @@ contract CarouselFactory is VaultFactoryV2 {
     @param _epochBegin uint40 of the epoch begin
     @param _epochEnd uint40 of the epoch end
     @param _withdrawalFee uint16 of the withdrawal fee
-    @param _permiumEmissions uint256 of the emissions for the premium vault
+    @param _premiumEmissions uint256 of the emissions for the premium vault
     @param _collatEmissions uint256 of the emissions for the collateral vault
     @return epochId uint256 of the epochId
     @return vaults address[2] of the vaults
@@ -158,7 +158,7 @@ contract CarouselFactory is VaultFactoryV2 {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee,
-        uint256 _permiumEmissions,
+        uint256 _premiumEmissions,
         uint256 _collatEmissions
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
@@ -169,8 +169,8 @@ contract CarouselFactory is VaultFactoryV2 {
             _withdrawalFee
         );
 
-        emissionsToken.safeTransferFrom(treasury, vaults[0], _permiumEmissions);
-        ICarousel(vaults[0]).setEmissions(epochId, _permiumEmissions);
+        emissionsToken.safeTransferFrom(treasury, vaults[0], _premiumEmissions);
+        ICarousel(vaults[0]).setEmissions(epochId, _premiumEmissions);
 
         emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
         ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
@@ -181,7 +181,7 @@ contract CarouselFactory is VaultFactoryV2 {
             _epochBegin,
             _epochEnd,
             _withdrawalFee,
-            _permiumEmissions,
+            _premiumEmissions,
             _collatEmissions
         );
     }

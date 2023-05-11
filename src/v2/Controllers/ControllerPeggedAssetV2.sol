@@ -355,6 +355,106 @@ contract ControllerPeggedAssetV2 {
         return price;
     }
 
+    function canExecDepeg(uint256 _marketId, uint256 _epochId) public view returns (bool){
+        address[2] memory vaults = vaultFactory.getVaults(_marketId);
+
+        if (vaults[0] == address(0) || vaults[1] == address(0))
+            return false;
+
+        IVaultV2 premiumVault = IVaultV2(vaults[0]);
+        IVaultV2 collateralVault = IVaultV2(vaults[1]);
+
+        if (premiumVault.epochExists(_epochId) == false) return false;
+
+        int256 price = getLatestPrice(_marketId);
+
+        if (int256(premiumVault.strike()) <= price)
+            return false;
+
+        (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
+            _epochId
+        );
+
+        if (uint256(epochStart) > block.timestamp) return false;
+
+        if (block.timestamp > uint256(epochEnd)) return false;
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if (premiumVault.epochResolved(_epochId)) return false;
+        if (collateralVault.epochResolved(_epochId))
+            return false;
+
+        // check if epoch qualifies for null epoch
+        if (
+            premiumVault.totalAssets(_epochId) == 0 ||
+            collateralVault.totalAssets(_epochId) == 0
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    function canExecNullEpoch(uint256 _marketId, uint256 _epochId) public view returns (bool) {
+        address[2] memory vaults = vaultFactory.getVaults(_marketId);
+
+        if (vaults[0] == address(0) || vaults[1] == address(0))
+            return false;
+
+        IVaultV2 premiumVault = IVaultV2(vaults[0]);
+        IVaultV2 collateralVault = IVaultV2(vaults[1]);
+
+        if (
+            premiumVault.epochExists(_epochId) == false ||
+            collateralVault.epochExists(_epochId) == false
+        ) return false;
+
+        (uint40 epochStart, , ) = premiumVault.getEpochConfig(_epochId);
+
+        if (block.timestamp < uint256(epochStart)) return false;
+
+        if (premiumVault.epochResolved(_epochId)) return false;
+        if (collateralVault.epochResolved(_epochId))
+            return false;
+
+        if (premiumVault.totalAssets(_epochId) == 0) {
+           return true;
+        } else if (collateralVault.totalAssets(_epochId) == 0) {
+           return true;
+        } else  return false;
+    }
+
+    function canExecEnd(uint256 _marketId, uint256 _epochId)public view returns (bool) {
+        address[2] memory vaults = vaultFactory.getVaults(_marketId);
+
+        if (vaults[0] == address(0) || vaults[1] == address(0))
+            return false;
+
+        IVaultV2 premiumVault = IVaultV2(vaults[0]);
+        IVaultV2 collateralVault = IVaultV2(vaults[1]);
+
+        if (
+            premiumVault.epochExists(_epochId) == false ||
+            collateralVault.epochExists(_epochId) == false
+        ) return false;
+
+        if (
+            premiumVault.totalAssets(_epochId) == 0 ||
+            collateralVault.totalAssets(_epochId) == 0
+        ) {
+           return false;
+        }
+
+        (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
+
+        if (block.timestamp <= uint256(epochEnd)) return false;
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if (premiumVault.epochResolved(_epochId)) return false;
+        if (collateralVault.epochResolved(_epochId))
+            return false;
+        return true;
+    }
+
     /** @notice Lookup target VaultFactory address
      * @dev need to find way to express typecasts in NatSpec
      */
