@@ -32,6 +32,8 @@ interface ICarousel {
         uint256 _epochId
     ) external;
 
+    function deposit(uint256 id, uint256 amount, address receiver) external;
+
     function resolveEpoch(uint256 _id) external;
 
     function setClaimTVL(uint256 _id, uint256 _amount) external;
@@ -97,7 +99,7 @@ interface ICarousel {
     function getRolloverQueueLength() external view returns (uint256);
 
    function getRolloverTVL() external view returns (uint256);
-   
+
    function getDepositQueueTVL() external view returns (uint256);
 
 }

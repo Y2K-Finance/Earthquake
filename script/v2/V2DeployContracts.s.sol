@@ -53,34 +53,24 @@ contract V2DeployContracts is Script, HelperV2 {
         vm.startBroadcast();   
 
         // address timeLock = address(new TimeLock(policy));
+        CarouselFactory vaultFactory = new CarouselFactory(addresses.weth, treasury, policy, addresses.y2k);
 
-        CarouselFactory vaultFactory = CarouselFactory(addresses.carouselFactory);
+        ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer);
+        // ControllerPeggedAssetV2 controller = ControllerPeggedAssetV2(0x68620dD41351Ff8d31702CE9B77d04805179eCe1);
 
-        // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(address(vaultFactory), addresses.arbitrum_sequencer);
-        ControllerPeggedAssetV2 controller = ControllerPeggedAssetV2(0x68620dD41351Ff8d31702CE9B77d04805179eCe1);
+        vaultFactory.whitelistController(address(controller));
 
-        // vaultFactory.whitelistController(address(controller), true);
-
-        vaultFactory.changeController(12447459829889661654709778517204204639729615077731522221602069492157540324035, address(controller));
-
-        // console.log("factory", address(vaultFactory));
-        // console.log("controller", controller);
-
-        // KeeperV2 resolveKeeper = new KeeperV2(payable(addresses.gelatoOpsV2), payable(addresses.gelatoTaskTreasury), address(controller));
-        // KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(payable(addresses.gelatoOpsV2), payable(addresses.gelatoTaskTreasury), addresses.carouselFactory);
-
-        // console2.log("resolveKeeper address", address(resolveKeeper));
-        // console2.log("rolloverKeeper address", address(rolloverKeeper));
-                        
-        // console2.log("Controller address", address(controller));
-        // console2.log("Vault Factory address", address(vaultFactory));
-        // console2.log("Rewards Factory address", address(rewardsFactory));
-        // console2.log("Y2K token address", addresses.y2k);
+        KeeperV2 resolveKeeper = new KeeperV2(payable(addresses.gelatoOpsV2), payable(addresses.gelatoTaskTreasury), address(controller));
+        KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(payable(addresses.gelatoOpsV2), payable(addresses.gelatoTaskTreasury), address(vaultFactory));
+              
+        console2.log("Controller address", address(controller));
+        console2.log("Vault Factory address", address(vaultFactory));
+        console2.log("resolveKeeper address", address(resolveKeeper));
+        console2.log("rolloverKeeper address", address(rolloverKeeper));
+        console2.log("Y2K token address", addresses.y2k);
   
-        // console2.log("\n");
+        console2.log("\n");
         
-        //transfer ownership
-        //vaultFactory.transferOwnership(addresses.admin);
         vm.stopBroadcast();
 
     }

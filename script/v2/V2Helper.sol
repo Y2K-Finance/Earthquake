@@ -69,6 +69,7 @@ contract HelperV2 is Script {
     address y2k;
     ConfigVariablesV2 configVariables;
     ConfigAddressesV2 configAddresses;
+    bool isTestEnv;
     function setVariables() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON-V2.json");
@@ -83,11 +84,12 @@ contract HelperV2 is Script {
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
 
-    function getConfigAddresses(bool isTestEnv) public returns (ConfigAddressesV2 memory constans) {
+    function getConfigAddresses(bool _isTestEnv) public returns (ConfigAddressesV2 memory constans) {
         string memory root = vm.projectRoot();
         string memory path;
-        if(isTestEnv){
+        if(_isTestEnv){
             path = string.concat(root, "/script/configs/configTestEnv-V2.json");
+            isTestEnv = _isTestEnv;
         }
         else{
             path = string.concat(root, "/script/configs/configAddresses-V2.json");

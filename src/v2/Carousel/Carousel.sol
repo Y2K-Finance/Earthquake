@@ -723,13 +723,16 @@ contract Carousel is VaultV2 {
         returns (uint256 tvl)
     {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
-            uint256 assets = previewWithdraw(
+            uint256 assets = 
+            epochResolved[rolloverQueue[i].epochId] ?
+            previewWithdraw(
                 rolloverQueue[i].epochId,
                 rolloverQueue[i].shares
-            );
+            ) : rolloverQueue[i].shares;
+
             if (
                 rolloverQueue[i].epochId == _epochId &&
-                (assets > rolloverQueue[i].shares) // check if position is in profit and getting rollover
+                (assets >= rolloverQueue[i].shares) // check if position is in profit and getting rollover
             ) {
                 tvl += assets;
             }
@@ -738,12 +741,16 @@ contract Carousel is VaultV2 {
 
     function getRolloverTVL() public view returns (uint256 tvl) {
         for (uint256 i = 0; i < rolloverQueue.length; i++) {
-            uint256 assets = previewWithdraw(
+
+             uint256 assets = 
+            epochResolved[rolloverQueue[i].epochId] ?
+            previewWithdraw(
                 rolloverQueue[i].epochId,
                 rolloverQueue[i].shares
-            );
+            ) : rolloverQueue[i].shares;
+
             if (
-                (assets > rolloverQueue[i].shares) // check if position is in profit and getting rollover
+                assets >= rolloverQueue[i].shares // check if position is in profit and getting rollover
             ) {
                 tvl += assets;
             }

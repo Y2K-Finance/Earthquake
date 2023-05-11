@@ -29,16 +29,17 @@ contract V2DeployConfig is HelperV2 {
     }
 
     function deploy() public {
-        // fundKeepers(4000000000000000);
+        fundKeepers(4000000000000000);
         if(configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();
         }
         if(configVariables.epochs){
-
+            IERC20(y2k).approve(address(factory), type(uint256).max);
             //deploy new epochs
             deployEpochs();
         }
+        
     }
 
     function deployMarkets() public {
@@ -114,7 +115,7 @@ contract V2DeployConfig is HelperV2 {
                 console2.log("Market not deployed", epoch.token, epoch.strikePrice, epoch.depositAsset);
                 revert("Market not deployed");
             }
-            (uint256 epochId, ) = CarouselFactory(factory).createEpochWithEmissions(
+            (uint256 epochId, address[2] memory vaults) = CarouselFactory(factory).createEpochWithEmissions(
                 previewMarketID,
                 epoch.epochBegin,
                 epoch.epochEnd,
@@ -122,7 +123,12 @@ contract V2DeployConfig is HelperV2 {
                 epoch.collatEmissions,
                 epoch.premiumEmissions
              );
-
+            if(isTestEnv) {
+                IERC20(addresses.weth).approve(vaults[0], 1 ether);
+                ICarousel(vaults[0]).deposit(0, 1 ether, 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
+                IERC20(addresses.weth).approve(vaults[1], 1 ether);
+                ICarousel(vaults[1]).deposit(0, 1 ether, 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
+            } 
             startKeepers(previewMarketID, epochId);
             console2.log("epochId", epochId);
             console2.log("----------------------------------------------------------------");
