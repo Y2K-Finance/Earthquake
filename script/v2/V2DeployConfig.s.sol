@@ -29,11 +29,13 @@ contract V2DeployConfig is HelperV2 {
     }
 
     function deploy() public {
+        // fundKeepers(4000000000000000);
         if(configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();
         }
         if(configVariables.epochs){
+
             //deploy new epochs
             deployEpochs();
         }
@@ -61,7 +63,8 @@ contract V2DeployConfig is HelperV2 {
             );
             address vault =  factory.marketIdToVaults(previewMarketID, 0);
             if(vault != address(0)) {
-                console2.log("Market already deployed", market.token);
+                console2.log("Market already deployed", previewMarketID);
+                console2.log("Market: ", market.token, market.strikePrice, market.depositAsset);
                 revert("Market already deployed");
             }
             ( address prem, address collat, uint256 marketId) =  factory.createNewCarouselMarket(
@@ -108,7 +111,7 @@ contract V2DeployConfig is HelperV2 {
             );
             address vault =  factory.marketIdToVaults(previewMarketID, 0);
             if(vault == address(0)) {
-                console2.log("Market not deployed", epoch.token);
+                console2.log("Market not deployed", epoch.token, epoch.strikePrice, epoch.depositAsset);
                 revert("Market not deployed");
             }
             (uint256 epochId, ) = CarouselFactory(factory).createEpochWithEmissions(
@@ -119,55 +122,12 @@ contract V2DeployConfig is HelperV2 {
                 epoch.collatEmissions,
                 epoch.premiumEmissions
              );
+
+            startKeepers(previewMarketID, epochId);
             console2.log("epochId", epochId);
             console2.log("----------------------------------------------------------------");
             console2.log("\n");
         }
-        // for(uint i = 0; i < configVariables.amountOfNewEpochs;++i){
-        //         uint marketId = configVariables.epochsIds[i];
-        //         console2.log("marketId", marketId);
-        //         console2.log("INDEX", i);
-                
-        //         ConfigEpochs memory epochs = getConfigEpochs(i);
-        //         //TODO verify
-        //         require(epochs.marketId == marketId, "marketId of epochs and loop are not the same");
-                
-        //         vaultFactory.deployMoreAssets(
-        //             marketId,
-        //             epochs.epochBegin, 
-        //             epochs.epochEnd, 
-        //             epochs.epochFee);
-
-        //         startKeepers(marketId, epochs.epochEnd);                
-        //     }
-    }
-
-    function deployFarms() public {
-        // for(uint i = 0; i < configVariables.amountOfNewFarms;++i){
-        //     uint marketId = configVariables.farmsIds[i];
-        //     ConfigFarms memory farms = getConfigFarms(i);
-            
-        //     require(farms.marketId == marketId, "marketId of farms and loop are not the same");
-            
-        //     (address _rHedge, 
-        //     address _rRisk) = rewardsFactory.createStakingRewards(
-        //         marketId, farms.epochEnd);
-            
-        //     fundFarms(_rHedge, _rRisk, 
-        //     farms.farmRewardsHEDGE, farms.farmRewardsRISK);
-        // }
-    }
-
-    function fundFarms(address _rHedge, address _rRisk, string memory _rewardsAmountHEDGE, string memory _rewardsAmountRISK) public {
-        // y2k.transfer(_rHedge, stringToUint(_rewardsAmountHEDGE));
-        // y2k.transfer(_rRisk, stringToUint(_rewardsAmountRISK));
-        //start rewards for farms
-        // StakingRewards(_rHedge).notifyRewardAmount(stringToUint(_rewardsAmountHEDGE));
-        // StakingRewards(_rRisk).notifyRewardAmount(stringToUint(_rewardsAmountRISK));
-
-        //unpause
-        // StakingRewards(_rHedge).unpause();
-        // StakingRewards(_rRisk).unpause();
     }
 
 }

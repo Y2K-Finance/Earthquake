@@ -33,9 +33,9 @@
             "withdrawalFee": 50
         },
         {
-            "name": "y2kUSDD_970*",
-            "strikePrice": 970000000000000000,
-            "token": "0x680447595e8b7b3aa1b43beb9f6098c79ac2ab3f",
+            "name": "y2kFRAX_990*",
+            "strikePrice": 990000000000000000,
+            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
             "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
             "epochBegin": 1683812556,
             "epochEnd": 1683826956,
@@ -83,11 +83,11 @@
             "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
             "depositFee": 10,
             "minQueueDeposit": 500000000000000000,
-            "name": "y2kUSDD_970*",
-            "oracle": "0x4ee1f9ec1048979930ac832a3c1d18a0b4955a02",
+            "name": "y2kFRAX_990*",
+            "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8",
             "relayFee": 200000000000000,
-            "strikePrice": 970000000000000000,
-            "token": "0x680447595e8b7b3aa1b43beb9f6098c79ac2ab3f",
+            "strikePrice": 990000000000000000,
+            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
             "uri": "https://y2k.finance"
         }
     ]

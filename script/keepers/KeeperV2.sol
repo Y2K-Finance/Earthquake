@@ -4,7 +4,7 @@ import { OpsReady, IOps } from "./OpsReady.sol";
 import {IControllerPeggedAssetV2 as IController} from "../../src/v2/interfaces/IControllerPeggedAssetV2.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract KeeperGelato is OpsReady, Ownable {
+contract KeeperV2 is OpsReady, Ownable {
     address public immutable controller;
     mapping(bytes32 => bytes32) public tasks;
 
@@ -42,19 +42,22 @@ contract KeeperGelato is OpsReady, Ownable {
         //check if task can be executed
         if(IController(controller).canExecNullEpoch(_marketIndex, _epochID)) {
             canExec  = true;
-            execPayload = execPayload = abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
+            execPayload= abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
+            execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
             return (canExec, execPayload);
         }
 
         if(IController(controller).canExecDepeg(_marketIndex, _epochID)) {
             canExec  = true;
-            execPayload = execPayload = abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
+            execPayload = abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
+            execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
             return (canExec, execPayload);
         }
       
         if(IController(controller).canExecEnd(_marketIndex, _epochID)) {
             canExec  = true;
-            execPayload = execPayload = abi.encodeWithSelector(IController.triggerEndEpoch.selector, _marketIndex, _epochID);
+            execPayload = abi.encodeWithSelector(IController.triggerEndEpoch.selector, _marketIndex, _epochID);
+            execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
             return (canExec, execPayload);
         }
         

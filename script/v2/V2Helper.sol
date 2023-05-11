@@ -9,8 +9,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../src/v2/Carousel/CarouselFactory.sol";
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// import "../keepers/KeeperDepeg.sol";
-// import "../keepers/KeeperEndEpoch.sol";
+import "../keepers/KeeperV2.sol";
+import "../keepers/KeeperV2Rollover.sol";
 
 /// @author MiguelBits
 
@@ -24,9 +24,9 @@ contract HelperV2 is Script {
         address carouselFactory;
         address gelatoOpsV2;
         address gelatoTaskTreasury;
-        address keeperDepeg;
-        address keeperEndEpoch;
         address policy;
+        address resolveKeeper;
+        address rolloverKeeper;
         address treasury;
         address weth;
         address y2k;
@@ -37,6 +37,7 @@ contract HelperV2 is Script {
         address depositAsset;
         uint40 epochBegin;
         uint40 epochEnd;
+        string name;
         uint256 premiumEmissions;
         uint256 strikePrice;
         address token;
@@ -67,6 +68,7 @@ contract HelperV2 is Script {
 
     address y2k;
     ConfigVariablesV2 configVariables;
+    ConfigAddressesV2 configAddresses;
     function setVariables() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON-V2.json");
@@ -75,16 +77,11 @@ contract HelperV2 is Script {
         configVariables = abi.decode(parseJsonByteCode, (ConfigVariablesV2));
     }
 
-    function contractToAddresses(ConfigAddressesV2 memory configAddresses) public {
-        y2k = address(configAddresses.y2k);
+    function contractToAddresses(ConfigAddressesV2 memory _configAddresses) public {
+        y2k = address(_configAddresses.y2k);
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
-
-    // function startKeepers(uint _marketIndex, uint _epochEnd) public {
-    //     keeperDepeg.startTask(_marketIndex, _epochEnd);
-    //     keeperEndEpoch.startTask(_marketIndex, _epochEnd);
-    // }
 
     function getConfigAddresses(bool isTestEnv) public returns (ConfigAddressesV2 memory constans) {
         string memory root = vm.projectRoot();
@@ -98,6 +95,8 @@ contract HelperV2 is Script {
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".configAddresses");
         constans = abi.decode(parseJsonByteCode, (ConfigAddressesV2));
+        configAddresses = constans;
+
     }
     
     function getConfigMarket() public returns (ConfigMarketV2[] memory markets) {
@@ -114,6 +113,16 @@ contract HelperV2 is Script {
         string memory json = vm.readFile(path);
         bytes memory epochsRaw = vm.parseJson(json, ".epochs");
         epochs = abi.decode(epochsRaw, (ConfigEpochWithEmission[]));
+    }
+
+    function fundKeepers(uint _amount) public payable{
+            KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(_amount);
+            KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{value: _amount}(_amount);
+    }
+
+    function startKeepers(uint _marketIndex, uint _epochID) public {
+        KeeperV2(configAddresses.resolveKeeper).startTask(_marketIndex, _epochID);
+        KeeperV2Rollover(configAddresses.rolloverKeeper).startTask(_marketIndex, _epochID);
     }
 
     function verifyMarket() public view {
