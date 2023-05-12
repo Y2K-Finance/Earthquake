@@ -10,10 +10,18 @@ interface IControllerPeggedAssetV2 {
 
     function triggerNullEpoch(uint256 marketIndex, uint256 epochId) external;
 
-    function canExecDepeg(uint256 marketIndex, uint256 epochId) external view returns(bool);
+    function canExecDepeg(uint256 marketIndex, uint256 epochId)
+        external
+        view
+        returns (bool);
 
-    function canExecNullEpoch(uint256 marketIndex, uint256 epochId) external view returns(bool);
-       
-    function canExecEnd(uint256 marketIndex, uint256 epochId) external view returns(bool);
+    function canExecNullEpoch(uint256 marketIndex, uint256 epochId)
+        external
+        view
+        returns (bool);
 
+    function canExecEnd(uint256 marketIndex, uint256 epochId)
+        external
+        view
+        returns (bool);
 }

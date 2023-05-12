@@ -18,7 +18,7 @@ contract HelperV2 is Script {
     using stdJson for string;
 
     // @note structs that reflect JSON need to have keys in alphabetical order!!!
-   struct ConfigAddressesV2 {
+    struct ConfigAddressesV2 {
         address admin;
         address arbitrum_sequencer;
         address carouselFactory;
@@ -57,7 +57,7 @@ contract HelperV2 is Script {
         string uri;
     }
 
-    struct ConfigVariablesV2{
+    struct ConfigVariablesV2 {
         uint256 amountOfNewEpochs;
         uint256 amountOfNewMarkets;
         bool epochs;
@@ -65,11 +65,11 @@ contract HelperV2 is Script {
         uint256 totalAmountOfEmittedTokens;
     }
 
-
     address y2k;
     ConfigVariablesV2 configVariables;
     ConfigAddressesV2 configAddresses;
     bool isTestEnv;
+
     function setVariables() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON-V2.json");
@@ -78,30 +78,39 @@ contract HelperV2 is Script {
         configVariables = abi.decode(parseJsonByteCode, (ConfigVariablesV2));
     }
 
-    function contractToAddresses(ConfigAddressesV2 memory _configAddresses) public {
+    function contractToAddresses(ConfigAddressesV2 memory _configAddresses)
+        public
+    {
         y2k = address(_configAddresses.y2k);
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
 
-    function getConfigAddresses(bool _isTestEnv) public returns (ConfigAddressesV2 memory constans) {
+    function getConfigAddresses(bool _isTestEnv)
+        public
+        returns (ConfigAddressesV2 memory constans)
+    {
         string memory root = vm.projectRoot();
         string memory path;
-        if(_isTestEnv){
+        if (_isTestEnv) {
             path = string.concat(root, "/script/configs/configTestEnv-V2.json");
             isTestEnv = _isTestEnv;
-        }
-        else{
-            path = string.concat(root, "/script/configs/configAddresses-V2.json");
+        } else {
+            path = string.concat(
+                root,
+                "/script/configs/configAddresses-V2.json"
+            );
         }
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".configAddresses");
         constans = abi.decode(parseJsonByteCode, (ConfigAddressesV2));
         configAddresses = constans;
-
     }
-    
-    function getConfigMarket() public returns (ConfigMarketV2[] memory markets) {
+
+    function getConfigMarket()
+        public
+        returns (ConfigMarketV2[] memory markets)
+    {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON-V2.json");
         string memory json = vm.readFile(path);
@@ -109,7 +118,10 @@ contract HelperV2 is Script {
         markets = abi.decode(marketsRaw, (ConfigMarketV2[]));
     }
 
-    function getConfigEpochs() public returns (ConfigEpochWithEmission[] memory epochs) {
+    function getConfigEpochs()
+        public
+        returns (ConfigEpochWithEmission[] memory epochs)
+    {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/configJSON-V2.json");
         string memory json = vm.readFile(path);
@@ -117,14 +129,24 @@ contract HelperV2 is Script {
         epochs = abi.decode(epochsRaw, (ConfigEpochWithEmission[]));
     }
 
-    function fundKeepers(uint _amount) public payable{
-            KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(_amount);
-            KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{value: _amount}(_amount);
+    function fundKeepers(uint256 _amount) public payable {
+        KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
+            _amount
+        );
+        KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
+            value: _amount
+        }(_amount);
     }
 
-    function startKeepers(uint _marketIndex, uint _epochID) public {
-        KeeperV2(configAddresses.resolveKeeper).startTask(_marketIndex, _epochID);
-        KeeperV2Rollover(configAddresses.rolloverKeeper).startTask(_marketIndex, _epochID);
+    function startKeepers(uint256 _marketIndex, uint256 _epochID) public {
+        KeeperV2(configAddresses.resolveKeeper).startTask(
+            _marketIndex,
+            _epochID
+        );
+        KeeperV2Rollover(configAddresses.rolloverKeeper).startTask(
+            _marketIndex,
+            _epochID
+        );
     }
 
     function verifyMarket() public view {
@@ -142,9 +164,9 @@ contract HelperV2 is Script {
         // //TODO add more checks
     }
 
-    function stringToUint(string memory s) public pure returns (uint) {
+    function stringToUint(string memory s) public pure returns (uint256) {
         bytes memory b = bytes(s);
-        uint result = 0;
+        uint256 result = 0;
         for (uint256 i = 0; i < b.length; i++) {
             uint256 c = uint256(uint8(b[i]));
             if (c >= 48 && c <= 57) {
@@ -153,5 +175,4 @@ contract HelperV2 is Script {
         }
         return result;
     }
-
 }

@@ -355,11 +355,14 @@ contract ControllerPeggedAssetV2 {
         return price;
     }
 
-    function canExecDepeg(uint256 _marketId, uint256 _epochId) public view returns (bool){
+    function canExecDepeg(uint256 _marketId, uint256 _epochId)
+        public
+        view
+        returns (bool)
+    {
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
-        if (vaults[0] == address(0) || vaults[1] == address(0))
-            return false;
+        if (vaults[0] == address(0) || vaults[1] == address(0)) return false;
 
         IVaultV2 premiumVault = IVaultV2(vaults[0]);
         IVaultV2 collateralVault = IVaultV2(vaults[1]);
@@ -368,8 +371,7 @@ contract ControllerPeggedAssetV2 {
 
         int256 price = getLatestPrice(_marketId);
 
-        if (int256(premiumVault.strike()) <= price)
-            return false;
+        if (int256(premiumVault.strike()) <= price) return false;
 
         (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
             _epochId
@@ -393,7 +395,11 @@ contract ControllerPeggedAssetV2 {
         return true;
     }
 
-    function canExecNullEpoch(uint256 _marketId, uint256 _epochId) public view returns (bool) {
+    function canExecNullEpoch(uint256 _marketId, uint256 _epochId)
+        public
+        view
+        returns (bool)
+    {
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
         if (vaults[0] == address(0) || vaults[1] == address(0)) return false;
@@ -411,20 +417,24 @@ contract ControllerPeggedAssetV2 {
         if (block.timestamp < uint256(epochStart)) return false;
 
         if (premiumVault.epochResolved(_epochId)) return false;
-        if (collateralVault.epochResolved(_epochId))  return false;
+        if (collateralVault.epochResolved(_epochId)) return false;
 
         if (premiumVault.totalAssets(_epochId) == 0) {
-           return true;
+            return true;
         } else if (collateralVault.totalAssets(_epochId) == 0) {
-           return true;
-        } else  return false;
+            return true;
+        } else return false;
     }
 
-    function canExecEnd(uint256 _marketId, uint256 _epochId)public view returns (bool) {
+    function canExecEnd(uint256 _marketId, uint256 _epochId)
+        public
+        view
+        returns (bool)
+    {
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
-        if (vaults[0] == address(0) || vaults[1] == address(0))  return false;
-        
+        if (vaults[0] == address(0) || vaults[1] == address(0)) return false;
+
         IVaultV2 premiumVault = IVaultV2(vaults[0]);
         IVaultV2 collateralVault = IVaultV2(vaults[1]);
 
@@ -436,7 +446,7 @@ contract ControllerPeggedAssetV2 {
         if (
             premiumVault.totalAssets(_epochId) == 0 ||
             collateralVault.totalAssets(_epochId) == 0
-        )  return false;
+        ) return false;
 
         (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
 
