@@ -6,12 +6,14 @@ import "../../../src/v2/Carousel/CarouselFactory.sol";
 import "../../../src/v2/interfaces/ICarousel.sol";
 import "../../../src/v2/Carousel/Carousel.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
+import "../../../script/keepers/KeeperV2Rollover.sol";
 
 contract EndToEndCarouselTest is Helper {
     using stdStorage for StdStorage;
 
     CarouselFactory public factory;
     ControllerPeggedAssetV2 public controller;
+    KeeperV2Rollover public keeper;
 
     address public emissionsToken;
     address public oracle;
@@ -125,6 +127,11 @@ contract EndToEndCarouselTest is Helper {
         deal(UNDERLYING, USER, 18 ether, true);
         deal(UNDERLYING, USER2, 10 ether, true);
 
+
+       keeper = new KeeperV2Rollover(payable(ops), payable(treasuryTask), address(factory));
+       keeper.startTask(marketId, epochId);
+       keeper.startTask(marketId, nextEpochId);
+
     }
 
 
@@ -139,7 +146,7 @@ contract EndToEndCarouselTest is Helper {
         vm.stopPrank();
     }
 
-    function testEndToEndCarousel() public {
+    function testEndToEndCarousel(bool keeperExecution) public {
         vm.startPrank(USER);
 
         //warp to deposit period
@@ -178,8 +185,22 @@ contract EndToEndCarouselTest is Helper {
         assertEq(Carousel(premium).getDepositQueueLength(), premiumQueueLength);
 
         //mint deposit in queue
-        Carousel(collateral).mintDepositInQueue(epochId, collateralQueueLength);
-        Carousel(premium).mintDepositInQueue(epochId, premiumQueueLength);
+
+        if(keeperExecution) {
+            bool loop = true;
+            while(loop) {
+                (bool canExec, bytes memory execPayload) = keeper.checker(marketId, epochId);
+                //trigger end of epoch with keeper
+                if(canExec) keeper.executePayload(execPayload); 
+                loop = canExec;
+            }
+
+            (bool canExec, ) = keeper.checker(marketId, epochId);
+            assertTrue(!canExec);
+        } else {
+            Carousel(collateral).mintDepositInQueue(epochId, collateralQueueLength);
+            Carousel(premium).mintDepositInQueue(epochId, premiumQueueLength);
+        }        
 
         (,uint256 collatBalanceAfterFee) = Carousel(collateral).getEpochDepositFee(epochId, 10 ether);
         (,uint256 premiumBalanceAfterFee) = Carousel(premium).getEpochDepositFee(epochId, 2 ether);
@@ -221,8 +242,21 @@ contract EndToEndCarouselTest is Helper {
         assertEq(Carousel(collateral).previewWithdraw(epochId, 20 ether), COLLATERAL_MINUS_FEES);
 
         // let relayer rollover for users
-        Carousel(collateral).mintRollovers(nextEpochId, 2);
+        if(keeperExecution) {
+            bool loop = true;
+            while(loop) {
+                (bool canExec, bytes memory execPayload) = keeper.checker(marketId, nextEpochId);
+                //trigger end of epoch with keeper
+                if(canExec) keeper.executePayload(execPayload); 
+                loop = canExec;
+            }
 
+            (bool canExec, ) = keeper.checker(marketId, nextEpochId);
+            assertTrue(!canExec);
+        } else {
+              Carousel(collateral).mintRollovers(nextEpochId, 2);
+        }
+      
         //assert rollover accounting
         assertEq(Carousel(collateral).rolloverAccounting(nextEpochId), 2);
 

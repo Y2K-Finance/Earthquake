@@ -23,7 +23,7 @@ contract KeeperV2 is OpsReady, Ownable {
         tasks[payloadKey] = taskId;
     }
     
-    function executePayload(bytes memory _payloadData) external onlyOps {
+    function executePayload(bytes memory _payloadData) external {
         (bytes memory callData, bytes32 taskId) = abi.decode(_payloadData, (bytes, bytes32));
         
         //execute task
@@ -42,7 +42,7 @@ contract KeeperV2 is OpsReady, Ownable {
         //check if task can be executed
         if(IController(controller).canExecNullEpoch(_marketIndex, _epochID)) {
             canExec  = true;
-            execPayload= abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
+            execPayload= abi.encodeWithSelector(IController.triggerNullEpoch.selector, _marketIndex, _epochID);
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
             return (canExec, execPayload);
         }

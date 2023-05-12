@@ -7,19 +7,20 @@ import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/VaultV2.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-
+import "../../../script/keepers/KeeperV2.sol";
 
 contract EndToEndV2Test is Helper {
     using FixedPointMathLib for uint256;
 
     VaultFactoryV2 public factory;
     ControllerPeggedAssetV2 public controller;
+    KeeperV2 public keeper;
 
     address public premium;
     address public collateral;
     address public oracle;
     address public depegPremium;
-    address public depegCollateral;
+    address public depegCollateral;   
 
     uint256 public marketId;
     uint256 public strike;
@@ -76,7 +77,7 @@ contract EndToEndV2Test is Helper {
             VaultFactoryV2.MarketConfigurationCalldata(
                 TOKEN,
                 strike,
-                oracle,
+                USDC_CHAINLINK,
                 UNDERLYING,
                 name,
                 symbol,
@@ -122,9 +123,13 @@ contract EndToEndV2Test is Helper {
        );
 
        MintableToken(UNDERLYING).mint(USER);
+
+       keeper = new KeeperV2( payable(ops), payable(treasuryTask), address(controller));
+       keeper.startTask(marketId, epochId);
+       keeper.startTask(depegMarketId, depegEpochId);
     }
 
-    function testEndToEndEndEpoch() public {
+    function testEndToEndEndEpoch(bool keeperExecution) public {
         vm.startPrank(USER);
 
         vm.warp(begin - 1 days);
@@ -149,9 +154,22 @@ contract EndToEndV2Test is Helper {
 
         //warp to epoch end
         vm.warp(end + 1 days);
-        
-        //trigger end of epoch
-        controller.triggerEndEpoch(marketId, epochId);
+
+        if(keeperExecution) {
+             // check keeper can end epoch
+            (bool canExec, bytes memory execPayload) = keeper.checker(marketId, epochId);
+                assertTrue(canExec);
+            
+            //trigger end of epoch with keeper
+            keeper.executePayload(execPayload); 
+           
+
+            // check if keeper can end epoch again
+            (canExec, ) = keeper.checker(marketId, epochId);
+            assertTrue(!canExec);
+        } else {
+            controller.triggerEndEpoch(marketId, epochId);
+        }
 
         //check vault balances on withdraw
         assertEq(VaultV2(premium).previewWithdraw(epochId, DEPOSIT_AMOUNT), 0);
@@ -171,7 +189,7 @@ contract EndToEndV2Test is Helper {
         vm.stopPrank();
     }
 
-    function testEndToEndDepeg() public {
+    function testEndToEndDepeg(bool keeperExecution) public {
         vm.startPrank(USER);
 
         vm.warp(begin - 10 days);
@@ -195,9 +213,22 @@ contract EndToEndV2Test is Helper {
 
         //warp to epoch begin
         vm.warp(begin + 1 hours);
-        
-        //trigger depeg
-        controller.triggerDepeg(depegMarketId, depegEpochId);
+
+        if(keeperExecution) {
+            // check keeper can end epoch
+            (bool canExec, bytes memory execPayload) = keeper.checker(depegMarketId, depegEpochId);
+            assertTrue(canExec);
+            
+            //trigger depeg with keeper
+            keeper.executePayload(execPayload); 
+            // controller.triggerDepeg(depegMarketId, depegEpochId);
+            
+            // check if keeper can end epoch again
+            (canExec, ) = keeper.checker(depegMarketId, depegEpochId);
+            assertTrue(!canExec);
+        } else {
+            controller.triggerDepeg(depegMarketId, depegEpochId);
+        }
 
         premiumShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegCollateral).finalTVL(depegEpochId), fee);
         collateralShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegPremium).finalTVL(depegEpochId), fee);
@@ -216,6 +247,49 @@ contract EndToEndV2Test is Helper {
 
         //check user ERC20 balance
         assertEq(USER.balance, DEALT_AMOUNT);
+
+        vm.stopPrank();
+    }
+
+     function testEndToEndNullEpoch(bool keeperExecution) public {
+        vm.startPrank(USER);
+
+        vm.warp(begin - 1 days);
+
+        //deal ether
+        vm.deal(USER, DEALT_AMOUNT);
+
+        //approve gov token
+        MintableToken(UNDERLYING).approve(premium, DEPOSIT_AMOUNT);
+        MintableToken(UNDERLYING).approve(collateral, DEPOSIT_AMOUNT);
+
+        VaultV2(collateral).deposit(epochId, COLLAT_DEPOSIT_AMOUNT, USER);
+
+        //warp to epoch end
+        vm.warp(end + 1 days);
+
+        if(keeperExecution) {
+            // check keeper can end epoch
+            (bool canExec, bytes memory execPayload) = keeper.checker(marketId, epochId);
+            assertTrue(canExec);
+            
+            //trigger end of epoch with keeper
+            keeper.executePayload(execPayload); 
+            // controller.triggerNullEpoch(marketId, epochId);
+
+            // check if keeper can end epoch again
+            (canExec, ) = keeper.checker(marketId, epochId);
+            assertTrue(!canExec);
+        } else {
+            controller.triggerNullEpoch(marketId, epochId);
+        }
+
+        // check epoch is null
+        assertEq(VaultV2(premium).epochResolved(epochId), true);
+        assertEq(VaultV2(collateral).epochResolved(epochId), true);
+
+        assertEq(VaultV2(premium).epochNull(epochId), false);
+        assertEq(VaultV2(collateral).epochNull(epochId), true);
 
         vm.stopPrank();
     }

@@ -26,7 +26,7 @@ contract KeeperV2Rollover is OpsReady, Ownable {
         tasks[payloadKey] = taskId;
     }
     
-    function executePayload(bytes memory _payloadData) external onlyOps {
+    function executePayload(bytes memory _payloadData) external {
         (bytes memory callData, address vault) = abi.decode(_payloadData, (bytes, address));
         
         //execute task
@@ -42,7 +42,7 @@ contract KeeperV2Rollover is OpsReady, Ownable {
         view
         returns (bool canExec, bytes memory execPayload)
     {
-        address[2] memory vaults = factory.marketIdToVaults(_marketIndex);
+        address[2] memory vaults = factory.getVaults(_marketIndex);
         ICarousel premium = ICarousel(vaults[0]);
         ICarousel collat = ICarousel(vaults[1]);
         //check if task can be executed
@@ -60,14 +60,14 @@ contract KeeperV2Rollover is OpsReady, Ownable {
             return (canExec, execPayload);
         }
 
-        if(premium.getRolloverTVL() > 0) {
+        if(premium.getRolloverQueueLength() > premium.rolloverAccounting(_epochID)) {
             canExec  = true;
             execPayload = abi.encodeWithSelector(ICarousel.mintRollovers.selector, _epochID, 100);
             execPayload = abi.encode(execPayload, address(premium));
             return (canExec, execPayload);
         }
 
-        if(collat.getRolloverTVL() > 0) {
+        if(collat.getRolloverQueueLength() > collat.rolloverAccounting(_epochID)) {
             canExec  = true;
             execPayload = abi.encodeWithSelector(ICarousel.mintRollovers.selector, _epochID, 100);
             execPayload = abi.encode(execPayload, address(collat));

@@ -63,7 +63,7 @@
             "minQueueDeposit": 200000000000000000,
             "name": "y2kFRAX_990*",
             "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8",
-            "relayFee": 200000000000000,
+            "relayFee": 900000000000000,
             "strikePrice": 990000000000000000,
             "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
             "uri": "https://y2k.finance"
@@ -75,7 +75,7 @@
             "minQueueDeposit": 200000000000000000,
             "name": "y2kFRAX_980*",
             "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8",
-            "relayFee": 200000000000000,
+            "relayFee": 900000000000000,
             "strikePrice": 980000000000000000,
             "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
             "uri": "https://y2k.finance"
@@ -87,7 +87,7 @@
             "minQueueDeposit": 200000000000000000,
             "name": "y2kUSDC_9999*",
             "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
-            "relayFee": 200000000000000,
+            "relayFee": 900000000000000,
             "strikePrice": 999900000000000000,
             "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
             "uri": "https://y2k.finance"
@@ -99,7 +99,7 @@
             "minQueueDeposit": 200000000000000000,
             "name": "y2kUSDC_980*",
             "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
-            "relayFee": 200000000000000,
+            "relayFee": 900000000000000,
             "strikePrice": 980000000000000000,
             "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
             "uri": "https://y2k.finance"
@@ -111,7 +111,7 @@
             "minQueueDeposit": 200000000000000000,
             "name": "y2kMIM_975*",
             "oracle": "0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b",
-            "relayFee": 200000000000000,
+            "relayFee": 900000000000000,
             "strikePrice": 975000000000000000,
             "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
             "uri": "https://y2k.finance"
@@ -123,7 +123,7 @@
             "minQueueDeposit": 200000000000000000,
             "name": "y2kMIM_950*",
             "oracle": "0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b",
-            "relayFee": 200000000000000,
+            "relayFee": 900000000000000,
             "strikePrice": 950000000000000000,
             "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
             "uri": "https://y2k.finance"

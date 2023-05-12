@@ -102,4 +102,5 @@ interface ICarousel {
 
    function getDepositQueueTVL() external view returns (uint256);
 
+   function rolloverAccounting(uint256 _epochId) external view returns (uint256);
 }
