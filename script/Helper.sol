@@ -114,10 +114,10 @@ contract HelperConfig is Script {
         string memory root = vm.projectRoot();
         string memory path;
         if(isTestEnv){
-            path = string.concat(root, "/configTestEnv.json");
+            path = string.concat(root, "/script/configs/configTestEnv.json");
         }
         else{
-            path = string.concat(root, "/configAddresses.json");
+            path = string.concat(root, "/script/configs/configAddresses.json");
         }
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".configAddresses[0]");

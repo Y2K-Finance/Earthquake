@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 interface ICarousel {
     // function name() external view  returns (string memory);
     // function symbol() external view  returns (string memory);
-    // function asset() external view  returns (address);
+    function asset() external view  returns (address);
 
     function token() external view returns (address);
 
@@ -30,6 +30,12 @@ interface ICarousel {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint256 _epochId
+    ) external;
+
+    function deposit(
+        uint256 id,
+        uint256 amount,
+        address receiver
     ) external;
 
     function resolveEpoch(uint256 _id) external;
@@ -95,4 +101,13 @@ interface ICarousel {
     function getDepositQueueLength() external view returns (uint256);
 
     function getRolloverQueueLength() external view returns (uint256);
+
+    function getRolloverTVL() external view returns (uint256);
+
+    function getDepositQueueTVL() external view returns (uint256);
+
+    function rolloverAccounting(uint256 _epochId)
+        external
+        view
+        returns (uint256);
 }

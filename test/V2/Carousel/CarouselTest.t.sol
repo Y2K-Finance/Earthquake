@@ -6,6 +6,7 @@ import "../../../src/v2/Carousel/Carousel.sol";
 import "../../../src/v2/libraries/CarouselCreator.sol";
 import "../../../src/v2/interfaces/ICarousel.sol";
 import "../../../src/v2/VaultV2.sol";
+import "forge-std/Test.sol";
 
 
 contract CarouselTest is Helper { 
@@ -287,11 +288,23 @@ contract CarouselTest is Helper {
         uint256 prevEpoch = 2;
         // enlist in rollover for next epoch
         helperRolloverFromEpoch(prevEpoch, USER,  prevEpochUserBalance);
+        uint256 rolloverTVL = vault.getRolloverTVL();
+        assertEq(rolloverTVL, 10 ether - relayerFee);
         helperRolloverFromEpoch(prevEpoch, USER2, prevEpochUserBalance);
+        rolloverTVL = vault.getRolloverTVL();
+        assertEq(rolloverTVL, 20 ether - (2*relayerFee));
         helperRolloverFromEpoch(prevEpoch, USER3, prevEpochUserBalance);
+        rolloverTVL = vault.getRolloverTVL();
+        assertEq(rolloverTVL, 30 ether - (3*relayerFee));
         helperRolloverFromEpoch(prevEpoch, USER4, prevEpochUserBalance);
+        rolloverTVL = vault.getRolloverTVL();
+        assertEq(rolloverTVL, 40 ether - (4*relayerFee));
         helperRolloverFromEpoch(prevEpoch, USER5, prevEpochUserBalance);
+        rolloverTVL = vault.getRolloverTVL();
+        assertEq(rolloverTVL, 50 ether - (5*relayerFee));
         helperRolloverFromEpoch(prevEpoch, USER6, prevEpochUserBalance);
+        rolloverTVL = vault.getRolloverTVL();
+        assertEq(rolloverTVL, 60 ether - (6*relayerFee));
 
         // check balance of relayer
         uint256 balanceBefore = IERC20(UNDERLYING).balanceOf(address(this));

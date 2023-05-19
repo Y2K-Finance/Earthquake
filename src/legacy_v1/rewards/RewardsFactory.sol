@@ -11,6 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract RewardsFactory is Ownable {
     address public govToken;
     address public factory;
+    mapping(uint256 => address[2]) public idToFarms;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -88,6 +89,17 @@ contract RewardsFactory is Ownable {
             _epochEnd
         );
 
+        uint256 id = uint256(keccak256(
+                abi.encodePacked(
+                    _marketIndex,
+                    Vault(_insrToken).idEpochBegin(_epochEnd),
+                    _epochEnd
+                )
+        ));
+
+        idToFarms[id][0] = address(insrStake);
+        idToFarms[id][1] = address(riskStake);
+
         emit CreatedStakingReward(
             keccak256(
                 abi.encodePacked(
@@ -102,5 +114,27 @@ contract RewardsFactory is Ownable {
         );
 
         return (address(insrStake), address(riskStake));
+    }
+
+    function getStakingRewards(uint256 _marketIndex, uint256 _epochEnd)
+        external
+        view
+        returns (address insr, address risk)
+    {
+        VaultFactory vaultFactory = VaultFactory(factory);
+
+        address _insrToken = vaultFactory.getVaults(_marketIndex)[0];
+        address _riskToken = vaultFactory.getVaults(_marketIndex)[1];
+
+       uint256 id = uint256(keccak256(
+                abi.encodePacked(
+                    _marketIndex,
+                    Vault(_insrToken).idEpochBegin(_epochEnd),
+                    _epochEnd
+                )
+        ));
+
+        insr = idToFarms[id][0];
+        risk = idToFarms[id][1];
     }
 }
