@@ -2,71 +2,46 @@
 {
 
     "variables":{
-        "newMarkets": true,
-        "amountOfNewMarkets": 6,
-        "marketsIds": [12,13,14,15,16,17],
+        "newMarkets": false,
+        "amountOfNewMarkets": 0,
+        "marketsIds": [],
         "newEpochs": true,
-        "amountOfNewEpochs": 1,
-        "epochsIds": [14],
-        "amountOfNewFarms": 0,
-        "newFarms": false,
-        "farmsIds" : [0]
+        "amountOfNewEpochs": 2,
+        "epochsIds": [1,31],
+        "amountOfNewFarms": 2,
+        "newFarms": true,
+        "farmsIds" : [1,31]
     },
 
     "markets":[
-        {    
-            "marketId": 12,
-            "name":"y2kUSDT_980*",
-            "strikePrice": 980000000000000000,
-            "token": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
-            "oracle": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7"
-        },
-        {    
-            "marketId": 13,
-            "name":"y2kFRAX_990*",
-            "strikePrice": 990000000000000000,
-            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
-            "oracle": "0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8"
-        },
-        {    
-            "marketId": 14,
-            "name":"y2kDAI_996*",
-            "strikePrice": 996000000000000000,
-            "token": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
-            "oracle": "0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB"
-        },
-        {    
-            "marketId": 15,
-            "name":"y2kMIM_950*",
-            "strikePrice": 950000000000000000,
-            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
-            "oracle": "0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b"
-        },
-        {    
-            "marketId": 16,
-            "name":"y2kWBTC_997*",
-            "strikePrice": 997000000000000000,
-            "token": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-            "oracle": "0x0017abac5b6f291f9164e35b1234ca1d697f9cf4"
-        },
-        {    
-            "marketId": 17,
-            "name":"y2kUSDD_970*",
-            "strikePrice": 970000000000000000,
-            "token": "0x680447595e8b7b3aa1b43beb9f6098c79ac2ab3f",
-            "oracle": "0x4ee1f9ec1048979930ac832a3c1d18a0b4955a02"
-        }
-
+       
     ],
     "epochs":[  
         {
-            "marketId": 14,
-            "epochBegin":1683788400,
-            "epochEnd":1683799200,
+            "marketId": 1,
+            "epochBegin": 1684490400,
+            "epochEnd": 1684573200,
+            "epochFee":50
+        },
+        {
+            "marketId": 31,
+            "epochBegin": 1684490400,
+            "epochEnd": 1684573200,
             "epochFee":50
         }
     ],
     "farms":[
-        
+        {
+            "marketId": 1,
+            "epochEnd": 1684573200,
+            "farmRewardsHEDGE": "1000000000000000000",
+            "farmRewardsRISK" : "2000000000000000000"
+        },
+        {
+            "marketId": 31,
+            "epochEnd": 1684573200,
+            "farmRewardsHEDGE": "1000000000000000000",
+            "farmRewardsRISK" : "2000000000000000000"
+        }
     ]
 }

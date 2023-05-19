@@ -130,9 +130,9 @@ contract HelperV2 is Script {
     }
 
     function fundKeepers(uint256 _amount) public payable {
-        KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
-            _amount
-        );
+        // KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
+        //     _amount
+        // );
         KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
             value: _amount
         }(_amount);

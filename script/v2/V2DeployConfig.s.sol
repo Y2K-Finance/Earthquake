@@ -155,18 +155,18 @@ contract V2DeployConfig is HelperV2 {
                     epoch.premiumEmissions
                 );
             if (isTestEnv) {
-                IERC20(addresses.weth).approve(vaults[0], 1 ether);
-                ICarousel(vaults[0]).deposit(
-                    0,
-                    1 ether,
-                    0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
-                );
-                IERC20(addresses.weth).approve(vaults[1], 1 ether);
-                ICarousel(vaults[1]).deposit(
-                    0,
-                    1 ether,
-                    0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
-                );
+                // IERC20(addresses.weth).approve(vaults[0], 1 ether);
+                // ICarousel(vaults[0]).deposit(
+                //     0,
+                //     1 ether,
+                //     0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
+                // );
+                // IERC20(addresses.weth).approve(vaults[1], 1 ether);
+                // ICarousel(vaults[1]).deposit(
+                //     0,
+                //     1 ether,
+                //     0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
+                // );
             }
             startKeepers(previewMarketID, epochId);
             console2.log("epochId", epochId);

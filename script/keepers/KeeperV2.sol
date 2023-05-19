@@ -44,6 +44,10 @@ contract KeeperV2 is OpsReady, Ownable {
             canExec  = true;
             execPayload= abi.encodeWithSelector(IController.triggerNullEpoch.selector, _marketIndex, _epochID);
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
 
@@ -51,6 +55,10 @@ contract KeeperV2 is OpsReady, Ownable {
             canExec  = true;
             execPayload = abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
       
@@ -58,6 +66,10 @@ contract KeeperV2 is OpsReady, Ownable {
             canExec  = true;
             execPayload = abi.encodeWithSelector(IController.triggerEndEpoch.selector, _marketIndex, _epochID);
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
         

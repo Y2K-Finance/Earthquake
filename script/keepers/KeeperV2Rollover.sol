@@ -29,9 +29,15 @@ contract KeeperV2Rollover is OpsReady, Ownable {
     function executePayload(bytes memory _payloadData) external {
         (bytes memory callData, address vault) = abi.decode(_payloadData, (bytes, address));
         
+        uint256 balanceBefore = IERC20(ICarousel(vault).asset()).balanceOf(address(this));
+
         //execute task
         (bool success, ) = vault.call(callData);
         require(success, "executePayload: call failed");
+
+        uint256 balanceAfter = IERC20(ICarousel(vault).asset()).balanceOf(address(this));
+
+        require(balanceAfter > balanceBefore, "executePayload: no premium minted");
 
         //cancel task
         // IOps(ops).cancelTask(taskId);
@@ -50,6 +56,10 @@ contract KeeperV2Rollover is OpsReady, Ownable {
             canExec  = true;
             execPayload = abi.encodeWithSelector(ICarousel.mintDepositInQueue.selector, _epochID, 100);
             execPayload = abi.encode(execPayload, address(premium));
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
 
@@ -57,20 +67,32 @@ contract KeeperV2Rollover is OpsReady, Ownable {
             canExec  = true;
             execPayload = abi.encodeWithSelector(ICarousel.mintDepositInQueue.selector, _epochID, 100);
             execPayload = abi.encode(execPayload, address(collat));
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
 
-        if(premium.getRolloverQueueLength() > premium.rolloverAccounting(_epochID)) {
+        if(premium.getRolloverQueueLength() > premium.rolloverAccounting(_epochID) && premium.getRolloverTVL() > 0) {
             canExec  = true;
             execPayload = abi.encodeWithSelector(ICarousel.mintRollovers.selector, _epochID, 100);
             execPayload = abi.encode(execPayload, address(premium));
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
 
-        if(collat.getRolloverQueueLength() > collat.rolloverAccounting(_epochID)) {
+        if(collat.getRolloverQueueLength() > collat.rolloverAccounting(_epochID) && collat.getRolloverTVL() > 0) {
             canExec  = true;
             execPayload = abi.encodeWithSelector(ICarousel.mintRollovers.selector, _epochID, 100);
             execPayload = abi.encode(execPayload, address(collat));
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
             return (canExec, execPayload);
         }
         

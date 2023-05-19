@@ -127,6 +127,72 @@
             "strikePrice": 950000000000000000,
             "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
             "uri": "https://y2k.finance"
+        },
+        {
+            "name": "y2kUSDC_980*",
+            "collatEmissions": 100000000000000000,
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684404000,
+           "epochEnd": 1684486800,
+            "premiumEmissions": 1000000000000000000,
+            "strikePrice": 980000000000000000,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "withdrawalFee": 50
+        },
+        {
+            "name": "y2kFRAX_990*",
+            "strikePrice": 990000000000000000,
+            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684404000,
+           "epochEnd": 1684486800,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
+        },
+        {
+            "name": "y2kFRAX_980*",
+            "strikePrice": 980000000000000000,
+            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684404000,
+           "epochEnd": 1684486800,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
+        },
+        {
+            "name": "y2kUSDC_999*",
+            "strikePrice": 999900000000000000,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684404000,
+            "epochEnd": 1684486800,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
+        },
+        {
+            "name": "y2kMIM_950*",
+            "strikePrice": 950000000000000000,
+            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684404000,
+            "epochEnd": 1684486800,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
+        },
+        {
+            "name": "y2kMIM_975*",
+            "strikePrice": 975000000000000000,
+            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684404000,
+           "epochEnd": 1684486800,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
         }
     ]
 }

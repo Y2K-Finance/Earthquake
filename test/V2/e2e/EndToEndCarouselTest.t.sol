@@ -7,6 +7,7 @@ import "../../../src/v2/interfaces/ICarousel.sol";
 import "../../../src/v2/Carousel/Carousel.sol";
 import "../../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "../../../script/keepers/KeeperV2Rollover.sol";
+import "../../../script/keepers/KeeperV2.sol";
 
 contract EndToEndCarouselTest is Helper {
     using stdStorage for StdStorage;
@@ -136,14 +137,40 @@ contract EndToEndCarouselTest is Helper {
 
 
     function testRealVault() public {
-        vm.startPrank(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
+        // vm.startPrank(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
         // Carousel(0xDd08cb5A0be3Cc2c6aF567e0D6bDaAE9FA6bb822).enlistInRollover(
         //     31112705580645966551877757450832888924960016498693986711100423123206632918881,
         //     uint256(0x06f02de04b74e000),
         //     0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
         // );
+        // console.log(ICarousel(0xDd08cb5A0be3Cc2c6aF567e0D6bDaAE9FA6bb822).asset());
+        // uint256 balanceBefore = IERC20(ICarousel(0xDd08cb5A0be3Cc2c6aF567e0D6bDaAE9FA6bb822).asset()).balanceOf(address(this));
+
+        // (bool canExec, bytes memory execPayload) = KeeperV2(0x1D8E6a60eE80f4fDD65c4377C9dd2F2C62DF3f58).checker(110788007100077306759356690218326038626284721750366921456204435275195769181459, 15803113041142907307017304074354905923746011177789603169554150192158286557592);
+        //trigger end of epoch with keeper
+        // if(canExec) address(0x1D8E6a60eE80f4fDD65c4377C9dd2F2C62DF3f58).call(execPayload); 
+
         // Carousel(0xDd08cb5A0be3Cc2c6aF567e0D6bDaAE9FA6bb822).getRolloverTVL();
-        vm.stopPrank();
+        // (bool canExec, bytes memory execPayload) = KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).checker(104539733070968503208825746187343215845456686552083697493706031226049768240009, 102245315311433893058817552423319371153653735781902521982789438665989751054437);
+        //trigger end of epoch with keeper
+        // if(canExec) address(keeper).call(execPayload); 
+
+        address vault = CarouselFactory(0x820877E5b1Ee55123c6c6AC2b197fD0A3697A6aB).marketIdToVaults(104539733070968503208825746187343215845456686552083697493706031226049768240009, 1);
+        console.log("getRolloverQueueLength", Carousel(vault).getRolloverQueueLength());
+        console.log("rolloverAccounting", Carousel(vault).rolloverAccounting(103601628178979418007908754735707002583381016495670010042370412917058389199285));
+        console.log("getRolloverIndex", Carousel(vault).getRolloverIndex(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F));
+        (uint256 enlistedAmount,) = Carousel(vault).getRolloverPosition(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
+        console.log("enlistedAmount", enlistedAmount);
+        console.log("rolloverTVL", Carousel(vault).getRolloverTVL());
+        uint256 balanceBefore = IERC20(ICarousel(vault).asset()).balanceOf(0x1F124d3f656aea4a829EE789c7a5328baFEF641e);
+        // Carousel(vault).mintRollovers(48615284262728488872268506276546633161776424798518002717091976367836849364943, 100);
+        (bool canExec, bytes memory execPayload) = KeeperV2Rollover(0x1F124d3f656aea4a829EE789c7a5328baFEF641e).checker(103315341651798820417043057093748085438159677267937636361440225860324413300936, 103601628178979418007908754735707002583381016495670010042370412917058389199285);
+        //trigger end of epoch with keeper
+        if(canExec) address(keeper).call(execPayload); 
+        uint256 balanceAfter = IERC20(ICarousel(vault).asset()).balanceOf(0x1F124d3f656aea4a829EE789c7a5328baFEF641e);
+        console.log("balanceAfter", balanceAfter);
+        console.log("balanceBefore", balanceBefore);
+        // vm.stopPrank();
     }
 
     function testEndToEndCarousel(bool keeperExecution) public {
@@ -185,18 +212,18 @@ contract EndToEndCarouselTest is Helper {
         assertEq(Carousel(premium).getDepositQueueLength(), premiumQueueLength);
 
         //mint deposit in queue
-
         if(keeperExecution) {
             bool loop = true;
             while(loop) {
                 (bool canExec, bytes memory execPayload) = keeper.checker(marketId, epochId);
                 //trigger end of epoch with keeper
-                if(canExec) keeper.executePayload(execPayload); 
+                if(canExec) address(keeper).call(execPayload); 
                 loop = canExec;
             }
 
             (bool canExec, ) = keeper.checker(marketId, epochId);
             assertTrue(!canExec);
+
         } else {
             Carousel(collateral).mintDepositInQueue(epochId, collateralQueueLength);
             Carousel(premium).mintDepositInQueue(epochId, premiumQueueLength);
@@ -247,7 +274,7 @@ contract EndToEndCarouselTest is Helper {
             while(loop) {
                 (bool canExec, bytes memory execPayload) = keeper.checker(marketId, nextEpochId);
                 //trigger end of epoch with keeper
-                if(canExec) keeper.executePayload(execPayload); 
+                if(canExec) address(keeper).call(execPayload); 
                 loop = canExec;
             }
 

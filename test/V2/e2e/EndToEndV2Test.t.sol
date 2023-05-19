@@ -161,7 +161,7 @@ contract EndToEndV2Test is Helper {
                 assertTrue(canExec);
             
             //trigger end of epoch with keeper
-            keeper.executePayload(execPayload); 
+            if(canExec) address(keeper).call(execPayload); 
            
 
             // check if keeper can end epoch again
@@ -220,7 +220,7 @@ contract EndToEndV2Test is Helper {
             assertTrue(canExec);
             
             //trigger depeg with keeper
-            keeper.executePayload(execPayload); 
+           if(canExec) address(keeper).call(execPayload); 
             // controller.triggerDepeg(depegMarketId, depegEpochId);
             
             // check if keeper can end epoch again
@@ -274,7 +274,7 @@ contract EndToEndV2Test is Helper {
             assertTrue(canExec);
             
             //trigger end of epoch with keeper
-            keeper.executePayload(execPayload); 
+            if(canExec) address(keeper).call(execPayload); 
             // controller.triggerNullEpoch(marketId, epochId);
 
             // check if keeper can end epoch again
