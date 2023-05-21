@@ -30,7 +30,7 @@ contract V2DeployConfig is HelperV2 {
     }
 
     function deploy() public {
-        fundKeepers(4000000000000000);
+        // fundKeepers(4000000000000000);
         if (configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();
@@ -129,6 +129,10 @@ contract V2DeployConfig is HelperV2 {
         }
         for (uint256 i = 0; i < epochs.length; ++i) {
             ConfigEpochWithEmission memory epoch = epochs[i];
+            if(epoch.epochBegin < block.timestamp) {
+                console2.log("Epoch already started", epoch.epochBegin);
+                revert("Epoch already started");
+            }
             uint256 previewMarketID = factory.getMarketId(
                 epoch.token,
                 epoch.strikePrice,

@@ -19,27 +19,27 @@
     "epochs":[  
         {
             "marketId": 1,
-            "epochBegin": 1684490400,
-            "epochEnd": 1684573200,
+            "epochBegin": 1684663200,
+            "epochEnd": 1684746000,
             "epochFee":50
         },
         {
             "marketId": 31,
-            "epochBegin": 1684490400,
-            "epochEnd": 1684573200,
+            "epochBegin": 1684663200,
+            "epochEnd": 1684746000,
             "epochFee":50
         }
     ],
     "farms":[
         {
             "marketId": 1,
-            "epochEnd": 1684573200,
+            "epochEnd": 1684746000,
             "farmRewardsHEDGE": "1000000000000000000",
             "farmRewardsRISK" : "2000000000000000000"
         },
         {
             "marketId": 31,
-            "epochEnd": 1684573200,
+            "epochEnd": 1684746000,
             "farmRewardsHEDGE": "1000000000000000000",
             "farmRewardsRISK" : "2000000000000000000"
         }
