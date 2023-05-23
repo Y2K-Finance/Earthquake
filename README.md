@@ -11,6 +11,9 @@
 | Rewards Factory | https://arbiscan.io/address/0x9889Fca1d9A5D131F5d4306a2BC2F293cAfAd2F3 |
 | Y2K token       | https://arbiscan.io/address/0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f |
 | Y2K treasury    | https://arbiscan.io/address/0x5c84cf4d91dc0acde638363ec804792bb2108258 |
+# Earthquake V2 Documentation
+
+- [Notion page with diagram and videos](https://y2kfinance.notion.site/Earthquake-V2-Documentation-9766c278d4a14c619ba92017a69853e4)
 
 # Foundry / Forge
 
@@ -37,9 +40,12 @@
 
 ## Test in Mainnet Fork
 
-```
+- make sure to create `.env` with variables in `.env.example`
+- currenlty foundry is configured to only run tests in `test/v2`
+- run `forge coverage` to see test coverage for V2. Tests for legacy_v1 will not be accounted for
 
-forge test --fork-url https://eth-mainnet.alchemyapi.io/v2/XGDnf9iNvs51rbBp5r07HB7nIBg_Frqm -vv
+```
+forge test -vv
 
 ```
 

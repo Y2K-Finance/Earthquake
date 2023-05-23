@@ -3,10 +3,11 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
-import "../src/VaultFactory.sol";
-import "../src/Controller.sol";
+import "../src/legacy_v1/VaultFactory.sol";
+import "../src/legacy_v1/Controller.sol";
 //TODO change this after deploy  y2k token
-import "../src/rewards/RewardsFactory.sol";
+// import "../src/legacy_v1/rewards/PausableRewardsFactory.sol";
+import "../src/legacy_v1/rewards/RewardsFactory.sol";
 import "../src/tokens/Y2K.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./keepers/KeeperDepeg.sol";
@@ -118,10 +119,10 @@ contract HelperConfig is Script {
         string memory root = vm.projectRoot();
         string memory path;
         if(isTestEnv){
-            path = string.concat(root, "/configTestEnv.json");
+            path = string.concat(root, "/script/configs/configTestEnv.json");
         }
         else{
-            path = string.concat(root, "/configAddresses.json");
+            path = string.concat(root, "/script/configs/configAddresses.json");
         }
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".configAddresses[0]");

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 import { OpsReady, IOps } from "./OpsReady.sol";
-import {IController} from "../../src/legacy_v1/interfaces/IController.sol";
+import {IControllerPeggedAssetV2 as IController} from "../../src/v2/interfaces/IControllerPeggedAssetV2.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract KeeperGelato is OpsReady, Ownable {
+contract KeeperV2 is OpsReady, Ownable {
     address public immutable controller;
     mapping(bytes32 => bytes32) public tasks;
 
@@ -23,7 +23,7 @@ contract KeeperGelato is OpsReady, Ownable {
         tasks[payloadKey] = taskId;
     }
     
-    function executePayload(bytes memory _payloadData) external onlyOps {
+    function executePayload(bytes memory _payloadData) external {
         (bytes memory callData, bytes32 taskId) = abi.decode(_payloadData, (bytes, bytes32));
         
         //execute task
@@ -40,31 +40,38 @@ contract KeeperGelato is OpsReady, Ownable {
         returns (bool canExec, bytes memory execPayload)
     {
         //check if task can be executed
-        (bool canExecDepeg,) = controller.staticcall(
-            abi.encodeWithSelector(bytes4(keccak256("triggerDepeg(uint256,uint256)")), 
-            _marketIndex, _epochID));
-
-        (bool canExecEnd,) = controller.staticcall(
-            abi.encodeWithSelector(bytes4(keccak256("triggerEndEpoch(uint256,uint256)")), 
-            _marketIndex, _epochID));
-
-        //execute task payload
-        if(canExecDepeg) {
-            execPayload = abi.encodeWithSelector(bytes4(keccak256("triggerDepeg(uint256,uint256)")), 
-            _marketIndex, _epochID);
-
+        if(IController(controller).canExecNullEpoch(_marketIndex, _epochID)) {
+            canExec  = true;
+            execPayload= abi.encodeWithSelector(IController.triggerNullEpoch.selector, _marketIndex, _epochID);
             execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
-        }
-
-        if(canExecEnd){
             execPayload = abi.encodeWithSelector(
-            bytes4(keccak256("triggerEndEpoch(uint256,uint256)")),
-            _marketIndex, _epochID
+                this.executePayload.selector,
+                execPayload
             );
-            execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
+            return (canExec, execPayload);
         }
-        
-        canExec = canExecDepeg || canExecEnd;
+
+        if(IController(controller).canExecDepeg(_marketIndex, _epochID)) {
+            canExec  = true;
+            execPayload = abi.encodeWithSelector(IController.triggerDepeg.selector, _marketIndex, _epochID);
+            execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
+            return (canExec, execPayload);
+        }
+      
+        if(IController(controller).canExecEnd(_marketIndex, _epochID)) {
+            canExec  = true;
+            execPayload = abi.encodeWithSelector(IController.triggerEndEpoch.selector, _marketIndex, _epochID);
+            execPayload = abi.encode(execPayload, tasks[keccak256(abi.encodePacked(_marketIndex, _epochID))]);
+            execPayload = abi.encodeWithSelector(
+                this.executePayload.selector,
+                execPayload
+            );
+            return (canExec, execPayload);
+        }
         
     }
 

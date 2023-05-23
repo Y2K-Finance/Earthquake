@@ -28,11 +28,11 @@
         "tokenUSDT": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
         "oracleUSDT": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
 
-        "vaultFactory": "0x992F785687eC8b3e64b9c163aF1e551ed9960715",
-        "controller": "0xb69f0bE0AF4eA44dAB8BD77c2010F09C09C052A5",
-        "rewardsFactory": "0xE4d1027381e1C7798BcdAa1857f6B835102cDA47",
-        "keeperDepeg": "0x608258B3a91346C1fA92CDBfca97276a3f218918",
-        "keeperEndEpoch": "0x59cCCD00CF330BD89fDAc59CF5b5609F535F0946"
+        "vaultFactory": "0xa39A84d1a3a0cedA92cdb7eBD9E3b6216fabAcE7",
+        "controller": "0x1ae6ca8892d7F0DaCBd3f282eaabDFbDbee3DE43",
+        "rewardsFactory": "0x22351212C4066d65F7B02f6f75Bc3347Ab17b870",
+        "keeperDepeg": "0x4208cd74b0dE2880d7B69700B749c2962381bD80",
+        "keeperEndEpoch": "0xcDf0Bda38eb465EC17Eda5B25830197075F4cabc"
     }]
 }
 

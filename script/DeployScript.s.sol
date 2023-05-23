@@ -6,10 +6,11 @@ import "./Helper.sol";
 /// @author MiguelBits
 //forge script DeployScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --gas-estimate-multiplier 200 --slow -vv
 // forge script DeployScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --slow -vv
+//forge script DeployScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --slow --verify -vv
 contract DeployScript is Script, HelperConfig {
 
     function setupY2K() public{
-        ConfigAddresses memory addresses = getConfigAddresses(false); //true if test env
+        ConfigAddresses memory addresses = getConfigAddresses(true); //true if test env
         contractToAddresses(addresses);
         setVariables();
 
@@ -48,6 +49,9 @@ contract DeployScript is Script, HelperConfig {
                 ConfigMarket memory markets = getConfigMarket(i);
                 //TODO verify
                 require(markets.marketId == marketId, "marketId of markets and loop are not the same");
+
+                console.log("marketId", marketId);
+                console.log("vaultFactory", address(vaultFactory));
     
                 vaultFactory.createNewMarket(
                     1, 
@@ -107,8 +111,8 @@ contract DeployScript is Script, HelperConfig {
         StakingRewards(_rRisk).notifyRewardAmount(stringToUint(_rewardsAmountRISK));
 
         //unpause
-        StakingRewards(_rHedge).unpause();
-        StakingRewards(_rRisk).unpause();
+        // StakingRewards(_rHedge).unpause();
+        // StakingRewards(_rRisk).unpause();
     }
 
 }
