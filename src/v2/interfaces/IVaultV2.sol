@@ -14,14 +14,9 @@ interface IVaultV2 {
 
     function counterPartyVault() external view returns (address);
 
-    function getEpochConfig(uint256)
-        external
-        view
-        returns (
-            uint40,
-            uint40,
-            uint40
-        );
+    function getEpochConfig(
+        uint256
+    ) external view returns (uint40, uint40, uint40);
 
     function totalAssets(uint256) external view returns (uint256);
 
@@ -57,8 +52,7 @@ interface IVaultV2 {
 
     function setEpochNull(uint256 _id) external;
 
-    function whitelistedAddresses(address _address)
-        external
-        view
-        returns (bool);
+    function whitelistedAddresses(
+        address _address
+    ) external view returns (bool);
 }

@@ -1,268 +1,193 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "../Helper.sol";
-import "../../../src/v2/VaultFactoryV2.sol";
-import "../../../src/v2/TimeLock.sol";
-import "../../../src/v2/VaultV2.sol";
-import "../../../src/v2/Controllers/ControllerGenericV2.sol";
-import "../../../src/v2/Controllers/ChainlinkPriceProvider.sol";
-import "../../../src/v2/Controllers/RedstoneMockPriceProvider.sol";
-import "../../../src/v2/Controllers/PriceBasedDepegCondition.sol";
-import "../../../src/v2/Controllers/IPriceProvider.sol";
-import "../../../src/v2/Controllers/IDepegCondition.sol";
+import {Config, MintableToken} from "../Helper.sol";
+import {IVaultV2} from "../../../src/v2/VaultFactoryV2.sol";
+import {VaultV2} from "../../../src/v2/VaultV2.sol";
+import {
+    ControllerGenericV2
+} from "../../../src/v2/Controllers/ControllerGenericV2.sol";
 
+import {console} from "forge-std/console.sol";
 
-
-import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-
-
-contract EndToEndV2Test is Helper {
-    using FixedPointMathLib for uint256;
-
-    VaultFactoryV2 public factory;
-    
-    IPriceProvider public priceProvider;
-    ControllerGenericV2 public controller;
-
-    address public premium;
-    address public collateral;
-    address public oracle;
-    address public depegPremium;
-    address public depegCollateral;
-
-    uint256 public marketId;
-    uint256 public strike;
-    uint256 public epochId;
-    uint256 public depegMarketId;
-    uint256 public depegStrike;
-    uint256 public depegEpochId;
-    uint256 public premiumShareValue;
-    uint256 public collateralShareValue;
-    uint256 public arbForkId;
-
-    uint256 public constant AMOUNT_AFTER_FEE = 19.95 ether;
-    uint256 public constant PREMIUM_DEPOSIT_AMOUNT = 2 ether;
-    uint256 public constant COLLAT_DEPOSIT_AMOUNT = 10 ether;
-    uint256 public constant DEPOSIT_AMOUNT = 10 ether;
-    uint256 public constant DEALT_AMOUNT = 20 ether;
-
-    uint40 public begin;
-    uint40 public end;
-
-    uint16 public fee;
-
-    string public ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
-
-    function setUp() public {
-        arbForkId = vm.createFork(ARBITRUM_RPC_URL);
-        vm.selectFork(arbForkId);
-        
-        UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
-
-        TimeLock timelock = new TimeLock(ADMIN);
-
-        factory = new VaultFactoryV2(
-                WETH,
-                TREASURY,
-                address(timelock)
-            );
-        
-        //priceProvider = IPriceProvider(new ChainlinkPriceProvider(
-        //    ARBITRUM_SEQUENCER,
-        //    address(factory)
-        //    ));
-        priceProvider = IPriceProvider(new RedstoneMockPriceProvider(
-            ARBITRUM_SEQUENCER,
-            address(factory),
-            "VST"
-            ));
-            
-            
-        controller = new ControllerGenericV2(
-                address(factory), 
-                ARBITRUM_SEQUENCER, 
-                TREASURY,
-                address(priceProvider));
-                
-                
-           
-                
-                
-        factory.whitelistController(address(controller));
-        
-        //create end epoch market
-        oracle = address(0x3);
-        strike = uint256(0x2);
-        string memory name = string("USD Coin");
-        string memory symbol = string("USDC");
-
-        (
-            premium,
-            collateral,
-            marketId
-        ) = factory.createNewMarket(
-            VaultFactoryV2.MarketConfigurationCalldata(
-                TOKEN,
-                strike,
-                oracle,
-                UNDERLYING,
-                name,
-                symbol,
-                address(controller))
-        );
-        
-        //create depeg market
-        depegStrike = uint256(2 ether);
-        (
-            depegPremium,
-            depegCollateral,
-            depegMarketId
-        ) = factory.createNewMarket(
-           VaultFactoryV2.MarketConfigurationCalldata(
-                USDC_TOKEN,
-                depegStrike,
-                USDC_CHAINLINK,
-                UNDERLYING,
-                name,
-                symbol,
-                address(controller)
+contract EndToEndV2GenericTest is Config {
+    function testErrorsGenericEndEpoch() public {
+        vm.expectRevert(
+            abi.encodePacked(
+                ControllerGenericV2.MarketDoesNotExist.selector,
+                falseId
             )
         );
+        controller.triggerEndEpoch(falseId, epochId);
 
-        //create epoch for end epoch
-        begin = uint40(block.timestamp - 5 days);
-        end = uint40(block.timestamp - 3 days);
-        fee = 50; // 0.5%
+        vm.expectRevert(ControllerGenericV2.EpochNotExist.selector);
+        controller.triggerEndEpoch(marketId, falseId);
 
-        (epochId, ) = factory.createEpoch(
-                marketId,
-                begin,
-                end,
-                fee
-       );
+        vm.warp(begin + 1 hours);
+        vm.expectRevert(ControllerGenericV2.EpochNotExpired.selector);
+        controller.triggerEndEpoch(marketId, epochId);
 
-       //create epoch for depeg
-        (depegEpochId, ) = factory.createEpoch(
-                depegMarketId,
-                begin,
-                end,
-                fee
-       );
-       
-       // TODO: Have this logic reviewed by 3rd party
-       //IVaultFactoryV2 vaultFactory = IVaultFactoryV2(factory);
-       address[2] memory vaults = factory.getVaults(depegMarketId);
-        
-       IVaultV2 premiumVault = IVaultV2(vaults[0]);
-        
-       IDepegCondition depegCondition = new PriceBasedDepegCondition(
-            address(priceProvider),
-            address(premiumVault));
-       controller.addDepegCondition(depegCondition);       
-       controller.lockdownSystem();      
-       MintableToken(UNDERLYING).mint(USER);
+        vm.warp(end + 1 hours);
+        vm.startPrank(USER);
+        configureEndEpochState();
+        vm.stopPrank();
+
+        controller.triggerEndEpoch(marketId, epochId);
+        vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
+        controller.triggerEndEpoch(marketId, epochId);
     }
 
-    function testGenericEndToEndEndEpoch() public {
+    function testErrorsGenericLiquidateEpoch() public {
+        vm.expectRevert(
+            abi.encodePacked(
+                ControllerGenericV2.MarketDoesNotExist.selector,
+                falseId
+            )
+        );
+        controller.triggerLiquidation(falseId, epochId);
+
+        vm.expectRevert(ControllerGenericV2.EpochNotExist.selector);
+        controller.triggerLiquidation(marketId, falseId);
+
+        vm.warp(begin - 1 hours);
+        vm.expectRevert(ControllerGenericV2.EpochNotStarted.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        vm.warp(end + 1 hours);
+        vm.expectRevert(ControllerGenericV2.EpochExpired.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        // TODO: Check when the condition isn't met that we revert - need to return diff value for price / diff oracle?
+        vm.warp(begin + 1 hours);
+        // vm.expectRevert(ControllerGenericV2.ConditionNotMet.selector);
+        // controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        vm.expectRevert(ControllerGenericV2.VaultZeroTVL.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
         vm.startPrank(USER);
+        configureDepegState();
+        vm.stopPrank();
 
-        vm.warp(begin - 1 days);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+        vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+    }
 
-        //deal ether
-        vm.deal(USER, DEALT_AMOUNT);
+    function testErrorsGenericNullEpoch() public {
+        vm.expectRevert(
+            abi.encodePacked(
+                ControllerGenericV2.MarketDoesNotExist.selector,
+                falseId
+            )
+        );
+        controller.triggerNullEpoch(falseId, epochId);
 
-        //approve gov token
-        MintableToken(UNDERLYING).approve(premium, DEPOSIT_AMOUNT);
-        MintableToken(UNDERLYING).approve(collateral, DEPOSIT_AMOUNT);
+        vm.expectRevert(ControllerGenericV2.EpochNotExist.selector);
+        controller.triggerNullEpoch(marketId, falseId);
 
-        //deposit in both vaults
-        VaultV2(premium).deposit(epochId, DEPOSIT_AMOUNT, USER);
-        VaultV2(collateral).deposit(epochId, DEPOSIT_AMOUNT, USER);
+        vm.warp(begin - 1 hours);
+        vm.expectRevert(ControllerGenericV2.EpochNotStarted.selector);
+        controller.triggerNullEpoch(marketId, epochId);
 
-        //check deposit balances
-        assertEq(VaultV2(premium).balanceOf(USER ,epochId), DEPOSIT_AMOUNT);
-        assertEq(VaultV2(collateral).balanceOf(USER ,epochId), DEPOSIT_AMOUNT);
+        vm.startPrank(USER);
+        configureEndEpochState();
+        vm.stopPrank();
 
-        //check user underlying balance
-        assertEq(USER.balance, DEALT_AMOUNT);
+        vm.warp(begin + 1 hours);
+        vm.expectRevert(ControllerGenericV2.VaultNotZeroTVL.selector);
+        controller.triggerNullEpoch(marketId, epochId);
 
-        //warp to epoch end
-        vm.warp(end + 1 days);
-        
-        
+        vm.warp(end + 1 hours);
+        controller.triggerEndEpoch(marketId, epochId);
+        vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
+        controller.triggerNullEpoch(marketId, epochId);
+    }
+
+    function testGenericEndToEndEpoch() public {
+        vm.startPrank(USER);
+        uint256 startingBalance = MintableToken(UNDERLYING).balanceOf(USER);
+        configureEndEpochState();
 
         //trigger end of epoch
         controller.triggerEndEpoch(marketId, epochId);
 
         //check vault balances on withdraw
         assertEq(VaultV2(premium).previewWithdraw(epochId, DEPOSIT_AMOUNT), 0);
-        assertEq(VaultV2(collateral).previewWithdraw(epochId, DEPOSIT_AMOUNT), AMOUNT_AFTER_FEE);
+        assertEq(
+            VaultV2(collateral).previewWithdraw(epochId, DEPOSIT_AMOUNT),
+            AMOUNT_AFTER_FEE
+        );
 
         //withdraw from vaults
         VaultV2(premium).withdraw(epochId, DEPOSIT_AMOUNT, USER, USER);
         VaultV2(collateral).withdraw(epochId, DEPOSIT_AMOUNT, USER, USER);
 
         //check vaults balance
-        assertEq(VaultV2(premium).balanceOf(USER ,epochId), 0);
-        assertEq(VaultV2(collateral).balanceOf(USER ,epochId), 0);
+        assertEq(VaultV2(premium).balanceOf(USER, epochId), 0);
+        assertEq(VaultV2(collateral).balanceOf(USER, epochId), 0);
 
         //check user ERC20 balance
         assertEq(USER.balance, DEALT_AMOUNT);
-
+        // TODO: Fee that works is 0.05% - check this out and the maths surrounding depositing the underlying
+        assertEq(
+            MintableToken(UNDERLYING).balanceOf(USER),
+            helperCalculateFeeAdjustedValue(startingBalance, 5)
+        );
         vm.stopPrank();
     }
 
     function testGenericEndToEndDepeg() public {
         vm.startPrank(USER);
+        configureDepegState();
 
-        vm.warp(begin - 10 days);
-        //deal ether
-        vm.deal(USER, DEALT_AMOUNT);
-
-        //approve gov token
-        MintableToken(UNDERLYING).approve(depegPremium, PREMIUM_DEPOSIT_AMOUNT);
-        MintableToken(UNDERLYING).approve(depegCollateral, COLLAT_DEPOSIT_AMOUNT);
-
-        //deposit in both vaults
-        VaultV2(depegPremium).deposit(depegEpochId, PREMIUM_DEPOSIT_AMOUNT, USER);
-        VaultV2(depegCollateral).deposit(depegEpochId, COLLAT_DEPOSIT_AMOUNT, USER);
-
-        //check deposit balances
-        assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), PREMIUM_DEPOSIT_AMOUNT);
-        assertEq(VaultV2(depegCollateral).balanceOf(USER ,depegEpochId), COLLAT_DEPOSIT_AMOUNT);
-
-        //check user underlying balance
-        assertEq(USER.balance, DEALT_AMOUNT);
-
-        //warp to epoch begin
-        vm.warp(begin + 1 hours);
-        
         //trigger depeg
-        controller.triggerDepeg(depegMarketId, depegEpochId);
-
-        premiumShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegCollateral).finalTVL(depegEpochId), fee);
-        collateralShareValue = helperCalculateFeeAdjustedValue(VaultV2(depegPremium).finalTVL(depegEpochId), fee);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+        premiumShareValue = helperCalculateFeeAdjustedValue(
+            VaultV2(depegCollateral).finalTVL(depegEpochId),
+            fee
+        );
+        collateralShareValue = helperCalculateFeeAdjustedValue(
+            VaultV2(depegPremium).finalTVL(depegEpochId),
+            fee
+        );
 
         //check vault balances on withdraw
-        assertEq(premiumShareValue, VaultV2(depegPremium).previewWithdraw(depegEpochId, PREMIUM_DEPOSIT_AMOUNT));
-        assertEq(collateralShareValue, VaultV2(depegCollateral).previewWithdraw(depegEpochId, COLLAT_DEPOSIT_AMOUNT));
+        assertEq(
+            premiumShareValue,
+            VaultV2(depegPremium).previewWithdraw(
+                depegEpochId,
+                PREMIUM_DEPOSIT_AMOUNT
+            )
+        );
+        assertEq(
+            collateralShareValue,
+            VaultV2(depegCollateral).previewWithdraw(
+                depegEpochId,
+                COLLAT_DEPOSIT_AMOUNT
+            )
+        );
 
         //withdraw from vaults
-        VaultV2(depegPremium).withdraw(depegEpochId, PREMIUM_DEPOSIT_AMOUNT, USER, USER);
-        VaultV2(depegCollateral).withdraw(depegEpochId, COLLAT_DEPOSIT_AMOUNT, USER, USER);
+        VaultV2(depegPremium).withdraw(
+            depegEpochId,
+            PREMIUM_DEPOSIT_AMOUNT,
+            USER,
+            USER
+        );
+        VaultV2(depegCollateral).withdraw(
+            depegEpochId,
+            COLLAT_DEPOSIT_AMOUNT,
+            USER,
+            USER
+        );
 
         //check vaults balance
-        assertEq(VaultV2(depegPremium).balanceOf(USER ,depegEpochId), 0);
-        assertEq(VaultV2(depegCollateral).balanceOf(USER ,depegEpochId), 0);
+        assertEq(VaultV2(depegPremium).balanceOf(USER, depegEpochId), 0);
+        assertEq(VaultV2(depegCollateral).balanceOf(USER, depegEpochId), 0);
 
         //check user ERC20 balance
         assertEq(USER.balance, DEALT_AMOUNT);
-
         vm.stopPrank();
-    }
-
-    function helperCalculateFeeAdjustedValue(uint256 amount, uint16 fee) internal pure returns (uint256) {
-        return amount - amount.mulDivUp(fee, 10000);
     }
 }

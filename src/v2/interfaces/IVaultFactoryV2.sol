@@ -21,8 +21,9 @@ interface IVaultFactoryV2 {
 
     function transferOwnership(address newOwner) external;
 
-    function marketIdToVaults(uint256 _marketId)
-        external
-        view
-        returns (address[2] memory);
+    function marketIdToVaults(
+        uint256 _marketId
+    ) external view returns (address[2] memory);
+
+    function marketToOracle(address _token) external view returns (address);
 }

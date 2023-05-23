@@ -3,121 +3,57 @@ pragma solidity 0.8.17;
 
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IVaultV2} from "../interfaces/IVaultV2.sol";
-import "@chainlink/interfaces/AggregatorV3Interface.sol";
-import "@chainlink/interfaces/AggregatorV2V3Interface.sol";
+import {
+    AggregatorV3Interface
+} from "@chainlink/interfaces/AggregatorV3Interface.sol";
+import {
+    AggregatorV2V3Interface
+} from "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
-import "./IDepegCondition.sol";
-import "./IPriceProvider.sol";
-import "forge-std/console.sol";
-
+import {IConditionProvider} from "./IConditionProvider.sol";
+import {console} from "forge-std/console.sol";
 
 /// @author Y2K Finance Team
 
 contract ControllerGenericV2 {
-
     using FixedPointMathLib for uint256;
+    // TODO: Do we want getters for these values?
     IVaultFactoryV2 public immutable vaultFactory;
     address public immutable treasury;
-    bool public locked = false;
     address public admin;
-    
-    IDepegCondition[] public depegConditions;
-    IPriceProvider public priceProvider;
-    
-    modifier onlyAdmin {
-        require(msg.sender == admin, "Only the admin can perform this action");
+
+    // TODO: Should add admin management - where should this be used?
+    modifier onlyAdmin() {
+        if (msg.sender != admin) revert Unauthorized();
         _;
     }
 
-    modifier notLocked {
-        require(!locked, "The system is locked, no new depeg conditions can be added");
-        _;
-    }
-
-    constructor(
-        address _factory,
-        address _sequencer,
-        address _treasury,
-        address _priceProvider
-    ) {
-        if (_priceProvider == address(0)) revert ZeroAddress();
-        priceProvider = IPriceProvider(_priceProvider);
-        
+    // NOTE: not clear what this is referring - was next to admin
+    // So we can add depegs, (which could have circular dependencies, i.e., may need to read ControllerGenericV2 in their constructor)
+    constructor(address _factory, address _treasury) {
         if (_factory == address(0)) revert ZeroAddress();
+        if (_treasury == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
-        admin = msg.sender; 
-        // So we can add depegs, (which could have circular dependencies, i.e., may need to read ControllerGenericV2 in their constructor) 
-        
-        treasury = _treasury;        
+        treasury = _treasury;
+        admin = msg.sender;
     }
+
     /*//////////////////////////////////////////////////////////////
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    /** @notice Add a Depeg Condition
-     * @param _condition The Condition that must be true to trigger liquidation
-     */    
-    function addDepegCondition(IDepegCondition _condition) external onlyAdmin notLocked {
-        if (address(_condition) == address(0)) revert ZeroAddress();
-        depegConditions.push(_condition);
-    }
+    // NOTE: The checks repeat meaning a private function could save storage
+    // Repeated checks: MarketDoesNotExist, EpochNotExist, EpochExpired, EpochFinishedAlready - EpochNotStarted (in null and liq) and not in endEpoch
 
-    /** @notice Lockdown the system so no more conditions can be added 
-    */
-    function lockdownSystem() external onlyAdmin {
-        locked = true;
-    }
     /** @notice Trigger depeg event
      * @param _marketId Target market index
      * @param _epochId End of epoch set for market
-    */
-    function triggerDepeg(uint256 _marketId, uint256 _epochId) public {
-        address[2] memory vaults = vaultFactory.getVaults(_marketId);
-
-        if (vaults[0] == address(0) || vaults[1] == address(0))
-            revert MarketDoesNotExist(_marketId);
-
-        IVaultV2 premiumVault = IVaultV2(vaults[0]);
-        IVaultV2 collateralVault = IVaultV2(vaults[1]);
-
-        if (premiumVault.epochExists(_epochId) == false) revert EpochNotExist();
-
-        int256 price = priceProvider.getLatestPrice(premiumVault.token());
-        console.log("premiumVault");
-        console.log(address(premiumVault));
-        console.log(uint256(premiumVault.strike()));
-        console.log(uint256(price));
-        
-        
-        for (uint256 i = 0; i < depegConditions.length; i++) {
-            if (!depegConditions[i].checkDepegCondition( _marketId, _epochId)) {
-                revert NotMetDepegConditions(address(depegConditions[i]));
-            }
-        }
-        
-        
-        if (int256(premiumVault.strike()) <= price) ////x 
-            revert PriceNotAtStrikePrice(price); ////x 
-
-        (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
-            _epochId
-        );
-
-        if (uint256(epochStart) > block.timestamp) revert EpochNotStarted();
-
-        if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
-
-        //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.epochResolved(_epochId))
-            revert EpochFinishedAlready();
-
-        // check if epoch qualifies for null epoch
-        if (
-            premiumVault.totalAssets(_epochId) == 0 ||
-            collateralVault.totalAssets(_epochId) == 0
-        ) {
-            revert VaultZeroTVL();
-        }
+     */
+    function triggerLiquidation(uint256 _marketId, uint256 _epochId) public {
+        (
+            IVaultV2 premiumVault,
+            IVaultV2 collateralVault,
+            int256 price
+        ) = _checkLiquidationConditions(_marketId, _epochId);
 
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
@@ -133,26 +69,25 @@ contract ControllerGenericV2 {
             epochFee
         );
 
-        // avoid stack too deep error by avoiding local variables
-        // uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
-        // uint256 collateralTVLAfterFee = collateralTVL - collateralFee;
+        uint256 premiumTVLAfterFee = premiumTVL - premiumFee;
+        uint256 collateralTVLAfterFee = collateralTVL - collateralFee;
 
-        premiumVault.setClaimTVL(_epochId, collateralTVL - collateralFee);
-        collateralVault.setClaimTVL(_epochId, premiumTVL - premiumFee);
+        premiumVault.setClaimTVL(_epochId, collateralTVLAfterFee);
+        collateralVault.setClaimTVL(_epochId, premiumTVLAfterFee);
 
         // send fees to treasury and remaining TVL to respective counterparty vault
         // strike price reached so premium is entitled to collateralTVL - collateralFee
         premiumVault.sendTokens(_epochId, premiumFee, treasury);
         premiumVault.sendTokens(
             _epochId,
-            premiumTVL - premiumFee,
+            premiumTVLAfterFee,
             address(collateralVault)
         );
         // strike price is reached so collateral is still entitled to premiumTVL - premiumFee but looses collateralTVL
         collateralVault.sendTokens(_epochId, collateralFee, treasury);
         collateralVault.sendTokens(
             _epochId,
-            collateralTVL - collateralFee,
+            collateralTVLAfterFee,
             address(premiumVault)
         );
 
@@ -160,9 +95,9 @@ contract ControllerGenericV2 {
             _epochId,
             _marketId,
             VaultTVL(
-                premiumTVL - premiumFee,
+                premiumTVLAfterFee,
                 collateralTVL,
-                collateralTVL - collateralFee,
+                collateralTVLAfterFee,
                 premiumTVL
             ),
             true,
@@ -176,27 +111,10 @@ contract ControllerGenericV2 {
      * @param _epochId End of epoch set for market
      */
     function triggerEndEpoch(uint256 _marketId, uint256 _epochId) public {
-        address[2] memory vaults = vaultFactory.getVaults(_marketId);
-
-        if (vaults[0] == address(0) || vaults[1] == address(0))
-            revert MarketDoesNotExist(_marketId);
-
-        IVaultV2 premiumVault = IVaultV2(vaults[0]);
-        IVaultV2 collateralVault = IVaultV2(vaults[1]);
-
-        if (
-            premiumVault.epochExists(_epochId) == false ||
-            collateralVault.epochExists(_epochId) == false
-        ) revert EpochNotExist();
-
-        (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
-
-        if (block.timestamp <= uint256(epochEnd)) revert EpochNotExpired();
-
-        //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.epochResolved(_epochId))
-            revert EpochFinishedAlready();
+        (
+            IVaultV2 premiumVault,
+            IVaultV2 collateralVault
+        ) = _checkEndEpochConditions(_marketId, _epochId);
 
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
@@ -240,27 +158,10 @@ contract ControllerGenericV2 {
      * @param _epochId End of epoch set for market
      */
     function triggerNullEpoch(uint256 _marketId, uint256 _epochId) public {
-        address[2] memory vaults = vaultFactory.getVaults(_marketId);
-
-        if (vaults[0] == address(0) || vaults[1] == address(0))
-            revert MarketDoesNotExist(_marketId);
-
-        IVaultV2 premiumVault = IVaultV2(vaults[0]);
-        IVaultV2 collateralVault = IVaultV2(vaults[1]);
-
-        if (
-            premiumVault.epochExists(_epochId) == false ||
-            collateralVault.epochExists(_epochId) == false
-        ) revert EpochNotExist();
-
-        (uint40 epochStart, , ) = premiumVault.getEpochConfig(_epochId);
-
-        if (block.timestamp < uint256(epochStart)) revert EpochNotStarted();
-
-        //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.epochResolved(_epochId))
-            revert EpochFinishedAlready();
+        (
+            IVaultV2 premiumVault,
+            IVaultV2 collateralVault
+        ) = _checkNullEpochConditions(_marketId, _epochId);
 
         //set claim TVL to final TVL if total assets are 0
         if (premiumVault.totalAssets(_epochId) == 0) {
@@ -298,9 +199,114 @@ contract ControllerGenericV2 {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                INTERNAL
+    //////////////////////////////////////////////////////////////*/
+    function _checkLiquidationConditions(
+        uint256 _marketId,
+        uint256 _epochId
+    )
+        internal
+        view
+        returns (IVaultV2 premiumVault, IVaultV2 collateralVault, int256 price)
+    {
+        address[2] memory vaults = vaultFactory.getVaults(_marketId);
+
+        if (vaults[0] == address(0) || vaults[1] == address(0))
+            revert MarketDoesNotExist(_marketId);
+
+        premiumVault = IVaultV2(vaults[0]);
+        collateralVault = IVaultV2(vaults[1]);
+
+        if (!premiumVault.epochExists(_epochId)) revert EpochNotExist();
+
+        (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
+            _epochId
+        );
+
+        if (uint256(epochStart) > block.timestamp) revert EpochNotStarted();
+
+        if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
+
+        IConditionProvider conditionProvider = IConditionProvider(
+            vaultFactory.marketToOracle(_marketId)
+        );
+        if (!conditionProvider.conditionMet(premiumVault.strike(), _marketId))
+            revert ConditionNotMet();
+
+        price = IConditionProvider(vaultFactory.marketToOracle(_marketId))
+            .getLatestPrice(_marketId);
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
+            revert EpochFinishedAlready();
+
+        // check if epoch qualifies for null epoch
+        if (
+            premiumVault.totalAssets(_epochId) == 0 ||
+            collateralVault.totalAssets(_epochId) == 0
+        ) {
+            revert VaultZeroTVL();
+        }
+    }
+
+    function _checkEndEpochConditions(
+        uint256 _marketId,
+        uint256 _epochId
+    ) internal view returns (IVaultV2 premiumVault, IVaultV2 collateralVault) {
+        address[2] memory vaults = vaultFactory.getVaults(_marketId);
+
+        if (vaults[0] == address(0) || vaults[1] == address(0))
+            revert MarketDoesNotExist(_marketId);
+
+        premiumVault = IVaultV2(vaults[0]);
+        collateralVault = IVaultV2(vaults[1]);
+
+        if (
+            !premiumVault.epochExists(_epochId) ||
+            !collateralVault.epochExists(_epochId)
+        ) revert EpochNotExist();
+
+        (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
+
+        if (block.timestamp <= uint256(epochEnd)) revert EpochNotExpired();
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
+            revert EpochFinishedAlready();
+    }
+
+    function _checkNullEpochConditions(
+        uint256 _marketId,
+        uint256 _epochId
+    ) internal view returns (IVaultV2 premiumVault, IVaultV2 collateralVault) {
+        address[2] memory vaults = vaultFactory.getVaults(_marketId);
+
+        if (vaults[0] == address(0) || vaults[1] == address(0))
+            revert MarketDoesNotExist(_marketId);
+
+        premiumVault = IVaultV2(vaults[0]);
+        collateralVault = IVaultV2(vaults[1]);
+
+        if (
+            !premiumVault.epochExists(_epochId) ||
+            !collateralVault.epochExists(_epochId)
+        ) revert EpochNotExist();
+
+        (uint40 epochStart, , ) = premiumVault.getEpochConfig(_epochId);
+
+        if (block.timestamp < uint256(epochStart)) revert EpochNotStarted();
+
+        //require this function cannot be called twice in the same epoch for the same vault
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
+            revert EpochFinishedAlready();
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 GETTERS
     //////////////////////////////////////////////////////////////*/
-
 
     /** @notice Lookup target VaultFactory address
      * @dev need to find way to express typecasts in NatSpec
@@ -313,11 +319,10 @@ contract ControllerGenericV2 {
      * @param amount Amount of tokens to withdraw
      * @param fee Fee to be applied
      */
-    function calculateWithdrawalFeeValue(uint256 amount, uint256 fee)
-        public
-        pure
-        returns (uint256 feeValue)
-    {
+    function calculateWithdrawalFeeValue(
+        uint256 amount,
+        uint256 fee
+    ) public pure returns (uint256 feeValue) {
         // 0.5% = multiply by 10000 then divide by 50
         return amount.mulDivDown(fee, 10000);
     }
@@ -332,7 +337,6 @@ contract ControllerGenericV2 {
     error ZeroAddress();
     error EpochFinishedAlready();
     error PriceNotAtStrikePrice(int256 price);
-    error NotMetDepegConditions(address cond);
     error EpochNotStarted();
     error EpochExpired();
     error OraclePriceZero();
@@ -341,11 +345,13 @@ contract ControllerGenericV2 {
     error EpochNotExpired();
     error VaultNotZeroTVL();
     error VaultZeroTVL();
+    error ConditionNotMet();
+    error Unauthorized();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-
+    // TODO: The timestamps being emitted can be removed - the block the event was emitted in will have a timestamp
     /** @notice Resolves epoch when event is emitted
      * @param epochId market epoch ID
      * @param marketId market ID

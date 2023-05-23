@@ -1,29 +1,31 @@
 pragma solidity 0.8.17;
 
 import "./IDepegCondition.sol";
-import "./IPriceProvider.sol";
+import "./IConditionProvider.sol";
 import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import "forge-std/console.sol";
 
-
 contract PriceBasedDepegCondition is IDepegCondition {
-    IPriceProvider public priceProvider;
+    IConditionProvider public priceProvider;
     IVaultV2 public premiumVault;
     uint256 public epochId;
 
     constructor(address _priceProvider, address _premiumVault) {
-        priceProvider = IPriceProvider(_priceProvider);
+        priceProvider = IConditionProvider(_priceProvider);
         premiumVault = IVaultV2(_premiumVault);
     }
 
-    function checkDepegCondition(uint256 _marketId, uint256 _epochId) external view override returns (bool) {
+    function checkDepegCondition(
+        uint256 _marketId,
+        uint256 _epochId
+    ) external view override returns (bool) {
         console.log(_epochId);
         if (!premiumVault.epochExists(_epochId)) {
             revert EpochNotExist();
             //return false;  //TODO -- decide between reverts and bools here (benifits / drawbacks)
         }
 
-        int256 price = priceProvider.getLatestPrice(premiumVault.token());
+        int256 price = priceProvider.getLatestPrice(_marketId);
         console.log("premiumVault 2");
         console.log(address(premiumVault));
         console.log(uint256(premiumVault.strike()));
@@ -36,7 +38,6 @@ contract PriceBasedDepegCondition is IDepegCondition {
         return true;
     }
 
-    
     // Custom errors
     error PriceNotAtStrikePrice(int256 price);
     error EpochNotExist();
