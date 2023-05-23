@@ -9,7 +9,7 @@ import "./Helper.sol";
 contract DeployScript is Script, HelperConfig {
 
     function setupY2K() public{
-        ConfigAddresses memory addresses = getConfigAddresses(true); //true if test env
+        ConfigAddresses memory addresses = getConfigAddresses(false); //true if test env
         contractToAddresses(addresses);
         setVariables();
 
