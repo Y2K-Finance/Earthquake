@@ -10,6 +10,7 @@ import "../../../src/v2/VaultFactoryV2.sol";
 import "../../../src/v2/TimeLock.sol";
 
 contract ControllerPeggedAssetV2Test is Helper {
+    using stdStorage for StdStorage;
     VaultV2 vault;
     VaultV2 counterpartyVault;
     ControllerPeggedAssetV2 controller;
@@ -37,8 +38,7 @@ contract ControllerPeggedAssetV2Test is Helper {
 
         controller = new ControllerPeggedAssetV2(
            address(factory),
-           address(0x1),
-            TREASURY
+           address(new Sequencer())
         );
 
         UNDERLYING = address(new MintableToken("UnderLyingToken", "utkn"));
@@ -71,8 +71,8 @@ contract ControllerPeggedAssetV2Test is Helper {
             )
         );
 
-        begin = uint40(block.timestamp);
-        end = uint40(block.timestamp + 1 days);
+        begin = uint40(block.timestamp+ 30 days);
+        end = uint40(block.timestamp + 35 days);
         withdrawalFee = 10;
 
         (epochId, ) = factory.createEpoch(
@@ -89,6 +89,16 @@ contract ControllerPeggedAssetV2Test is Helper {
    function testTriggerDepeg() public {
         // TODO
         // revert cases
+        stdstore
+            .target(address(factory))
+            .sig("marketToOracle(uint256)")
+            .with_key(marketId)
+            .checked_write(address(this)); // set oracle with faulty updated at time
+
+        vm.warp(begin + 1);
+        
+        vm.expectRevert(ControllerPeggedAssetV2.PriceOutdated.selector);
+        controller.triggerDepeg(marketId, epochId);
 
         // success case
     }
@@ -108,4 +118,19 @@ contract ControllerPeggedAssetV2Test is Helper {
         // success case
     }
 
+    function latestRoundData() public view returns (uint80, int256, uint256, uint256, uint80) {
+        return (100, int256(STRIKE) - int256(1), 0, block.timestamp - 3 days, 100);
+    }
+
+    function decimals() public pure returns (uint8) {
+        return 18;
+    }
+
+}
+
+
+contract Sequencer is Helper {
+    function latestRoundData() public view returns (uint80, int256, uint256, uint256, uint80) {
+        return (100, 0, block.timestamp - 1 days, block.timestamp, 100);
+    }
 }

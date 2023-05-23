@@ -23,8 +23,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
         vm.warp(120000);
         MintableToken(UNDERLYING).mint(address(this));
@@ -37,14 +36,12 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         vault.setCounterPartyVault(address(counterpartyVault));
 
         MintableToken(UNDERLYING).mint(USER);
-
     }
 
     function testVaultCreation() public {
@@ -58,8 +55,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         vm.expectRevert(VaultV2.AddressZero.selector);
@@ -71,8 +67,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             address(0), // wrong token
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         vm.expectRevert(VaultV2.AddressZero.selector);
@@ -84,21 +79,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            address(0), // wrong controller
-            TREASURY
-        );
-
-        vm.expectRevert(VaultV2.AddressZero.selector);
-        new VaultV2(
-            false,
-            UNDERLYING,
-            "Vault",
-            "v",
-            "randomURI",
-            TOKEN,
-            STRIKE,
-            controller,
-            address(0) // wrong treasury
+            address(0) // wrong controller
         );
 
         // test success case
@@ -110,8 +91,7 @@ contract VaultV2Test is Helper {
             "randomURI",
             TOKEN,
             STRIKE,
-            controller,
-            TREASURY
+            controller
         );
 
         assertEq(address(vault2.asset()), UNDERLYING);
@@ -120,7 +100,6 @@ contract VaultV2Test is Helper {
         assertEq(vault2.token(), TOKEN);
         assertEq(vault2.strike(), STRIKE);
         assertEq(vault2.controller(), controller);
-        assertTrue(vault2.whitelistedAddresses(TREASURY));
         assertEq(vault2.factory(), address(this));
     }
 
@@ -133,7 +112,7 @@ contract VaultV2Test is Helper {
         );
         vault.setEpoch(1, 1, 1);
         vm.stopPrank();
-        
+
         // assumes that factory is set to address(this)
         vm.expectRevert(VaultV2.InvalidEpoch.selector);
         vault.setEpoch(0, 0, 0);
@@ -197,9 +176,9 @@ contract VaultV2Test is Helper {
         MintableToken(UNDERLYING).allowance(USER, address(vault));
 
         // deposit tokens
-         vault.deposit(epochId, 10 ether, USER);
+        vault.deposit(epochId, 10 ether, USER);
         // check balances
-        assertEq(vault.balanceOf(USER ,epochId), 10 ether);
+        assertEq(vault.balanceOf(USER, epochId), 10 ether);
         vm.stopPrank();
         // check deposit after epoch started
     }
@@ -232,7 +211,7 @@ contract VaultV2Test is Helper {
         // deposit tokens
         vault.deposit(epochId, 10 ether, USER);
         // check balances
-        assertEq(vault.balanceOf(USER ,epochId), 10 ether);
+        assertEq(vault.balanceOf(USER, epochId), 10 ether);
 
         vm.startPrank(controller);
         // resolve epoch
@@ -243,7 +222,7 @@ contract VaultV2Test is Helper {
         // withdraw tokens
         vault.withdraw(epochId, 10 ether, USER, USER);
         // check balances
-        assertEq(vault.balanceOf(USER ,epochId), 0);
+        assertEq(vault.balanceOf(USER, epochId), 0);
         vm.stopPrank();
     }
 
@@ -257,10 +236,13 @@ contract VaultV2Test is Helper {
         helperSetEpoch(begin, end, epochId);
 
         vm.startPrank(NOTADMIN);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotController.selector, NOTADMIN)
-            );
-            vault.resolveEpoch(epochId);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaultV2.AddressNotController.selector,
+                NOTADMIN
+            )
+        );
+        vault.resolveEpoch(epochId);
         vm.stopPrank();
 
         vm.startPrank(controller);
@@ -292,15 +274,14 @@ contract VaultV2Test is Helper {
         // end epoch after epoch started to simulate strike price met
         vm.warp(begin + 1);
         vm.startPrank(controller);
-          vault.resolveEpoch(epochId);
+        vault.resolveEpoch(epochId);
         vm.stopPrank();
         assertTrue(vault.epochResolved(epochId));
         // check final TVL
         assertEq(vault.finalTVL(epochId), 10 ether);
 
-
         // test epoch resolvement after epoch ended
-        // create new epoch 
+        // create new epoch
         begin = uint40(block.timestamp + 1 days);
         end = uint40(block.timestamp + 2 days);
         epochId = 3;
@@ -311,7 +292,7 @@ contract VaultV2Test is Helper {
         // end epoch after epoch ended
         vm.warp(end + 1);
         vm.startPrank(controller);
-            vault.resolveEpoch(epochId);
+        vault.resolveEpoch(epochId);
         vm.stopPrank();
         assertTrue(vault.epochResolved(epochId));
         // check final TVL
@@ -337,20 +318,22 @@ contract VaultV2Test is Helper {
         vm.stopPrank();
 
         vm.startPrank(NOTADMIN);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotController.selector, NOTADMIN)
-            );
-            vault.setClaimTVL(epochId, 10 ether);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaultV2.AddressNotController.selector,
+                NOTADMIN
+            )
+        );
+        vault.setClaimTVL(epochId, 10 ether);
         vm.stopPrank();
 
         vm.startPrank(controller);
         vm.warp(begin + 1);
         vm.expectRevert(VaultV2.EpochDoesNotExist.selector);
-        vault.setClaimTVL(wrongEpochId,  10 ether);
+        vault.setClaimTVL(wrongEpochId, 10 ether);
 
         vm.expectRevert(VaultV2.EpochNotResolved.selector);
-        vault.setClaimTVL(epochId,  10 ether);
-
+        vault.setClaimTVL(epochId, 10 ether);
 
         /*vm.warp(begin + 1);
         // test claim TVL is less than counterparty tvl
@@ -362,7 +345,6 @@ contract VaultV2Test is Helper {
         vault.setClaimTVL(epochId,  11 ether);*/
 
         vm.stopPrank();
-
 
         // test success case
         // start new epoch
@@ -381,7 +363,7 @@ contract VaultV2Test is Helper {
         vm.warp(begin + 1);
         vault.resolveEpoch(epochId);
         counterpartyVault.resolveEpoch(epochId);
-        vault.setClaimTVL(epochId,  10 ether);
+        vault.setClaimTVL(epochId, 10 ether);
         vm.stopPrank();
         assertEq(vault.claimTVL(epochId), 10 ether);
     }
@@ -403,27 +385,35 @@ contract VaultV2Test is Helper {
         vm.stopPrank();
 
         vm.startPrank(NOTADMIN);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotController.selector, NOTADMIN)
-            );
-            vault.sendTokens(epochId, 10 ether, address(counterpartyVault));    
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaultV2.AddressNotController.selector,
+                NOTADMIN
+            )
+        );
+        vault.sendTokens(epochId, 10 ether, address(counterpartyVault));
         vm.stopPrank();
 
         vm.startPrank(controller);
         vm.expectRevert(VaultV2.EpochDoesNotExist.selector);
-        vault.sendTokens(wrongEpochId,  10 ether, address(counterpartyVault));
+        vault.sendTokens(wrongEpochId, 10 ether, address(counterpartyVault));
 
         vm.expectRevert(VaultV2.EpochNotResolved.selector);
-        vault.sendTokens(epochId,  10 ether, address(counterpartyVault));
+        vault.sendTokens(epochId, 10 ether, address(counterpartyVault));
 
         vm.warp(begin + 1);
         vault.resolveEpoch(epochId);
 
         vm.expectRevert(VaultV2.AmountExceedsTVL.selector);
-        vault.sendTokens(epochId,  11 ether, address(counterpartyVault));
+        vault.sendTokens(epochId, 11 ether, address(counterpartyVault));
 
-        vm.expectRevert(abi.encodeWithSelector(VaultV2.DestinationNotAuthorized.selector, NOTADMIN));
-        vault.sendTokens(epochId,  10 ether, NOTADMIN);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaultV2.DestinationNotAuthorized.selector,
+                NOTADMIN
+            )
+        );
+        vault.sendTokens(epochId, 10 ether, NOTADMIN);
 
         vm.stopPrank();
 
@@ -436,36 +426,39 @@ contract VaultV2Test is Helper {
         // deposit tokens before epoch starts
         MintableToken(UNDERLYING).approve(address(vault), 10 ether);
         vault.deposit(epochId, 10 ether, USER);
-        
+
         vm.startPrank(controller);
         vm.warp(begin + 1);
         vault.resolveEpoch(epochId);
-        uint256 balanceBefore = MintableToken(UNDERLYING).balanceOf(address(counterpartyVault));
-        console.log("whitelist" , vault.whitelistedAddresses(TREASURY));
-        // send tokens to treasury and counterparty 
-        vault.sendTokens(epochId,  1 ether, TREASURY);
-        // checkou epochAccounting 
+        uint256 balanceBefore = MintableToken(UNDERLYING).balanceOf(
+            address(counterpartyVault)
+        );
+        console.log("whitelist", vault.whitelistedAddresses(TREASURY));
+        // send tokens to treasury and counterparty
+        vault.sendTokens(epochId, 1 ether, TREASURY);
+        // checkou epochAccounting
         assertEq(vault.epochAccounting(epochId), 1 ether);
-        vault.sendTokens(epochId,  9 ether, address(counterpartyVault));
+        vault.sendTokens(epochId, 9 ether, address(counterpartyVault));
         // checkou epochAccounting
         assertEq(vault.epochAccounting(epochId), 10 ether);
-        uint256 balanceAfter = MintableToken(UNDERLYING).balanceOf(address(counterpartyVault));
+        uint256 balanceAfter = MintableToken(UNDERLYING).balanceOf(
+            address(counterpartyVault)
+        );
         assertEq(balanceAfter > balanceBefore, true);
         vm.stopPrank();
     }
 
     function setEpochNull() public {
         // test revert cases
-        
         // test success case
     }
 
     function testWhiteListAddress() public {
         // test revert cases
         vm.startPrank(NOTADMIN);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotFactory.selector, NOTADMIN)
-            );
+        vm.expectRevert(
+            abi.encodeWithSelector(VaultV2.AddressNotFactory.selector, NOTADMIN)
+        );
         vault.whiteListAddress(NOTADMIN);
         vm.stopPrank();
 
@@ -476,22 +469,21 @@ contract VaultV2Test is Helper {
         address whitelistedDestination = address(0x111);
         // expect address(this) to be factory
         vault.whiteListAddress(whitelistedDestination);
-        assertEq(vault.whitelistedAddresses(whitelistedDestination), true); 
+        assertEq(vault.whitelistedAddresses(whitelistedDestination), true);
 
         vault.whiteListAddress(whitelistedDestination);
         assertEq(vault.whitelistedAddresses(whitelistedDestination), false);
-
     }
 
     function testChangeController() public {
         // test revert cases
         vm.startPrank(NOTADMIN);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotFactory.selector, NOTADMIN)
-            );
+        vm.expectRevert(
+            abi.encodeWithSelector(VaultV2.AddressNotFactory.selector, NOTADMIN)
+        );
         vault.changeController(NOTADMIN);
         vm.stopPrank();
-    
+
         vm.expectRevert(VaultV2.AddressZero.selector);
         vault.changeController(address(0));
 
@@ -504,9 +496,12 @@ contract VaultV2Test is Helper {
 
         // test old controller can't call functions
         vm.startPrank(controller);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotController.selector, controller)
-            );
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaultV2.AddressNotController.selector,
+                controller
+            )
+        );
         vault.resolveEpoch(1);
         vm.stopPrank();
     }
@@ -514,9 +509,9 @@ contract VaultV2Test is Helper {
     function testSetCounterPartyVault() public {
         // test revert cases
         vm.startPrank(NOTADMIN);
-            vm.expectRevert(
-                abi.encodeWithSelector(VaultV2.AddressNotFactory.selector, NOTADMIN)
-            );
+        vm.expectRevert(
+            abi.encodeWithSelector(VaultV2.AddressNotFactory.selector, NOTADMIN)
+        );
         vault.setCounterPartyVault(NOTADMIN);
         vm.stopPrank();
 
@@ -529,7 +524,6 @@ contract VaultV2Test is Helper {
         vault.setCounterPartyVault(newCounterPartyVault);
 
         assertEq(vault.counterPartyVault(), newCounterPartyVault);
-
     }
 
     function helperSetEpoch(
@@ -539,5 +533,10 @@ contract VaultV2Test is Helper {
     ) public {
         vault.setEpoch(_epochBegin, _epochEnd, _epochId);
         counterpartyVault.setEpoch(_epochBegin, _epochEnd, _epochId);
+    }
+
+    // deployer contract acts as factory and must emulate VaultFactoryV2.treasury()
+    function treasury() public pure returns (address) {
+        return TREASURY;
     }
 }

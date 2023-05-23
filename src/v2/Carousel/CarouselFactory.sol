@@ -55,13 +55,23 @@ contract CarouselFactory is VaultFactoryV2 {
         if (_marketCalldata.oracle == address(0)) revert AddressZero();
         if (_marketCalldata.underlyingAsset == address(0)) revert AddressZero();
 
-        if (tokenToOracle[_marketCalldata.token] == address(0)) {
-            tokenToOracle[_marketCalldata.token] = _marketCalldata.oracle;
-        }
+        marketId = getMarketId(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
 
-        marketId = getMarketId(_marketCalldata.token, _marketCalldata.strike);
         if (marketIdToVaults[marketId][0] != address(0))
             revert MarketAlreadyExists();
+
+        marketIdInfo[marketId] = MarketInfo(
+            _marketCalldata.token,
+            _marketCalldata.strike,
+            _marketCalldata.underlyingAsset
+        );
+
+        // set oracle for the market
+        marketToOracle[marketId] = _marketCalldata.oracle;
 
         //y2kUSDC_99*PREMIUM
         premium = CarouselCreator.createCarousel(
@@ -77,7 +87,8 @@ contract CarouselFactory is VaultFactoryV2 {
                 treasury,
                 address(emissionsToken),
                 _marketCalldata.relayerFee,
-                _marketCalldata.depositFee
+                _marketCalldata.depositFee,
+                _marketCalldata.minQueueDeposit
             )
         );
 
@@ -95,7 +106,8 @@ contract CarouselFactory is VaultFactoryV2 {
                 treasury,
                 address(emissionsToken),
                 _marketCalldata.relayerFee,
-                _marketCalldata.depositFee
+                _marketCalldata.depositFee,
+                _marketCalldata.minQueueDeposit
             )
         );
 
@@ -119,12 +131,24 @@ contract CarouselFactory is VaultFactoryV2 {
         return (premium, collateral, marketId);
     }
 
+    function createNewMarket(MarketConfigurationCalldata memory)
+        external
+        override
+        returns (
+            address,
+            address,
+            uint256
+        )
+    {
+        revert();
+    }
+
     /** @notice Function to create a new epoch with emissions
     @param _marketId uint256 of the marketId
     @param _epochBegin uint40 of the epoch begin
     @param _epochEnd uint40 of the epoch end
     @param _withdrawalFee uint16 of the withdrawal fee
-    @param _permiumEmissions uint256 of the emissions for the premium vault
+    @param _premiumEmissions uint256 of the emissions for the premium vault
     @param _collatEmissions uint256 of the emissions for the collateral vault
     @return epochId uint256 of the epochId
     @return vaults address[2] of the vaults
@@ -134,22 +158,43 @@ contract CarouselFactory is VaultFactoryV2 {
         uint40 _epochBegin,
         uint40 _epochEnd,
         uint16 _withdrawalFee,
-        uint256 _permiumEmissions,
+        uint256 _premiumEmissions,
         uint256 _collatEmissions
     ) public returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
-        (epochId, vaults) = createEpoch(
+        (epochId, vaults) = _createEpoch(
             _marketId,
             _epochBegin,
             _epochEnd,
             _withdrawalFee
         );
 
-        emissionsToken.safeTransferFrom(treasury, vaults[0], _permiumEmissions);
-        ICarousel(vaults[0]).setEmissions(epochId, _permiumEmissions);
+        emissionsToken.safeTransferFrom(treasury, vaults[0], _premiumEmissions);
+        ICarousel(vaults[0]).setEmissions(epochId, _premiumEmissions);
 
         emissionsToken.safeTransferFrom(treasury, vaults[1], _collatEmissions);
         ICarousel(vaults[1]).setEmissions(epochId, _collatEmissions);
+
+        emit EpochCreatedWithEmissions(
+            epochId,
+            _marketId,
+            _epochBegin,
+            _epochEnd,
+            _withdrawalFee,
+            _premiumEmissions,
+            _collatEmissions
+        );
+    }
+
+    // to prevent the creation of epochs without emissions
+    // this function is not used
+    function createEpoch(
+        uint256, /*_marketId*/
+        uint40, /*_epochBegin*/
+        uint40, /*_epochEnd*/
+        uint16 /*_withdrawalFee*/
+    ) public override returns (uint256, address[2] memory) {
+        revert();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -168,10 +213,15 @@ contract CarouselFactory is VaultFactoryV2 {
 
         address[2] memory vaults = marketIdToVaults[_marketIndex];
         if (vaults[0] == address(0)) revert MarketDoesNotExist(_marketIndex);
-        ICarousel insr = ICarousel(vaults[0]);
-        ICarousel risk = ICarousel(vaults[1]);
-        insr.changeRelayerFee(_relayerFee);
-        risk.changeRelayerFee(_relayerFee);
+
+        ICarousel premium = ICarousel(vaults[0]);
+        ICarousel collat = ICarousel(vaults[1]);
+
+        if (premium.getDepositQueueLength() > 0) revert QueueNotEmpty();
+        if (collat.getDepositQueueLength() > 0) revert QueueNotEmpty();
+
+        premium.changeRelayerFee(_relayerFee);
+        collat.changeRelayerFee(_relayerFee);
 
         emit ChangedRelayerFee(_relayerFee, _marketIndex);
     }
@@ -198,6 +248,14 @@ contract CarouselFactory is VaultFactoryV2 {
         );
     }
 
+    // admin function to cleanup rollover queue by passing in array of addresses and vault address
+    function cleanupRolloverQueue(address[] memory _addresses, address _vault)
+        public
+        onlyTimeLocker
+    {
+        ICarousel(_vault).cleanupRolloverQueue(_addresses);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
     //////////////////////////////////////////////////////////////*/
@@ -212,6 +270,7 @@ contract CarouselFactory is VaultFactoryV2 {
         address controller;
         uint256 relayerFee;
         uint256 depositFee;
+        uint256 minQueueDeposit;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -221,6 +280,7 @@ contract CarouselFactory is VaultFactoryV2 {
     error InvalidRelayerFee();
     error InvalidVaultIndex();
     error InvalidDepositFee();
+    error QueueNotEmpty();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -234,4 +294,14 @@ contract CarouselFactory is VaultFactoryV2 {
     );
 
     event ChangedRelayerFee(uint256 relayerFee, uint256 marketIndex);
+
+    event EpochCreatedWithEmissions(
+        uint256 epochId,
+        uint256 marketId,
+        uint40 epochBegin,
+        uint40 epochEnd,
+        uint16 withdrawalFee,
+        uint256 premiumEmissions,
+        uint256 collateralEmissions
+    );
 }

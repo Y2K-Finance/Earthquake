@@ -1,0 +1,38 @@
+
+{
+
+    "variables":{
+        "newMarkets": false,
+        "amountOfNewMarkets": 0,
+        "epochs": true,
+        "amountOfNewEpochs": 2,
+        "totalAmountOfEmittedTokens": 0
+    },
+ 
+    "epochs": [
+        {
+            "name": "y2kUSDC_999*",
+            "strikePrice": 999900000000000000,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684490400,
+            "epochEnd": 1684573200,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
+        },
+        {
+            "name": "y2kMIM_950*",
+            "strikePrice": 950000000000000000,
+            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
+            "epochBegin": 1684490400,
+            "epochEnd": 1684573200,
+            "collatEmissions": 100000000000000000,
+            "premiumEmissions": 1000000000000000000,
+            "withdrawalFee": 50
+        }
+    ],
+    "markets": [
+    ]
+}
