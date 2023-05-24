@@ -91,6 +91,7 @@ contract ControllerGenericV2 {
             address(premiumVault)
         );
 
+        // TODO: timestamp removal?
         emit EpochResolved(
             _epochId,
             _marketId,
@@ -143,6 +144,7 @@ contract ControllerGenericV2 {
             address(collateralVault)
         );
 
+        // TODO: timestamp removal?
         emit EpochResolved(
             _epochId,
             _marketId,
@@ -185,6 +187,7 @@ contract ControllerGenericV2 {
             premiumVault.setEpochNull(_epochId);
         } else revert VaultNotZeroTVL();
 
+        // TODO: timestamp removal?
         emit NullEpoch(
             _epochId,
             _marketId,
@@ -227,15 +230,6 @@ contract ControllerGenericV2 {
 
         if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
 
-        IConditionProvider conditionProvider = IConditionProvider(
-            vaultFactory.marketToOracle(_marketId)
-        );
-        if (!conditionProvider.conditionMet(premiumVault.strike(), _marketId))
-            revert ConditionNotMet();
-
-        price = IConditionProvider(vaultFactory.marketToOracle(_marketId))
-            .getLatestPrice(_marketId);
-
         //require this function cannot be called twice in the same epoch for the same vault
         if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
         if (collateralVault.epochResolved(_epochId))
@@ -248,6 +242,15 @@ contract ControllerGenericV2 {
         ) {
             revert VaultZeroTVL();
         }
+
+        address providerAddress = vaultFactory.marketToOracle(_marketId);
+        IConditionProvider conditionProvider = IConditionProvider(
+            providerAddress
+        );
+        if (!conditionProvider.conditionMet(premiumVault.strike(), _marketId))
+            revert ConditionNotMet();
+
+        price = IConditionProvider(providerAddress).getLatestPrice(_marketId);
     }
 
     function _checkEndEpochConditions(
@@ -332,15 +335,10 @@ contract ControllerGenericV2 {
     //////////////////////////////////////////////////////////////*/
 
     error MarketDoesNotExist(uint256 marketId);
-    error SequencerDown();
-    error GracePeriodNotOver();
     error ZeroAddress();
     error EpochFinishedAlready();
-    error PriceNotAtStrikePrice(int256 price);
     error EpochNotStarted();
     error EpochExpired();
-    error OraclePriceZero();
-    error RoundIDOutdated();
     error EpochNotExist();
     error EpochNotExpired();
     error VaultNotZeroTVL();
@@ -351,7 +349,6 @@ contract ControllerGenericV2 {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
-    // TODO: The timestamps being emitted can be removed - the block the event was emitted in will have a timestamp
     /** @notice Resolves epoch when event is emitted
      * @param epochId market epoch ID
      * @param marketId market ID
@@ -360,6 +357,7 @@ contract ControllerGenericV2 {
      * @param time time
      * @param depegPrice Price that triggered depeg
      */
+    // TODO: The timestamps being emitted can be removed - the block the event was emitted in will have a timestamp
     event EpochResolved(
         uint256 indexed epochId,
         uint256 indexed marketId,
@@ -375,6 +373,7 @@ contract ControllerGenericV2 {
      * @param tvl TVL
      * @param time timestamp
      */
+    // TODO: The timestamps being emitted can be removed - the block the event was emitted in will have a timestamp
     event NullEpoch(
         uint256 indexed epochId,
         uint256 indexed marketId,

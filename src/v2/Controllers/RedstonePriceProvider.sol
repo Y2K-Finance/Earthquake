@@ -22,9 +22,10 @@ import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
 
 contract RedstonePriceProvider is IConditionProvider {
     IVaultFactoryV2 public immutable vaultFactory;
-    IPriceFeedAdapter public _priceFeedAdapter;
+    IPriceFeedAdapter public priceFeedAdapter;
 
     mapping(uint256 => bytes32) public marketToSymbol;
+    mapping(uint256 => uint256) public marketToCondition;
 
     event MarketSymbolStored(address token, uint256 marketId, string symbol);
 
@@ -32,23 +33,30 @@ contract RedstonePriceProvider is IConditionProvider {
         if (_factory == address(0)) revert ZeroAddress();
         if (_priceFeed == address(0)) revert ZeroAddress();
         vaultFactory = IVaultFactoryV2(_factory);
-        _priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
+        priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
     }
 
     // NOTE: This needs to be gated with an auth check
     // TODO: Do we need to check if the symbol is set? How likely is it to overwrite?
-    function storeSymbol(address _token, uint256 _marketId) public {
-        if (marketToSymbol[_marketId] != bytes32(0)) revert SymbolAlreadySet();
+    function storeMarket(
+        address _token,
+        uint256 _marketId,
+        uint256 _condition
+    ) public {
+        // NOTE: No need to check if condition is set i.e. marketToCondition[_marketId] != 0 as if symol is set then condition will be
+        if (_condition == 0 || _condition > 3) revert InvalidInput();
         if (_token == address(0)) revert ZeroAddress();
+        if (marketToSymbol[_marketId] != bytes32(0)) revert SymbolAlreadySet();
 
         string memory symbol = ERC20(_token).symbol();
         if (bytes(symbol).length == 0) revert InvalidInput();
 
         marketToSymbol[_marketId] = stringToBytes32(symbol);
+        marketToCondition[_marketId] = _condition;
         emit MarketSymbolStored(_token, _marketId, symbol);
     }
 
-    // TODO: Core logic should be to query the getValueForDataFeed(bytes32(“VST”)) on RedStoneVSTPriceFeedAdapter
+    // NOTE: Core logic is querying getValueForDataFeed(bytes32(“VST”)) on RedStoneVSTPriceFeedAdapter
     function getLatestPrice(
         uint256 _marketId
     ) public view virtual returns (int256) {
@@ -56,15 +64,26 @@ contract RedstonePriceProvider is IConditionProvider {
         if (symbol == bytes32(0)) revert SymbolNotSet();
 
         // NOTE: The feed address will support a list of dataFeedIds - in theory if symbol exists then the admin confirms dataFeedId exists
-        return int256(_priceFeedAdapter.getValueForDataFeed(symbol));
+        return int256(priceFeedAdapter.getValueForDataFeed(symbol));
     }
 
-    // TODO: What if want to check less than or equal to?
+    // TODO: Will hacks return 0 or 1 in latestPrice check? For condition 3
     function conditionMet(
         uint256 _strike,
         uint256 _marketId
     ) public view virtual returns (bool) {
-        return int256(_strike) > getLatestPrice(_marketId);
+        uint256 condition = marketToCondition[_marketId];
+        // TODO: Test this condition being met and not met
+        if (condition == 1) {
+            return int256(_strike) > getLatestPrice(_marketId);
+            // TODO: Test this condition being met and not met
+        } else if (condition == 2) {
+            return int256(_strike) < getLatestPrice(_marketId);
+            // TODO: Test this condition being met and not met
+        } else if (condition == 3) {
+            return int256(_strike) == getLatestPrice(_marketId);
+            // TODO: test this revert
+        } else revert ConditionNotSet();
     }
 
     function getLatestRawDecimals(
@@ -85,23 +104,11 @@ contract RedstonePriceProvider is IConditionProvider {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
-
-    error MarketDoesNotExist(uint256 marketId);
-    error SequencerDown();
-    error GracePeriodNotOver();
     error ZeroAddress();
-    error EpochFinishedAlready();
-    error PriceNotAtStrikePrice(int256 price);
-    error EpochNotStarted();
-    error EpochExpired();
-    error OraclePriceZero();
-    error RoundIDOutdated();
-    error EpochNotExist();
-    error EpochNotExpired();
-    error VaultNotZeroTVL();
     error InvalidInput();
     error SymbolNotSet();
     error SymbolAlreadySet();
-    error VaultZeroTVL();
+    error ConditionNotSet();
+    error ConditionAlreadySet();
     error FeedAlreadySet();
 }
