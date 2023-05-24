@@ -27,7 +27,12 @@ contract RedstonePriceProvider is IConditionProvider {
     mapping(uint256 => bytes32) public marketToSymbol;
     mapping(uint256 => uint256) public marketToCondition;
 
-    event MarketSymbolStored(address token, uint256 marketId, string symbol);
+    event MarketStored(
+        address token,
+        uint256 marketId,
+        string symbol,
+        uint256 condition
+    );
 
     constructor(address _factory, address _priceFeed) {
         if (_factory == address(0)) revert ZeroAddress();
@@ -36,8 +41,7 @@ contract RedstonePriceProvider is IConditionProvider {
         priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
     }
 
-    // NOTE: This needs to be gated with an auth check
-    // TODO: Do we need to check if the symbol is set? How likely is it to overwrite?
+    // TODO: Add auth check for ... ?
     function storeMarket(
         address _token,
         uint256 _marketId,
@@ -46,6 +50,7 @@ contract RedstonePriceProvider is IConditionProvider {
         // NOTE: No need to check if condition is set i.e. marketToCondition[_marketId] != 0 as if symol is set then condition will be
         if (_condition == 0 || _condition > 3) revert InvalidInput();
         if (_token == address(0)) revert ZeroAddress();
+        // TODO: Remove this check ???
         if (marketToSymbol[_marketId] != bytes32(0)) revert SymbolAlreadySet();
 
         string memory symbol = ERC20(_token).symbol();
@@ -53,7 +58,7 @@ contract RedstonePriceProvider is IConditionProvider {
 
         marketToSymbol[_marketId] = stringToBytes32(symbol);
         marketToCondition[_marketId] = _condition;
-        emit MarketSymbolStored(_token, _marketId, symbol);
+        emit MarketStored(_token, _marketId, symbol, _condition);
     }
 
     // NOTE: Core logic is querying getValueForDataFeed(bytes32(“VST”)) on RedStoneVSTPriceFeedAdapter
@@ -67,29 +72,18 @@ contract RedstonePriceProvider is IConditionProvider {
         return int256(priceFeedAdapter.getValueForDataFeed(symbol));
     }
 
-    // TODO: Will hacks return 0 or 1 in latestPrice check? For condition 3
     function conditionMet(
         uint256 _strike,
         uint256 _marketId
     ) public view virtual returns (bool) {
         uint256 condition = marketToCondition[_marketId];
-        // TODO: Test this condition being met and not met
         if (condition == 1) {
             return int256(_strike) > getLatestPrice(_marketId);
-            // TODO: Test this condition being met and not met
         } else if (condition == 2) {
             return int256(_strike) < getLatestPrice(_marketId);
-            // TODO: Test this condition being met and not met
         } else if (condition == 3) {
             return int256(_strike) == getLatestPrice(_marketId);
-            // TODO: test this revert
         } else revert ConditionNotSet();
-    }
-
-    function getLatestRawDecimals(
-        address _token
-    ) public view virtual returns (uint256) {
-        return ERC20(_token).decimals();
     }
 
     function stringToBytes32(

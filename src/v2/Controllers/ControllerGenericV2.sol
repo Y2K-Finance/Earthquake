@@ -17,16 +17,9 @@ import {console} from "forge-std/console.sol";
 
 contract ControllerGenericV2 {
     using FixedPointMathLib for uint256;
-    // TODO: Do we want getters for these values?
     IVaultFactoryV2 public immutable vaultFactory;
     address public immutable treasury;
     address public admin;
-
-    // TODO: Should add admin management - where should this be used?
-    modifier onlyAdmin() {
-        if (msg.sender != admin) revert Unauthorized();
-        _;
-    }
 
     // NOTE: not clear what this is referring - was next to admin
     // So we can add depegs, (which could have circular dependencies, i.e., may need to read ControllerGenericV2 in their constructor)

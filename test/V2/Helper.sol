@@ -59,6 +59,29 @@ contract Helper is Test {
     address public treasuryTask = 0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A;
 
     uint256 public falseId = 9999999;
+
+    event MarketStored(
+        address token,
+        uint256 marketId,
+        string symbol,
+        uint256 condition
+    );
+    event MarketStored(address token, uint256 marketId, uint256 condition);
+    event PriceFeedStored(address priceFeed, uint256 marketId);
+    event EpochResolved(
+        uint256 indexed epochId,
+        uint256 indexed marketId,
+        ControllerGenericV2.VaultTVL tvl,
+        bool strikeMet,
+        uint256 time,
+        int256 depegPrice
+    );
+    event NullEpoch(
+        uint256 indexed epochId,
+        uint256 indexed marketId,
+        ControllerGenericV2.VaultTVL tvl,
+        uint256 time
+    );
 }
 
 abstract contract Config is Helper {
@@ -67,6 +90,7 @@ abstract contract Config is Helper {
     VaultFactoryV2 public factory;
 
     RedstoneMockPriceProvider public redstoneMockProvider;
+    ChainlinkPriceProvider public chainlinkPriceProvider;
     ControllerGenericV2 public controller;
 
     address public premium;
@@ -74,6 +98,8 @@ abstract contract Config is Helper {
     address public oracle;
     address public depegPremium;
     address public depegCollateral;
+    address public depegPremiumChainlink;
+    address public depegCollateralChainlink;
 
     uint256 public marketId;
     uint256 public strike;
@@ -81,6 +107,10 @@ abstract contract Config is Helper {
     uint256 public depegMarketId;
     uint256 public depegStrike;
     uint256 public depegEpochId;
+    uint256 public depegMarketIdChainlink;
+    uint256 public depegStrikeChainlink;
+    uint256 public depegEpochIdChainlink;
+
     uint256 public premiumShareValue;
     uint256 public collateralShareValue;
     uint256 public arbForkId;
@@ -114,12 +144,18 @@ abstract contract Config is Helper {
         TimeLock timelock = new TimeLock(ADMIN);
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
 
+        // create price providers
         address priceFeed = forkId == 0
             ? PRICE_FEED_ADAPTER
             : PRICE_FEED_ADAPTER_GOERLI;
         redstoneMockProvider = new RedstoneMockPriceProvider(
             address(factory),
             priceFeed
+        );
+
+        chainlinkPriceProvider = new ChainlinkPriceProvider(
+            ARBITRUM_SEQUENCER,
+            address(factory)
         );
 
         controller = new ControllerGenericV2(address(factory), TREASURY);
@@ -171,12 +207,35 @@ abstract contract Config is Helper {
                 )
             );
 
+        depegStrikeChainlink = 3 ether;
+        (
+            depegPremiumChainlink,
+            depegCollateralChainlink,
+            depegMarketIdChainlink
+        ) = factory.createNewMarket(
+            VaultFactoryV2.MarketConfigurationCalldata(
+                depegToken,
+                depegStrikeChainlink,
+                address(chainlinkPriceProvider),
+                UNDERLYING,
+                name,
+                symbol,
+                address(controller)
+            )
+        );
+
+        // storing info for redstoneMock and Chainlink
         address depegStoredFeed = forkId == 0 ? USDC_CHAINLINK : priceFeed;
         redstoneMockProvider.storePriceFeed(depegMarketId, depegStoredFeed);
         redstoneMockProvider.storeMarket(
             depegToken,
             depegMarketId,
             strikeCondition
+        );
+        chainlinkPriceProvider.storeMarket(
+            USDC_CHAINLINK,
+            depegMarketIdChainlink,
+            1
         );
 
         //create epoch for end epoch
@@ -188,10 +247,16 @@ abstract contract Config is Helper {
 
         //create epoch for depeg
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
+
+        (depegEpochIdChainlink, ) = factory.createEpoch(
+            depegMarketIdChainlink,
+            begin,
+            end,
+            fee
+        );
         MintableToken(UNDERLYING).mint(USER);
     }
 
-    // TODO: If 10 was input then x would be returned ...
     function helperCalculateFeeAdjustedValue(
         uint256 _amount,
         uint16 _fee
@@ -224,37 +289,33 @@ abstract contract Config is Helper {
         vm.warp(end + 1 days);
     }
 
-    function configureDepegState() public {
+    function configureDepegState(
+        address _premiumVault,
+        address _collatVault,
+        uint256 _epochId
+    ) public {
         vm.warp(begin - 1 days);
         //deal ether
         vm.deal(USER, DEALT_AMOUNT);
 
         //approve gov token
-        MintableToken(UNDERLYING).approve(depegPremium, PREMIUM_DEPOSIT_AMOUNT);
         MintableToken(UNDERLYING).approve(
-            depegCollateral,
-            COLLAT_DEPOSIT_AMOUNT
+            _premiumVault,
+            PREMIUM_DEPOSIT_AMOUNT
         );
+        MintableToken(UNDERLYING).approve(_collatVault, COLLAT_DEPOSIT_AMOUNT);
 
         //deposit in both vaults
-        VaultV2(depegPremium).deposit(
-            depegEpochId,
-            PREMIUM_DEPOSIT_AMOUNT,
-            USER
-        );
-        VaultV2(depegCollateral).deposit(
-            depegEpochId,
-            COLLAT_DEPOSIT_AMOUNT,
-            USER
-        );
+        VaultV2(_premiumVault).deposit(_epochId, PREMIUM_DEPOSIT_AMOUNT, USER);
+        VaultV2(_collatVault).deposit(_epochId, COLLAT_DEPOSIT_AMOUNT, USER);
 
         //check deposit balances
         assertEq(
-            VaultV2(depegPremium).balanceOf(USER, depegEpochId),
+            VaultV2(_premiumVault).balanceOf(USER, _epochId),
             PREMIUM_DEPOSIT_AMOUNT
         );
         assertEq(
-            VaultV2(depegCollateral).balanceOf(USER, depegEpochId),
+            VaultV2(_collatVault).balanceOf(USER, _epochId),
             COLLAT_DEPOSIT_AMOUNT
         );
 
@@ -302,7 +363,6 @@ abstract contract Config is Helper {
 
         assertEq(controller.admin(), address(this));
         assertEq(controller.treasury(), TREASURY);
-        // TODO: Checking the vaultFactory() for controller throws: Error (9322): No matching declaration found after argument-dependent lookup
     }
 
     function testStateVars_Markets() public {
@@ -409,6 +469,38 @@ abstract contract Config is Helper {
             bytes32("USDC")
         );
         assertEq(redstoneMockProvider.marketToCondition(depegMarketId), 1);
+
+        vm.expectEmit(true, true, true, false);
+        emit MarketStored(USDC_TOKEN, marketId, "USDC", 1);
+        redstoneMockProvider.storeMarket(USDC_TOKEN, marketId, 1);
+
+        vm.expectEmit(true, true, true, false);
+        emit PriceFeedStored(USDC_CHAINLINK, marketId);
+        redstoneMockProvider.storePriceFeed(marketId, USDC_CHAINLINK);
+    }
+
+    function testStateVars_Chainlink() public {
+        assertEq(
+            address(chainlinkPriceProvider.vaultFactory()),
+            address(factory)
+        );
+        assertEq(
+            address(chainlinkPriceProvider._sequencerUptimeFeed()),
+            ARBITRUM_SEQUENCER
+        );
+
+        assertEq(
+            chainlinkPriceProvider.marketToPriceFeed(depegMarketIdChainlink),
+            USDC_CHAINLINK
+        );
+        assertEq(
+            chainlinkPriceProvider.marketToCondition(depegMarketIdChainlink),
+            1
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit MarketStored(USDC_CHAINLINK, marketId, 1);
+        chainlinkPriceProvider.storeMarket(USDC_CHAINLINK, marketId, 1);
     }
 
     function testErrors_RedstoneProvider() public {
@@ -421,6 +513,9 @@ abstract contract Config is Helper {
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
         redstoneMockProvider.storeMarket(USDC_TOKEN, marketId, 0);
 
+        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
+        redstoneMockProvider.storeMarket(USDC_TOKEN, marketId, 4);
+
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
         redstoneMockProvider.storeMarket(address(0), marketId, 1);
 
@@ -432,6 +527,7 @@ abstract contract Config is Helper {
 
         // TODO: Revert when the symbol length is 0
 
+        // reverting via overridden function
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
         redstoneMockProvider.getLatestPrice(falseId);
 
@@ -446,6 +542,44 @@ abstract contract Config is Helper {
         );
         vm.expectRevert(RedstonePriceProvider.SymbolNotSet.selector);
         priceProvider.getLatestPrice(falseId);
+
+        vm.expectRevert(RedstonePriceProvider.ConditionNotSet.selector);
+        chainlinkPriceProvider.conditionMet(100, 10);
+    }
+
+    function testErrors_ChainlinkProvider() public {
+        vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
+        new ChainlinkPriceProvider(address(0), PRICE_FEED_ADAPTER);
+
+        vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
+        new ChainlinkPriceProvider(address(factory), address(0));
+
+        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
+        chainlinkPriceProvider.storeMarket(USDC_TOKEN, marketId, 0);
+
+        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
+        chainlinkPriceProvider.storeMarket(USDC_TOKEN, marketId, 4);
+
+        vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
+        chainlinkPriceProvider.storeMarket(address(0), marketId, 1);
+
+        vm.expectRevert(ChainlinkPriceProvider.FeedAlreadySet.selector);
+        chainlinkPriceProvider.storeMarket(
+            USDC_TOKEN,
+            depegMarketIdChainlink,
+            1
+        );
+
+        // TODO: Revert with SequencerDown
+        // TODO: Revert with GracePeriodNotOver
+
+        vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
+        chainlinkPriceProvider.getLatestPrice(falseId);
+
+        // TODO: Revert with Oracle Price Zero
+        // TODO: Rever with RoundIdOutdated
+        vm.expectRevert(ChainlinkPriceProvider.ConditionNotSet.selector);
+        chainlinkPriceProvider.conditionMet(100, 10);
     }
 
     function testErrors_GenericEndEpoch() public {
@@ -503,7 +637,7 @@ abstract contract Config is Helper {
         controller.triggerLiquidation(depegMarketId, depegEpochId);
 
         vm.startPrank(USER);
-        configureDepegState();
+        configureDepegState(depegPremium, depegCollateral, depegEpochId);
         vm.stopPrank();
 
         controller.triggerLiquidation(depegMarketId, depegEpochId);
@@ -541,7 +675,7 @@ abstract contract Config is Helper {
         controller.triggerNullEpoch(marketId, epochId);
     }
 
-    function test_ArbitrumGoerliFork() public {
+    function testFork_ArbitrumGoerli() public {
         vm.selectFork(arbGoerliForkId);
         assertEq(vm.activeFork(), arbGoerliForkId);
         assertEq(

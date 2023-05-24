@@ -14,29 +14,34 @@ import {IConditionProvider} from "./IConditionProvider.sol";
 contract ChainlinkPriceProvider is IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     IVaultFactoryV2 public immutable vaultFactory;
-    // TODO: Check if this relates to an individual feed or is generic
-    AggregatorV2V3Interface internal immutable _sequencerUptimeFeed;
+    AggregatorV2V3Interface public immutable _sequencerUptimeFeed;
 
     mapping(uint256 => address) public marketToPriceFeed;
+    mapping(uint256 => uint256) public marketToCondition;
 
-    event PriceFeedStored(address priceFeed, uint256 marketId);
+    event MarketStored(address priceFeed, uint256 marketId, uint256 condition);
 
     constructor(address _sequencer, address _factory) {
         if (_factory == address(0)) revert ZeroAddress();
-        vaultFactory = IVaultFactoryV2(_factory);
-
         if (_sequencer == address(0)) revert ZeroAddress();
+        vaultFactory = IVaultFactoryV2(_factory);
         _sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
     }
 
-    // TODO: Need to add auth check
-    // TODO: Should we check if the feed exists? Or will it never be changed?
-    function storePriceFeed(uint256 _marketId, address _priceFeed) public {
-        if (marketToPriceFeed[_marketId] != address(0)) revert FeedAlreadySet();
+    // TODO: Add auth check for ... ?
+    function storeMarket(
+        address _priceFeed,
+        uint256 _marketId,
+        uint256 _condition
+    ) public {
+        if (_condition == 0 || _condition > 3) revert InvalidInput();
         if (_priceFeed == address(0)) revert ZeroAddress();
+        // TODO: Remove the feed check ??
+        if (marketToPriceFeed[_marketId] != address(0)) revert FeedAlreadySet();
 
         marketToPriceFeed[_marketId] = _priceFeed;
-        emit PriceFeedStored(_priceFeed, _marketId);
+        marketToCondition[_marketId] = _condition;
+        emit MarketStored(_priceFeed, _marketId, _condition);
     }
 
     /** @notice Lookup token price
@@ -48,14 +53,12 @@ contract ChainlinkPriceProvider is IConditionProvider {
             .latestRoundData();
 
         // Answer == 0: Sequencer is up || Answer == 1: Sequencer is down
-        bool isSequencerUp = answer == 0;
-        if (!isSequencerUp) {
+        if (!(answer == 0)) {
             revert SequencerDown();
         }
 
-        // Make sure the grace period has passed after the sequencer is back up.
-        uint256 timeSinceUp = block.timestamp - startedAt;
-        if (timeSinceUp <= _GRACE_PERIOD_TIME) {
+        // Make sure the grace period has passed after the sequencer is back up - timeSinceUp <= PERIOD
+        if ((block.timestamp - startedAt) <= _GRACE_PERIOD_TIME) {
             revert GracePeriodNotOver();
         }
 
@@ -66,18 +69,7 @@ contract ChainlinkPriceProvider is IConditionProvider {
 
         (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
             .latestRoundData();
-        uint256 decimals = priceFeed.decimals();
-
-        if (decimals < 18) {
-            decimals = 10 ** (18 - (decimals));
-            price = price * int256(decimals);
-        } else if (decimals == 18) {
-            price = price;
-        } else {
-            decimals = 10 ** ((decimals - 18));
-            price = price / int256(decimals);
-        }
-
+        // NOTE: Removed previous decimal scaling logic - need to confirm why being used
         if (price <= 0) revert OraclePriceZero();
 
         if (answeredInRound < roundID) revert RoundIDOutdated();
@@ -85,31 +77,30 @@ contract ChainlinkPriceProvider is IConditionProvider {
         return price;
     }
 
-    // TODO: What if want to check less than or equal to?
     function conditionMet(
         uint256 _strike,
         uint256 _marketId
-    ) public view returns (bool) {
-        return int256(_strike) > getLatestPrice(_marketId);
+    ) public view virtual returns (bool) {
+        uint256 condition = marketToCondition[_marketId];
+        if (condition == 1) {
+            return int256(_strike) > getLatestPrice(_marketId);
+        } else if (condition == 2) {
+            return int256(_strike) < getLatestPrice(_marketId);
+        } else if (condition == 3) {
+            return int256(_strike) == getLatestPrice(_marketId);
+        } else revert ConditionNotSet();
     }
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
-
-    error MarketDoesNotExist(uint256 marketId);
     error SequencerDown();
     error GracePeriodNotOver();
-    error ZeroAddress();
-    error EpochFinishedAlready();
-    error PriceNotAtStrikePrice(int256 price);
-    error EpochNotStarted();
-    error EpochExpired();
     error OraclePriceZero();
     error RoundIDOutdated();
-    error EpochNotExist();
-    error EpochNotExpired();
-    error VaultNotZeroTVL();
-    error VaultZeroTVL();
+    error InvalidInput();
+    error ZeroAddress();
+    error ConditionNotSet();
+    error ConditionAlreadySet();
     error FeedAlreadySet();
 }
