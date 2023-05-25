@@ -42,16 +42,4 @@ contract RedstoneMockPriceProvider is RedstonePriceProvider {
         (, int256 price, , , ) = priceFeed.latestRoundData();
         return price;
     }
-
-    function getLatestRawDecimals(
-        address _token
-    ) public view override returns (uint256) {
-        // TODO: The marketToOracle takes a marketId to get the oracle address
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            vaultFactory.marketToOracle(_token)
-        );
-
-        uint256 decimals = priceFeed.decimals();
-        return decimals;
-    }
 }

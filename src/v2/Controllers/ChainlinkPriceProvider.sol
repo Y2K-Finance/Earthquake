@@ -80,14 +80,17 @@ contract ChainlinkPriceProvider is IConditionProvider {
     function conditionMet(
         uint256 _strike,
         uint256 _marketId
-    ) public view virtual returns (bool) {
+    ) public view virtual returns (bool, int256 price) {
         uint256 condition = marketToCondition[_marketId];
         if (condition == 1) {
-            return int256(_strike) > getLatestPrice(_marketId);
+            price = getLatestPrice(_marketId);
+            return (int256(_strike) > price, price);
         } else if (condition == 2) {
-            return int256(_strike) < getLatestPrice(_marketId);
+            price = getLatestPrice(_marketId);
+            return (int256(_strike) < price, price);
         } else if (condition == 3) {
-            return int256(_strike) == getLatestPrice(_marketId);
+            price = getLatestPrice(_marketId);
+            return (int256(_strike) == price, price);
         } else revert ConditionNotSet();
     }
 

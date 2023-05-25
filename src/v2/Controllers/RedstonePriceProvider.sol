@@ -24,15 +24,9 @@ contract RedstonePriceProvider is IConditionProvider {
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;
 
-    mapping(uint256 => bytes32) public marketToSymbol;
     mapping(uint256 => uint256) public marketToCondition;
 
-    event MarketStored(
-        address token,
-        uint256 marketId,
-        string symbol,
-        uint256 condition
-    );
+    event MarketStored(uint256 marketId, uint256 condition);
 
     constructor(address _factory, address _priceFeed) {
         if (_factory == address(0)) revert ZeroAddress();
@@ -42,47 +36,36 @@ contract RedstonePriceProvider is IConditionProvider {
     }
 
     // TODO: Add auth check for ... ?
-    function storeMarket(
-        address _token,
-        uint256 _marketId,
-        uint256 _condition
-    ) public {
-        // NOTE: No need to check if condition is set i.e. marketToCondition[_marketId] != 0 as if symol is set then condition will be
+    function storeMarket(uint256 _marketId, uint256 _condition) public {
         if (_condition == 0 || _condition > 3) revert InvalidInput();
-        if (_token == address(0)) revert ZeroAddress();
-        // TODO: Remove this check ???
-        if (marketToSymbol[_marketId] != bytes32(0)) revert SymbolAlreadySet();
-
-        string memory symbol = ERC20(_token).symbol();
-        if (bytes(symbol).length == 0) revert InvalidInput();
-
-        marketToSymbol[_marketId] = stringToBytes32(symbol);
         marketToCondition[_marketId] = _condition;
-        emit MarketStored(_token, _marketId, symbol, _condition);
+        emit MarketStored(_marketId, _condition);
     }
 
     // NOTE: Core logic is querying getValueForDataFeed(bytes32(“VST”)) on RedStoneVSTPriceFeedAdapter
     function getLatestPrice(
         uint256 _marketId
     ) public view virtual returns (int256) {
-        bytes32 symbol = marketToSymbol[_marketId];
-        if (symbol == bytes32(0)) revert SymbolNotSet();
-
-        // NOTE: The feed address will support a list of dataFeedIds - in theory if symbol exists then the admin confirms dataFeedId exists
+        (address token, , ) = vaultFactory.getMarketInfo(_marketId);
+        // TODO: Need to ensure that the symbol linked to ERC20 works with the data feed
+        bytes32 symbol = stringToBytes32(ERC20(token).symbol());
         return int256(priceFeedAdapter.getValueForDataFeed(symbol));
     }
 
     function conditionMet(
         uint256 _strike,
         uint256 _marketId
-    ) public view virtual returns (bool) {
+    ) public view virtual returns (bool, int256 price) {
         uint256 condition = marketToCondition[_marketId];
         if (condition == 1) {
-            return int256(_strike) > getLatestPrice(_marketId);
+            price = getLatestPrice(_marketId);
+            return (int256(_strike) > price, price);
         } else if (condition == 2) {
-            return int256(_strike) < getLatestPrice(_marketId);
+            price = getLatestPrice(_marketId);
+            return (int256(_strike) < price, price);
         } else if (condition == 3) {
-            return int256(_strike) == getLatestPrice(_marketId);
+            price = getLatestPrice(_marketId);
+            return (int256(_strike) == price, price);
         } else revert ConditionNotSet();
     }
 

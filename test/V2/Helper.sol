@@ -24,6 +24,12 @@ import {
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IPriceFeedAdapter} from "../../src/v2/Interfaces/IPriceFeedAdapter.sol";
 
+import {console} from "forge-std/console.sol";
+
+interface IRedstonePrice {
+    function getValueForDataFeed(bytes32) external view returns (uint256);
+}
+
 contract Helper is Test {
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
@@ -47,8 +53,10 @@ contract Helper is Test {
     address public constant USDC_TOKEN =
         0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address public constant PRICE_FEED_ADAPTER = address(0x123);
-    address public constant PRICE_FEED_ADAPTER_GOERLI =
+    address public constant PRICE_FEED_GOERLI =
         0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
+    address public constant PRICE_FEED_ADAPTER_GOERLI =
+        0x86392aF1fB288f49b8b8fA2495ba201084C70A13;
     bytes32 public constant DATA_FEED_ID =
         0x5653540000000000000000000000000000000000000000000000000000000000;
     address public constant RELAYER = address(0x55);
@@ -60,12 +68,7 @@ contract Helper is Test {
 
     uint256 public falseId = 9999999;
 
-    event MarketStored(
-        address token,
-        uint256 marketId,
-        string symbol,
-        uint256 condition
-    );
+    event MarketStored(uint256 marketId, uint256 condition);
     event MarketStored(address token, uint256 marketId, uint256 condition);
     event PriceFeedStored(address priceFeed, uint256 marketId);
     event EpochResolved(
@@ -89,9 +92,11 @@ abstract contract Config is Helper {
 
     VaultFactoryV2 public factory;
 
+    RedstonePriceProvider public redstoneProvider;
     RedstoneMockPriceProvider public redstoneMockProvider;
     ChainlinkPriceProvider public chainlinkPriceProvider;
     ControllerGenericV2 public controller;
+    TimeLock public timelock;
 
     address public premium;
     address public collateral;
@@ -140,17 +145,22 @@ abstract contract Config is Helper {
     function _setupFork(uint256 strikeCondition, uint256 forkId) public {
         vm.selectFork(forkId);
 
-        UNDERLYING = address(new MintableToken("UnderLyingToken", "UTKN"));
-        TimeLock timelock = new TimeLock(ADMIN);
+        UNDERLYING = address(new MintableToken("Vesta Token", "VST"));
+        timelock = new TimeLock(ADMIN);
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
 
         // create price providers
         address priceFeed = forkId == 0
             ? PRICE_FEED_ADAPTER
-            : PRICE_FEED_ADAPTER_GOERLI;
+            : PRICE_FEED_GOERLI;
         redstoneMockProvider = new RedstoneMockPriceProvider(
             address(factory),
             priceFeed
+        );
+
+        redstoneProvider = new RedstonePriceProvider(
+            address(factory),
+            PRICE_FEED_ADAPTER_GOERLI
         );
 
         chainlinkPriceProvider = new ChainlinkPriceProvider(
@@ -162,7 +172,9 @@ abstract contract Config is Helper {
         factory.whitelistController(address(controller));
 
         //create end epoch market
-        oracle = address(redstoneMockProvider);
+        oracle = forkId == 0
+            ? address(redstoneMockProvider)
+            : address(redstoneProvider);
         string memory name = string("USD Coin");
         string memory symbol = string("USDC");
 
@@ -227,11 +239,8 @@ abstract contract Config is Helper {
         // storing info for redstoneMock and Chainlink
         address depegStoredFeed = forkId == 0 ? USDC_CHAINLINK : priceFeed;
         redstoneMockProvider.storePriceFeed(depegMarketId, depegStoredFeed);
-        redstoneMockProvider.storeMarket(
-            depegToken,
-            depegMarketId,
-            strikeCondition
-        );
+        redstoneMockProvider.storeMarket(depegMarketId, strikeCondition);
+        redstoneProvider.storeMarket(depegMarketId, strikeCondition);
         chainlinkPriceProvider.storeMarket(
             USDC_CHAINLINK,
             depegMarketIdChainlink,
@@ -328,11 +337,10 @@ abstract contract Config is Helper {
 
     function testStateVars_ControllerAndFactory() public {
         assertEq(vm.activeFork(), arbForkId);
-        assertEq(factory.treasury(), TREASURY);
         assertEq(factory.WETH(), WETH);
+        assertEq(factory.treasury(), TREASURY);
+        assertEq(factory.timelocker(), address(timelock));
         assertEq(factory.controllers(address(controller)), true);
-        assertEq(factory.marketToOracle(marketId), oracle);
-        assertEq(factory.marketToOracle(depegMarketId), oracle);
 
         (
             address tokenMarket,
@@ -341,9 +349,14 @@ abstract contract Config is Helper {
         ) = factory.marketIdInfo(marketId);
         assertEq(factory.marketIdToVaults(marketId, 0), premium); // Fetches premium vault for Market
         assertEq(factory.marketIdToVaults(marketId, 1), collateral); // Fetches collateral vault for Market
+        assertEq(factory.marketIdToEpochs(marketId, 0), epochId);
+        assertEq(factory.marketIdToEpochs(depegMarketId, 0), depegEpochId);
         assertEq(tokenMarket, TOKEN);
         assertEq(strikeMarket, strike);
         assertEq(underlyingAssetMarket, UNDERLYING);
+        assertEq(factory.epochFee(epochId), fee);
+        assertEq(factory.marketToOracle(marketId), oracle);
+        assertEq(factory.controllers(address(controller)), true);
 
         (
             address tokenDepegMarket,
@@ -355,12 +368,8 @@ abstract contract Config is Helper {
         assertEq(tokenDepegMarket, USDC_TOKEN);
         assertEq(strikeDepegMarket, depegStrike);
         assertEq(underlyingAssetDepegMarket, UNDERLYING);
-
-        assertEq(factory.epochFee(epochId), fee);
         assertEq(factory.epochFee(depegEpochId), fee);
-        assertEq(factory.marketIdToEpochs(marketId, 0), epochId);
-        assertEq(factory.marketIdToEpochs(depegMarketId, 0), depegEpochId);
-
+        assertEq(factory.marketToOracle(depegMarketId), oracle);
         assertEq(controller.admin(), address(this));
         assertEq(controller.treasury(), TREASURY);
     }
@@ -386,15 +395,15 @@ abstract contract Config is Helper {
         ) = premiumMarketVault.epochConfig(epochId);
         assertEq(premiumMarketVault.token(), TOKEN);
         assertEq(premiumMarketVault.strike(), strike);
-        assertEq(premiumMarketVault.factory(), address(factory));
-        assertEq(premiumMarketVault.controller(), address(controller));
         assertEq(premiumMarketVault.isWETH(), false);
-        assertEq(premiumMarketVault.epochExists(epochId), true);
-        assertEq(premiumMarketVault.epochs(0), epochId);
         assertEq(
             premiumMarketVault.counterPartyVault(),
             address(collateralMarketVault)
         );
+        assertEq(premiumMarketVault.factory(), address(factory));
+        assertEq(premiumMarketVault.controller(), address(controller));
+        assertEq(premiumMarketVault.epochs(0), epochId);
+        assertEq(premiumMarketVault.epochExists(epochId), true);
         assertEq(epochBegin, begin);
         assertEq(epochEnd, end);
         assertEq(epochCreation, block.timestamp);
@@ -403,15 +412,15 @@ abstract contract Config is Helper {
             .epochConfig(epochId);
         assertEq(collateralMarketVault.token(), TOKEN);
         assertEq(collateralMarketVault.strike(), strike);
-        assertEq(collateralMarketVault.factory(), address(factory));
-        assertEq(collateralMarketVault.controller(), address(controller));
         assertEq(collateralMarketVault.isWETH(), false);
-        assertEq(collateralMarketVault.epochExists(epochId), true);
-        assertEq(collateralMarketVault.epochs(0), epochId);
         assertEq(
             collateralMarketVault.counterPartyVault(),
             address(premiumMarketVault)
         );
+        assertEq(collateralMarketVault.factory(), address(factory));
+        assertEq(collateralMarketVault.controller(), address(controller));
+        assertEq(collateralMarketVault.epochs(0), epochId);
+        assertEq(collateralMarketVault.epochExists(epochId), true);
         assertEq(epochBegin, begin);
         assertEq(epochEnd, end);
         assertEq(epochCreation, block.timestamp);
@@ -420,15 +429,15 @@ abstract contract Config is Helper {
             .epochConfig(depegEpochId);
         assertEq(premiumDepegMarketVault.token(), USDC_TOKEN);
         assertEq(premiumDepegMarketVault.strike(), depegStrike);
-        assertEq(premiumDepegMarketVault.factory(), address(factory));
-        assertEq(premiumDepegMarketVault.controller(), address(controller));
         assertEq(premiumDepegMarketVault.isWETH(), false);
-        assertEq(premiumDepegMarketVault.epochExists(depegEpochId), true);
-        assertEq(premiumDepegMarketVault.epochs(0), depegEpochId);
         assertEq(
             premiumDepegMarketVault.counterPartyVault(),
             address(collateralDepegMarketVault)
         );
+        assertEq(premiumDepegMarketVault.factory(), address(factory));
+        assertEq(premiumDepegMarketVault.controller(), address(controller));
+        assertEq(premiumDepegMarketVault.epochs(0), depegEpochId);
+        assertEq(premiumDepegMarketVault.epochExists(depegEpochId), true);
         assertEq(epochBegin, begin);
         assertEq(epochEnd, end);
         assertEq(epochCreation, block.timestamp);
@@ -437,15 +446,15 @@ abstract contract Config is Helper {
             .epochConfig(depegEpochId);
         assertEq(collateralDepegMarketVault.token(), USDC_TOKEN);
         assertEq(collateralDepegMarketVault.strike(), depegStrike);
-        assertEq(collateralDepegMarketVault.factory(), address(factory));
-        assertEq(collateralDepegMarketVault.controller(), address(controller));
         assertEq(collateralDepegMarketVault.isWETH(), false);
-        assertEq(collateralDepegMarketVault.epochExists(depegEpochId), true);
-        assertEq(collateralDepegMarketVault.epochs(0), depegEpochId);
         assertEq(
             collateralDepegMarketVault.counterPartyVault(),
             address(premiumDepegMarketVault)
         );
+        assertEq(collateralDepegMarketVault.factory(), address(factory));
+        assertEq(collateralDepegMarketVault.controller(), address(controller));
+        assertEq(collateralDepegMarketVault.epochs(0), depegEpochId);
+        assertEq(collateralDepegMarketVault.epochExists(depegEpochId), true);
         assertEq(epochBegin, begin);
         assertEq(epochEnd, end);
         assertEq(epochCreation, block.timestamp);
@@ -464,15 +473,11 @@ abstract contract Config is Helper {
             redstoneMockProvider.marketToPriceFeed(depegMarketId),
             USDC_CHAINLINK
         );
-        assertEq(
-            redstoneMockProvider.marketToSymbol(depegMarketId),
-            bytes32("USDC")
-        );
         assertEq(redstoneMockProvider.marketToCondition(depegMarketId), 1);
 
         vm.expectEmit(true, true, true, false);
-        emit MarketStored(USDC_TOKEN, marketId, "USDC", 1);
-        redstoneMockProvider.storeMarket(USDC_TOKEN, marketId, 1);
+        emit MarketStored(marketId, 1);
+        redstoneMockProvider.storeMarket(marketId, 1);
 
         vm.expectEmit(true, true, true, false);
         emit PriceFeedStored(USDC_CHAINLINK, marketId);
@@ -511,40 +516,22 @@ abstract contract Config is Helper {
         new RedstoneMockPriceProvider(address(factory), address(0));
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneMockProvider.storeMarket(USDC_TOKEN, marketId, 0);
+        redstoneMockProvider.storeMarket(marketId, 0);
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneMockProvider.storeMarket(USDC_TOKEN, marketId, 4);
-
-        vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        redstoneMockProvider.storeMarket(address(0), marketId, 1);
-
-        vm.expectRevert(RedstonePriceProvider.SymbolAlreadySet.selector);
-        redstoneMockProvider.storeMarket(USDC_TOKEN, depegMarketId, 1);
-
-        vm.expectRevert(); // Revert from symbol not being returned
-        redstoneMockProvider.storeMarket(address(123), marketId, 1);
-
-        // TODO: Revert when the symbol length is 0
+        redstoneMockProvider.storeMarket(marketId, 4);
 
         // reverting via overridden function
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
         redstoneMockProvider.getLatestPrice(falseId);
 
+        vm.expectRevert(RedstonePriceProvider.ConditionNotSet.selector);
+        chainlinkPriceProvider.conditionMet(100, 10);
+
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
         redstoneMockProvider.stringToBytes32(
             "Long sentence that's very likely to be more than 32 bytes in total"
         );
-
-        RedstonePriceProvider priceProvider = new RedstonePriceProvider(
-            address(factory),
-            PRICE_FEED_ADAPTER
-        );
-        vm.expectRevert(RedstonePriceProvider.SymbolNotSet.selector);
-        priceProvider.getLatestPrice(falseId);
-
-        vm.expectRevert(RedstonePriceProvider.ConditionNotSet.selector);
-        chainlinkPriceProvider.conditionMet(100, 10);
     }
 
     function testErrors_ChainlinkProvider() public {
@@ -572,14 +559,55 @@ abstract contract Config is Helper {
 
         // TODO: Revert with SequencerDown
         // TODO: Revert with GracePeriodNotOver
-
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         chainlinkPriceProvider.getLatestPrice(falseId);
-
         // TODO: Revert with Oracle Price Zero
-        // TODO: Rever with RoundIdOutdated
+        // TODO: Revert with RoundIdOutdated
+
         vm.expectRevert(ChainlinkPriceProvider.ConditionNotSet.selector);
         chainlinkPriceProvider.conditionMet(100, 10);
+    }
+
+    function testErrors_GenericLiquidateEpoch() public {
+        vm.expectRevert(ControllerGenericV2.ZeroAddress.selector);
+        new ControllerGenericV2(address(0), PRICE_FEED_ADAPTER);
+
+        vm.expectRevert(ControllerGenericV2.ZeroAddress.selector);
+        new ControllerGenericV2(PRICE_FEED_ADAPTER, address(0));
+
+        vm.expectRevert(
+            abi.encodePacked(
+                ControllerGenericV2.MarketDoesNotExist.selector,
+                falseId
+            )
+        );
+        controller.triggerLiquidation(falseId, epochId);
+
+        vm.expectRevert(ControllerGenericV2.EpochNotExist.selector);
+        controller.triggerLiquidation(marketId, falseId);
+
+        vm.warp(begin - 1 hours);
+        vm.expectRevert(ControllerGenericV2.EpochNotStarted.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        vm.warp(end + 1 hours);
+        vm.expectRevert(ControllerGenericV2.EpochExpired.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        vm.warp(begin + 1 hours);
+        vm.expectRevert(ControllerGenericV2.VaultZeroTVL.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        vm.startPrank(USER);
+        configureDepegState(depegPremium, depegCollateral, depegEpochId);
+        vm.stopPrank();
+
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+        vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+
+        // vm.expectRevert(ControllerGenericV2.ConditionNotMet.selector);
+        // controller.triggerLiquidation(depegMarketId, depegEpochId);
     }
 
     function testErrors_GenericEndEpoch() public {
@@ -606,43 +634,6 @@ abstract contract Config is Helper {
         controller.triggerEndEpoch(marketId, epochId);
         vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
         controller.triggerEndEpoch(marketId, epochId);
-    }
-
-    function testErrors_GenericLiquidateEpoch() public {
-        vm.expectRevert(
-            abi.encodePacked(
-                ControllerGenericV2.MarketDoesNotExist.selector,
-                falseId
-            )
-        );
-        controller.triggerLiquidation(falseId, epochId);
-
-        vm.expectRevert(ControllerGenericV2.EpochNotExist.selector);
-        controller.triggerLiquidation(marketId, falseId);
-
-        vm.warp(begin - 1 hours);
-        vm.expectRevert(ControllerGenericV2.EpochNotStarted.selector);
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
-
-        vm.warp(end + 1 hours);
-        vm.expectRevert(ControllerGenericV2.EpochExpired.selector);
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
-
-        // TODO: Check when the condition isn't met that we revert - need to return diff value for price / diff oracle?
-        vm.warp(begin + 1 hours);
-        // vm.expectRevert(ControllerGenericV2.ConditionNotMet.selector);
-        // controller.triggerLiquidation(depegMarketId, depegEpochId);
-
-        vm.expectRevert(ControllerGenericV2.VaultZeroTVL.selector);
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
-
-        vm.startPrank(USER);
-        configureDepegState(depegPremium, depegCollateral, depegEpochId);
-        vm.stopPrank();
-
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
-        vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
     }
 
     function testErrors_GenericNullEpoch() public {
@@ -679,8 +670,13 @@ abstract contract Config is Helper {
         vm.selectFork(arbGoerliForkId);
         assertEq(vm.activeFork(), arbGoerliForkId);
         assertEq(
-            IPriceFeedAdapter(PRICE_FEED_ADAPTER_GOERLI).dataFeedId(),
+            IPriceFeedAdapter(PRICE_FEED_GOERLI).dataFeedId(),
             DATA_FEED_ID
         );
+        bytes32 dataFeedId = 0x5653540000000000000000000000000000000000000000000000000000000000;
+        // TODO: Find the price feed adapters address
+        uint256 price = IRedstonePrice(PRICE_FEED_ADAPTER_GOERLI)
+            .getValueForDataFeed(dataFeedId);
+        console.logUint(price);
     }
 }

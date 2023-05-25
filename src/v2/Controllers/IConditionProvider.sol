@@ -7,5 +7,5 @@ interface IConditionProvider {
     function conditionMet(
         uint256 _value,
         uint256 _marketId
-    ) external view returns (bool);
+    ) external view returns (bool, int256 price);
 }

@@ -224,6 +224,7 @@ contract ControllerGenericV2 {
         if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
 
         //require this function cannot be called twice in the same epoch for the same vault
+        // TODO: Both vaults are updated when resolveEpoch is called implying if premiumVault is resolve then collateral vault will be resolved
         if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
         if (collateralVault.epochResolved(_epochId))
             revert EpochFinishedAlready();
@@ -236,14 +237,15 @@ contract ControllerGenericV2 {
             revert VaultZeroTVL();
         }
 
-        address providerAddress = vaultFactory.marketToOracle(_marketId);
+        bool conditionMet;
         IConditionProvider conditionProvider = IConditionProvider(
-            providerAddress
+            vaultFactory.marketToOracle(_marketId)
         );
-        if (!conditionProvider.conditionMet(premiumVault.strike(), _marketId))
-            revert ConditionNotMet();
-
-        price = IConditionProvider(providerAddress).getLatestPrice(_marketId);
+        (conditionMet, price) = conditionProvider.conditionMet(
+            premiumVault.strike(),
+            _marketId
+        );
+        if (!conditionMet) revert ConditionNotMet();
     }
 
     function _checkEndEpochConditions(

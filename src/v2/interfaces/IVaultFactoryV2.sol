@@ -26,4 +26,8 @@ interface IVaultFactoryV2 {
     ) external view returns (address[2] memory);
 
     function marketToOracle(address _token) external view returns (address);
+
+    function getMarketInfo(
+        uint256 _marketId
+    ) external view returns (address, uint256, address);
 }
