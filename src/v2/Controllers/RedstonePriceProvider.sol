@@ -23,50 +23,53 @@ import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
 contract RedstonePriceProvider is IConditionProvider {
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;
+    bytes32 public immutable dataFeedId;
+    string public symbol;
 
-    mapping(uint256 => uint256) public marketToCondition;
-
-    event MarketStored(uint256 marketId, uint256 condition);
-
-    constructor(address _factory, address _priceFeed) {
+    constructor(
+        address _factory,
+        address _priceFeed,
+        string memory _dataFeedSymbol
+    ) {
         if (_factory == address(0)) revert ZeroAddress();
         if (_priceFeed == address(0)) revert ZeroAddress();
+        // TODO: compare gas of abi.encodePacked vs. bytes32
+        if (
+            keccak256(abi.encodePacked(_dataFeedSymbol)) ==
+            keccak256(abi.encodePacked(string("")))
+        ) revert InvalidInput();
         vaultFactory = IVaultFactoryV2(_factory);
         priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
-    }
-
-    // TODO: Add auth check for ... ?
-    function storeMarket(uint256 _marketId, uint256 _condition) public {
-        if (_condition == 0 || _condition > 3) revert InvalidInput();
-        marketToCondition[_marketId] = _condition;
-        emit MarketStored(_marketId, _condition);
+        symbol = _dataFeedSymbol;
+        dataFeedId = stringToBytes32(_dataFeedSymbol);
     }
 
     // NOTE: Core logic is querying getValueForDataFeed(bytes32(“VST”)) on RedStoneVSTPriceFeedAdapter
     function getLatestPrice(
-        uint256 _marketId
+        uint256 marketId
     ) public view virtual returns (int256) {
-        (address token, , ) = vaultFactory.getMarketInfo(_marketId);
-        // TODO: Need to ensure that the symbol linked to ERC20 works with the data feed
-        bytes32 symbol = stringToBytes32(ERC20(token).symbol());
-        return int256(priceFeedAdapter.getValueForDataFeed(symbol));
+        (
+            uint80 roundId,
+            int256 price,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeedAdapter.latestRoundData();
+        if (price <= 0) revert OraclePriceZero();
+        // TODO: What instances are there where the Id doesn't match?
+        if (answeredInRound < roundId) revert RoundIdOutdated();
+        // TODO: How should we check the update for the timestamp
+
+        return price;
     }
 
+    // NOTE: The _marketId isn't used but using this in controller would allow composability in future contracts
     function conditionMet(
         uint256 _strike,
         uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
-        uint256 condition = marketToCondition[_marketId];
-        if (condition == 1) {
-            price = getLatestPrice(_marketId);
-            return (int256(_strike) > price, price);
-        } else if (condition == 2) {
-            price = getLatestPrice(_marketId);
-            return (int256(_strike) < price, price);
-        } else if (condition == 3) {
-            price = getLatestPrice(_marketId);
-            return (int256(_strike) == price, price);
-        } else revert ConditionNotSet();
+        price = getLatestPrice(_marketId);
+        return (int256(_strike) > price, price);
     }
 
     function stringToBytes32(
@@ -88,4 +91,6 @@ contract RedstonePriceProvider is IConditionProvider {
     error ConditionNotSet();
     error ConditionAlreadySet();
     error FeedAlreadySet();
+    error OraclePriceZero();
+    error RoundIdOutdated();
 }

@@ -19,8 +19,9 @@ contract RedstoneMockPriceProvider is RedstonePriceProvider {
 
     constructor(
         address _factory,
-        address _priceFeedAdapter
-    ) RedstonePriceProvider(_factory, _priceFeedAdapter) {}
+        address _priceFeedAdapter,
+        string memory _dataFeedId
+    ) RedstonePriceProvider(_factory, _priceFeedAdapter, _dataFeedId) {}
 
     // TODO: Need to add auth check
     function storePriceFeed(uint256 _marketId, address _priceFeed) public {

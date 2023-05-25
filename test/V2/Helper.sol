@@ -56,7 +56,7 @@ contract Helper is Test {
     address public constant PRICE_FEED_GOERLI =
         0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
     address public constant PRICE_FEED_ADAPTER_GOERLI =
-        0x86392aF1fB288f49b8b8fA2495ba201084C70A13;
+        0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
     bytes32 public constant DATA_FEED_ID =
         0x5653540000000000000000000000000000000000000000000000000000000000;
     address public constant RELAYER = address(0x55);
@@ -155,17 +155,20 @@ abstract contract Config is Helper {
             : PRICE_FEED_GOERLI;
         redstoneMockProvider = new RedstoneMockPriceProvider(
             address(factory),
-            priceFeed
+            priceFeed,
+            "USDC"
         );
 
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
-            PRICE_FEED_ADAPTER_GOERLI
+            PRICE_FEED_ADAPTER_GOERLI,
+            "VST"
         );
 
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
-            address(factory)
+            address(factory),
+            USDC_CHAINLINK
         );
 
         controller = new ControllerGenericV2(address(factory), TREASURY);
@@ -239,13 +242,6 @@ abstract contract Config is Helper {
         // storing info for redstoneMock and Chainlink
         address depegStoredFeed = forkId == 0 ? USDC_CHAINLINK : priceFeed;
         redstoneMockProvider.storePriceFeed(depegMarketId, depegStoredFeed);
-        redstoneMockProvider.storeMarket(depegMarketId, strikeCondition);
-        redstoneProvider.storeMarket(depegMarketId, strikeCondition);
-        chainlinkPriceProvider.storeMarket(
-            USDC_CHAINLINK,
-            depegMarketIdChainlink,
-            1
-        );
 
         //create epoch for end epoch
         begin = uint40(block.timestamp - 5 days);
@@ -469,15 +465,12 @@ abstract contract Config is Helper {
             address(redstoneMockProvider.priceFeedAdapter()),
             PRICE_FEED_ADAPTER
         );
+        assertEq(redstoneMockProvider.dataFeedId(), bytes32("USDC"));
+        assertEq(redstoneMockProvider.symbol(), "USDC");
         assertEq(
             redstoneMockProvider.marketToPriceFeed(depegMarketId),
             USDC_CHAINLINK
         );
-        assertEq(redstoneMockProvider.marketToCondition(depegMarketId), 1);
-
-        vm.expectEmit(true, true, true, false);
-        emit MarketStored(marketId, 1);
-        redstoneMockProvider.storeMarket(marketId, 1);
 
         vm.expectEmit(true, true, true, false);
         emit PriceFeedStored(USDC_CHAINLINK, marketId);
@@ -490,43 +483,25 @@ abstract contract Config is Helper {
             address(factory)
         );
         assertEq(
-            address(chainlinkPriceProvider._sequencerUptimeFeed()),
+            address(chainlinkPriceProvider.sequencerUptimeFeed()),
             ARBITRUM_SEQUENCER
         );
-
-        assertEq(
-            chainlinkPriceProvider.marketToPriceFeed(depegMarketIdChainlink),
-            USDC_CHAINLINK
-        );
-        assertEq(
-            chainlinkPriceProvider.marketToCondition(depegMarketIdChainlink),
-            1
-        );
-
-        vm.expectEmit(true, true, true, false);
-        emit MarketStored(USDC_CHAINLINK, marketId, 1);
-        chainlinkPriceProvider.storeMarket(USDC_CHAINLINK, marketId, 1);
+        assertEq(address(chainlinkPriceProvider.priceFeed()), USDC_CHAINLINK);
     }
 
     function testErrors_RedstoneProvider() public {
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        new RedstoneMockPriceProvider(address(0), PRICE_FEED_ADAPTER);
+        new RedstoneMockPriceProvider(address(0), PRICE_FEED_ADAPTER, "USDC");
 
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        new RedstoneMockPriceProvider(address(factory), address(0));
+        new RedstoneMockPriceProvider(address(factory), address(0), "USDC");
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneMockProvider.storeMarket(marketId, 0);
-
-        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneMockProvider.storeMarket(marketId, 4);
+        new RedstoneMockPriceProvider(address(factory), PRICE_FEED_ADAPTER, "");
 
         // reverting via overridden function
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
         redstoneMockProvider.getLatestPrice(falseId);
-
-        vm.expectRevert(RedstonePriceProvider.ConditionNotSet.selector);
-        chainlinkPriceProvider.conditionMet(100, 10);
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
         redstoneMockProvider.stringToBytes32(
@@ -536,36 +511,30 @@ abstract contract Config is Helper {
 
     function testErrors_ChainlinkProvider() public {
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
-        new ChainlinkPriceProvider(address(0), PRICE_FEED_ADAPTER);
+        new ChainlinkPriceProvider(
+            address(0),
+            PRICE_FEED_ADAPTER,
+            USDC_CHAINLINK
+        );
 
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
-        new ChainlinkPriceProvider(address(factory), address(0));
-
-        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
-        chainlinkPriceProvider.storeMarket(USDC_TOKEN, marketId, 0);
-
-        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
-        chainlinkPriceProvider.storeMarket(USDC_TOKEN, marketId, 4);
+        new ChainlinkPriceProvider(
+            address(factory),
+            address(0),
+            USDC_CHAINLINK
+        );
 
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
-        chainlinkPriceProvider.storeMarket(address(0), marketId, 1);
-
-        vm.expectRevert(ChainlinkPriceProvider.FeedAlreadySet.selector);
-        chainlinkPriceProvider.storeMarket(
-            USDC_TOKEN,
-            depegMarketIdChainlink,
-            1
+        new ChainlinkPriceProvider(
+            address(factory),
+            PRICE_FEED_ADAPTER,
+            address(0)
         );
 
         // TODO: Revert with SequencerDown
         // TODO: Revert with GracePeriodNotOver
-        vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
-        chainlinkPriceProvider.getLatestPrice(falseId);
         // TODO: Revert with Oracle Price Zero
         // TODO: Revert with RoundIdOutdated
-
-        vm.expectRevert(ChainlinkPriceProvider.ConditionNotSet.selector);
-        chainlinkPriceProvider.conditionMet(100, 10);
     }
 
     function testErrors_GenericLiquidateEpoch() public {
@@ -673,10 +642,5 @@ abstract contract Config is Helper {
             IPriceFeedAdapter(PRICE_FEED_GOERLI).dataFeedId(),
             DATA_FEED_ID
         );
-        bytes32 dataFeedId = 0x5653540000000000000000000000000000000000000000000000000000000000;
-        // TODO: Find the price feed adapters address
-        uint256 price = IRedstonePrice(PRICE_FEED_ADAPTER_GOERLI)
-            .getValueForDataFeed(dataFeedId);
-        console.logUint(price);
     }
 }

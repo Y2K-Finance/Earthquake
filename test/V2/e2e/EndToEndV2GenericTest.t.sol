@@ -69,7 +69,7 @@ contract EndToEndV2GenericTest is Config {
         controller.triggerNullEpoch(marketId, epochId);
     }
 
-    function test_GenericDepegBelow() public {
+    function test_GenericDepegRedstone() public {
         _setupFork(1, arbGoerliForkId); // price is below
 
         vm.startPrank(USER);
@@ -130,128 +130,7 @@ contract EndToEndV2GenericTest is Config {
         vm.stopPrank();
     }
 
-    function test_GenericDepegAbove() public {
-        _setupFork(2, arbGoerliForkId); // 2 = price is above
-
-        vm.startPrank(USER);
-        configureDepegState(depegPremium, depegCollateral, depegEpochId);
-        uint256 cachedBalance = MintableToken(UNDERLYING).balanceOf(USER);
-
-        //trigger depeg
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
-        premiumShareValue = helperCalculateFeeAdjustedValue(
-            VaultV2(depegCollateral).finalTVL(depegEpochId),
-            fee
-        );
-        collateralShareValue = helperCalculateFeeAdjustedValue(
-            VaultV2(depegPremium).finalTVL(depegEpochId),
-            fee
-        );
-
-        //check vault balances on withdraw
-        assertEq(
-            premiumShareValue,
-            VaultV2(depegPremium).previewWithdraw(
-                depegEpochId,
-                PREMIUM_DEPOSIT_AMOUNT
-            )
-        );
-        assertEq(
-            collateralShareValue,
-            VaultV2(depegCollateral).previewWithdraw(
-                depegEpochId,
-                COLLAT_DEPOSIT_AMOUNT
-            )
-        );
-
-        //withdraw from vaults
-        VaultV2(depegPremium).withdraw(
-            depegEpochId,
-            PREMIUM_DEPOSIT_AMOUNT,
-            USER,
-            USER
-        );
-        VaultV2(depegCollateral).withdraw(
-            depegEpochId,
-            COLLAT_DEPOSIT_AMOUNT,
-            USER,
-            USER
-        );
-
-        //check vaults balance
-        assertEq(VaultV2(depegPremium).balanceOf(USER, depegEpochId), 0);
-        assertEq(VaultV2(depegCollateral).balanceOf(USER, depegEpochId), 0);
-
-        //check user ERC20 balance
-        assertEq(USER.balance, DEALT_AMOUNT);
-        assertEq(
-            MintableToken(UNDERLYING).balanceOf(USER),
-            cachedBalance + collateralShareValue + premiumShareValue
-        );
-        vm.stopPrank();
-    }
-
-    function test_GenericDepegExact() public {
-        _setupFork(3, arbGoerliForkId); // 3 = price is exact
-        vm.startPrank(USER);
-        configureDepegState(depegPremium, depegCollateral, depegEpochId);
-        uint256 cachedBalance = MintableToken(UNDERLYING).balanceOf(USER);
-
-        //trigger depeg
-        controller.triggerLiquidation(depegMarketId, depegEpochId);
-        premiumShareValue = helperCalculateFeeAdjustedValue(
-            VaultV2(depegCollateral).finalTVL(depegEpochId),
-            fee
-        );
-        collateralShareValue = helperCalculateFeeAdjustedValue(
-            VaultV2(depegPremium).finalTVL(depegEpochId),
-            fee
-        );
-
-        //check vault balances on withdraw
-        assertEq(
-            premiumShareValue,
-            VaultV2(depegPremium).previewWithdraw(
-                depegEpochId,
-                PREMIUM_DEPOSIT_AMOUNT
-            )
-        );
-        assertEq(
-            collateralShareValue,
-            VaultV2(depegCollateral).previewWithdraw(
-                depegEpochId,
-                COLLAT_DEPOSIT_AMOUNT
-            )
-        );
-
-        //withdraw from vaults
-        VaultV2(depegPremium).withdraw(
-            depegEpochId,
-            PREMIUM_DEPOSIT_AMOUNT,
-            USER,
-            USER
-        );
-        VaultV2(depegCollateral).withdraw(
-            depegEpochId,
-            COLLAT_DEPOSIT_AMOUNT,
-            USER,
-            USER
-        );
-
-        //check vaults balance
-        assertEq(VaultV2(depegPremium).balanceOf(USER, depegEpochId), 0);
-        assertEq(VaultV2(depegCollateral).balanceOf(USER, depegEpochId), 0);
-
-        //check user ERC20 balance
-        assertEq(USER.balance, DEALT_AMOUNT);
-        assertEq(
-            MintableToken(UNDERLYING).balanceOf(USER),
-            cachedBalance + collateralShareValue + premiumShareValue
-        );
-        vm.stopPrank();
-    }
-
-    function test_GenericDepegBelowChainlink() public {
+    function test_GenericDepegChainlink() public {
         vm.startPrank(USER);
         configureDepegState(
             depegPremiumChainlink,
