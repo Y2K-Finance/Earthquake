@@ -48,7 +48,7 @@ contract ChainlinkPriceProvider is IConditionProvider {
             .latestRoundData();
         // NOTE: Removed previous decimal scaling logic - need to confirm why being used
         if (price <= 0) revert OraclePriceZero();
-        if (answeredInRound < roundID) revert RoundIDOutdated();
+        if (answeredInRound < roundID) revert RoundIdOutdated();
 
         return price;
     }
@@ -67,10 +67,6 @@ contract ChainlinkPriceProvider is IConditionProvider {
     error SequencerDown();
     error GracePeriodNotOver();
     error OraclePriceZero();
-    error RoundIDOutdated();
-    error InvalidInput();
+    error RoundIdOutdated();
     error ZeroAddress();
-    error ConditionNotSet();
-    error ConditionAlreadySet();
-    error FeedAlreadySet();
 }

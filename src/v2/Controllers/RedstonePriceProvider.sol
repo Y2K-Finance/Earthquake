@@ -86,11 +86,6 @@ contract RedstonePriceProvider is IConditionProvider {
     //////////////////////////////////////////////////////////////*/
     error ZeroAddress();
     error InvalidInput();
-    error SymbolNotSet();
-    error SymbolAlreadySet();
-    error ConditionNotSet();
-    error ConditionAlreadySet();
-    error FeedAlreadySet();
     error OraclePriceZero();
     error RoundIdOutdated();
 }

@@ -15,16 +15,20 @@ import {
     ChainlinkPriceProvider
 } from "../../src/v2/Controllers/ChainlinkPriceProvider.sol";
 import {
-    RedstoneMockPriceProvider,
     RedstonePriceProvider
-} from "../../src/v2/Controllers/RedstoneMockPriceProvider.sol";
+} from "../../src/v2/Controllers/RedstonePriceProvider.sol";
+import {
+    MockOracleAnswerZero,
+    MockOracleAnswerOne,
+    MockOracleGracePeriod,
+    MockOracleRoundOutdated,
+    MockOracleConditionNotMet
+} from "./MockOracles.sol";
 import {
     IConditionProvider
 } from "../../src/v2/Controllers/IConditionProvider.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IPriceFeedAdapter} from "../../src/v2/Interfaces/IPriceFeedAdapter.sol";
-
-import {console} from "forge-std/console.sol";
 
 interface IRedstonePrice {
     function getValueForDataFeed(bytes32) external view returns (uint256);
@@ -52,7 +56,6 @@ contract Helper is Test {
         0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
     address public constant USDC_TOKEN =
         0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
-    address public constant PRICE_FEED_ADAPTER = address(0x123);
     address public constant PRICE_FEED_GOERLI =
         0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
     address public constant PRICE_FEED_ADAPTER_GOERLI =
@@ -92,8 +95,8 @@ abstract contract Config is Helper {
 
     VaultFactoryV2 public factory;
 
-    RedstonePriceProvider public redstoneProvider;
-    RedstoneMockPriceProvider public redstoneMockProvider;
+    RedstonePriceProvider public redstoneProviderGoerli;
+    RedstonePriceProvider public redstoneProviderArbitrum;
     ChainlinkPriceProvider public chainlinkPriceProvider;
     ControllerGenericV2 public controller;
     TimeLock public timelock;
@@ -150,16 +153,14 @@ abstract contract Config is Helper {
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
 
         // create price providers
-        address priceFeed = forkId == 0
-            ? PRICE_FEED_ADAPTER
-            : PRICE_FEED_GOERLI;
-        redstoneMockProvider = new RedstoneMockPriceProvider(
+        address priceFeed = forkId == 0 ? USDC_CHAINLINK : PRICE_FEED_GOERLI;
+        redstoneProviderArbitrum = new RedstonePriceProvider(
             address(factory),
             priceFeed,
             "USDC"
         );
 
-        redstoneProvider = new RedstonePriceProvider(
+        redstoneProviderGoerli = new RedstonePriceProvider(
             address(factory),
             PRICE_FEED_ADAPTER_GOERLI,
             "VST"
@@ -176,8 +177,8 @@ abstract contract Config is Helper {
 
         //create end epoch market
         oracle = forkId == 0
-            ? address(redstoneMockProvider)
-            : address(redstoneProvider);
+            ? address(redstoneProviderArbitrum)
+            : address(redstoneProviderGoerli);
         string memory name = string("USD Coin");
         string memory symbol = string("USDC");
 
@@ -239,10 +240,6 @@ abstract contract Config is Helper {
             )
         );
 
-        // storing info for redstoneMock and Chainlink
-        address depegStoredFeed = forkId == 0 ? USDC_CHAINLINK : priceFeed;
-        redstoneMockProvider.storePriceFeed(depegMarketId, depegStoredFeed);
-
         //create epoch for end epoch
         begin = uint40(block.timestamp - 5 days);
         end = uint40(block.timestamp - 3 days);
@@ -260,75 +257,6 @@ abstract contract Config is Helper {
             fee
         );
         MintableToken(UNDERLYING).mint(USER);
-    }
-
-    function helperCalculateFeeAdjustedValue(
-        uint256 _amount,
-        uint16 _fee
-    ) internal pure returns (uint256) {
-        return _amount - _amount.mulDivUp(_fee, 10000);
-    }
-
-    function configureEndEpochState() public {
-        vm.warp(begin - 1 days);
-
-        //deal ether
-        vm.deal(USER, DEALT_AMOUNT);
-
-        //approve gov token
-        MintableToken(UNDERLYING).approve(premium, DEPOSIT_AMOUNT);
-        MintableToken(UNDERLYING).approve(collateral, DEPOSIT_AMOUNT);
-
-        //deposit in both vaults
-        VaultV2(premium).deposit(epochId, DEPOSIT_AMOUNT, USER);
-        VaultV2(collateral).deposit(epochId, DEPOSIT_AMOUNT, USER);
-
-        //check deposit balances
-        assertEq(VaultV2(premium).balanceOf(USER, epochId), DEPOSIT_AMOUNT);
-        assertEq(VaultV2(collateral).balanceOf(USER, epochId), DEPOSIT_AMOUNT);
-
-        //check user underlying balance
-        assertEq(USER.balance, DEALT_AMOUNT);
-
-        //warp to epoch end
-        vm.warp(end + 1 days);
-    }
-
-    function configureDepegState(
-        address _premiumVault,
-        address _collatVault,
-        uint256 _epochId
-    ) public {
-        vm.warp(begin - 1 days);
-        //deal ether
-        vm.deal(USER, DEALT_AMOUNT);
-
-        //approve gov token
-        MintableToken(UNDERLYING).approve(
-            _premiumVault,
-            PREMIUM_DEPOSIT_AMOUNT
-        );
-        MintableToken(UNDERLYING).approve(_collatVault, COLLAT_DEPOSIT_AMOUNT);
-
-        //deposit in both vaults
-        VaultV2(_premiumVault).deposit(_epochId, PREMIUM_DEPOSIT_AMOUNT, USER);
-        VaultV2(_collatVault).deposit(_epochId, COLLAT_DEPOSIT_AMOUNT, USER);
-
-        //check deposit balances
-        assertEq(
-            VaultV2(_premiumVault).balanceOf(USER, _epochId),
-            PREMIUM_DEPOSIT_AMOUNT
-        );
-        assertEq(
-            VaultV2(_collatVault).balanceOf(USER, _epochId),
-            COLLAT_DEPOSIT_AMOUNT
-        );
-
-        //check user underlying balance
-        assertEq(USER.balance, DEALT_AMOUNT);
-
-        //warp to epoch begin
-        vm.warp(begin + 1 days);
     }
 
     function testStateVars_ControllerAndFactory() public {
@@ -458,23 +386,15 @@ abstract contract Config is Helper {
 
     function testStateVars_RedStone() public {
         assertEq(
-            address(redstoneMockProvider.vaultFactory()),
+            address(redstoneProviderArbitrum.vaultFactory()),
             address(factory)
         );
         assertEq(
-            address(redstoneMockProvider.priceFeedAdapter()),
-            PRICE_FEED_ADAPTER
-        );
-        assertEq(redstoneMockProvider.dataFeedId(), bytes32("USDC"));
-        assertEq(redstoneMockProvider.symbol(), "USDC");
-        assertEq(
-            redstoneMockProvider.marketToPriceFeed(depegMarketId),
+            address(redstoneProviderArbitrum.priceFeedAdapter()),
             USDC_CHAINLINK
         );
-
-        vm.expectEmit(true, true, true, false);
-        emit PriceFeedStored(USDC_CHAINLINK, marketId);
-        redstoneMockProvider.storePriceFeed(marketId, USDC_CHAINLINK);
+        assertEq(redstoneProviderArbitrum.dataFeedId(), bytes32("USDC"));
+        assertEq(redstoneProviderArbitrum.symbol(), "USDC");
     }
 
     function testStateVars_Chainlink() public {
@@ -491,20 +411,36 @@ abstract contract Config is Helper {
 
     function testErrors_RedstoneProvider() public {
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        new RedstoneMockPriceProvider(address(0), PRICE_FEED_ADAPTER, "USDC");
+        new RedstonePriceProvider(address(0), USDC_CHAINLINK, "USDC");
 
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        new RedstoneMockPriceProvider(address(factory), address(0), "USDC");
+        new RedstonePriceProvider(address(factory), address(0), "USDC");
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        new RedstoneMockPriceProvider(address(factory), PRICE_FEED_ADAPTER, "");
+        new RedstonePriceProvider(address(factory), USDC_CHAINLINK, "");
 
-        // reverting via overridden function
-        vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        redstoneMockProvider.getLatestPrice(falseId);
+        // create mock oracle to test revert case
+        address mockOracle = address(new MockOracleAnswerZero());
+        redstoneProviderArbitrum = new RedstonePriceProvider(
+            address(factory),
+            mockOracle,
+            "USDC"
+        );
+        vm.expectRevert(RedstonePriceProvider.OraclePriceZero.selector);
+        redstoneProviderArbitrum.getLatestPrice(marketId);
+
+        // create mock oracle to test revert case
+        mockOracle = address(new MockOracleRoundOutdated());
+        redstoneProviderArbitrum = new RedstonePriceProvider(
+            address(factory),
+            mockOracle,
+            "USDC"
+        );
+        vm.expectRevert(RedstonePriceProvider.RoundIdOutdated.selector);
+        redstoneProviderArbitrum.getLatestPrice(marketId);
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneMockProvider.stringToBytes32(
+        redstoneProviderArbitrum.stringToBytes32(
             "Long sentence that's very likely to be more than 32 bytes in total"
         );
     }
@@ -513,36 +449,68 @@ abstract contract Config is Helper {
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         new ChainlinkPriceProvider(
             address(0),
-            PRICE_FEED_ADAPTER,
+            address(factory),
             USDC_CHAINLINK
         );
 
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         new ChainlinkPriceProvider(
-            address(factory),
+            ARBITRUM_SEQUENCER,
             address(0),
             USDC_CHAINLINK
         );
 
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         new ChainlinkPriceProvider(
+            ARBITRUM_SEQUENCER,
             address(factory),
-            PRICE_FEED_ADAPTER,
             address(0)
         );
 
-        // TODO: Revert with SequencerDown
-        // TODO: Revert with GracePeriodNotOver
-        // TODO: Revert with Oracle Price Zero
-        // TODO: Revert with RoundIdOutdated
+        // create mock sequencer to test revert case
+        address mockAddress = address(new MockOracleAnswerOne());
+        chainlinkPriceProvider = new ChainlinkPriceProvider(
+            mockAddress,
+            address(factory),
+            USDC_CHAINLINK
+        );
+        vm.expectRevert(ChainlinkPriceProvider.SequencerDown.selector);
+        chainlinkPriceProvider.getLatestPrice(marketId);
+
+        mockAddress = address(new MockOracleGracePeriod());
+        chainlinkPriceProvider = new ChainlinkPriceProvider(
+            mockAddress,
+            address(factory),
+            USDC_CHAINLINK
+        );
+        vm.expectRevert(ChainlinkPriceProvider.GracePeriodNotOver.selector);
+        chainlinkPriceProvider.getLatestPrice(marketId);
+
+        mockAddress = address(new MockOracleAnswerZero());
+        chainlinkPriceProvider = new ChainlinkPriceProvider(
+            ARBITRUM_SEQUENCER,
+            address(factory),
+            mockAddress
+        );
+        vm.expectRevert(ChainlinkPriceProvider.OraclePriceZero.selector);
+        chainlinkPriceProvider.getLatestPrice(marketId);
+
+        mockAddress = address(new MockOracleRoundOutdated());
+        chainlinkPriceProvider = new ChainlinkPriceProvider(
+            ARBITRUM_SEQUENCER,
+            address(factory),
+            mockAddress
+        );
+        vm.expectRevert(ChainlinkPriceProvider.RoundIdOutdated.selector);
+        chainlinkPriceProvider.getLatestPrice(marketId);
     }
 
     function testErrors_GenericLiquidateEpoch() public {
         vm.expectRevert(ControllerGenericV2.ZeroAddress.selector);
-        new ControllerGenericV2(address(0), PRICE_FEED_ADAPTER);
+        new ControllerGenericV2(address(0), TREASURY);
 
         vm.expectRevert(ControllerGenericV2.ZeroAddress.selector);
-        new ControllerGenericV2(PRICE_FEED_ADAPTER, address(0));
+        new ControllerGenericV2(address(factory), address(0));
 
         vm.expectRevert(
             abi.encodePacked(
@@ -575,8 +543,12 @@ abstract contract Config is Helper {
         vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
         controller.triggerLiquidation(depegMarketId, depegEpochId);
 
-        // vm.expectRevert(ControllerGenericV2.ConditionNotMet.selector);
-        // controller.triggerLiquidation(depegMarketId, depegEpochId);
+        // create new market and mock oracle to test revert case
+        int256 mockStrike = 1 ether;
+        address mockOracle = address(new MockOracleConditionNotMet(mockStrike));
+        _mockDepegMarketHelper(mockStrike, mockOracle);
+        vm.expectRevert(ControllerGenericV2.ConditionNotMet.selector);
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
     }
 
     function testErrors_GenericEndEpoch() public {
@@ -642,5 +614,99 @@ abstract contract Config is Helper {
             IPriceFeedAdapter(PRICE_FEED_GOERLI).dataFeedId(),
             DATA_FEED_ID
         );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 INTERNALS/HELPERS
+    //////////////////////////////////////////////////////////////*/
+    function helperCalculateFeeAdjustedValue(
+        uint256 _amount,
+        uint16 _fee
+    ) internal pure returns (uint256) {
+        return _amount - _amount.mulDivUp(_fee, 10000);
+    }
+
+    function configureEndEpochState() public {
+        vm.warp(begin - 1 days);
+
+        //deal ether
+        vm.deal(USER, DEALT_AMOUNT);
+
+        //approve gov token
+        MintableToken(UNDERLYING).approve(premium, DEPOSIT_AMOUNT);
+        MintableToken(UNDERLYING).approve(collateral, DEPOSIT_AMOUNT);
+
+        //deposit in both vaults
+        VaultV2(premium).deposit(epochId, DEPOSIT_AMOUNT, USER);
+        VaultV2(collateral).deposit(epochId, DEPOSIT_AMOUNT, USER);
+
+        //check deposit balances
+        assertEq(VaultV2(premium).balanceOf(USER, epochId), DEPOSIT_AMOUNT);
+        assertEq(VaultV2(collateral).balanceOf(USER, epochId), DEPOSIT_AMOUNT);
+
+        //check user underlying balance
+        assertEq(USER.balance, DEALT_AMOUNT);
+
+        //warp to epoch end
+        vm.warp(end + 1 days);
+    }
+
+    function configureDepegState(
+        address _premiumVault,
+        address _collatVault,
+        uint256 _epochId
+    ) public {
+        vm.warp(begin - 1 days);
+        //deal ether
+        vm.deal(USER, DEALT_AMOUNT);
+
+        //approve gov token
+        MintableToken(UNDERLYING).approve(
+            _premiumVault,
+            PREMIUM_DEPOSIT_AMOUNT
+        );
+        MintableToken(UNDERLYING).approve(_collatVault, COLLAT_DEPOSIT_AMOUNT);
+
+        //deposit in both vaults
+        VaultV2(_premiumVault).deposit(_epochId, PREMIUM_DEPOSIT_AMOUNT, USER);
+        VaultV2(_collatVault).deposit(_epochId, COLLAT_DEPOSIT_AMOUNT, USER);
+
+        //check deposit balances
+        assertEq(
+            VaultV2(_premiumVault).balanceOf(USER, _epochId),
+            PREMIUM_DEPOSIT_AMOUNT
+        );
+        assertEq(
+            VaultV2(_collatVault).balanceOf(USER, _epochId),
+            COLLAT_DEPOSIT_AMOUNT
+        );
+
+        //check user underlying balance
+        assertEq(USER.balance, DEALT_AMOUNT);
+
+        //warp to epoch begin
+        vm.warp(begin + 1 days);
+    }
+
+    function _mockDepegMarketHelper(
+        int256 _strike,
+        address mockOracle
+    ) internal {
+        (depegPremium, depegCollateral, depegMarketId) = factory
+            .createNewMarket(
+                VaultFactoryV2.MarketConfigurationCalldata(
+                    UNDERLYING,
+                    uint256(_strike),
+                    mockOracle,
+                    UNDERLYING,
+                    "USDC Token",
+                    "USDC",
+                    address(controller)
+                )
+            );
+        (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
+        vm.startPrank(USER);
+        configureDepegState(depegPremium, depegCollateral, depegEpochId);
+        vm.stopPrank();
     }
 }
