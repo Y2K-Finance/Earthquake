@@ -22,7 +22,9 @@ import {
     MockOracleAnswerOne,
     MockOracleGracePeriod,
     MockOracleRoundOutdated,
-    MockOracleConditionNotMet
+    MockOracleConditionNotMet,
+    MockOracleConditionMet,
+    MockOracleTimeOut
 } from "./MockOracles.sol";
 import {
     IConditionProvider
@@ -35,6 +37,7 @@ interface IRedstonePrice {
 }
 
 contract Helper is Test {
+    uint256 public constant TIME_OUT = 3600;
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
     uint256 public constant COLLATERAL_MINUS_FEES_DIV10 = 2198999999839855145;
@@ -132,6 +135,8 @@ abstract contract Config is Helper {
 
     uint40 public begin;
     uint40 public end;
+    uint40 public beginChainlink;
+    uint40 public endChainlink;
 
     uint16 public fee;
 
@@ -142,10 +147,10 @@ abstract contract Config is Helper {
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         arbGoerliForkId = vm.createFork(ARBITRUM_GOERLI_RPC_URL);
-        _setupFork(1, arbForkId); // 1 = condition below
+        _setupFork(arbForkId);
     }
 
-    function _setupFork(uint256 strikeCondition, uint256 forkId) public {
+    function _setupFork(uint256 forkId) public {
         vm.selectFork(forkId);
 
         UNDERLYING = address(new MintableToken("Vesta Token", "VST"));
@@ -195,18 +200,12 @@ abstract contract Config is Helper {
         );
 
         //create depeg market
-        depegStrike = strikeCondition == 1 ? 2 ether : 1;
+        depegStrike = 2 ether;
         int256 strikeInput;
         if (forkId == 1) {
             (, strikeInput, , , ) = IPriceFeedAdapter(priceFeed)
                 .latestRoundData();
-            if (strikeCondition == 1) {
-                depegStrike = uint256(strikeInput) + 1;
-            } else if (strikeCondition == 2) {
-                depegStrike = uint256(strikeInput) - 1;
-            } else {
-                depegStrike = uint256(strikeInput);
-            }
+            depegStrike = uint256(strikeInput) + 1;
         }
 
         address depegToken = forkId == 0 ? USDC_TOKEN : UNDERLYING;
@@ -250,10 +249,20 @@ abstract contract Config is Helper {
         //create epoch for depeg
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
 
+        // sets begin based on updatedAt if on ArbFork to ensure
+        beginChainlink = begin;
+        endChainlink = end;
+        if (forkId == 0) {
+            (, , , uint256 updatedAt, ) = IPriceFeedAdapter(USDC_CHAINLINK)
+                .latestRoundData();
+            // depeg test runs at begin + 1 hours to avoid TIME_OUT reverts from oracle
+            beginChainlink = uint40(updatedAt);
+            endChainlink = uint40(updatedAt + 3 days);
+        }
         (depegEpochIdChainlink, ) = factory.createEpoch(
             depegMarketIdChainlink,
-            begin,
-            end,
+            beginChainlink,
+            endChainlink,
             fee
         );
         MintableToken(UNDERLYING).mint(USER);
@@ -385,6 +394,7 @@ abstract contract Config is Helper {
     }
 
     function testStateVars_RedStone() public {
+        assertEq(redstoneProviderArbitrum.TIME_OUT(), TIME_OUT);
         assertEq(
             address(redstoneProviderArbitrum.vaultFactory()),
             address(factory)
@@ -427,7 +437,7 @@ abstract contract Config is Helper {
             "USDC"
         );
         vm.expectRevert(RedstonePriceProvider.OraclePriceZero.selector);
-        redstoneProviderArbitrum.getLatestPrice(marketId);
+        redstoneProviderArbitrum.getLatestPrice();
 
         // create mock oracle to test revert case
         mockOracle = address(new MockOracleRoundOutdated());
@@ -437,7 +447,17 @@ abstract contract Config is Helper {
             "USDC"
         );
         vm.expectRevert(RedstonePriceProvider.RoundIdOutdated.selector);
-        redstoneProviderArbitrum.getLatestPrice(marketId);
+        redstoneProviderArbitrum.getLatestPrice();
+
+        // create mock oracle to test revert case
+        mockOracle = address(new MockOracleTimeOut(block.timestamp, TIME_OUT));
+        redstoneProviderArbitrum = new RedstonePriceProvider(
+            address(factory),
+            mockOracle,
+            "USDC"
+        );
+        vm.expectRevert(RedstonePriceProvider.PriceTimedOut.selector);
+        redstoneProviderArbitrum.getLatestPrice();
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
         redstoneProviderArbitrum.stringToBytes32(
@@ -475,7 +495,7 @@ abstract contract Config is Helper {
             USDC_CHAINLINK
         );
         vm.expectRevert(ChainlinkPriceProvider.SequencerDown.selector);
-        chainlinkPriceProvider.getLatestPrice(marketId);
+        chainlinkPriceProvider.getLatestPrice();
 
         mockAddress = address(new MockOracleGracePeriod());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
@@ -484,7 +504,7 @@ abstract contract Config is Helper {
             USDC_CHAINLINK
         );
         vm.expectRevert(ChainlinkPriceProvider.GracePeriodNotOver.selector);
-        chainlinkPriceProvider.getLatestPrice(marketId);
+        chainlinkPriceProvider.getLatestPrice();
 
         mockAddress = address(new MockOracleAnswerZero());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
@@ -493,7 +513,7 @@ abstract contract Config is Helper {
             mockAddress
         );
         vm.expectRevert(ChainlinkPriceProvider.OraclePriceZero.selector);
-        chainlinkPriceProvider.getLatestPrice(marketId);
+        chainlinkPriceProvider.getLatestPrice();
 
         mockAddress = address(new MockOracleRoundOutdated());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
@@ -502,7 +522,14 @@ abstract contract Config is Helper {
             mockAddress
         );
         vm.expectRevert(ChainlinkPriceProvider.RoundIdOutdated.selector);
-        chainlinkPriceProvider.getLatestPrice(marketId);
+        chainlinkPriceProvider.getLatestPrice();
+
+        mockAddress = address(new MockOracleTimeOut(block.timestamp, TIME_OUT));
+        chainlinkPriceProvider = new ChainlinkPriceProvider(
+            ARBITRUM_SEQUENCER,
+            address(factory),
+            mockAddress
+        );
     }
 
     function testErrors_GenericLiquidateEpoch() public {
@@ -536,17 +563,22 @@ abstract contract Config is Helper {
         controller.triggerLiquidation(depegMarketId, depegEpochId);
 
         vm.startPrank(USER);
-        configureDepegState(depegPremium, depegCollateral, depegEpochId);
+        configureDepegState(depegPremium, depegCollateral, depegEpochId, begin);
         vm.stopPrank();
 
+        // NOTE: To make this work - the oracle mocked to return updatedAt less than TIME_OUT and depeg
+        address mockOracle = address(
+            new MockOracleConditionMet(begin + 1 days)
+        );
+        _rewriteDepegMarket(int256(depegStrike), mockOracle);
         controller.triggerLiquidation(depegMarketId, depegEpochId);
         vm.expectRevert(ControllerGenericV2.EpochFinishedAlready.selector);
         controller.triggerLiquidation(depegMarketId, depegEpochId);
 
         // create new market and mock oracle to test revert case
         int256 mockStrike = 1 ether;
-        address mockOracle = address(new MockOracleConditionNotMet(mockStrike));
-        _mockDepegMarketHelper(mockStrike, mockOracle);
+        mockOracle = address(new MockOracleConditionNotMet(mockStrike));
+        _rewriteDepegMarket(mockStrike, mockOracle);
         vm.expectRevert(ControllerGenericV2.ConditionNotMet.selector);
         controller.triggerLiquidation(depegMarketId, depegEpochId);
     }
@@ -626,6 +658,25 @@ abstract contract Config is Helper {
         return _amount - _amount.mulDivUp(_fee, 10000);
     }
 
+    function _rewriteDepegMarket(int256 _strike, address mockOracle) internal {
+        (depegPremium, depegCollateral, depegMarketId) = factory
+            .createNewMarket(
+                VaultFactoryV2.MarketConfigurationCalldata(
+                    UNDERLYING,
+                    uint256(_strike),
+                    mockOracle,
+                    UNDERLYING,
+                    "USDC Token",
+                    "USDC",
+                    address(controller)
+                )
+            );
+        (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
+        vm.startPrank(USER);
+        configureDepegState(depegPremium, depegCollateral, depegEpochId, begin);
+        vm.stopPrank();
+    }
+
     function configureEndEpochState() public {
         vm.warp(begin - 1 days);
 
@@ -654,9 +705,10 @@ abstract contract Config is Helper {
     function configureDepegState(
         address _premiumVault,
         address _collatVault,
-        uint256 _epochId
+        uint256 _epochId,
+        uint256 _begin
     ) public {
-        vm.warp(begin - 1 days);
+        vm.warp(_begin - 1 days);
         //deal ether
         vm.deal(USER, DEALT_AMOUNT);
 
@@ -684,29 +736,7 @@ abstract contract Config is Helper {
         //check user underlying balance
         assertEq(USER.balance, DEALT_AMOUNT);
 
-        //warp to epoch begin
-        vm.warp(begin + 1 days);
-    }
-
-    function _mockDepegMarketHelper(
-        int256 _strike,
-        address mockOracle
-    ) internal {
-        (depegPremium, depegCollateral, depegMarketId) = factory
-            .createNewMarket(
-                VaultFactoryV2.MarketConfigurationCalldata(
-                    UNDERLYING,
-                    uint256(_strike),
-                    mockOracle,
-                    UNDERLYING,
-                    "USDC Token",
-                    "USDC",
-                    address(controller)
-                )
-            );
-        (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
-        vm.startPrank(USER);
-        configureDepegState(depegPremium, depegCollateral, depegEpochId);
-        vm.stopPrank();
+        //warp to epoch _begin
+        vm.warp(_begin + 1 hours);
     }
 }

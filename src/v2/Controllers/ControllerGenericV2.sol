@@ -11,7 +11,6 @@ import {
 } from "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IConditionProvider} from "./IConditionProvider.sol";
-import {console} from "forge-std/console.sol";
 
 /// @author Y2K Finance Team
 
@@ -242,8 +241,7 @@ contract ControllerGenericV2 {
             vaultFactory.marketToOracle(_marketId)
         );
         (conditionMet, price) = conditionProvider.conditionMet(
-            premiumVault.strike(),
-            _marketId
+            premiumVault.strike()
         );
         if (!conditionMet) revert ConditionNotMet();
     }

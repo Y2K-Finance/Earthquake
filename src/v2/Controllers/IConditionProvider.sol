@@ -2,10 +2,9 @@
 pragma solidity 0.8.17;
 
 interface IConditionProvider {
-    function getLatestPrice(uint256 _marketId) external view returns (int256);
+    function getLatestPrice() external view returns (int256);
 
     function conditionMet(
-        uint256 _value,
-        uint256 _marketId
+        uint256 _value
     ) external view returns (bool, int256 price);
 }

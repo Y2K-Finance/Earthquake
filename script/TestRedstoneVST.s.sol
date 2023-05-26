@@ -119,9 +119,8 @@ contract TestRedstoneVST is Script {
             console.log("newPrice");
             console.log(newPrice);
             RedstonePriceProvider rpp = RedstonePriceProvider(redstoneOracle);
-            uint256 marketId = 1;
 
-            try rpp.getLatestPrice(marketId) returns (int256 vstPrice) {
+            try rpp.getLatestPrice() returns (int256 vstPrice) {
                 console.log("vstPrice");
                 console.log(uint256(vstPrice));
             } catch Error(string memory reason) {

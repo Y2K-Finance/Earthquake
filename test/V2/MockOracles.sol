@@ -107,8 +107,79 @@ contract MockOracleConditionNotMet {
     }
 
     function conditionMet(
-        uint256 _strike,
-        uint256 _marketId
+        uint256 _strike
+    ) external view returns (bool, int256 price) {
+        (, price, , , ) = latestRoundData();
+        return (int256(_strike) > price, price);
+    }
+}
+
+contract MockOracleTimeOut {
+    uint256 public updateTime;
+
+    // NOTE: This would return a time that is more than timeout
+    // @param warptime equals block.timestamp
+    // @param timeout equals timeout set for price provider
+    constructor(uint256 _warpTime, uint256 _timeout) {
+        updateTime = _warpTime - _timeout - 1;
+    }
+
+    function latestRoundData()
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        roundId = 2;
+        answer = 1 ether;
+        startedAt = block.timestamp;
+        updatedAt = updateTime;
+        answeredInRound = 2;
+    }
+
+    function conditionMet(
+        uint256 _strike
+    ) external view returns (bool, int256 price) {
+        (, price, , , ) = latestRoundData();
+        return (int256(_strike) > price, price);
+    }
+}
+
+contract MockOracleConditionMet {
+    uint256 public updateTime;
+
+    // NOTE: This would return a time that is within timeout range
+    // @param warptime equals block.timestamp
+    // @param timeout equals timeout set for price provider
+    constructor(uint256 _warpTime) {
+        updateTime = _warpTime - 1;
+    }
+
+    function latestRoundData()
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        roundId = 2;
+        answer = 1 ether;
+        startedAt = block.timestamp;
+        updatedAt = updateTime;
+        answeredInRound = 2;
+    }
+
+    function conditionMet(
+        uint256 _strike
     ) external view returns (bool, int256 price) {
         (, price, , , ) = latestRoundData();
         return (int256(_strike) > price, price);

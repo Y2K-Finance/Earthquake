@@ -70,10 +70,10 @@ contract EndToEndV2GenericTest is Config {
     }
 
     function test_GenericDepegRedstone() public {
-        _setupFork(1, arbGoerliForkId); // price is below
+        _setupFork(arbGoerliForkId); // price is below
 
         vm.startPrank(USER);
-        configureDepegState(depegPremium, depegCollateral, depegEpochId);
+        configureDepegState(depegPremium, depegCollateral, depegEpochId, begin);
         uint256 cachedBalance = MintableToken(UNDERLYING).balanceOf(USER);
 
         //trigger depeg
@@ -135,7 +135,8 @@ contract EndToEndV2GenericTest is Config {
         configureDepegState(
             depegPremiumChainlink,
             depegCollateralChainlink,
-            depegEpochIdChainlink
+            depegEpochIdChainlink,
+            beginChainlink
         );
         uint256 cachedBalance = MintableToken(UNDERLYING).balanceOf(USER);
 

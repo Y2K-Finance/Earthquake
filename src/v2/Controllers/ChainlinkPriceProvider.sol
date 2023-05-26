@@ -8,11 +8,12 @@ import {
     AggregatorV2V3Interface
 } from "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
-import {IVaultV2} from "../interfaces/IVaultV2.sol";
 import {IConditionProvider} from "./IConditionProvider.sol";
 
 contract ChainlinkPriceProvider is IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
+    // TODO: Need to review the updatedAt window as it was 21 hours for USDC on Arb
+    uint256 public constant TIME_OUT = 2 hours;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface public immutable sequencerUptimeFeed;
     AggregatorV3Interface public immutable priceFeed;
@@ -26,11 +27,10 @@ contract ChainlinkPriceProvider is IConditionProvider {
         priceFeed = AggregatorV3Interface(_priceFeed);
     }
 
-    /** @notice Lookup token price
-     * @param _marketId Target token address
-     * @return nowPrice Current token price
+    /** @notice Fetch token price from priceFeed (Chainlink oracle address)
+     * @return int256 Current token price
      */
-    function getLatestPrice(uint256 _marketId) public view returns (int256) {
+    function getLatestPrice() public view returns (int256) {
         (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed
             .latestRoundData();
 
@@ -44,20 +44,31 @@ contract ChainlinkPriceProvider is IConditionProvider {
             revert GracePeriodNotOver();
         }
 
-        (uint80 roundID, int256 price, , , uint80 answeredInRound) = priceFeed
-            .latestRoundData();
-        // NOTE: Removed previous decimal scaling logic - need to confirm why being used
+        (
+            uint80 roundID,
+            int256 price,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
         if (price <= 0) revert OraclePriceZero();
         if (answeredInRound < roundID) revert RoundIdOutdated();
+        // NOTE: fetching updatedAt for USDC had no updates from 1685019769 to 1685096282 i.e for 21 hours
+        // TODO: What is a suitable timeframe to set timeout as based on this info?
+        if ((block.timestamp - updatedAt) > TIME_OUT) revert PriceTimedOut();
 
         return price;
     }
 
+    /** @notice Fetch price and return condition
+     * @param _strike Strike price
+     * @return boolean If condition is met i.e. strike > price
+     * @return price Current price for token
+     */
     function conditionMet(
-        uint256 _strike,
-        uint256 _marketId
+        uint256 _strike
     ) public view virtual returns (bool, int256 price) {
-        price = getLatestPrice(_marketId);
+        price = getLatestPrice();
         return (int256(_strike) > price, price);
     }
 
@@ -69,4 +80,5 @@ contract ChainlinkPriceProvider is IConditionProvider {
     error OraclePriceZero();
     error RoundIdOutdated();
     error ZeroAddress();
+    error PriceTimedOut();
 }
