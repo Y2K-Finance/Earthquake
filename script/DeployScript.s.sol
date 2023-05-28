@@ -111,8 +111,8 @@ contract DeployScript is Script, HelperConfig {
         StakingRewards(_rRisk).notifyRewardAmount(stringToUint(_rewardsAmountRISK));
 
         //unpause
-        // StakingRewards(_rHedge).unpause();
-        // StakingRewards(_rRisk).unpause();
+        StakingRewards(_rHedge).unpause();
+        StakingRewards(_rRisk).unpause();
     }
 
 }
