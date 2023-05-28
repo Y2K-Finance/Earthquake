@@ -182,14 +182,29 @@ contract TimeLock {
 
     /** @notice change owner on factory
      *  @param _newOwner new owner
+     * @param _factory factory address
      */
     function changeOwnerOnFactory(address _newOwner, address _factory)
         external
         onlyOwner
     {
+        if(_newOwner == address(0)) revert AddressZero();
+        if(_factory == address(0)) revert AddressZero();
         IVaultFactoryV2(_factory).transferOwnership(_newOwner);
     }
 
+    /** @notice change timelocker on factory
+     *  @param _newOwner new owner
+     * @param _factory factory address
+     */
+    function changeTimelockerOnFactory(address _newOwner, address _factory)
+        external
+        onlyOwner
+    {
+        if(_newOwner == address(0)) revert AddressZero();
+        if(_factory == address(0)) revert AddressZero();
+        IVaultFactoryV2(_factory).changeTimelocker(_newOwner);
+    }
     /*///////////////////////////////////////////////////////////////
                                ERRORS
     //////////////////////////////////////////////////////////////*/

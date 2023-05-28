@@ -19,19 +19,20 @@ import "./V2Helper.sol";
 contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
-    address policy = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
-    address weth = 0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1;
-    address treasury = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
-    address emissionToken = 0x5D59e5837F7e5d0F710178Eda34d9eCF069B36D2;
-
     function run() public {
         ConfigAddressesV2 memory addresses = getConfigAddresses(false);
+        // address policy = addresses.policy;
+        address weth = addresses.weth;
+        address treasury = addresses.treasury;
+        address emissionToken = addresses.y2k;
+        address policy = addresses.policy;
+
         console2.log("Address admin", addresses.admin);
         console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
         console2.log("\n");
 
         // uint256 privateKey = vm.envUint("PRIVATE_KEY");
-        require(privateKey != 0, "PRIVATE_KEY is not set");
+        // require(privateKey != 0, "PRIVATE_KEY is not set");
         // console2.log("Broadcast privateKey", privateKey);
         // vm.startBroadcast(privateKey);
 
@@ -41,14 +42,18 @@ contract V2DeployContracts is Script, HelperV2 {
 
         vm.startBroadcast();
 
-        address timeLock = address(new TimeLock(policy));
+        // TimeLock timeLock = new TimeLock(policy);
+        // factory.changeTimelocker(address(timeLock));
+
         
         CarouselFactory vaultFactory = new CarouselFactory(
             addresses.weth,
-            treasury,
-            timeLock,
+            addresses.treasury,
+            msg.sender,
             addresses.y2k
         );
+
+
 
         ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
             address(vaultFactory),
@@ -68,13 +73,13 @@ contract V2DeployContracts is Script, HelperV2 {
         KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
             payable(addresses.gelatoOpsV2),
             payable(addresses.gelatoTaskTreasury),
-            addresses.carouselFactory
+            address(vaultFactory)
         );
 
    
-        console2.log("TimeLock address", timeLock);
-        console2.log("Controller address", address(controller));
+        // console2.log("TimeLock address", timeLock);
         console2.log("Vault Factory address", address(vaultFactory));
+            console2.log("Controller address", address(controller));
         console2.log("resolveKeeper address", address(resolveKeeper));
         console2.log("rolloverKeeper address", address(rolloverKeeper));
         console2.log("Y2K token address", addresses.y2k);
