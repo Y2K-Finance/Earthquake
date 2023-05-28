@@ -30,7 +30,7 @@
 
         "vaultFactory": "0x984E0EB8fB687aFa53fc8B33E12E04967560E092",
         "controller": "0x225aCF1D32f0928A96E49E6110abA1fdf777C85f",
-        "rewardsFactory": "0x9889Fca1d9A5D131F5d4306a2BC2F293cAfAd2F3",
+        "rewardsFactory": "0xa86Fb27D996E6BDf2383E8dEe998065f60F30e88",
         "keeperDepeg": "0xE4E34f988E060e9C072F13F82A9C16DFEe112F10",
         "keeperEndEpoch": "0x439Ca11DEd780ddcEbB94089884751Cf1CD0BE5d"
     }]
