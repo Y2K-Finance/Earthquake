@@ -9,7 +9,7 @@ contract V2DeployConfig is HelperV2 {
     CarouselFactory factory;
 
     function setupY2K() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(true); //true if test env
+        ConfigAddressesV2 memory addresses = getConfigAddresses(false); //true if test env
         console.log("Address admin", addresses.admin);
         console.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
         console.log("Address Factory", addresses.carouselFactory);
