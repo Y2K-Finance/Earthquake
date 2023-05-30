@@ -10,13 +10,14 @@ import "./Helper.sol";
 contract DeployScript is Script, HelperConfig {
 
     function setupY2K() public{
-        ConfigAddresses memory addresses = getConfigAddresses(true); //true if test env
+        ConfigAddresses memory addresses = getConfigAddresses(false); //true if test env
         contractToAddresses(addresses);
         setVariables();
 
     }
 
     function run() public {
+
         //LOAD json config and check bool deploy new markets
         setupY2K();
         //if true deploy new markets
