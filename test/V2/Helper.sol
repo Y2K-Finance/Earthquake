@@ -37,7 +37,7 @@ interface IRedstonePrice {
 }
 
 contract Helper is Test {
-    uint256 public constant TIME_OUT = 3600;
+    uint256 public constant TIME_OUT = 1 days;
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
     uint256 public constant COLLATERAL_MINUS_FEES_DIV10 = 2198999999839855145;
@@ -208,6 +208,7 @@ abstract contract Config is Helper {
             depegStrike = uint256(strikeInput) + 1;
         }
 
+        // create depeg market for redstone using different tokens for arb vs. Goerli
         address depegToken = forkId == 0 ? USDC_TOKEN : UNDERLYING;
         (depegPremium, depegCollateral, depegMarketId) = factory
             .createNewMarket(
@@ -222,6 +223,7 @@ abstract contract Config is Helper {
                 )
             );
 
+        // create depeg market for chainlink
         depegStrikeChainlink = 3 ether;
         (
             depegPremiumChainlink,
@@ -249,7 +251,7 @@ abstract contract Config is Helper {
         //create epoch for depeg
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
 
-        // sets begin based on updatedAt if on ArbFork to ensure
+        // sets begin based on updatedAt if on ArbFork
         beginChainlink = begin;
         endChainlink = end;
         if (forkId == 0) {
@@ -417,6 +419,41 @@ abstract contract Config is Helper {
             ARBITRUM_SEQUENCER
         );
         assertEq(address(chainlinkPriceProvider.priceFeed()), USDC_CHAINLINK);
+    }
+
+    function testFunctions_RedStone() public {
+        bool condition;
+        int256 price = redstoneProviderArbitrum.getLatestPrice();
+        assertTrue(price != 0);
+
+        (condition, price) = redstoneProviderArbitrum.conditionMet(2 ether);
+        assertTrue(price != 0);
+        assertTrue(condition == true);
+
+        bytes32 symbol = redstoneProviderArbitrum.stringToBytes32("VST");
+        assertEq(symbol, bytes32("VST"));
+    }
+
+    function testFunctions_Chainlink() public {
+        bool condition;
+        int256 price = chainlinkPriceProvider.getLatestPrice();
+        assertTrue(price != 0);
+
+        (condition, price) = chainlinkPriceProvider.conditionMet(2 ether);
+        assertTrue(price != 0);
+        assertTrue(condition == true);
+    }
+
+    function testFunctions_RedstoneGoerli() public {
+        _setupFork(arbGoerliForkId);
+
+        bool condition;
+        int256 price = redstoneProviderGoerli.getLatestPrice();
+        assertTrue(price != 0);
+
+        (condition, price) = redstoneProviderGoerli.conditionMet(2 ether);
+        assertTrue(price != 0);
+        assertTrue(condition == true);
     }
 
     function testErrors_RedstoneProvider() public {

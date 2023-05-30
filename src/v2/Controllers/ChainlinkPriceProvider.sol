@@ -13,7 +13,7 @@ import {IConditionProvider} from "./IConditionProvider.sol";
 contract ChainlinkPriceProvider is IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     // TODO: Need to review the updatedAt window as it was 21 hours for USDC on Arb
-    uint256 public constant TIME_OUT = 2 hours;
+    uint256 public constant TIME_OUT = 1 days;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface public immutable sequencerUptimeFeed;
     AggregatorV3Interface public immutable priceFeed;

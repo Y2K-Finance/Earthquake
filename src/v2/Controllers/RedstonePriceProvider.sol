@@ -10,7 +10,7 @@ import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
 
 contract RedstonePriceProvider is IConditionProvider {
     // TODO: Need to review the updatedAt as seems to return timestamp on Goerli
-    uint256 public constant TIME_OUT = 3600;
+    uint256 public constant TIME_OUT = 1 days;
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;
     bytes32 public immutable dataFeedId;

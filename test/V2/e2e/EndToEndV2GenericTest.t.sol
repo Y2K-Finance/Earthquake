@@ -70,7 +70,7 @@ contract EndToEndV2GenericTest is Config {
     }
 
     function test_GenericDepegRedstone() public {
-        _setupFork(arbGoerliForkId); // price is below
+        _setupFork(arbGoerliForkId);
 
         vm.startPrank(USER);
         configureDepegState(depegPremium, depegCollateral, depegEpochId, begin);
