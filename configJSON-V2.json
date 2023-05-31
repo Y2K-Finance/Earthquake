@@ -1,86 +1,83 @@
-
 {
-
     "variables":{
-        "newMarkets": false,
-        "amountOfNewMarkets": 0,
-        "epochs": true,
-        "amountOfNewEpochs": 6,
+        "newMarkets": true,
+        "amountOfNewMarkets": 6,
+        "epochs": false,
+        "amountOfNewEpochs": 0,
         "totalAmountOfEmittedTokens": 0
     },
- 
-    "epochs": [
+    "markets": [
         {
-            "name": "y2kFRAX_990*",
-            "strikePrice": 990000000000000000,
-            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
-            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
-           "epochBegin": 1685095200,
-            "epochEnd": 1685178000,
-            "collatEmissions": 100000000000000000,
-            "premiumEmissions": 1000000000000000000,
-            "withdrawalFee": 50
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+            "depositFee": 38,
+            "minQueueDeposit": "50000000000000000000",
+            "name": "y2kMAI_963_ARB*",
+            "oracle": "0x59644ec622243878d1464A9504F9e9a31294128a",
+            "relayFee": "2000000000000000000",
+            "strikePrice": 963000000000000000,
+            "token": "0x3f56e0c36d275367b8c502090edf38289b3dea0d",
+            "uri": "https://y2k.finance"
         },
         {
-            "name": "y2kFRAX_991*",
-            "strikePrice": 991000000000000000,
-            "token": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F",
-            "depositAsset": "0x12e0a97aC4410a79d5cb61343AA160dF33C67F75",
-           "epochBegin": 1685095200,
-            "epochEnd": 1685178000,
-            "collatEmissions": 100000000000000000,
-            "premiumEmissions": 1000000000000000000,
-            "withdrawalFee": 50
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "depositFee": 38,
+            "minQueueDeposit": "25000000000000000",
+            "name": "y2kMAI_963_WETH*",
+            "oracle": "0x59644ec622243878d1464A9504F9e9a31294128a",
+            "relayFee": "1000000000000000",
+            "strikePrice": 963000000000000000,
+            "token": "0x3f56e0c36d275367b8c502090edf38289b3dea0d",
+            "uri": "https://y2k.finance"
         },
         {
-            "name": "y2kUSDC_999*",
-            "strikePrice": 999900000000000000,
-            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
-            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
-           "epochBegin": 1685095200,
-            "epochEnd": 1685178000,
-            "collatEmissions": 100000000000000000,
-            "premiumEmissions": 1000000000000000000,
-            "withdrawalFee": 50
-        },
-        {
-            "name": "y2kUSDC_980*",
-            "collatEmissions": 100000000000000000,
-            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
-           "epochBegin": 1685095200,
-            "epochEnd": 1685178000,
-            "premiumEmissions": 1000000000000000000,
-            "strikePrice": 980000000000000000,
-            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
-            "withdrawalFee": 50
-        },
-        {
-            "name": "y2kUSDC_997*",
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+            "depositFee": 53,
+            "minQueueDeposit": "50000000000000000000",
+            "name": "y2kUSDC_997_ARB*",
+            "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
+            "relayFee": "2000000000000000000",
             "strikePrice": 997000000000000000,
             "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
-            "depositAsset": "0x12e0a97aC4410a79d5cb61343AA160dF33C67F75",
-           "epochBegin": 1685095200,
-            "epochEnd": 1685178000,
-            "collatEmissions": 100000000000000000,
-            "premiumEmissions": 1000000000000000000,
-            "withdrawalFee": 50
+            "uri": "https://y2k.finance"
         },
-        
         {
-            "name": "y2kMIM_950*",
-            "strikePrice": 950000000000000000,
-            "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
-            "depositAsset": "0x6BE37a65E46048B1D12C0E08d9722402A5247Ff1",
-           "epochBegin": 1685095200,
-            "epochEnd": 1685178000,
-            "collatEmissions": 100000000000000000,
-            "premiumEmissions": 1000000000000000000,
-            "withdrawalFee": 50
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "depositFee": 53,
+            "minQueueDeposit": "25000000000000000",
+            "name": "y2kUSDC_997_WETH*",
+            "oracle": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
+            "relayFee": "1000000000000000",
+            "strikePrice": 997000000000000000,
+            "token": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+            "uri": "https://y2k.finance"
+        },
+        {
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+            "depositFee": 38,
+            "minQueueDeposit": "50000000000000000000",
+            "name": "y2kUSDD_970_ARB*",
+            "oracle": "0x4Ee1f9ec1048979930aC832a3C1d18a0b4955a02",
+            "relayFee": "2000000000000000000",
+            "strikePrice": 970000000000000000,
+            "token": "0x680447595e8b7b3Aa1B43beB9f6098C79ac2Ab3f",
+            "uri": "https://y2k.finance"
+        },
+        {
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "depositFee": 38,
+            "minQueueDeposit": "25000000000000000",
+            "name": "y2kUSDD_970_WETH*",
+            "oracle": "0x4Ee1f9ec1048979930aC832a3C1d18a0b4955a02",
+            "relayFee": "1000000000000000",
+            "strikePrice": 970000000000000000,
+            "token": "0x680447595e8b7b3Aa1B43beB9f6098C79ac2Ab3f",
+            "uri": "https://y2k.finance"
         }
-        
-        
-    ],
-    "markets": [
     ]
 }
-

@@ -5,6 +5,8 @@ import "./V2Helper.sol";
 
 /// @author MiguelBits
 //forge script V2DeployConfig --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --slow --verify -vv
+
+// whitelist controller 0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC 
 contract V2DeployConfig is HelperV2 {
     CarouselFactory factory;
 
@@ -30,7 +32,7 @@ contract V2DeployConfig is HelperV2 {
     }
 
     function deploy() public {
-        fundKeepers(4000000000000000);
+        // fundKeepers(100000000000000000);
         if (configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();
@@ -88,9 +90,9 @@ contract V2DeployConfig is HelperV2 {
                         market.name,
                         market.uri,
                         market.controller,
-                        market.relayFee,
+                        stringToUint(market.relayFee),
                         market.depositFee,
-                        market.minQueueDeposit
+                        stringToUint(market.minQueueDeposit)
                     )
                 );
             console2.log("marketId", marketId);
@@ -151,8 +153,8 @@ contract V2DeployConfig is HelperV2 {
                     epoch.epochBegin,
                     epoch.epochEnd,
                     epoch.withdrawalFee,
-                    epoch.collatEmissions,
-                    epoch.premiumEmissions
+                    stringToUint(epoch.collatEmissions),
+                    stringToUint(epoch.premiumEmissions)
                 );
             if (isTestEnv) {
                 // IERC20(addresses.weth).approve(vaults[0], 1 ether);

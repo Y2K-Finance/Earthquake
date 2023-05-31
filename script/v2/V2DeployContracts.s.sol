@@ -29,6 +29,8 @@ contract V2DeployContracts is Script, HelperV2 {
 
         console2.log("Address admin", addresses.admin);
         console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
+        console2.log("Address gelatoOpsV2", addresses.gelatoOpsV2);
+        console2.log("Address gelatoTaskTreasury", addresses.gelatoTaskTreasury);
         console2.log("\n");
 
         // uint256 privateKey = vm.envUint("PRIVATE_KEY");
@@ -54,7 +56,6 @@ contract V2DeployContracts is Script, HelperV2 {
         );
 
 
-
         ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
             address(vaultFactory),
             addresses.arbitrum_sequencer
@@ -67,7 +68,7 @@ contract V2DeployContracts is Script, HelperV2 {
         KeeperV2 resolveKeeper = new KeeperV2(
             payable(addresses.gelatoOpsV2),
             payable(addresses.gelatoTaskTreasury),
-            0x5F8142A6d172B05bceA26115D7B07a5512314201
+            address(controller)
         );
         // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
         KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
@@ -76,16 +77,16 @@ contract V2DeployContracts is Script, HelperV2 {
             address(vaultFactory)
         );
 
+        vm.stopBroadcast();
    
         // console2.log("TimeLock address", timeLock);
         console2.log("Vault Factory address", address(vaultFactory));
-            console2.log("Controller address", address(controller));
+        console2.log("Controller address", address(controller));
         console2.log("resolveKeeper address", address(resolveKeeper));
         console2.log("rolloverKeeper address", address(rolloverKeeper));
         console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
 
-        vm.stopBroadcast();
     }
 }
