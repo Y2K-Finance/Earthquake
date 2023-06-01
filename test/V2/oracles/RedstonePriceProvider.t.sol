@@ -14,7 +14,6 @@ import {
 } from "./MockOracles.sol";
 
 contract RedstonePriceProviderTest is Helper {
-    uint256 public constant TIME_OUT = 1 days;
     uint256 public arbGoerliForkId;
     VaultFactoryV2 public factory;
     RedstonePriceProvider public redstoneProvider;
@@ -32,7 +31,8 @@ contract RedstonePriceProviderTest is Helper {
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
             VST_PRICE_FEED_GOERLI,
-            "VST"
+            "VST",
+            TIME_OUT
         );
     }
 
@@ -41,7 +41,7 @@ contract RedstonePriceProviderTest is Helper {
     ////////////////////////////////////////////////
 
     function testRedStoneCreation() public {
-        assertEq(redstoneProvider.TIME_OUT(), TIME_OUT);
+        assertEq(redstoneProvider.timeOut(), TIME_OUT);
         assertEq(address(redstoneProvider.vaultFactory()), address(factory));
         assertEq(
             address(redstoneProvider.priceFeedAdapter()),
@@ -77,13 +77,26 @@ contract RedstonePriceProviderTest is Helper {
 
     function testRevertConstructorInputs() public {
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        new RedstonePriceProvider(address(0), USDC_CHAINLINK, "USDC");
+        new RedstonePriceProvider(address(0), USDC_CHAINLINK, "USDC", TIME_OUT);
 
         vm.expectRevert(RedstonePriceProvider.ZeroAddress.selector);
-        new RedstonePriceProvider(address(factory), address(0), "USDC");
+        new RedstonePriceProvider(
+            address(factory),
+            address(0),
+            "USDC",
+            TIME_OUT
+        );
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        new RedstonePriceProvider(address(factory), USDC_CHAINLINK, "");
+        new RedstonePriceProvider(
+            address(factory),
+            USDC_CHAINLINK,
+            "",
+            TIME_OUT
+        );
+
+        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
+        new RedstonePriceProvider(address(factory), USDC_CHAINLINK, "USDC", 0);
     }
 
     function testRevertOraclePriceZero() public {
@@ -91,7 +104,8 @@ contract RedstonePriceProviderTest is Helper {
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
             mockOracle,
-            "USDC"
+            "USDC",
+            TIME_OUT
         );
         vm.expectRevert(RedstonePriceProvider.OraclePriceZero.selector);
         redstoneProvider.getLatestPrice();
@@ -102,7 +116,8 @@ contract RedstonePriceProviderTest is Helper {
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
             mockOracle,
-            "USDC"
+            "USDC",
+            TIME_OUT
         );
         vm.expectRevert(RedstonePriceProvider.RoundIdOutdated.selector);
         redstoneProvider.getLatestPrice();
@@ -115,7 +130,8 @@ contract RedstonePriceProviderTest is Helper {
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
             mockOracle,
-            "USDC"
+            "USDC",
+            TIME_OUT
         );
         vm.expectRevert(RedstonePriceProvider.PriceTimedOut.selector);
         redstoneProvider.getLatestPrice();

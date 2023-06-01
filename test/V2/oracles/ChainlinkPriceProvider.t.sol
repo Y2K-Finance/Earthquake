@@ -16,7 +16,6 @@ import {
 } from "./MockOracles.sol";
 
 contract ChainlinkPriceProviderTest is Helper {
-    uint256 public constant TIME_OUT = 1 days;
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
     ChainlinkPriceProvider public chainlinkPriceProvider;
@@ -34,7 +33,8 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory),
-            USDC_CHAINLINK
+            USDC_CHAINLINK,
+            TIME_OUT
         );
     }
 
@@ -43,7 +43,7 @@ contract ChainlinkPriceProviderTest is Helper {
     ////////////////////////////////////////////////
 
     function testChainlinkCreation() public {
-        assertEq(chainlinkPriceProvider.TIME_OUT(), TIME_OUT);
+        assertEq(chainlinkPriceProvider.timeOut(), TIME_OUT);
         assertEq(
             address(chainlinkPriceProvider.vaultFactory()),
             address(factory)
@@ -81,21 +81,32 @@ contract ChainlinkPriceProviderTest is Helper {
         new ChainlinkPriceProvider(
             address(0),
             address(factory),
-            USDC_CHAINLINK
+            USDC_CHAINLINK,
+            TIME_OUT
         );
 
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(0),
-            USDC_CHAINLINK
+            USDC_CHAINLINK,
+            TIME_OUT
         );
 
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory),
-            address(0)
+            address(0),
+            TIME_OUT
+        );
+
+        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
+        new ChainlinkPriceProvider(
+            ARBITRUM_SEQUENCER,
+            address(factory),
+            USDC_CHAINLINK,
+            0
         );
     }
 
@@ -104,7 +115,8 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             mockAddress,
             address(factory),
-            USDC_CHAINLINK
+            USDC_CHAINLINK,
+            TIME_OUT
         );
         vm.expectRevert(ChainlinkPriceProvider.SequencerDown.selector);
         chainlinkPriceProvider.getLatestPrice();
@@ -115,7 +127,8 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             mockAddress,
             address(factory),
-            USDC_CHAINLINK
+            USDC_CHAINLINK,
+            TIME_OUT
         );
         vm.expectRevert(ChainlinkPriceProvider.GracePeriodNotOver.selector);
         chainlinkPriceProvider.getLatestPrice();
@@ -126,7 +139,8 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory),
-            mockAddress
+            mockAddress,
+            TIME_OUT
         );
         vm.expectRevert(ChainlinkPriceProvider.OraclePriceZero.selector);
         chainlinkPriceProvider.getLatestPrice();
@@ -137,7 +151,8 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory),
-            mockAddress
+            mockAddress,
+            TIME_OUT
         );
         vm.expectRevert(ChainlinkPriceProvider.RoundIdOutdated.selector);
         chainlinkPriceProvider.getLatestPrice();
@@ -150,7 +165,8 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory),
-            mockAddress
+            mockAddress,
+            TIME_OUT
         );
     }
 }

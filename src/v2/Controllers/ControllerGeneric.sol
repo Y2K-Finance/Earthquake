@@ -30,9 +30,14 @@ contract ControllerGeneric {
     function triggerLiquidation(uint256 _marketId, uint256 _epochId) public {
         (
             IVaultV2 premiumVault,
-            IVaultV2 collateralVault,
-            int256 price
-        ) = _checkLiquidationConditions(_marketId, _epochId);
+            IVaultV2 collateralVault
+        ) = _checkGenericConditions(_marketId, _epochId);
+        int256 price = _checkLiquidationConditions(
+            _marketId,
+            _epochId,
+            premiumVault,
+            collateralVault
+        );
 
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
@@ -94,7 +99,9 @@ contract ControllerGeneric {
         (
             IVaultV2 premiumVault,
             IVaultV2 collateralVault
-        ) = _checkEndEpochConditions(_marketId, _epochId);
+        ) = _checkGenericConditions(_marketId, _epochId);
+
+        _checkEndEpochConditions(_epochId, premiumVault);
 
         premiumVault.resolveEpoch(_epochId);
         collateralVault.resolveEpoch(_epochId);
@@ -142,7 +149,8 @@ contract ControllerGeneric {
         (
             IVaultV2 premiumVault,
             IVaultV2 collateralVault
-        ) = _checkNullEpochConditions(_marketId, _epochId);
+        ) = _checkGenericConditions(_marketId, _epochId);
+        _checkNullEpochConditions(_marketId, premiumVault);
 
         //set claim TVL to final TVL if total assets are 0
         if (premiumVault.totalAssets(_epochId) == 0) {
@@ -183,14 +191,10 @@ contract ControllerGeneric {
     /*//////////////////////////////////////////////////////////////
                                 INTERNAL
     //////////////////////////////////////////////////////////////*/
-    function _checkLiquidationConditions(
+    function _checkGenericConditions(
         uint256 _marketId,
         uint256 _epochId
-    )
-        internal
-        view
-        returns (IVaultV2 premiumVault, IVaultV2 collateralVault, int256 price)
-    {
+    ) private view returns (IVaultV2 premiumVault, IVaultV2 collateralVault) {
         address[2] memory vaults = vaultFactory.getVaults(_marketId);
 
         if (vaults[0] == address(0) || vaults[1] == address(0))
@@ -199,8 +203,23 @@ contract ControllerGeneric {
         premiumVault = IVaultV2(vaults[0]);
         collateralVault = IVaultV2(vaults[1]);
 
-        if (!premiumVault.epochExists(_epochId)) revert EpochNotExist();
+        if (
+            !premiumVault.epochExists(_epochId) ||
+            !collateralVault.epochExists(_epochId)
+        ) revert EpochNotExist();
 
+        //require this function cannot be called twice in the same epoch for the same vault
+        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
+        if (collateralVault.epochResolved(_epochId))
+            revert EpochFinishedAlready();
+    }
+
+    function _checkLiquidationConditions(
+        uint256 _marketId,
+        uint256 _epochId,
+        IVaultV2 premiumVault,
+        IVaultV2 collateralVault
+    ) internal view returns (int256 price) {
         (uint40 epochStart, uint40 epochEnd, ) = premiumVault.getEpochConfig(
             _epochId
         );
@@ -208,11 +227,6 @@ contract ControllerGeneric {
         if (uint256(epochStart) > block.timestamp) revert EpochNotStarted();
 
         if (block.timestamp > uint256(epochEnd)) revert EpochExpired();
-
-        //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.epochResolved(_epochId))
-            revert EpochFinishedAlready();
 
         // check if epoch qualifies for null epoch
         if (
@@ -233,57 +247,21 @@ contract ControllerGeneric {
     }
 
     function _checkEndEpochConditions(
-        uint256 _marketId,
-        uint256 _epochId
-    ) internal view returns (IVaultV2 premiumVault, IVaultV2 collateralVault) {
-        address[2] memory vaults = vaultFactory.getVaults(_marketId);
-
-        if (vaults[0] == address(0) || vaults[1] == address(0))
-            revert MarketDoesNotExist(_marketId);
-
-        premiumVault = IVaultV2(vaults[0]);
-        collateralVault = IVaultV2(vaults[1]);
-
-        if (
-            !premiumVault.epochExists(_epochId) ||
-            !collateralVault.epochExists(_epochId)
-        ) revert EpochNotExist();
-
+        uint256 _epochId,
+        IVaultV2 premiumVault
+    ) internal view {
         (, uint40 epochEnd, ) = premiumVault.getEpochConfig(_epochId);
 
         if (block.timestamp <= uint256(epochEnd)) revert EpochNotExpired();
-
-        //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.epochResolved(_epochId))
-            revert EpochFinishedAlready();
     }
 
     function _checkNullEpochConditions(
-        uint256 _marketId,
-        uint256 _epochId
-    ) internal view returns (IVaultV2 premiumVault, IVaultV2 collateralVault) {
-        address[2] memory vaults = vaultFactory.getVaults(_marketId);
-
-        if (vaults[0] == address(0) || vaults[1] == address(0))
-            revert MarketDoesNotExist(_marketId);
-
-        premiumVault = IVaultV2(vaults[0]);
-        collateralVault = IVaultV2(vaults[1]);
-
-        if (
-            !premiumVault.epochExists(_epochId) ||
-            !collateralVault.epochExists(_epochId)
-        ) revert EpochNotExist();
-
+        uint256 _epochId,
+        IVaultV2 premiumVault
+    ) internal view {
         (uint40 epochStart, , ) = premiumVault.getEpochConfig(_epochId);
 
         if (block.timestamp < uint256(epochStart)) revert EpochNotStarted();
-
-        //require this function cannot be called twice in the same epoch for the same vault
-        if (premiumVault.epochResolved(_epochId)) revert EpochFinishedAlready();
-        if (collateralVault.epochResolved(_epochId))
-            revert EpochFinishedAlready();
     }
 
     /*//////////////////////////////////////////////////////////////

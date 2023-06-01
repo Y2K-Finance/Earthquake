@@ -6,7 +6,7 @@ import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
 import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
 
 contract RedstonePriceProvider is IConditionProvider {
-    uint256 public constant TIME_OUT = 1 days;
+    uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;
     bytes32 public immutable dataFeedId;
@@ -15,16 +15,19 @@ contract RedstonePriceProvider is IConditionProvider {
     constructor(
         address _factory,
         address _priceFeed,
-        string memory _dataFeedSymbol
+        string memory _dataFeedSymbol,
+        uint256 _timeOut
     ) {
         if (_factory == address(0)) revert ZeroAddress();
         if (_priceFeed == address(0)) revert ZeroAddress();
         if (keccak256(bytes(_dataFeedSymbol)) == keccak256(bytes(string(""))))
             revert InvalidInput();
+        if (_timeOut == 0) revert InvalidInput();
         vaultFactory = IVaultFactoryV2(_factory);
         priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
         symbol = _dataFeedSymbol;
         dataFeedId = stringToBytes32(_dataFeedSymbol);
+        timeOut = _timeOut;
     }
 
     /** @notice Fetch token price from priceFeedAdapter (Redston oracle address)
@@ -41,7 +44,7 @@ contract RedstonePriceProvider is IConditionProvider {
         if (price <= 0) revert OraclePriceZero();
         if (answeredInRound < roundId) revert RoundIdOutdated();
         // TODO: What is a suitable timeframe to set timeout as based on this info? Update at always timestamp?
-        if ((block.timestamp - updatedAt) > TIME_OUT) revert PriceTimedOut();
+        if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
 
         return price;
     }

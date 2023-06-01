@@ -66,7 +66,8 @@ contract EndToEndV2GenericTest is Helper {
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
             VST_PRICE_FEED_GOERLI,
-            "VST"
+            "VST",
+            TIME_OUT
         );
 
         string memory name = string("VST Coin");
@@ -118,7 +119,8 @@ contract EndToEndV2GenericTest is Helper {
         chainlinkProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
             address(factory),
-            USDC_CHAINLINK
+            USDC_CHAINLINK,
+            TIME_OUT
         );
 
         (, , , uint256 updatedAt, ) = IPriceFeedAdapter(USDC_CHAINLINK)

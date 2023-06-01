@@ -23,6 +23,7 @@ contract Helper is Test {
     uint256 public constant COLLAT_AFTER_FEE = 9.95 ether;
     uint256 public constant DEPOSIT_AMOUNT = 10 ether;
     uint256 public constant DEALT_AMOUNT = 20 ether;
+    uint256 public constant TIME_OUT = 1 days;
 
     address public constant ADMIN = address(0x1);
     address public constant WETH = address(0x888);

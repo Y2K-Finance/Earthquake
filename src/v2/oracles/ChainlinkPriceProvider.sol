@@ -12,18 +12,25 @@ import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
 
 contract ChainlinkPriceProvider is IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
-    uint256 public constant TIME_OUT = 1 days;
+    uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface public immutable sequencerUptimeFeed;
     AggregatorV3Interface public immutable priceFeed;
 
-    constructor(address _sequencer, address _factory, address _priceFeed) {
+    constructor(
+        address _sequencer,
+        address _factory,
+        address _priceFeed,
+        uint256 _timeOut
+    ) {
         if (_factory == address(0)) revert ZeroAddress();
         if (_sequencer == address(0)) revert ZeroAddress();
         if (_priceFeed == address(0)) revert ZeroAddress();
+        if (_timeOut == 0) revert InvalidInput();
         vaultFactory = IVaultFactoryV2(_factory);
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
         priceFeed = AggregatorV3Interface(_priceFeed);
+        timeOut = _timeOut;
     }
 
     /** @notice Fetch token price from priceFeed (Chainlink oracle address)
@@ -55,7 +62,7 @@ contract ChainlinkPriceProvider is IConditionProvider {
         // NOTE: fetching updatedAt for USDC had no updates from 1685019769 to 1685096282 i.e for 21 hours
         // TODO: Need to review the updatedAt window as it was 21 hours for USDC on Arb
         // TODO: What is a suitable timeframe to set timeout as based on this info?
-        if ((block.timestamp - updatedAt) > TIME_OUT) revert PriceTimedOut();
+        if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
 
         return price;
     }
@@ -81,4 +88,5 @@ contract ChainlinkPriceProvider is IConditionProvider {
     error RoundIdOutdated();
     error ZeroAddress();
     error PriceTimedOut();
+    error InvalidInput();
 }
