@@ -40,6 +40,8 @@ contract Helper is Test {
         address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
     address public constant VST_PRICE_FEED_GOERLI =
         0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
+    address public constant GDAI_VAULT =
+        0xd85E038593d7A098614721EaE955EC2022B9B91B;
     address public constant RELAYER = address(0x55);
     address public UNDERLYING = address(0x123);
     address public TOKEN = address(new MintableToken("Token", "tkn"));
