@@ -14,7 +14,7 @@ import {
 } from "./MockOracles.sol";
 
 contract RedstonePriceProviderTest is Helper {
-    uint256 public arbGoerliForkId;
+    uint256 public arbForkId;
     VaultFactoryV2 public factory;
     RedstonePriceProvider public redstoneProvider;
 
@@ -23,14 +23,14 @@ contract RedstonePriceProviderTest is Helper {
     ////////////////////////////////////////////////
 
     function setUp() public {
-        arbGoerliForkId = vm.createFork(ARBITRUM_GOERLI_RPC_URL);
-        vm.selectFork(arbGoerliForkId);
+        arbForkId = vm.createFork(ARBITRUM_RPC_URL);
+        vm.selectFork(arbForkId);
 
         address timelock = address(new TimeLock(ADMIN));
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
         redstoneProvider = new RedstonePriceProvider(
             address(factory),
-            VST_PRICE_FEED_GOERLI,
+            VST_PRICE_FEED,
             "VST",
             TIME_OUT
         );
@@ -43,10 +43,7 @@ contract RedstonePriceProviderTest is Helper {
     function testRedStoneCreation() public {
         assertEq(redstoneProvider.timeOut(), TIME_OUT);
         assertEq(address(redstoneProvider.vaultFactory()), address(factory));
-        assertEq(
-            address(redstoneProvider.priceFeedAdapter()),
-            VST_PRICE_FEED_GOERLI
-        );
+        assertEq(address(redstoneProvider.priceFeedAdapter()), VST_PRICE_FEED);
         assertEq(redstoneProvider.dataFeedId(), bytes32("VST"));
         assertEq(redstoneProvider.symbol(), "VST");
     }
@@ -55,7 +52,7 @@ contract RedstonePriceProviderTest is Helper {
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
 
-    function testLatestPrice() public {
+    function testLatestPriceRedstone() public {
         int256 price = redstoneProvider.getLatestPrice();
         assertTrue(price != 0);
     }

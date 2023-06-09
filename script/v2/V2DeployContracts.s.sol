@@ -22,52 +22,51 @@ contract V2DeployContracts is Script, HelperV2 {
 
     function run() public {
         ConfigAddressesV2 memory addresses = getConfigAddresses(false);
-        // address policy = addresses.policy;
         address weth = addresses.weth;
         address treasury = addresses.treasury;
         address emissionToken = addresses.y2k;
         address policy = addresses.policy;
 
-        console2.log("Address admin", addresses.admin);
-        console2.log(
-            "Address arbitrum_sequencer",
-            addresses.arbitrum_sequencer
-        );
-        console2.log("Address gelatoOpsV2", addresses.gelatoOpsV2);
-        console2.log(
-            "Address gelatoTaskTreasury",
-            addresses.gelatoTaskTreasury
-        );
+        // console2.log("Address admin", addresses.admin);
+        // console2.log(
+        //     "Address arbitrum_sequencer",
+        //     addresses.arbitrum_sequencer
+        // );
+        // console2.log("Address gelatoOpsV2", addresses.gelatoOpsV2);
+        // console2.log(
+        //     "Address gelatoTaskTreasury",
+        //     addresses.gelatoTaskTreasury
+        // );
         console2.log("\n");
 
-        // uint256 privateKey = vm.envUint("PRIVATE_KEY");
+        uint256 privateKey = vm.envUint("PRIVATE_KEY");
         // require(privateKey != 0, "PRIVATE_KEY is not set");
         // console2.log("Broadcast privateKey", privateKey);
-        // vm.startBroadcast(privateKey);
+        vm.startBroadcast(privateKey);
 
-        console2.log("Broadcast sender", msg.sender);
-        console2.log("Broadcast policy", policy);
-        console2.log("Broadcast treasury", treasury);
+        // console2.log("Broadcast sender", msg.sender);
+        // console2.log("Broadcast policy", policy);
+        // console2.log("Broadcast treasury", treasury);
 
-        vm.startBroadcast();
+        // vm.startBroadcast();
 
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        CarouselFactory vaultFactory = new CarouselFactory(
-            addresses.weth,
-            addresses.treasury,
-            msg.sender,
-            addresses.y2k
-        );
+        // CarouselFactory vaultFactory = new CarouselFactory(
+        //     addresses.weth,
+        //     addresses.treasury,
+        //     msg.sender,
+        //     addresses.y2k
+        // );
 
-        ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
-            address(vaultFactory),
-            addresses.arbitrum_sequencer
-        );
+        // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
+        //     address(vaultFactory),
+        //     addresses.arbitrum_sequencer
+        // );
         // ControllerPeggedAssetV2 controller = ControllerPeggedAssetV2(0x68620dD41351Ff8d31702CE9B77d04805179eCe1);
 
-        vaultFactory.whitelistController(address(controller));
+        // vaultFactory.whitelistController(address(controller));
 
         ControllerGeneric controllerGeneric = new ControllerGeneric(
             addresses.carouselFactory,
@@ -76,26 +75,27 @@ contract V2DeployContracts is Script, HelperV2 {
 
         // vaultFactory.whitelistController(address(controller));
         // KeeperV2(0x52B90b1cbB3D9FFC866BC3Abece39b6E86b5d358).withdraw(4000000000000000);
-        KeeperV2 resolveKeeper = new KeeperV2(
-            payable(addresses.gelatoOpsV2),
-            payable(addresses.gelatoTaskTreasury),
-            address(controller)
-        );
+        // KeeperV2 resolveKeeper = new KeeperV2(
+        //     payable(addresses.gelatoOpsV2),
+        //     payable(addresses.gelatoTaskTreasury),
+        //     address(controller)
+        // );
         // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
-        KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
-            payable(addresses.gelatoOpsV2),
-            payable(addresses.gelatoTaskTreasury),
-            address(vaultFactory)
-        );
+        // KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
+        //     payable(addresses.gelatoOpsV2),
+        //     payable(addresses.gelatoTaskTreasury),
+        //     address(vaultFactory)
+        // );
 
         vm.stopBroadcast();
 
         // console2.log("TimeLock address", timeLock);
-        console2.log("Vault Factory address", address(vaultFactory));
-        console2.log("Controller address", address(controller));
-        console2.log("resolveKeeper address", address(resolveKeeper));
-        console2.log("rolloverKeeper address", address(rolloverKeeper));
-        console2.log("Y2K token address", addresses.y2k);
+        // console2.log("Vault Factory address", address(vaultFactory));
+        // console2.log("Controller address", address(controller));
+        console2.log("Controller Generic address", address(controllerGeneric));
+        // console2.log("resolveKeeper address", address(resolveKeeper));
+        // console2.log("rolloverKeeper address", address(rolloverKeeper));
+        // console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
     }

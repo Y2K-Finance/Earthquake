@@ -4,12 +4,7 @@ pragma solidity 0.8.17;
 import {Helper} from "../Helper.sol";
 import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
 import {TimeLock} from "../../../src/v2/TimeLock.sol";
-import {
-    GdaiPriceProviderV1
-} from "../../../src/v2/oracles/GDaiPriceProviderV1.sol";
-import {
-    GdaiPriceProviderV2
-} from "../../../src/v2/oracles/GDaiPriceProviderV2.sol";
+import {GdaiPriceProvider} from "../../../src/v2/oracles/GDaiPriceProvider.sol";
 import {
     MockOracleAnswerOne,
     MockOracleGracePeriod,
@@ -19,9 +14,11 @@ import {
 } from "./MockOracles.sol";
 
 contract GdaiPriceProviderTest is Helper {
-    GdaiPriceProviderV1 public gdaiPriceProviderV1;
-    GdaiPriceProviderV2 public gdaiPriceProviderV2;
+    GdaiPriceProvider public gdaiPriceProvider;
     uint256 public arbForkId;
+    int256 public strikePrice = -8994085036142722;
+
+    event StrikeUpdated(bytes strikeHash, int256 strikePrice);
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -30,45 +27,38 @@ contract GdaiPriceProviderTest is Helper {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
 
-        gdaiPriceProviderV1 = new GdaiPriceProviderV1(GDAI_VAULT);
-        gdaiPriceProviderV2 = new GdaiPriceProviderV2(GDAI_VAULT);
+        gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
+        gdaiPriceProvider.updateStrikeHash(strikePrice);
     }
 
     ////////////////////////////////////////////////
     //                STATE                       //
     ////////////////////////////////////////////////
-    function testGdaiV1Creation() public {
-        assertEq(address(gdaiPriceProviderV1.gdaiPriceFeed()), GDAI_VAULT);
-    }
+    function testGdaiCreation() public {
+        assertEq(address(gdaiPriceProvider.gdaiPriceFeed()), GDAI_VAULT);
 
-    function testGdaiV2Creation() public {
-        assertEq(address(gdaiPriceProviderV2.gdaiPriceFeed()), GDAI_VAULT);
+        assertEq(gdaiPriceProvider.strikeHash(), abi.encode(strikePrice));
     }
 
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
-    function testLatestPriceV1() public {
-        int256 price = gdaiPriceProviderV1.getLatestPrice();
+    function testUpdateStrike() public {
+        int256 newStrikePrice = -1;
+        vm.expectEmit(true, true, false, false);
+        emit StrikeUpdated(abi.encode(newStrikePrice), newStrikePrice);
+        gdaiPriceProvider.updateStrikeHash(newStrikePrice);
+        assertEq(gdaiPriceProvider.strikeHash(), abi.encode(newStrikePrice));
+    }
+
+    function testLatestPrice() public {
+        int256 price = gdaiPriceProvider.getLatestPrice();
         assertTrue(price != 0);
     }
 
-    function testLatestPriceV2() public {
-        int256 price = gdaiPriceProviderV2.getLatestPrice();
-        assertTrue(price != 0);
-    }
-
-    function testConditionMetV1() public {
-        (bool condition, int256 price) = gdaiPriceProviderV1.conditionMet(
-            -200 ether
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
-    function testConditionMetV2() public {
-        (bool condition, int256 price) = gdaiPriceProviderV2.conditionMet(
-            0.1 ether
+    function testConditionMetGDAI() public {
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(-strikePrice)
         );
         assertTrue(price != 0);
         assertEq(condition, true);
@@ -78,13 +68,19 @@ contract GdaiPriceProviderTest is Helper {
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
 
-    function testRevertConstructorInputsV1() public {
-        vm.expectRevert(GdaiPriceProviderV1.ZeroAddress.selector);
-        new GdaiPriceProviderV1(address(0));
+    function testRevertConstructorInputs() public {
+        vm.expectRevert(GdaiPriceProvider.ZeroAddress.selector);
+        new GdaiPriceProvider(address(0));
     }
 
-    function testRevertConstructorInputsV2() public {
-        vm.expectRevert(GdaiPriceProviderV2.ZeroAddress.selector);
-        new GdaiPriceProviderV2(address(0));
+    function testRevertInvalidStrike() public {
+        vm.expectRevert(GdaiPriceProvider.InvalidStrike.selector);
+        gdaiPriceProvider.conditionMet(10 ether);
+    }
+
+    function testRevertNotOwner() public {
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.prank(address(0x123));
+        gdaiPriceProvider.updateStrikeHash(1);
     }
 }

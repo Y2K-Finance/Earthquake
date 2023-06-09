@@ -10,7 +10,7 @@ import {
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
 
-contract ChainlinkPriceProvider is IConditionProvider {
+contract ChainlinkPriceProviderV2 is IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
@@ -73,7 +73,7 @@ contract ChainlinkPriceProvider is IConditionProvider {
         uint256 _strike
     ) public view virtual returns (bool, int256 price) {
         price = getLatestPrice();
-        return (int256(_strike) > price, price);
+        return (int256(_strike) < price, price);
     }
 
     /*//////////////////////////////////////////////////////////////

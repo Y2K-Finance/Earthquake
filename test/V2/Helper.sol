@@ -29,19 +29,26 @@ contract Helper is Test {
     address public constant WETH = address(0x888);
     address public constant TREASURY = address(0x777);
     address public constant NOTADMIN = address(0x99);
-    address public constant USER =
-        address(0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F);
+    address public constant USER = 0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F;
     address public constant USER2 = address(0x12312);
     address public constant ARBITRUM_SEQUENCER =
-        address(0xFdB631F5EE196F0ed6FAa767959853A9F217697D);
+        0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+    address public constant ARBITRUM_SEQUENCER_GOERLI =
+        0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69;
     address public constant USDC_CHAINLINK =
-        address(0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3);
+        0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
+    address public constant ETH_VOL_CHAINLINK =
+        0x1B8e08a5457b12ae3CbC4233e645AEE2fA809e39;
     address public constant USDC_TOKEN =
-        address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
+        0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address public constant VST_PRICE_FEED_GOERLI =
         0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
+    address public constant VST_PRICE_FEED =
+        0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
     address public constant GDAI_VAULT =
         0xd85E038593d7A098614721EaE955EC2022B9B91B;
+    address public constant DIA_ORACLE_V2 =
+        0xd041478644048d9281f88558E6088e9da97df624;
     address public constant RELAYER = address(0x55);
     address public UNDERLYING = address(0x123);
     address public TOKEN = address(new MintableToken("Token", "tkn"));

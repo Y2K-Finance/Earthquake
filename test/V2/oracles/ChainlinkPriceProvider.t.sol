@@ -6,6 +6,9 @@ import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
 import {
     ChainlinkPriceProvider
 } from "../../../src/v2/oracles/ChainlinkPriceProvider.sol";
+import {
+    ChainlinkPriceProviderV2
+} from "../../../src/v2/oracles/ChainlinkPriceProviderV2.sol";
 import {TimeLock} from "../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerOne,
@@ -17,15 +20,17 @@ import {
 
 contract ChainlinkPriceProviderTest is Helper {
     uint256 public arbForkId;
+    uint256 public arbGoerliForkId;
     VaultFactoryV2 public factory;
     ChainlinkPriceProvider public chainlinkPriceProvider;
+    ChainlinkPriceProviderV2 public chainlinkPriceProviderV2;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
     ////////////////////////////////////////////////
-
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
+        arbGoerliForkId = vm.createFork(ARBITRUM_GOERLI_RPC_URL);
         vm.selectFork(arbForkId);
 
         address timelock = address(new TimeLock(ADMIN));
@@ -36,6 +41,16 @@ contract ChainlinkPriceProviderTest is Helper {
             USDC_CHAINLINK,
             TIME_OUT
         );
+
+        vm.selectFork(arbGoerliForkId);
+        chainlinkPriceProviderV2 = new ChainlinkPriceProviderV2(
+            ARBITRUM_SEQUENCER_GOERLI,
+            address(factory),
+            ETH_VOL_CHAINLINK,
+            TIME_OUT
+        );
+
+        vm.selectFork(arbForkId);
     }
 
     ////////////////////////////////////////////////
@@ -59,14 +74,31 @@ contract ChainlinkPriceProviderTest is Helper {
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
 
-    function testLatestPrice() public {
+    function testLatestPriceV1() public {
         int256 price = chainlinkPriceProvider.getLatestPrice();
         assertTrue(price != 0);
     }
 
-    function testConditionMet() public {
+    function testConditionMetV1() public {
         (bool condition, int256 price) = chainlinkPriceProvider.conditionMet(
             2 ether
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testLatestPriceV2() public {
+        vm.selectFork(arbGoerliForkId);
+        int256 price = chainlinkPriceProviderV2.getLatestPrice();
+        assertTrue(price != 0);
+    }
+
+    function testConditionMetV2() public {
+        vm.selectFork(arbGoerliForkId);
+        uint256 strike = uint256(chainlinkPriceProviderV2.getLatestPrice() - 1);
+
+        (bool condition, int256 price) = chainlinkPriceProviderV2.conditionMet(
+            strike
         );
         assertTrue(price != 0);
         assertEq(condition, true);
