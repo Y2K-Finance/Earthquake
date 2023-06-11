@@ -3,7 +3,7 @@ pragma solidity ^0.8.15;
 
 import "./V2Helper.sol";
 
-/// @author MiguelBits
+/// @author Y2K Team
 //forge script V2DeployConfig --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --slow --verify -vv
 
 // whitelist controller 0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC 
@@ -11,12 +11,13 @@ contract V2DeployConfig is HelperV2 {
     CarouselFactory factory;
 
     function setupY2K() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(false); //true if test env
-        console.log("Address admin", addresses.admin);
-        console.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
-        console.log("Address Factory", addresses.carouselFactory);
-        factory = CarouselFactory(addresses.carouselFactory);
-        contractToAddresses(addresses);
+        // ConfigAddressesV2 memory addresses = getConfigAddresses(false); //true if test env
+        configAddresses = getConfigAddresses(false); //true if test env
+        console.log("Address admin", configAddresses.admin);
+        console.log("Address arbitrum_sequencer", configAddresses.arbitrum_sequencer);
+        console.log("Address Factory", configAddresses.carouselFactory);
+        factory = CarouselFactory(configAddresses.carouselFactory);
+        contractToAddresses(configAddresses);
         setVariables();
     }
 
@@ -32,13 +33,13 @@ contract V2DeployConfig is HelperV2 {
     }
 
     function deploy() public {
-        // fundKeepers(100000000000000000);
+        // fundKeepers(10000000000000000);
         if (configVariables.newMarkets) {
             //deploy new markets
             deployMarkets();
         }
         if (configVariables.epochs) {
-            IERC20(y2k).approve(address(factory), type(uint256).max);
+            // IERC20(y2k).approve(address(factory), type(uint256).max);
             //deploy new epochs
             deployEpochs();
         }
@@ -106,10 +107,10 @@ contract V2DeployConfig is HelperV2 {
     }
 
     function deployEpochs() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(true);
+        // ConfigAddressesV2 memory addresses = getConfigAddresses(false);
         ConfigEpochWithEmission[] memory epochs = getConfigEpochs();
         if (
-            IERC20(y2k).allowance(addresses.policy, address(factory)) <
+            IERC20(y2k).allowance(configAddresses.policy, address(factory)) <
             configVariables.totalAmountOfEmittedTokens
         ) {
             console2.log(
@@ -153,29 +154,81 @@ contract V2DeployConfig is HelperV2 {
                     epoch.epochBegin,
                     epoch.epochEnd,
                     epoch.withdrawalFee,
-                    stringToUint(epoch.collatEmissions),
-                    stringToUint(epoch.premiumEmissions)
+                    stringToUint(epoch.premiumEmissions),
+                    stringToUint(epoch.collatEmissions)
                 );
-            if (isTestEnv) {
-                // IERC20(addresses.weth).approve(vaults[0], 1 ether);
+
+                if (isTestEnv) {
+                // IERC20(configAddresses.weth).approve(vaults[0], 1 ether);
                 // ICarousel(vaults[0]).deposit(
                 //     0,
                 //     1 ether,
                 //     0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
                 // );
-                // IERC20(addresses.weth).approve(vaults[1], 1 ether);
+                // IERC20(configAddresses.weth).approve(vaults[1], 1 ether);
                 // ICarousel(vaults[1]).deposit(
                 //     0,
                 //     1 ether,
                 //     0xCCA23C05a9Cf7e78830F3fd55b1e8CfCCbc5E50F
                 // );
             }
-            startKeepers(previewMarketID, epochId);
+
+            deployKeeper(previewMarketID, epochId, vaults, epoch);
+
             console2.log("epochId", epochId);
+            console.log("marketName", epoch.name);
+            console2.log("previewMarketID", previewMarketID);
+
+            console2.log("\n");
+        }
+    }
+
+    function deployKeeper(uint256 marketId, uint256 epochId,  address[2] memory vaults, ConfigEpochWithEmission memory epoch) public{
+            // checks
+            if(ICarousel(vaults[0]).emissions(epochId) != stringToUint(epoch.premiumEmissions)){
+                console2.log("Premium emissions not set");
+                revert("Premium emissions error");
+            }
+            if(ICarousel(vaults[1]).emissions(epochId) != stringToUint(epoch.collatEmissions)){
+                console2.log("Collat emissions not set");
+                revert("Collat emissions error");
+            }
+
+            (
+            uint40 epochBegin,
+            uint40 epochEnd,
+            uint40 epochCreation) = ICarousel(vaults[0]).getEpochConfig(epochId);
+            if(epochBegin != epoch.epochBegin){
+                console2.log("Epoch begin not set");
+                revert("Epoch begin error");
+            }
+            if(epochEnd != epoch.epochEnd){
+                console2.log("Epoch end not set");
+                revert("Epoch end error");
+            }
+
+            // deploy rollover and resolve keeper
+            startKeepers(marketId, epochId);
+           
+            if(KeeperV2(configAddresses.resolveKeeper).tasks(keccak256(abi.encodePacked(marketId, epochId))) == bytes32(0)){
+                console2.log("resolveKeeper epochId not set");
+                revert("resolveKeeper epochId error");
+            }
+            
+            if(KeeperV2(configAddresses.rolloverKeeper).tasks(keccak256(abi.encodePacked(marketId, epochId))) == bytes32(0)){
+                console2.log("rolloverKeeper epochId not set");
+                revert("rolloverKeeper epochId error");
+            }
+            console2.log(
+                "---------------Keepers-------------------"
+            );
+
+            console2.log("resolveKeeper taskId");
+            console2.logBytes32(KeeperV2(configAddresses.rolloverKeeper).tasks(keccak256(abi.encodePacked(marketId, epochId))));
+            console2.log("rolloverKeeper taskId");
+            console.logBytes32(KeeperV2(configAddresses.rolloverKeeper).tasks(keccak256(abi.encodePacked(marketId, epochId))));
             console2.log(
                 "----------------------------------------------------------------"
             );
-            console2.log("\n");
-        }
     }
 }
