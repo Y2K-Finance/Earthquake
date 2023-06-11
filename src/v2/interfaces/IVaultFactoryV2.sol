@@ -21,6 +21,8 @@ interface IVaultFactoryV2 {
 
     function transferOwnership(address newOwner) external;
 
+    function changeTimelocker(address newTimelocker) external;
+
     function marketIdToVaults(uint256 _marketId)
         external
         view

@@ -33,12 +33,12 @@ contract HelperV2 is Script {
     }
 
     struct ConfigEpochWithEmission {
-        uint256 collatEmissions;
+        string collatEmissions;
         address depositAsset;
         uint40 epochBegin;
         uint40 epochEnd;
         string name;
-        uint256 premiumEmissions;
+        string premiumEmissions;
         uint256 strikePrice;
         address token;
         uint16 withdrawalFee;
@@ -48,10 +48,10 @@ contract HelperV2 is Script {
         address controller;
         address depositAsset;
         uint256 depositFee;
-        uint256 minQueueDeposit;
+        string minQueueDeposit;
         string name;
         address oracle;
-        uint256 relayFee;
+        string relayFee;
         uint256 strikePrice;
         address token;
         string uri;
@@ -130,9 +130,9 @@ contract HelperV2 is Script {
     }
 
     function fundKeepers(uint256 _amount) public payable {
-        // KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
-        //     _amount
-        // );
+        KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
+            _amount
+        );
         KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
             value: _amount
         }(_amount);

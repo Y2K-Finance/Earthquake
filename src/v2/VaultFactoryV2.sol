@@ -334,12 +334,21 @@ contract VaultFactoryV2 is Ownable {
     }
 
     /**
-    @notice Timelocker function, changes owner address
+    @notice Timelocker function, changes owner (market/epoch creator) address
     @param _owner Address of the new _owner
      */
     function transferOwnership(address _owner) public override onlyTimeLocker {
         if (_owner == address(0)) revert AddressZero();
         _transferOwnership(_owner);
+    }
+
+    /**
+    @notice Timelocker function, changes timelocker address
+    @param _newTimelocker Address of the new timelocker
+     */
+    function changeTimelocker(address _newTimelocker) public onlyTimeLocker {
+        if (_newTimelocker == address(0)) revert AddressZero();
+        timelocker = _newTimelocker;
     }
 
     /*//////////////////////////////////////////////////////////////
