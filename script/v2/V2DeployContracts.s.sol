@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../src/v2/VaultFactoryV2.sol";
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
+import "../../src/v2/Controllers/ControllerGeneric.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 
@@ -28,9 +29,15 @@ contract V2DeployContracts is Script, HelperV2 {
         address policy = addresses.policy;
 
         console2.log("Address admin", addresses.admin);
-        console2.log("Address arbitrum_sequencer", addresses.arbitrum_sequencer);
+        console2.log(
+            "Address arbitrum_sequencer",
+            addresses.arbitrum_sequencer
+        );
         console2.log("Address gelatoOpsV2", addresses.gelatoOpsV2);
-        console2.log("Address gelatoTaskTreasury", addresses.gelatoTaskTreasury);
+        console2.log(
+            "Address gelatoTaskTreasury",
+            addresses.gelatoTaskTreasury
+        );
         console2.log("\n");
 
         // uint256 privateKey = vm.envUint("PRIVATE_KEY");
@@ -47,14 +54,12 @@ contract V2DeployContracts is Script, HelperV2 {
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        
         CarouselFactory vaultFactory = new CarouselFactory(
             addresses.weth,
             addresses.treasury,
             msg.sender,
             addresses.y2k
         );
-
 
         ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
             address(vaultFactory),
@@ -64,6 +69,12 @@ contract V2DeployContracts is Script, HelperV2 {
 
         vaultFactory.whitelistController(address(controller));
 
+        ControllerGeneric controllerGeneric = new ControllerGeneric(
+            addresses.carouselFactory,
+            treasury
+        );
+
+        // vaultFactory.whitelistController(address(controller));
         // KeeperV2(0x52B90b1cbB3D9FFC866BC3Abece39b6E86b5d358).withdraw(4000000000000000);
         KeeperV2 resolveKeeper = new KeeperV2(
             payable(addresses.gelatoOpsV2),
@@ -78,7 +89,7 @@ contract V2DeployContracts is Script, HelperV2 {
         );
 
         vm.stopBroadcast();
-   
+
         // console2.log("TimeLock address", timeLock);
         console2.log("Vault Factory address", address(vaultFactory));
         console2.log("Controller address", address(controller));
@@ -87,6 +98,5 @@ contract V2DeployContracts is Script, HelperV2 {
         console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
-
     }
 }
