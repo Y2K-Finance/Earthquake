@@ -42,13 +42,13 @@ contract V2DeployContracts is Script, HelperV2 {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         // require(privateKey != 0, "PRIVATE_KEY is not set");
         // console2.log("Broadcast privateKey", privateKey);
-        vm.startBroadcast(privateKey);
+        // vm.startBroadcast(privateKey);
 
         // console2.log("Broadcast sender", msg.sender);
         // console2.log("Broadcast policy", policy);
         // console2.log("Broadcast treasury", treasury);
 
-        // vm.startBroadcast();
+        vm.startBroadcast();
 
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
