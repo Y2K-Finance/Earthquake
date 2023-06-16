@@ -72,24 +72,24 @@ contract HelperV2 is Script {
 
     function setVariables() public {
         string memory root = vm.projectRoot();
+        // TODO: Set the variables correctly
         string memory path = string.concat(root, "/configJSON-V2.json");
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".variables");
         configVariables = abi.decode(parseJsonByteCode, (ConfigVariablesV2));
     }
 
-    function contractToAddresses(ConfigAddressesV2 memory _configAddresses)
-        public
-    {
+    function contractToAddresses(
+        ConfigAddressesV2 memory _configAddresses
+    ) public {
         y2k = address(_configAddresses.y2k);
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
 
-    function getConfigAddresses(bool _isTestEnv)
-        public
-        returns (ConfigAddressesV2 memory constans)
-    {
+    function getConfigAddresses(
+        bool _isTestEnv
+    ) public returns (ConfigAddressesV2 memory constans) {
         string memory root = vm.projectRoot();
         string memory path;
         if (_isTestEnv) {
