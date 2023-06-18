@@ -9,7 +9,7 @@ import "./Helper.sol";
 //forge script DeployScript --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --slow --verify -vv
 contract DeployScript is Script, HelperConfig {
     function setupY2K() public {
-        ConfigAddresses memory addresses = getConfigAddresses(true); //true if test env
+        ConfigAddresses memory addresses = getConfigAddresses(false); //true if test env
         contractToAddresses(addresses);
         setVariables();
     }
