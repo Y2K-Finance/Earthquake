@@ -20,6 +20,7 @@ import {
 } from "../../../src/v2/oracles/ChainlinkPriceProviderV2.sol";
 import {GdaiPriceProvider} from "../../../src/v2/oracles/GdaiPriceProvider.sol";
 import {DIAPriceProvider} from "../../../src/v2/oracles/DIAPriceProvider.sol";
+import {CVIPriceProvider} from "../../../src/v2/oracles/CVIPriceProvider.sol";
 import {
     IPriceFeedAdapter
 } from "../../../src/v2/interfaces/IPriceFeedAdapter.sol";
@@ -34,6 +35,7 @@ contract EndToEndV2GenericTest is Helper {
     ChainlinkPriceProviderV2 public chainlinkProviderV2;
     GdaiPriceProvider public gdaiPriceProvider;
     DIAPriceProvider public diaPriceProvider;
+    CVIPriceProvider public cviPriceProvider;
 
     address public premium;
     address public collateral;
@@ -253,6 +255,37 @@ contract EndToEndV2GenericTest is Helper {
                     UNDERLYING,
                     depegStrike,
                     address(diaPriceProvider),
+                    UNDERLYING,
+                    name,
+                    symbol,
+                    address(controller)
+                )
+            );
+
+        (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
+        MintableToken(UNDERLYING).mint(USER);
+    }
+
+    function _setupCVI() internal {
+        vm.selectFork(arbForkId);
+        UNDERLYING = address(new MintableToken("CVI Volatility", "CVI"));
+        address timelock = address(new TimeLock(ADMIN));
+        factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
+        controller = new ControllerGeneric(address(factory), TREASURY);
+        factory.whitelistController(address(controller));
+
+        cviPriceProvider = new CVIPriceProvider(CVI_ORACLE, TIME_OUT);
+        int256 cviStrike = cviPriceProvider.getLatestPrice() - 1;
+
+        depegStrike = uint256(cviStrike);
+        string memory name = string("CVI Volatility");
+        string memory symbol = string("CVI");
+        (depegPremium, depegCollateral, depegMarketId) = factory
+            .createNewMarket(
+                VaultFactoryV2.MarketConfigurationCalldata(
+                    UNDERLYING,
+                    depegStrike,
+                    address(cviPriceProvider),
                     UNDERLYING,
                     name,
                     symbol,
@@ -576,6 +609,72 @@ contract EndToEndV2GenericTest is Helper {
 
     function test_GenericDepegDIA() public {
         _setupDIA();
+        vm.startPrank(USER);
+        configureDepegState(
+            depegPremium,
+            depegCollateral,
+            depegEpochId,
+            begin,
+            PREMIUM_DEPOSIT_AMOUNT,
+            COLLAT_DEPOSIT_AMOUNT
+        );
+        uint256 cachedBalance = MintableToken(UNDERLYING).balanceOf(USER);
+
+        //trigger depeg
+        controller.triggerLiquidation(depegMarketId, depegEpochId);
+        premiumShareValue = helperCalculateFeeAdjustedValue(
+            VaultV2(depegCollateral).finalTVL(depegEpochId),
+            fee
+        );
+        collateralShareValue = helperCalculateFeeAdjustedValue(
+            VaultV2(depegPremium).finalTVL(depegEpochId),
+            fee
+        );
+
+        //check vault balances on withdraw
+        assertEq(
+            premiumShareValue,
+            VaultV2(depegPremium).previewWithdraw(
+                depegEpochId,
+                PREMIUM_DEPOSIT_AMOUNT
+            )
+        );
+        assertEq(
+            collateralShareValue,
+            VaultV2(depegCollateral).previewWithdraw(
+                depegEpochId,
+                COLLAT_DEPOSIT_AMOUNT
+            )
+        );
+
+        //withdraw from vaults
+        VaultV2(depegPremium).withdraw(
+            depegEpochId,
+            PREMIUM_DEPOSIT_AMOUNT,
+            USER,
+            USER
+        );
+        VaultV2(depegCollateral).withdraw(
+            depegEpochId,
+            COLLAT_DEPOSIT_AMOUNT,
+            USER,
+            USER
+        );
+
+        //check vaults balance
+        assertEq(VaultV2(depegPremium).balanceOf(USER, depegEpochId), 0);
+        assertEq(VaultV2(depegCollateral).balanceOf(USER, depegEpochId), 0);
+
+        //check user ERC20 balance
+        assertEq(
+            MintableToken(UNDERLYING).balanceOf(USER),
+            cachedBalance + collateralShareValue + premiumShareValue
+        );
+        vm.stopPrank();
+    }
+
+    function test_GenericDepegCVIVol() public {
+        _setupCVI();
         vm.startPrank(USER);
         configureDepegState(
             depegPremium,

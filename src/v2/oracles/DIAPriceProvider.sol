@@ -6,9 +6,8 @@ pragma solidity 0.8.17;
 
 import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
 import {IDIAPriceFeed} from "../interfaces/IDIAPriceFeed.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract DIAPriceProvider is IConditionProvider, Ownable {
+contract DIAPriceProvider is IConditionProvider {
     string public constant PAIR_NAME = "BTC/USD";
     IDIAPriceFeed public diaPriceFeed;
 
@@ -17,12 +16,16 @@ contract DIAPriceProvider is IConditionProvider, Ownable {
         diaPriceFeed = IDIAPriceFeed(_priceFeed);
     }
 
-    /** @notice Fetch token price from priceFeedAdapter (Redston oracle address)
+    function _getLatestPrice() private view returns (uint256 price) {
+        (price, ) = diaPriceFeed.getValue(PAIR_NAME);
+        return price;
+    }
+
+    /** @notice Fetch token price from priceFeedAdapter (Using string name)
      * @return int256 Current token price
      */
     function getLatestPrice() public view override returns (int256) {
-        (uint128 price, ) = diaPriceFeed.getValue(PAIR_NAME);
-        return int128(price);
+        return int256(_getLatestPrice());
     }
 
     /** @notice Fetch price and return condition
@@ -32,12 +35,11 @@ contract DIAPriceProvider is IConditionProvider, Ownable {
      * @return condition boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
-    // TODO: Seems counterintuitive to convert price, return it, and convert it back
     function conditionMet(
         uint256 _strike
-    ) public view virtual returns (bool condition, int256 price) {
-        price = getLatestPrice();
-        return (_strike > uint256(price), price);
+    ) public view virtual returns (bool condition, int256) {
+        uint256 price = _getLatestPrice();
+        return (_strike > price, int256(price));
     }
 
     /*//////////////////////////////////////////////////////////////

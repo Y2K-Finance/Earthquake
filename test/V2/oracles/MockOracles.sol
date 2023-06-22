@@ -185,3 +185,133 @@ contract MockOracleConditionMet {
         return (int256(_strike) > price, price);
     }
 }
+
+////////////////// CVI Implementation //////////////////
+contract MockOracleAnswerZeroCVI {
+    function getCVILatestRoundData()
+        external
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 1;
+        answer = 0;
+        updatedAt = block.timestamp;
+    }
+}
+
+contract MockOracleAnswerOneCVI {
+    function getCVILatestRoundData()
+        external
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 1;
+        answer = 1;
+        updatedAt = block.timestamp;
+    }
+}
+
+contract MockOracleRoundOutdatedCVI {
+    function getCVILatestRoundData()
+        external
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 2;
+        answer = 1;
+        updatedAt = block.timestamp;
+    }
+}
+
+contract MockOracleGracePeriodCVI {
+    function getCVILatestRoundData()
+        external
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 2;
+        answer = 0;
+        updatedAt = block.timestamp;
+    }
+}
+
+contract MockOracleConditionNotMetCVI {
+    uint32 public strike;
+
+    constructor(uint32 _strike) {
+        strike = _strike + 1;
+    }
+
+    function getCVILatestRoundData()
+        public
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 2;
+        answer = strike;
+        updatedAt = block.timestamp;
+    }
+
+    function conditionMet(
+        uint256 _strike
+    ) external view returns (bool, int256) {
+        (uint256 price, , ) = getCVILatestRoundData();
+        return (int256(_strike) > int256(price), int256(price));
+    }
+}
+
+contract MockOracleTimeOutCVI {
+    uint256 public updateTime;
+
+    // NOTE: This would return a time that is more than timeout
+    // @param warptime equals block.timestamp
+    // @param timeout equals timeout set for price provider
+    constructor(uint256 _warpTime, uint256 _timeout) {
+        updateTime = _warpTime - _timeout - 1;
+    }
+
+    function getCVILatestRoundData()
+        public
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 2;
+        answer = uint32(1);
+        updatedAt = updateTime;
+    }
+
+    function conditionMet(
+        uint256 _strike
+    ) external view returns (bool, int256) {
+        (uint256 price, , ) = getCVILatestRoundData();
+        return (int256(_strike) > int256(price), int256(price));
+    }
+}
+
+contract MockOracleConditionMetCVI {
+    uint256 public updateTime;
+
+    // NOTE: This would return a time that is within timeout range
+    // @param warptime equals block.timestamp
+    // @param timeout equals timeout set for price provider
+    constructor(uint256 _warpTime) {
+        updateTime = _warpTime - 1;
+    }
+
+    function getCVILatestRoundData()
+        public
+        view
+        returns (uint32 answer, uint80 roundId, uint256 updatedAt)
+    {
+        roundId = 2;
+        answer = uint32(1);
+        updatedAt = updateTime;
+    }
+
+    function conditionMet(
+        uint256 _strike
+    ) external view returns (bool, int256) {
+        (uint256 price, , ) = getCVILatestRoundData();
+        return (int256(_strike) > int256(price), int256(price));
+    }
+}
