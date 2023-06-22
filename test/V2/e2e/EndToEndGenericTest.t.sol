@@ -302,6 +302,37 @@ contract EndToEndV2GenericTest is Helper {
         MintableToken(UNDERLYING).mint(USER);
     }
 
+    function _setupCVI() internal {
+        vm.selectFork(arbForkId);
+        UNDERLYING = address(new MintableToken("CVI Volatility", "CVI"));
+        address timelock = address(new TimeLock(ADMIN));
+        factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
+        controller = new ControllerGeneric(address(factory), TREASURY);
+        factory.whitelistController(address(controller));
+
+        cviPriceProvider = new CVIPriceProvider(CVI_ORACLE, TIME_OUT);
+        int256 cviStrike = cviPriceProvider.getLatestPrice() - 1;
+
+        depegStrike = uint256(cviStrike);
+        string memory name = string("CVI Volatility");
+        string memory symbol = string("CVI");
+        (depegPremium, depegCollateral, depegMarketId) = factory
+            .createNewMarket(
+                VaultFactoryV2.MarketConfigurationCalldata(
+                    UNDERLYING,
+                    depegStrike,
+                    address(cviPriceProvider),
+                    UNDERLYING,
+                    name,
+                    symbol,
+                    address(controller)
+                )
+            );
+
+        (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
+        MintableToken(UNDERLYING).mint(USER);
+    }
+
     function helperCalculateFeeAdjustedValue(
         uint256 _amount,
         uint16 _fee
