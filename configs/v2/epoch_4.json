@@ -1,12 +1,13 @@
 {
 
     "variables":{
-        "newMarkets": false,
-        "amountOfNewMarkets": 0,
+        "newMarkets": true,
+        "amountOfNewMarkets": 2,
         "epochs": true,
         "amountOfNewEpochs": 14,
         "totalAmountOfEmittedTokens": 0
     },
+
     "epochs": [
         {
             "name": "y2kMAI_963_ARB*",
@@ -164,5 +165,29 @@
         }
     ],
     "markets": [
+        {
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+            "depositFee": 46,
+            "minQueueDeposit": "50000000000000000000",
+            "name": "y2kTUSD_991_ARB*",
+            "oracle": "0x6fAbee62266Da6686EE2744C6f15bb8352d2f28D",
+            "relayFee": "2000000000000000000",
+            "strikePrice": 991000000000000000,
+            "token": "0x4D15a3A2286D883AF0AA1B3f21367843FAc63E07",
+            "uri": "https://y2k.finance"
+        },
+        {
+            "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
+            "depositAsset": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "depositFee": 46,
+            "minQueueDeposit": "25000000000000000",
+            "name": "y2kTUSD_991_WETH*",
+            "oracle": "0x6fAbee62266Da6686EE2744C6f15bb8352d2f28D",
+            "relayFee": "1000000000000000",
+            "strikePrice": 991000000000000000,
+            "token": "0x4D15a3A2286D883AF0AA1B3f21367843FAc63E07",
+            "uri": "https://y2k.finance"
+        }
     ]
 }
