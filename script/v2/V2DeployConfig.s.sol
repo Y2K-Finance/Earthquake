@@ -147,6 +147,15 @@ contract V2DeployConfig is HelperV2 {
                 );
                 revert("Market not deployed");
             }
+            if(epoch.epochBegin < block.timestamp){
+                console2.log("Epoch begin in the past");
+                revert("Epoch begin in the past");
+            }
+            if(epoch.epochEnd < block.timestamp){
+                console2.log("Epoch end in the past");
+                revert("Epoch end in the past");
+            }
+            
             (uint256 epochId, address[2] memory vaults) = CarouselFactory(
                 factory
             ).createEpochWithEmissions(
