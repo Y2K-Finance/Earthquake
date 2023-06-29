@@ -22,7 +22,11 @@ contract CVIPriceProviderTest is Helper {
 
         address timelock = address(new TimeLock(ADMIN));
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
-        cviPriceProvider = new CVIPriceProvider(CVI_ORACLE, TIME_OUT);
+        cviPriceProvider = new CVIPriceProvider(
+            CVI_ORACLE,
+            TIME_OUT,
+            CVI_DECIMALS
+        );
     }
 
     ////////////////////////////////////////////////
@@ -31,11 +35,27 @@ contract CVIPriceProviderTest is Helper {
     function testCVICreation() public {
         assertEq(cviPriceProvider.timeOut(), TIME_OUT);
         assertEq(address(cviPriceProvider.priceFeedAdapter()), CVI_ORACLE);
+        assertEq(cviPriceProvider.decimals(), CVI_DECIMALS);
+        assertEq(cviPriceProvider.description(), "CVI");
     }
 
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
+    function testLatestRoundDataCVI() public {
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = cviPriceProvider.latestRoundData();
+        assertTrue(price != 0);
+        assertTrue(roundId != 0);
+        assertEq(startedAt, 1);
+        assertTrue(updatedAt != 0);
+        assertTrue(answeredInRound != 0);
+    }
 
     function testLatestPriceCVI() public {
         int256 price = cviPriceProvider.getLatestPrice();
@@ -54,15 +74,19 @@ contract CVIPriceProviderTest is Helper {
 
     function testRevertConstructorInputs() public {
         vm.expectRevert(CVIPriceProvider.ZeroAddress.selector);
-        new CVIPriceProvider(address(0), TIME_OUT);
+        new CVIPriceProvider(address(0), TIME_OUT, CVI_DECIMALS);
 
         vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
-        new CVIPriceProvider(CVI_ORACLE, 0);
+        new CVIPriceProvider(CVI_ORACLE, 0, CVI_DECIMALS);
     }
 
     function testRevertOraclePriceZeroCVI() public {
         address mockOracle = address(new MockOracleAnswerZeroCVI());
-        cviPriceProvider = new CVIPriceProvider(mockOracle, TIME_OUT);
+        cviPriceProvider = new CVIPriceProvider(
+            mockOracle,
+            TIME_OUT,
+            CVI_DECIMALS
+        );
         vm.expectRevert(CVIPriceProvider.OraclePriceZero.selector);
         cviPriceProvider.getLatestPrice();
     }
@@ -71,7 +95,11 @@ contract CVIPriceProviderTest is Helper {
         address mockOracle = address(
             new MockOracleTimeOutCVI(block.timestamp, TIME_OUT)
         );
-        cviPriceProvider = new CVIPriceProvider(mockOracle, TIME_OUT);
+        cviPriceProvider = new CVIPriceProvider(
+            mockOracle,
+            TIME_OUT,
+            CVI_DECIMALS
+        );
         vm.expectRevert(CVIPriceProvider.PriceTimedOut.selector);
         cviPriceProvider.getLatestPrice();
     }
