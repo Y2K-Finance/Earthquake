@@ -310,7 +310,11 @@ contract EndToEndV2GenericTest is Helper {
         controller = new ControllerGeneric(address(factory), TREASURY);
         factory.whitelistController(address(controller));
 
-        cviPriceProvider = new CVIPriceProvider(CVI_ORACLE, TIME_OUT);
+        cviPriceProvider = new CVIPriceProvider(
+            CVI_ORACLE,
+            TIME_OUT,
+            CVI_DECIMALS
+        );
         int256 cviStrike = cviPriceProvider.getLatestPrice() - 1;
 
         depegStrike = uint256(cviStrike);
