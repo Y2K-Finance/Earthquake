@@ -16,6 +16,8 @@ contract ChainlinkPriceProviderV2 is IConditionProvider {
     IVaultFactoryV2 public immutable vaultFactory;
     AggregatorV2V3Interface public immutable sequencerUptimeFeed;
     AggregatorV3Interface public immutable priceFeed;
+    uint256 public immutable decimals;
+    string public description;
 
     constructor(
         address _sequencer,
@@ -31,6 +33,23 @@ contract ChainlinkPriceProviderV2 is IConditionProvider {
         sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
         priceFeed = AggregatorV3Interface(_priceFeed);
         timeOut = _timeOut;
+        decimals = priceFeed.decimals();
+        description = priceFeed.description();
+    }
+
+    function latestRoundData()
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        (roundId, price, startedAt, updatedAt, answeredInRound) = priceFeed
+            .latestRoundData();
     }
 
     /** @notice Fetch token price from priceFeed (Chainlink oracle address)
@@ -56,10 +75,18 @@ contract ChainlinkPriceProviderV2 is IConditionProvider {
             ,
             uint256 updatedAt,
             uint80 answeredInRound
-        ) = priceFeed.latestRoundData();
+        ) = latestRoundData();
         if (price <= 0) revert OraclePriceZero();
         if (answeredInRound < roundID) revert RoundIdOutdated();
         if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
+
+        if (decimals < 18) {
+            uint256 calcDecimals = 10 ** (18 - (decimals));
+            price = price * int256(calcDecimals);
+        } else if (decimals > 18) {
+            uint256 calcDecimals = 10 ** ((decimals - 18));
+            price = price / int256(calcDecimals);
+        }
 
         return price;
     }

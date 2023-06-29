@@ -7,4 +7,9 @@ interface IConditionProvider {
     function conditionMet(
         uint256 _value
     ) external view returns (bool, int256 price);
+
+    function latestRoundData()
+        external
+        view
+        returns (uint80, int256, uint256, uint256, uint80);
 }

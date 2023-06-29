@@ -10,7 +10,8 @@ contract RedstonePriceProvider is IConditionProvider {
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;
     bytes32 public immutable dataFeedId;
-    string public symbol;
+    uint256 public immutable decimals;
+    string public description;
 
     constructor(
         address _factory,
@@ -25,9 +26,30 @@ contract RedstonePriceProvider is IConditionProvider {
         if (_timeOut == 0) revert InvalidInput();
         vaultFactory = IVaultFactoryV2(_factory);
         priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
-        symbol = _dataFeedSymbol;
+        description = _dataFeedSymbol;
         dataFeedId = stringToBytes32(_dataFeedSymbol);
         timeOut = _timeOut;
+        decimals = priceFeedAdapter.decimals();
+    }
+
+    function latestRoundData()
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        (
+            roundId,
+            price,
+            startedAt,
+            updatedAt,
+            answeredInRound
+        ) = priceFeedAdapter.latestRoundData();
     }
 
     /** @notice Fetch token price from priceFeedAdapter (Redston oracle address)
@@ -40,11 +62,19 @@ contract RedstonePriceProvider is IConditionProvider {
             ,
             uint256 updatedAt,
             uint80 answeredInRound
-        ) = priceFeedAdapter.latestRoundData();
+        ) = latestRoundData();
         if (price <= 0) revert OraclePriceZero();
         if (answeredInRound < roundId) revert RoundIdOutdated();
         // TODO: What is a suitable timeframe to set timeout as based on this info? Update at always timestamp?
         if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
+
+        if (decimals < 18) {
+            uint256 calcDecimals = 10 ** (18 - (decimals));
+            price = price * int256(calcDecimals);
+        } else if (decimals > 18) {
+            uint256 calcDecimals = 10 ** ((decimals - 18));
+            price = price / int256(calcDecimals);
+        }
 
         return price;
     }
