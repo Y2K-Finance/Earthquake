@@ -2,6 +2,9 @@
 pragma solidity 0.8.17;
 
 contract MockOracleAnswerZero {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
+
     function latestRoundData()
         external
         view
@@ -22,6 +25,9 @@ contract MockOracleAnswerZero {
 }
 
 contract MockOracleAnswerOne {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
+
     function latestRoundData()
         external
         view
@@ -42,6 +48,9 @@ contract MockOracleAnswerOne {
 }
 
 contract MockOracleRoundOutdated {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
+
     function latestRoundData()
         external
         view
@@ -62,6 +71,9 @@ contract MockOracleRoundOutdated {
 }
 
 contract MockOracleGracePeriod {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
+
     function latestRoundData()
         external
         view
@@ -82,6 +94,8 @@ contract MockOracleGracePeriod {
 }
 
 contract MockOracleConditionNotMet {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
     int256 public strike;
 
     constructor(int256 _strike) {
@@ -115,6 +129,8 @@ contract MockOracleConditionNotMet {
 }
 
 contract MockOracleTimeOut {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
     uint256 public updateTime;
 
     // NOTE: This would return a time that is more than timeout
@@ -151,6 +167,8 @@ contract MockOracleTimeOut {
 }
 
 contract MockOracleConditionMet {
+    uint256 public decimals = 0;
+    string public description = "MOCK";
     uint256 public updateTime;
 
     // NOTE: This would return a time that is within timeout range

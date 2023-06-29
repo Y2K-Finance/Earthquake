@@ -12,6 +12,7 @@ import {
     MockOracleRoundOutdated,
     MockOracleTimeOut
 } from "./MockOracles.sol";
+import {IPriceFeedAdapter} from "./PriceInterfaces.sol";
 
 contract GdaiPriceProviderTest is Helper {
     GdaiPriceProvider public gdaiPriceProvider;
@@ -36,13 +37,35 @@ contract GdaiPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     function testGdaiCreation() public {
         assertEq(address(gdaiPriceProvider.gdaiPriceFeed()), GDAI_VAULT);
-
         assertEq(gdaiPriceProvider.strikeHash(), abi.encode(strikePrice));
+        assertEq(
+            gdaiPriceProvider.decimals(),
+            IPriceFeedAdapter(GDAI_VAULT).decimals()
+        );
+        assertEq(
+            gdaiPriceProvider.description(),
+            IPriceFeedAdapter(GDAI_VAULT).symbol()
+        );
     }
 
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
+    function testLatestRoundDataGdai() public {
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = gdaiPriceProvider.latestRoundData();
+        assertTrue(price != 0);
+        assertTrue(roundId != 0);
+        assertTrue(startedAt != 0);
+        assertTrue(updatedAt != 0);
+        assertTrue(answeredInRound != 0);
+    }
+
     function testUpdateStrike() public {
         int256 newStrikePrice = -1;
         vm.expectEmit(true, true, false, false);

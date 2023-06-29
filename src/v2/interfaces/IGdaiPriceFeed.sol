@@ -7,4 +7,8 @@ interface IGdaiPriceFeed {
     function accPnlPerTokenUsed() external view returns (int256);
 
     function shareToAssetsPrice() external view returns (uint256);
+
+    function decimals() external view returns (uint256);
+
+    function symbol() external view returns (string memory);
 }

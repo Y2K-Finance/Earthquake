@@ -49,8 +49,10 @@ contract Helper is Test {
         0xd85E038593d7A098614721EaE955EC2022B9B91B;
     address public constant DIA_ORACLE_V2 =
         0xd041478644048d9281f88558E6088e9da97df624;
+    uint256 public constant DIA_DECIMALS = 18;
     address public constant CVI_ORACLE =
         0x649813B6dc6111D67484BaDeDd377D32e4505F85;
+    uint256 public constant CVI_DECIMALS = 18;
     address public constant RELAYER = address(0x55);
     address public UNDERLYING = address(0x123);
     address public TOKEN = address(new MintableToken("Token", "tkn"));

@@ -12,6 +12,7 @@ import {
     MockOracleRoundOutdated,
     MockOracleTimeOut
 } from "./MockOracles.sol";
+import {IPriceFeedAdapter} from "./PriceInterfaces.sol";
 
 contract RedstonePriceProviderTest is Helper {
     uint256 public arbForkId;
@@ -45,12 +46,30 @@ contract RedstonePriceProviderTest is Helper {
         assertEq(address(redstoneProvider.vaultFactory()), address(factory));
         assertEq(address(redstoneProvider.priceFeedAdapter()), VST_PRICE_FEED);
         assertEq(redstoneProvider.dataFeedId(), bytes32("VST"));
-        assertEq(redstoneProvider.symbol(), "VST");
+        assertEq(
+            redstoneProvider.decimals(),
+            IPriceFeedAdapter(VST_PRICE_FEED).decimals()
+        );
+        assertEq(redstoneProvider.description(), "VST");
     }
 
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
+    function testLatestRoundDataRedstone() public {
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = redstoneProvider.latestRoundData();
+        assertTrue(price != 0);
+        assertTrue(roundId == 0);
+        assertTrue(startedAt != 0);
+        assertTrue(updatedAt != 0);
+        assertTrue(answeredInRound == 0);
+    }
 
     function testLatestPriceRedstone() public {
         int256 price = redstoneProvider.getLatestPrice();

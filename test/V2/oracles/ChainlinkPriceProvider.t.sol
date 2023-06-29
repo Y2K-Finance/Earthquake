@@ -17,6 +17,7 @@ import {
     MockOracleRoundOutdated,
     MockOracleTimeOut
 } from "./MockOracles.sol";
+import {IChainlink} from "./PriceInterfaces.sol";
 
 contract ChainlinkPriceProviderTest is Helper {
     uint256 public arbForkId;
@@ -57,7 +58,7 @@ contract ChainlinkPriceProviderTest is Helper {
     //                STATE                       //
     ////////////////////////////////////////////////
 
-    function testChainlinkCreation() public {
+    function testChainlinkCreationV1() public {
         assertEq(chainlinkPriceProvider.timeOut(), TIME_OUT);
         assertEq(
             address(chainlinkPriceProvider.vaultFactory()),
@@ -68,11 +69,58 @@ contract ChainlinkPriceProviderTest is Helper {
             ARBITRUM_SEQUENCER
         );
         assertEq(address(chainlinkPriceProvider.priceFeed()), USDC_CHAINLINK);
+        assertEq(
+            chainlinkPriceProvider.decimals(),
+            IChainlink(USDC_CHAINLINK).decimals()
+        );
+        assertEq(
+            chainlinkPriceProvider.description(),
+            IChainlink(USDC_CHAINLINK).description()
+        );
+    }
+
+    function testChainlinkCreation() public {
+        vm.selectFork(arbGoerliForkId);
+        assertEq(chainlinkPriceProviderV2.timeOut(), TIME_OUT);
+        assertEq(
+            address(chainlinkPriceProviderV2.vaultFactory()),
+            address(factory)
+        );
+        assertEq(
+            address(chainlinkPriceProviderV2.sequencerUptimeFeed()),
+            ARBITRUM_SEQUENCER_GOERLI
+        );
+        assertEq(
+            address(chainlinkPriceProviderV2.priceFeed()),
+            ETH_VOL_CHAINLINK
+        );
+        assertEq(
+            chainlinkPriceProviderV2.decimals(),
+            IChainlink(ETH_VOL_CHAINLINK).decimals()
+        );
+        assertEq(
+            chainlinkPriceProviderV2.description(),
+            IChainlink(ETH_VOL_CHAINLINK).description()
+        );
     }
 
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
+    function testLatestRoundDataV1() public {
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = chainlinkPriceProvider.latestRoundData();
+        assertTrue(price != 0);
+        assertTrue(roundId != 0);
+        assertTrue(startedAt != 0);
+        assertTrue(updatedAt != 0);
+        assertTrue(answeredInRound != 0);
+    }
 
     function testLatestPriceV1() public {
         int256 price = chainlinkPriceProvider.getLatestPrice();
@@ -85,6 +133,22 @@ contract ChainlinkPriceProviderTest is Helper {
         );
         assertTrue(price != 0);
         assertEq(condition, true);
+    }
+
+    function testLatestRoundDataV2() public {
+        vm.selectFork(arbGoerliForkId);
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = chainlinkPriceProviderV2.latestRoundData();
+        assertTrue(price != 0);
+        assertTrue(roundId != 0);
+        assertTrue(startedAt != 0);
+        assertTrue(updatedAt != 0);
+        assertTrue(answeredInRound != 0);
     }
 
     function testLatestPriceV2() public {
@@ -108,7 +172,7 @@ contract ChainlinkPriceProviderTest is Helper {
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
 
-    function testRevertConstructorInputs() public {
+    function testRevertConstructorInputsV1() public {
         vm.expectRevert(ChainlinkPriceProvider.ZeroAddress.selector);
         new ChainlinkPriceProvider(
             address(0),
@@ -142,7 +206,7 @@ contract ChainlinkPriceProviderTest is Helper {
         );
     }
 
-    function testRevertSequencerDown() public {
+    function testRevertSequencerDownV1() public {
         address mockAddress = address(new MockOracleAnswerOne());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             mockAddress,
@@ -154,7 +218,7 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider.getLatestPrice();
     }
 
-    function testRevertGracePeriodNotOver() public {
+    function testRevertGracePeriodNotOverV1() public {
         address mockAddress = address(new MockOracleGracePeriod());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             mockAddress,
@@ -166,7 +230,7 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider.getLatestPrice();
     }
 
-    function testRevertOraclePriceZero() public {
+    function testRevertOraclePriceZeroV1() public {
         address mockAddress = address(new MockOracleAnswerZero());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
@@ -178,7 +242,7 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider.getLatestPrice();
     }
 
-    function testRevertRoundIdOutdated() public {
+    function testRevertRoundIdOutdatedV1() public {
         address mockAddress = address(new MockOracleRoundOutdated());
         chainlinkPriceProvider = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER,
@@ -190,7 +254,7 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider.getLatestPrice();
     }
 
-    function testRevertOracleTimeOut() public {
+    function testRevertOracleTimeOutV1() public {
         address mockAddress = address(
             new MockOracleTimeOut(block.timestamp, TIME_OUT)
         );

@@ -97,7 +97,7 @@ contract EndToEndV2GenericTest is Helper {
             )
         );
 
-        depegStrike = 0.1 ether;
+        depegStrike = 0.1 ether * 10 ** 18;
         (depegPremium, depegCollateral, depegMarketId) = factory
             .createNewMarket(
                 VaultFactoryV2.MarketConfigurationCalldata(
@@ -141,7 +141,7 @@ contract EndToEndV2GenericTest is Helper {
         begin = uint40(updatedAt);
         end = uint40(updatedAt + 3 days);
 
-        depegStrike = 1 ether;
+        depegStrike = 1 ether * 10 ** 6;
         string memory name = string("USD Coin");
         string memory symbol = string("USDC");
         (depegPremium, depegCollateral, depegMarketId) = factory
@@ -243,7 +243,7 @@ contract EndToEndV2GenericTest is Helper {
         controller = new ControllerGeneric(address(factory), TREASURY);
         factory.whitelistController(address(controller));
 
-        diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2);
+        diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2, DIA_DECIMALS);
 
         // TODO: Change this to price feed when MIM/USD live
         depegStrike = diaStrikePrice;
@@ -274,7 +274,11 @@ contract EndToEndV2GenericTest is Helper {
         controller = new ControllerGeneric(address(factory), TREASURY);
         factory.whitelistController(address(controller));
 
-        cviPriceProvider = new CVIPriceProvider(CVI_ORACLE, TIME_OUT);
+        cviPriceProvider = new CVIPriceProvider(
+            CVI_ORACLE,
+            TIME_OUT,
+            CVI_DECIMALS
+        );
         int256 cviStrike = cviPriceProvider.getLatestPrice() - 1;
 
         depegStrike = uint256(cviStrike);
