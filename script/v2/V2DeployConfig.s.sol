@@ -8,17 +8,20 @@ import "./V2Helper.sol";
 
 // whitelist controller 0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC 
 contract V2DeployConfig is HelperV2 {
-    CarouselFactory factory;
 
     function setupY2K() public {
+        setVariables();
         // ConfigAddressesV2 memory addresses = getConfigAddresses(false); //true if test env
-        configAddresses = getConfigAddresses(false); //true if test env
-        console.log("Address admin", configAddresses.admin);
+        configAddresses = getConfigAddresses(configVariables.isTestEnv); //true if test env
+        if(configVariables.isTestEnv) {
+            console2.log("THIS IS A TEST ENV DEPLOYMENT");
+        } else {
+            console2.log("THIS IS A PRODUCTION ENV DEPLOYMENT");
+        }
+        console.log("Deployer", msg.sender);
         console.log("Address arbitrum_sequencer", configAddresses.arbitrum_sequencer);
         console.log("Address Factory", configAddresses.carouselFactory);
-        factory = CarouselFactory(configAddresses.carouselFactory);
         contractToAddresses(configAddresses);
-        setVariables();
     }
 
     function run() public {
@@ -61,14 +64,16 @@ contract V2DeployConfig is HelperV2 {
         }
         for (uint256 i = 0; i < markets.length; ++i) {
             ConfigMarketV2 memory market = markets[i];
-            if (!factory.controllers(market.controller)) {
-                console2.log("Controller not whitelisted", market.controller);
+            address controller = getController(market.isGenericController);
+            address depositAsset = getDepositAsset(market.depositAsset);
+            if (!factory.controllers(controller)) {
+                console2.log("Controller not whitelisted", controller);
                 revert("Controller not whitelisted");
             }
             uint256 previewMarketID = factory.getMarketId(
                 market.token,
                 market.strikePrice,
-                market.depositAsset
+                depositAsset
             );
             address vault = factory.marketIdToVaults(previewMarketID, 0);
             if (vault != address(0)) {
@@ -77,7 +82,7 @@ contract V2DeployConfig is HelperV2 {
                     "Market: ",
                     market.token,
                     market.strikePrice,
-                    market.depositAsset
+                    depositAsset
                 );
                 revert("Market already deployed");
             }
@@ -87,10 +92,10 @@ contract V2DeployConfig is HelperV2 {
                         market.token,
                         market.strikePrice,
                         market.oracle,
-                        market.depositAsset,
+                        depositAsset,
                         market.name,
                         market.uri,
-                        market.controller,
+                        controller,
                         stringToUint(market.relayFee),
                         market.depositFee,
                         stringToUint(market.minQueueDeposit)
@@ -132,10 +137,11 @@ contract V2DeployConfig is HelperV2 {
         }
         for (uint256 i = 0; i < epochs.length; ++i) {
             ConfigEpochWithEmission memory epoch = epochs[i];
+            address depositAsset = getDepositAsset(epoch.depositAsset);
             uint256 previewMarketID = factory.getMarketId(
                 epoch.token,
                 epoch.strikePrice,
-                epoch.depositAsset
+                depositAsset
             );
             address vault = factory.marketIdToVaults(previewMarketID, 0);
             if (vault == address(0)) {
@@ -143,7 +149,7 @@ contract V2DeployConfig is HelperV2 {
                     "Market not deployed",
                     epoch.token,
                     epoch.strikePrice,
-                    epoch.depositAsset
+                    depositAsset
                 );
                 revert("Market not deployed");
             }
@@ -155,14 +161,14 @@ contract V2DeployConfig is HelperV2 {
                 console2.log("Epoch end in the past");
                 revert("Epoch end in the past");
             }
-            
+
             (uint256 epochId, address[2] memory vaults) = CarouselFactory(
                 factory
             ).createEpochWithEmissions(
                     previewMarketID,
                     epoch.epochBegin,
                     epoch.epochEnd,
-                    epoch.withdrawalFee,
+                    500,
                     stringToUint(epoch.premiumEmissions),
                     stringToUint(epoch.collatEmissions)
                 );
