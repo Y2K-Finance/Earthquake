@@ -18,7 +18,7 @@ contract RedstonePriceProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
     RedstonePriceProvider public redstoneProvider;
-    uint256 public marketId = 1;
+    uint256 public marketId = 2;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -84,6 +84,40 @@ contract RedstonePriceProviderTest is Helper {
         (bool condition, int256 price) = redstoneProvider.conditionMet(
             2 ether,
             marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionOneMetRedstone() public {
+        uint256 conditionType = 1;
+        uint256 marketIdOne = 1;
+        redstoneProvider.setConditionType(marketIdOne, conditionType);
+        (bool condition, int256 price) = redstoneProvider.conditionMet(
+            0.01 ether,
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetRedstone() public {
+        (bool condition, int256 price) = redstoneProvider.conditionMet(
+            2 ether,
+            marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionThreeMetRedstone() public {
+        uint256 conditionType = 3;
+        uint256 marketIdThree = 3;
+        redstoneProvider.setConditionType(marketIdThree, conditionType);
+        int256 latestPrice = redstoneProvider.getLatestPrice();
+        (bool condition, int256 price) = redstoneProvider.conditionMet(
+            uint256(latestPrice),
+            marketIdThree
         );
         assertTrue(price != 0);
         assertEq(condition, true);

@@ -18,7 +18,7 @@ contract DIAPriceProviderTest is Helper {
     uint256 public arbForkId;
     string public pairName = "BTC/USD";
     uint256 public strikePrice = 50_000e8;
-    uint256 public marketId = 1;
+    uint256 public marketId = 2;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -67,10 +67,35 @@ contract DIAPriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionMetDIA() public {
+    function testConditionOneMetDIA() public {
+        uint256 conditionType = 1;
+        uint256 marketIdOne = 1;
+        diaPriceProvider.setConditionType(marketIdOne, conditionType);
+        (bool condition, int256 price) = diaPriceProvider.conditionMet(
+            10e6,
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetDIA() public {
         (bool condition, int256 price) = diaPriceProvider.conditionMet(
             strikePrice,
             marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionThreeMetDIA() public {
+        uint256 conditionType = 3;
+        uint256 marketIdThree = 3;
+        diaPriceProvider.setConditionType(marketIdThree, conditionType);
+        int256 latestPrice = diaPriceProvider.getLatestPrice();
+        (bool condition, int256 price) = diaPriceProvider.conditionMet(
+            uint256(latestPrice),
+            marketIdThree
         );
         assertTrue(price != 0);
         assertEq(condition, true);

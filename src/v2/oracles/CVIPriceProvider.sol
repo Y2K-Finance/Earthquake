@@ -94,7 +94,6 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = marketIdToConditionType[_marketId];
         price = getLatestPrice();
-        // Originally in use was <
         if (conditionType == 1) return (int256(_strike) < price, price);
         else if (conditionType == 2) return (int256(_strike) > price, price);
         else if (conditionType == 3) return (int256(_strike) == price, price);

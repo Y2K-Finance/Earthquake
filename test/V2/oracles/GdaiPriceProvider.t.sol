@@ -18,7 +18,7 @@ contract GdaiPriceProviderTest is Helper {
     GdaiPriceProvider public gdaiPriceProvider;
     uint256 public arbForkId;
     int256 public strikePrice = -8994085036142722;
-    uint256 public marketId = 1;
+    uint256 public marketId = 2;
 
     event StrikeUpdated(bytes strikeHash, int256 strikePrice);
 
@@ -86,6 +86,43 @@ contract GdaiPriceProviderTest is Helper {
         (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
             uint256(-strikePrice),
             marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionOneMetGdai() public {
+        uint256 conditionType = 1;
+        uint256 marketIdOne = 1;
+        gdaiPriceProvider.setConditionType(marketIdOne, conditionType);
+        int256 newStrike = -1 ether;
+        gdaiPriceProvider.updateStrikeHash(newStrike);
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(-newStrike),
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetGdai() public {
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(-strikePrice),
+            marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionThreeMetGdai() public {
+        uint256 conditionType = 3;
+        uint256 marketIdThree = 3;
+        gdaiPriceProvider.setConditionType(marketIdThree, conditionType);
+        int256 latestPrice = gdaiPriceProvider.getLatestPrice();
+        gdaiPriceProvider.updateStrikeHash(latestPrice);
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(-latestPrice),
+            marketIdThree
         );
         assertTrue(price != 0);
         assertEq(condition, true);

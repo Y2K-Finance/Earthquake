@@ -66,10 +66,35 @@ contract CVIPriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionMetCVI() public {
+    function testConditionOneMetCVI() public {
         (bool condition, int256 price) = cviPriceProvider.conditionMet(
             100,
             marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetCVI() public {
+        uint256 conditionType = 2;
+        uint256 marketIdTwo = 2;
+        cviPriceProvider.setConditionType(marketIdTwo, conditionType);
+        (bool condition, int256 price) = cviPriceProvider.conditionMet(
+            0.1 ether,
+            marketIdTwo
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionThreeMetCVI() public {
+        uint256 conditionType = 3;
+        uint256 marketIdThree = 3;
+        cviPriceProvider.setConditionType(marketIdThree, conditionType);
+        int256 latestPrice = cviPriceProvider.getLatestPrice();
+        (bool condition, int256 price) = cviPriceProvider.conditionMet(
+            uint256(latestPrice),
+            marketIdThree
         );
         assertTrue(price != 0);
         assertEq(condition, true);
