@@ -5,7 +5,8 @@ interface IConditionProvider {
     function getLatestPrice() external view returns (int256);
 
     function conditionMet(
-        uint256 _value
+        uint256 _value,
+        uint256 _marketId
     ) external view returns (bool, int256 price);
 
     function latestRoundData()

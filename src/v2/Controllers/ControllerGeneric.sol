@@ -241,7 +241,8 @@ contract ControllerGeneric {
             vaultFactory.marketToOracle(_marketId)
         );
         (conditionMet, price) = conditionProvider.conditionMet(
-            premiumVault.strike()
+            premiumVault.strike(),
+            _marketId
         );
         if (!conditionMet) revert ConditionNotMet();
     }

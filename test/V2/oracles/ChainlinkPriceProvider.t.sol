@@ -24,7 +24,8 @@ contract ChainlinkPriceProviderTest is Helper {
     uint256 public arbGoerliForkId;
     VaultFactoryV2 public factory;
     ChainlinkPriceProvider public chainlinkPriceProvider;
-    ChainlinkPriceProviderV2 public chainlinkPriceProviderV2;
+    ChainlinkPriceProvider public chainlinkPriceProviderV2;
+    uint256 public marketId = 1;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -42,14 +43,18 @@ contract ChainlinkPriceProviderTest is Helper {
             USDC_CHAINLINK,
             TIME_OUT
         );
+        uint256 condition = 2;
+        chainlinkPriceProvider.setConditionType(marketId, condition);
 
         vm.selectFork(arbGoerliForkId);
-        chainlinkPriceProviderV2 = new ChainlinkPriceProviderV2(
+        chainlinkPriceProviderV2 = new ChainlinkPriceProvider(
             ARBITRUM_SEQUENCER_GOERLI,
             address(factory),
             ETH_VOL_CHAINLINK,
             TIME_OUT
         );
+        condition = 1;
+        chainlinkPriceProviderV2.setConditionType(marketId, condition);
 
         vm.selectFork(arbForkId);
     }
@@ -129,7 +134,8 @@ contract ChainlinkPriceProviderTest is Helper {
 
     function testConditionMetV1() public {
         (bool condition, int256 price) = chainlinkPriceProvider.conditionMet(
-            2 ether
+            2 ether,
+            marketId
         );
         assertTrue(price != 0);
         assertEq(condition, true);
@@ -162,7 +168,8 @@ contract ChainlinkPriceProviderTest is Helper {
         uint256 strike = uint256(chainlinkPriceProviderV2.getLatestPrice() - 1);
 
         (bool condition, int256 price) = chainlinkPriceProviderV2.conditionMet(
-            strike
+            strike,
+            marketId
         );
         assertTrue(price != 0);
         assertEq(condition, true);

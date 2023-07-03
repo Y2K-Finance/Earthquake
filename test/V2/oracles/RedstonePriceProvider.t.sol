@@ -18,6 +18,7 @@ contract RedstonePriceProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
     RedstonePriceProvider public redstoneProvider;
+    uint256 public marketId = 1;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -35,6 +36,9 @@ contract RedstonePriceProviderTest is Helper {
             "VST",
             TIME_OUT
         );
+
+        uint256 condition = 2;
+        redstoneProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -77,7 +81,10 @@ contract RedstonePriceProviderTest is Helper {
     }
 
     function testConditionMet() public {
-        (bool condition, int256 price) = redstoneProvider.conditionMet(2 ether);
+        (bool condition, int256 price) = redstoneProvider.conditionMet(
+            2 ether,
+            marketId
+        );
         assertTrue(price != 0);
         assertEq(condition, true);
     }

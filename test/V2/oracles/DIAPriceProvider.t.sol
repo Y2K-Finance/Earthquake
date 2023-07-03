@@ -18,6 +18,7 @@ contract DIAPriceProviderTest is Helper {
     uint256 public arbForkId;
     string public pairName = "BTC/USD";
     uint256 public strikePrice = 50_000e8;
+    uint256 public marketId = 1;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -27,6 +28,8 @@ contract DIAPriceProviderTest is Helper {
         vm.selectFork(arbForkId);
 
         diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2, DIA_DECIMALS);
+        uint256 condition = 2;
+        diaPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -66,7 +69,8 @@ contract DIAPriceProviderTest is Helper {
 
     function testConditionMetDIA() public {
         (bool condition, int256 price) = diaPriceProvider.conditionMet(
-            strikePrice
+            strikePrice,
+            marketId
         );
         assertTrue(price != 0);
         assertEq(condition, true);

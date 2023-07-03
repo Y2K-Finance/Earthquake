@@ -11,6 +11,7 @@ contract CVIPriceProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
     CVIPriceProvider public cviPriceProvider;
+    uint256 public marketId = 1;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -27,6 +28,9 @@ contract CVIPriceProviderTest is Helper {
             TIME_OUT,
             CVI_DECIMALS
         );
+
+        uint256 condition = 1;
+        cviPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -63,7 +67,10 @@ contract CVIPriceProviderTest is Helper {
     }
 
     function testConditionMetCVI() public {
-        (bool condition, int256 price) = cviPriceProvider.conditionMet(100);
+        (bool condition, int256 price) = cviPriceProvider.conditionMet(
+            100,
+            marketId
+        );
         assertTrue(price != 0);
         assertEq(condition, true);
     }

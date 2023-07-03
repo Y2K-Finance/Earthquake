@@ -14,7 +14,10 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
     uint256 public immutable decimals;
     string public description;
 
+    mapping(uint256 => uint256) public marketIdToConditionType;
+
     event StrikeUpdated(bytes strikeHash, int256 strikePrice);
+    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed) {
         if (_priceFeed == address(0)) revert ZeroAddress();
@@ -23,12 +26,27 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         description = gdaiPriceFeed.symbol();
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                 ADMIN
+    //////////////////////////////////////////////////////////////*/
+    function setConditionType(
+        uint256 _marketId,
+        uint256 _condition
+    ) external onlyOwner {
+        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
+        marketIdToConditionType[_marketId] = _condition;
+        emit MarketConditionSet(_marketId, _condition);
+    }
+
     function updateStrikeHash(int256 strikePrice) external onlyOwner {
         bytes memory _strikeHash = abi.encode(strikePrice);
         strikeHash = _strikeHash;
         emit StrikeUpdated(_strikeHash, strikePrice);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                 PUBLIC
+    //////////////////////////////////////////////////////////////*/
     function latestRoundData()
         public
         view
@@ -70,19 +88,25 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
      * @return price Current price for token
      */
     function conditionMet(
-        uint256 _strike
+        uint256 _strike,
+        uint256 _marketId
     ) public view virtual returns (bool condition, int256 price) {
         uint256 strikeUint;
         int256 strikeInt = abi.decode(strikeHash, (int256));
+        uint256 conditionType = marketIdToConditionType[_marketId];
 
         if (strikeInt < 0) strikeUint = uint256(-strikeInt);
         else strikeUint = uint256(strikeInt);
-
         if (_strike != strikeUint) revert InvalidStrike();
 
         price = getLatestPrice();
 
-        return (strikeInt > price, price);
+        // NOTE: Using strikeInt as number can be less than 0 for strike
+        if (conditionType == 1) return (strikeInt < price, price);
+        // Originally using >
+        else if (conditionType == 2) return (strikeInt > price, price);
+        else if (conditionType == 3) return (strikeInt == price, price);
+        else revert ConditionTypeNotSet();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -91,4 +115,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
     error ZeroAddress();
     error InvalidStrike();
     error InvalidInput();
+    error ConditionTypeNotSet();
+    error ConditionTypeSet();
 }

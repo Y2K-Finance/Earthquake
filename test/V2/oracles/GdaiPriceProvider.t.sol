@@ -18,6 +18,7 @@ contract GdaiPriceProviderTest is Helper {
     GdaiPriceProvider public gdaiPriceProvider;
     uint256 public arbForkId;
     int256 public strikePrice = -8994085036142722;
+    uint256 public marketId = 1;
 
     event StrikeUpdated(bytes strikeHash, int256 strikePrice);
 
@@ -30,6 +31,8 @@ contract GdaiPriceProviderTest is Helper {
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
         gdaiPriceProvider.updateStrikeHash(strikePrice);
+        uint256 condition = 2;
+        gdaiPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -81,7 +84,8 @@ contract GdaiPriceProviderTest is Helper {
 
     function testConditionMetGDAI() public {
         (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
-            uint256(-strikePrice)
+            uint256(-strikePrice),
+            marketId
         );
         assertTrue(price != 0);
         assertEq(condition, true);
@@ -98,7 +102,7 @@ contract GdaiPriceProviderTest is Helper {
 
     function testRevertInvalidStrike() public {
         vm.expectRevert(GdaiPriceProvider.InvalidStrike.selector);
-        gdaiPriceProvider.conditionMet(10 ether);
+        gdaiPriceProvider.conditionMet(10 ether, marketId);
     }
 
     function testRevertNotOwner() public {

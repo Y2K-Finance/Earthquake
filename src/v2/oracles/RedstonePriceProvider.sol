@@ -4,14 +4,19 @@ pragma solidity 0.8.17;
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
 import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RedstonePriceProvider is IConditionProvider {
+contract RedstonePriceProvider is Ownable, IConditionProvider {
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;
     bytes32 public immutable dataFeedId;
     uint256 public immutable decimals;
     string public description;
+
+    mapping(uint256 => uint256) public marketIdToConditionType;
+
+    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(
         address _factory,
@@ -32,6 +37,21 @@ contract RedstonePriceProvider is IConditionProvider {
         decimals = priceFeedAdapter.decimals();
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                 ADMIN
+    //////////////////////////////////////////////////////////////*/
+    function setConditionType(
+        uint256 _marketId,
+        uint256 _condition
+    ) external onlyOwner {
+        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
+        marketIdToConditionType[_marketId] = _condition;
+        emit MarketConditionSet(_marketId, _condition);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 PUBLIC
+    //////////////////////////////////////////////////////////////*/
     function latestRoundData()
         public
         view
@@ -86,10 +106,17 @@ contract RedstonePriceProvider is IConditionProvider {
      * @return price Current price for token
      */
     function conditionMet(
-        uint256 _strike
+        uint256 _strike,
+        uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
+        uint256 conditionType = marketIdToConditionType[_marketId];
         price = getLatestPrice();
-        return (int256(_strike) > price, price);
+
+        if (conditionType == 1) return (int256(_strike) < price, price);
+        // Originally using >
+        else if (conditionType == 2) return (int256(_strike) > price, price);
+        else if (conditionType == 3) return (int256(_strike) == price, price);
+        else revert ConditionTypeNotSet();
     }
 
     /** @notice Convert string to bytes32
@@ -113,4 +140,6 @@ contract RedstonePriceProvider is IConditionProvider {
     error OraclePriceZero();
     error RoundIdOutdated();
     error PriceTimedOut();
+    error ConditionTypeNotSet();
+    error ConditionTypeSet();
 }
