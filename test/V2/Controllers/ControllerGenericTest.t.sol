@@ -39,15 +39,13 @@ contract ControllerGenericTest is Helper {
         uint256 indexed marketId,
         ControllerGeneric.VaultTVL tvl,
         bool strikeMet,
-        uint256 time,
         int256 depegPrice
     );
 
     event NullEpoch(
         uint256 indexed epochId,
         uint256 indexed marketId,
-        ControllerGeneric.VaultTVL tvl,
-        uint256 time
+        ControllerGeneric.VaultTVL tvl
     );
 
     ////////////////////////////////////////////////
@@ -88,6 +86,8 @@ contract ControllerGenericTest is Helper {
                 address(controller)
             )
         );
+        uint256 condition = 2;
+        redstoneProvider.setConditionType(marketId, condition);
 
         begin = uint40(block.timestamp - 5 days);
         end = uint40(block.timestamp - 3 days);
@@ -170,7 +170,6 @@ contract ControllerGenericTest is Helper {
                 DEPOSIT_AMOUNT
             ),
             false,
-            block.timestamp,
             0
         );
         controller.triggerEndEpoch(marketId, epochId);
@@ -184,8 +183,7 @@ contract ControllerGenericTest is Helper {
         emit NullEpoch(
             epochId,
             marketId,
-            ControllerGeneric.VaultTVL(0, 0, 0, 0),
-            block.timestamp
+            ControllerGeneric.VaultTVL(0, 0, 0, 0)
         );
         controller.triggerNullEpoch(marketId, epochId);
     }
@@ -214,7 +212,6 @@ contract ControllerGenericTest is Helper {
                 PREMIUM_DEPOSIT_AMOUNT
             ),
             true,
-            block.timestamp,
             price
         );
         controller.triggerLiquidation(marketId, epochId);
@@ -303,7 +300,7 @@ contract ControllerGenericTest is Helper {
         controller.triggerNullEpoch(marketId, epochId);
     }
 
-    function testRevertLiquidate() public {
+    function testRevertMarketDoesNotExist() public {
         vm.expectRevert(
             abi.encodePacked(
                 ControllerGeneric.MarketDoesNotExist.selector,
@@ -311,22 +308,32 @@ contract ControllerGenericTest is Helper {
             )
         );
         controller.triggerLiquidation(falseId, epochId);
+    }
 
+    function testRevertEpochNotExist() public {
         vm.expectRevert(ControllerGeneric.EpochNotExist.selector);
         controller.triggerLiquidation(marketId, falseId);
+    }
 
+    function testRevertEpochNotStarted() public {
         vm.warp(begin - 1 hours);
         vm.expectRevert(ControllerGeneric.EpochNotStarted.selector);
         controller.triggerLiquidation(marketId, epochId);
+    }
 
+    function testRevertEpochExpired() public {
         vm.warp(end + 1 hours);
         vm.expectRevert(ControllerGeneric.EpochExpired.selector);
         controller.triggerLiquidation(marketId, epochId);
+    }
 
+    function testRevertVaultZeroTVL() public {
         vm.warp(begin + 1 hours);
         vm.expectRevert(ControllerGeneric.VaultZeroTVL.selector);
         controller.triggerLiquidation(marketId, epochId);
+    }
 
+    function testRevertLiquidate() public {
         vm.startPrank(USER);
         configureDepegState(
             premium,

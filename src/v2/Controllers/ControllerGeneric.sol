@@ -7,7 +7,6 @@ import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
 
 /// @author Y2K Finance Team
-
 contract ControllerGeneric {
     using FixedPointMathLib for uint256;
     IVaultFactoryV2 public immutable vaultFactory;
@@ -75,7 +74,6 @@ contract ControllerGeneric {
             address(premiumVault)
         );
 
-        // TODO: timestamp removal?
         emit EpochResolved(
             _epochId,
             _marketId,
@@ -86,7 +84,6 @@ contract ControllerGeneric {
                 premiumTVL
             ),
             true,
-            block.timestamp,
             price
         );
     }
@@ -130,13 +127,11 @@ contract ControllerGeneric {
             address(collateralVault)
         );
 
-        // TODO: timestamp removal?
         emit EpochResolved(
             _epochId,
             _marketId,
             VaultTVL(collateralTVLAfterFee, collateralTVL, 0, premiumTVL),
             false,
-            block.timestamp,
             0
         );
     }
@@ -174,7 +169,6 @@ contract ControllerGeneric {
             premiumVault.setEpochNull(_epochId);
         } else revert VaultNotZeroTVL();
 
-        // TODO: timestamp removal?
         emit NullEpoch(
             _epochId,
             _marketId,
@@ -183,8 +177,7 @@ contract ControllerGeneric {
                 collateralVault.finalTVL(_epochId),
                 premiumVault.claimTVL(_epochId),
                 premiumVault.finalTVL(_epochId)
-            ),
-            block.timestamp
+            )
         );
     }
 
@@ -241,7 +234,8 @@ contract ControllerGeneric {
             vaultFactory.marketToOracle(_marketId)
         );
         (conditionMet, price) = conditionProvider.conditionMet(
-            premiumVault.strike()
+            premiumVault.strike(),
+            _marketId
         );
         if (!conditionMet) revert ConditionNotMet();
     }
@@ -310,16 +304,13 @@ contract ControllerGeneric {
      * @param marketId market ID
      * @param tvl TVL
      * @param strikeMet Flag if event isDisaster
-     * @param time time
      * @param depegPrice Price that triggered depeg
      */
-    // TODO: The timestamps being emitted can be removed - the block the event was emitted in will have a timestamp
     event EpochResolved(
         uint256 indexed epochId,
         uint256 indexed marketId,
         VaultTVL tvl,
         bool strikeMet,
-        uint256 time,
         int256 depegPrice
     );
 
@@ -327,14 +318,11 @@ contract ControllerGeneric {
      * @param epochId market epoch ID
      * @param marketId market ID
      * @param tvl TVL
-     * @param time timestamp
      */
-    // TODO: The timestamps being emitted can be removed - the block the event was emitted in will have a timestamp
     event NullEpoch(
         uint256 indexed epochId,
         uint256 indexed marketId,
-        VaultTVL tvl,
-        uint256 time
+        VaultTVL tvl
     );
 
     struct VaultTVL {

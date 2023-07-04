@@ -18,6 +18,7 @@ contract DIAPriceProviderTest is Helper {
     uint256 public arbForkId;
     string public pairName = "BTC/USD";
     uint256 public strikePrice = 50_000e8;
+    uint256 public marketId = 2;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -27,6 +28,8 @@ contract DIAPriceProviderTest is Helper {
         vm.selectFork(arbForkId);
 
         diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2, DIA_DECIMALS);
+        uint256 condition = 2;
+        diaPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -64,9 +67,22 @@ contract DIAPriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionMetDIA() public {
+    function testConditionOneMetDIA() public {
+        uint256 conditionType = 1;
+        uint256 marketIdOne = 1;
+        diaPriceProvider.setConditionType(marketIdOne, conditionType);
         (bool condition, int256 price) = diaPriceProvider.conditionMet(
-            strikePrice
+            10e6,
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetDIA() public {
+        (bool condition, int256 price) = diaPriceProvider.conditionMet(
+            strikePrice,
+            marketId
         );
         assertTrue(price != 0);
         assertEq(condition, true);
@@ -75,9 +91,21 @@ contract DIAPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-
     function testRevertConstructorInputs() public {
         vm.expectRevert(DIAPriceProvider.ZeroAddress.selector);
         new DIAPriceProvider(address(0), DIA_DECIMALS);
+    }
+
+    function testRevertConditionTypeSetDIA() public {
+        vm.expectRevert(DIAPriceProvider.ConditionTypeSet.selector);
+        diaPriceProvider.setConditionType(2, 0);
+    }
+
+    function testRevertInvalidInputConditionDIA() public {
+        vm.expectRevert(DIAPriceProvider.InvalidInput.selector);
+        diaPriceProvider.setConditionType(0, 0);
+
+        vm.expectRevert(DIAPriceProvider.InvalidInput.selector);
+        diaPriceProvider.setConditionType(0, 3);
     }
 }

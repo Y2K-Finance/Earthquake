@@ -9,8 +9,9 @@ import {
 } from "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ChainlinkPriceProvider is IConditionProvider {
+contract ChainlinkPriceProvider is Ownable, IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
@@ -18,6 +19,10 @@ contract ChainlinkPriceProvider is IConditionProvider {
     AggregatorV3Interface public immutable priceFeed;
     uint256 public immutable decimals;
     string public description;
+
+    mapping(uint256 => uint256) public marketIdToConditionType;
+
+    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(
         address _sequencer,
@@ -37,6 +42,22 @@ contract ChainlinkPriceProvider is IConditionProvider {
         description = priceFeed.description();
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                 ADMIN
+    //////////////////////////////////////////////////////////////*/
+    function setConditionType(
+        uint256 _marketId,
+        uint256 _condition
+    ) external onlyOwner {
+        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
+        if (_condition != 1 && _condition != 2) revert InvalidInput();
+        marketIdToConditionType[_marketId] = _condition;
+        emit MarketConditionSet(_marketId, _condition);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 PUBLIC
+    //////////////////////////////////////////////////////////////*/
     function latestRoundData()
         public
         view
@@ -93,14 +114,19 @@ contract ChainlinkPriceProvider is IConditionProvider {
 
     /** @notice Fetch price and return condition
      * @param _strike Strike price
+     * @param _marketId Market id
      * @return boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
     function conditionMet(
-        uint256 _strike
+        uint256 _strike,
+        uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
+        uint256 conditionType = marketIdToConditionType[_marketId];
         price = getLatestPrice();
-        return (int256(_strike) > price, price);
+        if (conditionType == 1) return (int256(_strike) < price, price);
+        else if (conditionType == 2) return (int256(_strike) > price, price);
+        else revert ConditionTypeNotSet();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -113,4 +139,6 @@ contract ChainlinkPriceProvider is IConditionProvider {
     error ZeroAddress();
     error PriceTimedOut();
     error InvalidInput();
+    error ConditionTypeNotSet();
+    error ConditionTypeSet();
 }

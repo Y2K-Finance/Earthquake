@@ -11,6 +11,7 @@ contract CVIPriceProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
     CVIPriceProvider public cviPriceProvider;
+    uint256 public marketId = 1;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -27,6 +28,9 @@ contract CVIPriceProviderTest is Helper {
             TIME_OUT,
             CVI_DECIMALS
         );
+
+        uint256 condition = 1;
+        cviPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -62,8 +66,23 @@ contract CVIPriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionMetCVI() public {
-        (bool condition, int256 price) = cviPriceProvider.conditionMet(100);
+    function testConditionOneMetCVI() public {
+        (bool condition, int256 price) = cviPriceProvider.conditionMet(
+            100,
+            marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetCVI() public {
+        uint256 conditionType = 2;
+        uint256 marketIdTwo = 2;
+        cviPriceProvider.setConditionType(marketIdTwo, conditionType);
+        (bool condition, int256 price) = cviPriceProvider.conditionMet(
+            0.1 ether,
+            marketIdTwo
+        );
         assertTrue(price != 0);
         assertEq(condition, true);
     }
@@ -71,13 +90,25 @@ contract CVIPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-
     function testRevertConstructorInputs() public {
         vm.expectRevert(CVIPriceProvider.ZeroAddress.selector);
         new CVIPriceProvider(address(0), TIME_OUT, CVI_DECIMALS);
 
         vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
         new CVIPriceProvider(CVI_ORACLE, 0, CVI_DECIMALS);
+    }
+
+    function testRevertConditionTypeSetCVI() public {
+        vm.expectRevert(CVIPriceProvider.ConditionTypeSet.selector);
+        cviPriceProvider.setConditionType(1, 0);
+    }
+
+    function testRevertInvalidInputConditionCVI() public {
+        vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
+        cviPriceProvider.setConditionType(0, 0);
+
+        vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
+        cviPriceProvider.setConditionType(0, 3);
     }
 
     function testRevertOraclePriceZeroCVI() public {

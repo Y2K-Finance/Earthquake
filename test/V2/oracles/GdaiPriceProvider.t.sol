@@ -18,6 +18,7 @@ contract GdaiPriceProviderTest is Helper {
     GdaiPriceProvider public gdaiPriceProvider;
     uint256 public arbForkId;
     int256 public strikePrice = -8994085036142722;
+    uint256 public marketId = 2;
 
     event StrikeUpdated(bytes strikeHash, int256 strikePrice);
 
@@ -30,6 +31,8 @@ contract GdaiPriceProviderTest is Helper {
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
         gdaiPriceProvider.updateStrikeHash(strikePrice);
+        uint256 condition = 2;
+        gdaiPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -81,7 +84,31 @@ contract GdaiPriceProviderTest is Helper {
 
     function testConditionMetGDAI() public {
         (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
-            uint256(-strikePrice)
+            uint256(-strikePrice),
+            marketId
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionOneMetGdai() public {
+        uint256 conditionType = 1;
+        uint256 marketIdOne = 1;
+        gdaiPriceProvider.setConditionType(marketIdOne, conditionType);
+        int256 newStrike = -1 ether;
+        gdaiPriceProvider.updateStrikeHash(newStrike);
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(-newStrike),
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+    }
+
+    function testConditionTwoMetGdai() public {
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(-strikePrice),
+            marketId
         );
         assertTrue(price != 0);
         assertEq(condition, true);
@@ -96,9 +123,22 @@ contract GdaiPriceProviderTest is Helper {
         new GdaiPriceProvider(address(0));
     }
 
+    function testRevertConditionTypeSetGdai() public {
+        vm.expectRevert(GdaiPriceProvider.ConditionTypeSet.selector);
+        gdaiPriceProvider.setConditionType(2, 0);
+    }
+
+    function testRevertInvalidInputConditionGdai() public {
+        vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
+        gdaiPriceProvider.setConditionType(0, 0);
+
+        vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
+        gdaiPriceProvider.setConditionType(0, 3);
+    }
+
     function testRevertInvalidStrike() public {
         vm.expectRevert(GdaiPriceProvider.InvalidStrike.selector);
-        gdaiPriceProvider.conditionMet(10 ether);
+        gdaiPriceProvider.conditionMet(10 ether, marketId);
     }
 
     function testRevertNotOwner() public {
