@@ -9,14 +9,18 @@ import {IGdaiPriceFeed} from "../interfaces/IGdaiPriceFeed.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GdaiPriceProvider is IConditionProvider, Ownable {
-    IGdaiPriceFeed public gdaiPriceFeed;
+    IGdaiPriceFeed public immutable gdaiPriceFeed;
     bytes public strikeHash;
+    uint256 public immutable decimals;
+    string public description;
 
     event StrikeUpdated(bytes strikeHash, int256 strikePrice);
 
     constructor(address _priceFeed) {
         if (_priceFeed == address(0)) revert ZeroAddress();
         gdaiPriceFeed = IGdaiPriceFeed(_priceFeed);
+        decimals = gdaiPriceFeed.decimals();
+        description = gdaiPriceFeed.symbol();
     }
 
     function updateStrikeHash(int256 strikePrice) external onlyOwner {
@@ -25,11 +29,37 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         emit StrikeUpdated(_strikeHash, strikePrice);
     }
 
+    function latestRoundData()
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        roundId = 1;
+        price = gdaiPriceFeed.accPnlPerToken();
+        startedAt = 1;
+        updatedAt = block.timestamp;
+        answeredInRound = 1;
+    }
+
     /** @notice Fetch token price from priceFeedAdapter (Redston oracle address)
-     * @return int256 Current token price
+     * @return price Current token price
      */
-    function getLatestPrice() public view virtual returns (int256) {
-        return gdaiPriceFeed.accPnlPerToken();
+    function getLatestPrice() public view virtual returns (int256 price) {
+        price = gdaiPriceFeed.accPnlPerToken();
+
+        if (decimals < 18) {
+            uint256 calcDecimals = 10 ** (18 - (decimals));
+            price = price * int256(calcDecimals);
+        } else if (decimals > 18) {
+            uint256 calcDecimals = 10 ** ((decimals - 18));
+            price = price / int256(calcDecimals);
+        }
     }
 
     /** @notice Fetch price and return condition

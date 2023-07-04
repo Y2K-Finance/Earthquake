@@ -26,7 +26,7 @@ contract DIAPriceProviderTest is Helper {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
 
-        diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2);
+        diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2, DIA_DECIMALS);
     }
 
     ////////////////////////////////////////////////
@@ -34,8 +34,9 @@ contract DIAPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     function testDIACreation() public {
         assertEq(address(diaPriceProvider.diaPriceFeed()), DIA_ORACLE_V2);
+        assertEq(diaPriceProvider.decimals(), DIA_DECIMALS);
         assertEq(
-            abi.encode(diaPriceProvider.PAIR_NAME()),
+            abi.encode(diaPriceProvider.description()),
             abi.encode(pairName)
         );
     }
@@ -43,6 +44,21 @@ contract DIAPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
+    function testLatestRoundDataDIA() public {
+        (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = diaPriceProvider.latestRoundData();
+        assertTrue(price != 0);
+        assertEq(roundId, 1);
+        assertEq(startedAt, 1);
+        assertTrue(updatedAt != 0);
+        assertEq(answeredInRound, 1);
+    }
+
     function testLatestPrice() public {
         int256 price = diaPriceProvider.getLatestPrice();
         assertTrue(price != 0);
@@ -62,6 +78,6 @@ contract DIAPriceProviderTest is Helper {
 
     function testRevertConstructorInputs() public {
         vm.expectRevert(DIAPriceProvider.ZeroAddress.selector);
-        new DIAPriceProvider(address(0));
+        new DIAPriceProvider(address(0), DIA_DECIMALS);
     }
 }

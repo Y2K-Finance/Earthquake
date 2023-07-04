@@ -9,6 +9,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../src/v2/VaultFactoryV2.sol";
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "../../src/v2/Controllers/ControllerGeneric.sol";
+import "../../src/v2/oracles/RedstonePriceProvider.sol";
+import "../../src/v2/oracles/DIAPriceProvider.sol";
+import "../../src/v2/oracles/CVIPriceProvider.sol";
+import "../../src/v2/oracles/GdaiPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 
@@ -21,11 +25,11 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(false);
-        address weth = addresses.weth;
-        address treasury = addresses.treasury;
-        address emissionToken = addresses.y2k;
-        address policy = addresses.policy;
+        // ConfigAddressesV2 memory addresses = getConfigAddresses(true);
+        // address weth = addresses.weth;
+        // address treasury = addresses.treasury;
+        // address emissionToken = addresses.y2k;
+        // address policy = addresses.policy;
 
         // console2.log("Address admin", addresses.admin);
         // console2.log(
@@ -39,7 +43,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // );
         console2.log("\n");
 
-        uint256 privateKey = vm.envUint("PRIVATE_KEY");
+        // uint256 privateKey = vm.envUint("PRIVATE_KEY");
         // require(privateKey != 0, "PRIVATE_KEY is not set");
         // console2.log("Broadcast privateKey", privateKey);
         // vm.startBroadcast(privateKey);
@@ -68,10 +72,33 @@ contract V2DeployContracts is Script, HelperV2 {
 
         // vaultFactory.whitelistController(address(controller));
 
-        ControllerGeneric controllerGeneric = new ControllerGeneric(
-            addresses.carouselFactory,
-            treasury
-        );
+        // ControllerGeneric controllerGeneric = new ControllerGeneric(
+        //     addresses.carouselFactory,
+        //     treasury
+        // );
+
+        // uint256 timeOut = 12 hours;
+        // address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
+        // RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
+        //     addresses.carouselFactory,
+        //     vstPriceFeed,
+        //     "VST",
+        //     timeOut
+        // );
+
+        // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
+        // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
+
+        // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
+        // uint256 cviDecimals = 0;
+        // CVIPriceProvider cviPriceProvider = new CVIPriceProvider(
+        //     cviOracle,
+        //     timeOut,
+        //     cviDecimals
+        // );
+
+        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
 
         // vaultFactory.whitelistController(address(controller));
         // KeeperV2(0x52B90b1cbB3D9FFC866BC3Abece39b6E86b5d358).withdraw(4000000000000000);
@@ -92,7 +119,16 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("TimeLock address", timeLock);
         // console2.log("Vault Factory address", address(vaultFactory));
         // console2.log("Controller address", address(controller));
-        console2.log("Controller Generic address", address(controllerGeneric));
+        // console2.log("Controller Generic address", address(controllerGeneric));
+
+        // console2.log(
+        //     "Redstone Price Provider address",
+        //     address(redstoneProvider)
+        // );
+        // console2.log("Dia Price Provider address", address(diaPriceProvider));
+        // console2.log("CVI Price Provider address", address(cviPriceProvider));
+        console2.log("Gdai Price Provider address", address(gdaiPriceProvider));
+
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("rolloverKeeper address", address(rolloverKeeper));
         // console2.log("Y2K token address", addresses.y2k);

@@ -73,7 +73,8 @@ contract ControllerGenericTest is Helper {
 
         string memory name = "USD Coin";
         string memory symbol = "USDC";
-        strike = 0.1 ether;
+        uint256 decimals = 6; // 1e6
+        strike = 0.1 ether * 10 ** decimals;
         falseId = 999;
 
         (premium, collateral, marketId) = factory.createNewMarket(
