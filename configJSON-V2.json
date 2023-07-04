@@ -3,8 +3,8 @@
     "variables":{
         "newMarkets": false,
         "amountOfNewMarkets": 0,
-        "epochs": true,
-        "amountOfNewEpochs": 1,
+        "epochs": false,
+        "amountOfNewEpochs": 0,
         "totalAmountOfEmittedTokens": 0,
         "isTestEnv": true
     },
@@ -22,6 +22,19 @@
         }
     ],
     "markets": [
+        {
+            "isGenericController": true,
+            "isDepegCondition": true,
+            "depositAsset": "WETH",
+            "depositFee": 38,
+            "minQueueDeposit": "25000000000000000",
+            "name": "y2kVST_995_WETH*",
+            "oracle": "0x1e67f3a849d5852559f8200aacd2108bf3a5f1a9",
+            "relayFee": "1000000000000000",
+            "strikePrice": 995000000000000000,
+            "token": "0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17",
+            "uri": "https://y2k.finance"
+        }
     ]
     
     }
