@@ -107,7 +107,19 @@ contract V2DeployConfig is HelperV2 {
             console2.log(
                 "----------------------------------------------------------------"
             );
+            if(market.isGenericController) {
+                setDepegCondition(market.oracle, marketId, market.isDepegCondition);
+            }
             console2.log("\n");
+        }
+    }
+
+    function setDepegCondition(address _oracle, uint256 _marketId, bool _isDepegCondition) public {
+        if(_isDepegCondition){
+            console2.log("Set depeg condition");
+          
+        }else {
+
         }
     }
 
