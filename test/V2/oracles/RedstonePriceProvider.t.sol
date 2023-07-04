@@ -110,19 +110,6 @@ contract RedstonePriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
-    function testConditionThreeMetRedstone() public {
-        uint256 conditionType = 3;
-        uint256 marketIdThree = 3;
-        redstoneProvider.setConditionType(marketIdThree, conditionType);
-        int256 latestPrice = redstoneProvider.getLatestPrice();
-        (bool condition, int256 price) = redstoneProvider.conditionMet(
-            uint256(latestPrice),
-            marketIdThree
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
     function testStringToBytes() public {
         bytes32 result = redstoneProvider.stringToBytes32("VST");
         assertEq(result, bytes32("VST"));
@@ -154,6 +141,19 @@ contract RedstonePriceProviderTest is Helper {
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
         new RedstonePriceProvider(address(factory), USDC_CHAINLINK, "USDC", 0);
+    }
+
+    function testRevertConditionTypeSetRedstone() public {
+        vm.expectRevert(RedstonePriceProvider.ConditionTypeSet.selector);
+        redstoneProvider.setConditionType(2, 0);
+    }
+
+    function testRevertInvalidInputConditionRedstone() public {
+        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
+        redstoneProvider.setConditionType(0, 0);
+
+        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
+        redstoneProvider.setConditionType(0, 3);
     }
 
     function testRevertOraclePriceZero() public {

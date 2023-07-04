@@ -6,9 +6,6 @@ import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
 import {
     ChainlinkPriceProvider
 } from "../../../src/v2/oracles/ChainlinkPriceProvider.sol";
-import {
-    ChainlinkPriceProviderV2
-} from "../../../src/v2/oracles/ChainlinkPriceProviderV2.sol";
 import {TimeLock} from "../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerOne,
@@ -155,19 +152,6 @@ contract ChainlinkPriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
-    function testConditionThreeMetChainlink() public {
-        uint256 conditionType = 3;
-        uint256 marketIdThree = 3;
-        chainlinkPriceProvider.setConditionType(marketIdThree, conditionType);
-        int256 latestPrice = chainlinkPriceProvider.getLatestPrice();
-        (bool condition, int256 price) = chainlinkPriceProvider.conditionMet(
-            uint256(latestPrice),
-            marketIdThree
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
@@ -203,6 +187,16 @@ contract ChainlinkPriceProviderTest is Helper {
             USDC_CHAINLINK,
             0
         );
+    }
+
+    function testRevertConditionTypeSetChainlink() public {
+        vm.expectRevert(ChainlinkPriceProvider.ConditionTypeSet.selector);
+        chainlinkPriceProvider.setConditionType(2, 0);
+    }
+
+    function testRevertInvalidInputConditionChainlink() public {
+        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
+        chainlinkPriceProvider.setConditionType(0, 0);
     }
 
     function testRevertSequencerDownChainlink() public {

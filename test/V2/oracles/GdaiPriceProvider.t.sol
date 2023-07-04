@@ -114,20 +114,6 @@ contract GdaiPriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
-    function testConditionThreeMetGdai() public {
-        uint256 conditionType = 3;
-        uint256 marketIdThree = 3;
-        gdaiPriceProvider.setConditionType(marketIdThree, conditionType);
-        int256 latestPrice = gdaiPriceProvider.getLatestPrice();
-        gdaiPriceProvider.updateStrikeHash(latestPrice);
-        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
-            uint256(-latestPrice),
-            marketIdThree
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
@@ -135,6 +121,19 @@ contract GdaiPriceProviderTest is Helper {
     function testRevertConstructorInputs() public {
         vm.expectRevert(GdaiPriceProvider.ZeroAddress.selector);
         new GdaiPriceProvider(address(0));
+    }
+
+    function testRevertConditionTypeSetGdai() public {
+        vm.expectRevert(GdaiPriceProvider.ConditionTypeSet.selector);
+        gdaiPriceProvider.setConditionType(2, 0);
+    }
+
+    function testRevertInvalidInputConditionGdai() public {
+        vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
+        gdaiPriceProvider.setConditionType(0, 0);
+
+        vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
+        gdaiPriceProvider.setConditionType(0, 3);
     }
 
     function testRevertInvalidStrike() public {

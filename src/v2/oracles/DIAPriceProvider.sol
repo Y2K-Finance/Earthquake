@@ -31,6 +31,7 @@ contract DIAPriceProvider is Ownable, IConditionProvider {
         uint256 _condition
     ) external onlyOwner {
         if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
+        if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
     }
@@ -78,9 +79,7 @@ contract DIAPriceProvider is Ownable, IConditionProvider {
         (price, ) = _getLatestPrice();
 
         if (conditionType == 1) return (int256(_strike) < price, price);
-        // Originally in use was >
         else if (conditionType == 2) return (int256(_strike) > price, price);
-        else if (conditionType == 3) return (int256(_strike) == price, price);
         else revert ConditionTypeNotSet();
     }
 
@@ -110,6 +109,7 @@ contract DIAPriceProvider is Ownable, IConditionProvider {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error ZeroAddress();
+    error InvalidInput();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
 }

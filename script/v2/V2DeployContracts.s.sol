@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../src/v2/VaultFactoryV2.sol";
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "../../src/v2/Controllers/ControllerGeneric.sol";
+import "../../src/v2/oracles/ChainlinkPriceProvider.sol";
 import "../../src/v2/oracles/RedstonePriceProvider.sol";
 import "../../src/v2/oracles/DIAPriceProvider.sol";
 import "../../src/v2/oracles/CVIPriceProvider.sol";
@@ -25,7 +26,7 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        // ConfigAddressesV2 memory addresses = getConfigAddresses(true);
+        ConfigAddressesV2 memory addresses = getConfigAddresses(true);
         // address weth = addresses.weth;
         // address treasury = addresses.treasury;
         // address emissionToken = addresses.y2k;
@@ -72,22 +73,31 @@ contract V2DeployContracts is Script, HelperV2 {
 
         // vaultFactory.whitelistController(address(controller));
 
-        // ControllerGeneric controllerGeneric = new ControllerGeneric(
-        //     addresses.carouselFactory,
-        //     treasury
-        // );
+        ControllerGeneric controllerGeneric = new ControllerGeneric(
+            addresses.carouselFactory,
+            addresses.treasury
+        );
 
-        // uint256 timeOut = 12 hours;
-        // address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
-        // RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
-        //     addresses.carouselFactory,
-        //     vstPriceFeed,
-        //     "VST",
-        //     timeOut
-        // );
+        uint256 timeOut = 12 hours;
+        address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+        address btcFeed = 0x6ce185860a4963106506C203335A2910413708e9;
+        ChainlinkPriceProvider chainlinkPriceProvider = new ChainlinkPriceProvider(
+                arbitrumSequencer,
+                addresses.carouselFactory,
+                btcFeed,
+                timeOut
+            );
 
-        // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
-        // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
+        address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
+        RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
+            addresses.carouselFactory,
+            vstPriceFeed,
+            "VST",
+            timeOut
+        );
+
+        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
 
         // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
         // uint256 cviDecimals = 0;
@@ -97,8 +107,8 @@ contract V2DeployContracts is Script, HelperV2 {
         //     cviDecimals
         // );
 
-        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
-        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
+        // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
+        // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
 
         // vaultFactory.whitelistController(address(controller));
         // KeeperV2(0x52B90b1cbB3D9FFC866BC3Abece39b6E86b5d358).withdraw(4000000000000000);
@@ -119,15 +129,16 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("TimeLock address", timeLock);
         // console2.log("Vault Factory address", address(vaultFactory));
         // console2.log("Controller address", address(controller));
-        // console2.log("Controller Generic address", address(controllerGeneric));
+        console2.log("Controller Generic address", address(controllerGeneric));
 
-        // console2.log(
-        //     "Redstone Price Provider address",
-        //     address(redstoneProvider)
-        // );
-        // console2.log("Dia Price Provider address", address(diaPriceProvider));
-        // console2.log("CVI Price Provider address", address(cviPriceProvider));
-        console2.log("Gdai Price Provider address", address(gdaiPriceProvider));
+        console2.log(
+            "Chainlink Price Provider",
+            address(chainlinkPriceProvider)
+        );
+        console2.log("Redstone Price Provider", address(redstoneProvider));
+        console2.log("Gdai Price Provider", address(gdaiPriceProvider));
+        // console2.log("CVI Price Provider", address(cviPriceProvider));
+        // console2.log("Dia Price Provider", address(diaPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("rolloverKeeper address", address(rolloverKeeper));

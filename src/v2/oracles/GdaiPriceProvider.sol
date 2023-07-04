@@ -34,6 +34,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 _condition
     ) external onlyOwner {
         if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
+        if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
     }
@@ -92,6 +93,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 _marketId
     ) public view virtual returns (bool condition, int256 price) {
         uint256 strikeUint;
+        // TODO: StrikeHash should link to marketId
         int256 strikeInt = abi.decode(strikeHash, (int256));
         uint256 conditionType = marketIdToConditionType[_marketId];
 
@@ -103,9 +105,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
 
         // NOTE: Using strikeInt as number can be less than 0 for strike
         if (conditionType == 1) return (strikeInt < price, price);
-        // Originally using >
         else if (conditionType == 2) return (strikeInt > price, price);
-        else if (conditionType == 3) return (strikeInt == price, price);
         else revert ConditionTypeNotSet();
     }
 

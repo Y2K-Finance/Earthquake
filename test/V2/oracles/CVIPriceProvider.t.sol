@@ -87,29 +87,28 @@ contract CVIPriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
-    function testConditionThreeMetCVI() public {
-        uint256 conditionType = 3;
-        uint256 marketIdThree = 3;
-        cviPriceProvider.setConditionType(marketIdThree, conditionType);
-        int256 latestPrice = cviPriceProvider.getLatestPrice();
-        (bool condition, int256 price) = cviPriceProvider.conditionMet(
-            uint256(latestPrice),
-            marketIdThree
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-
     function testRevertConstructorInputs() public {
         vm.expectRevert(CVIPriceProvider.ZeroAddress.selector);
         new CVIPriceProvider(address(0), TIME_OUT, CVI_DECIMALS);
 
         vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
         new CVIPriceProvider(CVI_ORACLE, 0, CVI_DECIMALS);
+    }
+
+    function testRevertConditionTypeSetCVI() public {
+        vm.expectRevert(CVIPriceProvider.ConditionTypeSet.selector);
+        cviPriceProvider.setConditionType(1, 0);
+    }
+
+    function testRevertInvalidInputConditionCVI() public {
+        vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
+        cviPriceProvider.setConditionType(0, 0);
+
+        vm.expectRevert(CVIPriceProvider.InvalidInput.selector);
+        cviPriceProvider.setConditionType(0, 3);
     }
 
     function testRevertOraclePriceZeroCVI() public {

@@ -88,25 +88,24 @@ contract DIAPriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
-    function testConditionThreeMetDIA() public {
-        uint256 conditionType = 3;
-        uint256 marketIdThree = 3;
-        diaPriceProvider.setConditionType(marketIdThree, conditionType);
-        int256 latestPrice = diaPriceProvider.getLatestPrice();
-        (bool condition, int256 price) = diaPriceProvider.conditionMet(
-            uint256(latestPrice),
-            marketIdThree
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-
     function testRevertConstructorInputs() public {
         vm.expectRevert(DIAPriceProvider.ZeroAddress.selector);
         new DIAPriceProvider(address(0), DIA_DECIMALS);
+    }
+
+    function testRevertConditionTypeSetDIA() public {
+        vm.expectRevert(DIAPriceProvider.ConditionTypeSet.selector);
+        diaPriceProvider.setConditionType(2, 0);
+    }
+
+    function testRevertInvalidInputConditionDIA() public {
+        vm.expectRevert(DIAPriceProvider.InvalidInput.selector);
+        diaPriceProvider.setConditionType(0, 0);
+
+        vm.expectRevert(DIAPriceProvider.InvalidInput.selector);
+        diaPriceProvider.setConditionType(0, 3);
     }
 }

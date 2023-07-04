@@ -33,6 +33,7 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
         uint256 _condition
     ) external onlyOwner {
         if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
+        if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
     }
@@ -96,7 +97,6 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);
         else if (conditionType == 2) return (int256(_strike) > price, price);
-        else if (conditionType == 3) return (int256(_strike) == price, price);
         else revert ConditionTypeNotSet();
     }
 
