@@ -86,6 +86,13 @@ contract ControllerGeneric {
             true,
             price
         );
+
+        emit ProtocolFeeCollected(
+            _epochId,
+            _marketId,
+            premiumFee,
+            collateralFee
+        );
     }
 
     /** @notice Trigger epoch end without depeg event
@@ -132,6 +139,13 @@ contract ControllerGeneric {
             _marketId,
             VaultTVL(collateralTVLAfterFee, collateralTVL, 0, premiumTVL),
             false,
+            0
+        );
+
+        emit ProtocolFeeCollected(
+            _epochId,
+            _marketId,
+            premiumFee,
             0
         );
     }
@@ -440,4 +454,19 @@ contract ControllerGeneric {
         uint256 PREM_claimTVL;
         uint256 PREM_finalTVL;
     }
+
+
+
+    /** @notice Indexes protocol fees collected
+     * @param epochId market epoch ID
+     * @param marketId market ID
+     * @param premiumFee premium fee
+     * @param collateralFee collateral fee
+     */
+    event ProtocolFeeCollected(
+        uint256 indexed epochId,
+        uint256 indexed marketId,
+        uint256 premiumFee,
+        uint256 collateralFee
+    );
 }

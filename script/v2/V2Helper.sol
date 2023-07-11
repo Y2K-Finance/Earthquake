@@ -186,6 +186,21 @@ contract HelperV2 is Script {
             console2.log("rolloverKeeper epochId not set");
             revert("rolloverKeeper epochId error");
         }
+
+         console2.log("------------------------KEEPER DETAILS----------------------");
+
+        console2.log("Resolve Keeper taskId: ");
+            console2.logBytes32(
+                KeeperV2(resolver).tasks(
+                    keccak256(abi.encodePacked(_marketId, _epochId))
+                )
+            );
+            console2.log("Rollover Keeper taskId: ");
+            console.logBytes32(
+                KeeperV2(configAddresses.rolloverKeeper).tasks(
+                    keccak256(abi.encodePacked(_marketId, _epochId))
+                )
+            );
     }
 
     function getController(bool isGenericControler)

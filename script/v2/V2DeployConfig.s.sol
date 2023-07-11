@@ -3,6 +3,7 @@ pragma solidity ^0.8.15;
 
 import "./V2Helper.sol";
 import "../../src/v2/interfaces/IConditionProvider.sol";
+import "../../src/v2/Controllers/ControllerGeneric.sol";
 
 /// @author Y2K Team
 //forge script V2DeployConfig --rpc-url $ARBITRUM_RPC_URL --private-key $PRIVATE_KEY --broadcast --skip-simulation --slow --verify -vv
@@ -55,7 +56,7 @@ contract V2DeployConfig is HelperV2 {
             console2.log(
                 "-------------------------DEPLOY EPOCHS----------------------"
             );
-            fundKeepers(2000000000000000);
+            // fundKeepers(2000000000000000);
             deployEpochs();
         }
     }
@@ -292,22 +293,8 @@ contract V2DeployConfig is HelperV2 {
         // deploy rollover and resolve keeper
         startKeepers(marketId, epochId, epoch.isGenericController);
 
-        console2.log("------------------------KEEPER DETAILS----------------------");
-
-        console2.log("Resolve Keeper taskId: ");
-        console2.logBytes32(
-            KeeperV2(configAddresses.rolloverKeeper).tasks(
-                keccak256(abi.encodePacked(marketId, epochId))
-            )
-        );
-        console2.log("Rollover Keeper taskId: ");
-        console.logBytes32(
-            KeeperV2(configAddresses.rolloverKeeper).tasks(
-                keccak256(abi.encodePacked(marketId, epochId))
-            )
-        );
         console2.log(
-            "-----------------------------------------------------------"
+            "------------------------------------------------------------"
         );
     }
 }

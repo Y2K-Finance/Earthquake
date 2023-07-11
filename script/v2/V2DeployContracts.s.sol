@@ -28,7 +28,7 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(true);
+        ConfigAddressesV2 memory addresses = getConfigAddresses(false);
         // address weth = addresses.weth;
         // address treasury = addresses.treasury;
         // address emissionToken = addresses.y2k;
@@ -75,10 +75,33 @@ contract V2DeployContracts is Script, HelperV2 {
 
         // vaultFactory.whitelistController(address(controller));
 
-        ControllerGeneric controllerGeneric = new ControllerGeneric(
-           0x820877E5b1Ee55123c6c6AC2b197fD0A3697A6aB,
-           0x6bD6948ef89c43dc3e188c1Fa0D145cA75A46074
-        );
+        // ControllerGeneric controllerGeneric = new ControllerGeneric(
+        //     addresses.carouselFactory,
+        //     addresses.treasury);
+
+        // ControllerGeneric controllerGeneric = new ControllerGeneric(
+        //     addresses.carouselFactory,
+        //     addresses.treasury
+        // );
+
+        uint256[7] memory markets = [
+            102062669946436220800282965814418861703520361600036198831171353773735437582898,
+            111421210939391528484088102920415860233503986458498274079532691809454099237075,
+            11810749631572916259290140579407728535491467368654952084793878872665389831986,
+            13460764146036414337380196068365709247259621097717951186513179471480948962666,
+            43365822659564324551460842388001340228617494417519860688859686053122333904688,
+            78747529850370621525761201463833537338614899618597837920824482195739019216457,
+            93601944593345476072344843193813093085647514424424373919377230374357655731143
+        ];
+
+        CarouselFactory carouselFactory = CarouselFactory(addresses.carouselFactory);
+        console.log("Carousel Factory address", address(carouselFactory));
+        // iterrate over markets and change relayer fee
+        for (uint256 i = 0; i < markets.length; i++) {
+            carouselFactory.changeRelayerFee(200000000000000, markets[i]);
+        }
+        // carouselFactory.whitelistController(address(controllerGeneric));
+
 
         // uint256 timeOut = 12 hours;
         // address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
@@ -113,17 +136,20 @@ contract V2DeployContracts is Script, HelperV2 {
         // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
 
         // vaultFactory.whitelistController(address(controller));
-        // KeeperV2(0x52B90b1cbB3D9FFC866BC3Abece39b6E86b5d358).withdraw(4000000000000000);
         // KeeperV2 resolveKeeper = new KeeperV2(
         //     payable(addresses.gelatoOpsV2),
         //     payable(addresses.gelatoTaskTreasury),
         //     address(controller)
         // );
-        KeeperV2GenericController resolveKeeperGenericController = new KeeperV2GenericController(
-            payable(addresses.gelatoOpsV2),
-            payable(addresses.gelatoTaskTreasury),
-            address(controllerGeneric)
-        );
+        // KeeperV2GenericController(0x030754953308DC6782F7A04653929Fd25359ebCc).withdraw(3060778887280000);
+        // KeeperV2GenericController resolveKeeperGenericController = new KeeperV2GenericController(
+        //     payable(addresses.gelatoOpsV2),
+        //     payable(addresses.gelatoTaskTreasury),
+        //     address(controllerGeneric)
+        // );
+        // resolveKeeperGenericController.deposit{
+        //     value: 50000000000000000
+        // }(50000000000000000);
         // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
         // KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
         //     payable(addresses.gelatoOpsV2),
@@ -136,7 +162,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("TimeLock address", timeLock);
         // console2.log("Vault Factory address", address(vaultFactory));
         // console2.log("Controller address", address(controller));
-        console2.log("Controller Generic address", address(controllerGeneric));
+        // console2.log("Controller Generic address", address(controllerGeneric));
 
         // console2.log(
         //     "Chainlink Price Provider",
@@ -148,7 +174,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("Dia Price Provider", address(diaPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
-        console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
+        // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
         // console2.log("rolloverKeeper address", address(rolloverKeeper));
         // console2.log("Y2K token address", addresses.y2k);
 

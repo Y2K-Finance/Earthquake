@@ -5,7 +5,7 @@ import {IControllerGeneric as IController} from "../../src/v2/interfaces/IContro
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract KeeperV2GenericController is OpsReady, Ownable {
-    address public immutable controller;
+    address public controller;
     mapping(bytes32 => bytes32) public tasks;
 
     constructor(address payable _ops, address payable _treasuryTask,address _controller) OpsReady(_ops, _treasuryTask) {
@@ -82,4 +82,11 @@ contract KeeperV2GenericController is OpsReady, Ownable {
     function withdraw(uint256 _amount) external onlyOwner{
         treasury.withdrawFunds(payable(msg.sender), ETH, _amount);
     }
+
+    function changeController(address _controller) external onlyOwner {
+        if (_controller == address(0)) revert ZeroAddress();
+        controller = _controller;
+    }
+
+   error ZeroAddress();
 }
