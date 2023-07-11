@@ -1,11 +1,15 @@
 {"configAddresses":
   {
     "admin": "0x16cBaDA408F7523452fF91c8387b1784d00d10D8",
+    "arb": "0x12e0a97aC4410a79d5cb61343AA160dF33C67F75",
     "arbitrum_sequencer": "0xFdB631F5EE196F0ed6FAa767959853A9F217697D",
     "carouselFactory": "0x820877E5b1Ee55123c6c6AC2b197fD0A3697A6aB",
+    "controller": "0x5F8142A6d172B05bceA26115D7B07a5512314201",
+    "controllerGeneric" : "0xc85F29F4E1636FD70d458C9897D60b4d28906a93",
     "gelatoOpsV2": "0xB3f5503f93d5Ef84b06993a1975B9D21B962892F",
     "gelatoTaskTreasury": "0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A",
     "resolveKeeper": "0x1D8E6a60eE80f4fDD65c4377C9dd2F2C62DF3f58",
+    "resolveKeeperGeneric": "0xef9f4D35E0A675388dA6dB5fa2d9BD0475763DC4",
     "rolloverKeeper": "0x1F124d3f656aea4a829EE789c7a5328baFEF641e",
     "policy": "0x6bD6948ef89c43dc3e188c1Fa0D145cA75A46074",
     "treasury": "0x6bD6948ef89c43dc3e188c1Fa0D145cA75A46074",

@@ -20,12 +20,16 @@ contract HelperV2 is Script {
     // @note structs that reflect JSON need to have keys in alphabetical order!!!
     struct ConfigAddressesV2 {
         address admin;
+        address arb;
         address arbitrum_sequencer;
         address carouselFactory;
+        address controller;
+        address controllerGeneric;
         address gelatoOpsV2;
         address gelatoTaskTreasury;
         address policy;
         address resolveKeeper;
+        address resolveKeeperGeneric;
         address rolloverKeeper;
         address treasury;
         address weth;
@@ -34,25 +38,27 @@ contract HelperV2 is Script {
 
     struct ConfigEpochWithEmission {
         string collatEmissions;
-        address depositAsset;
+        string depositAsset;
         uint40 epochBegin;
         uint40 epochEnd;
+        bool isGenericController;
         string name;
         string premiumEmissions;
-        uint256 strikePrice;
+        string strikePrice;
         address token;
         uint16 withdrawalFee;
     }
 
     struct ConfigMarketV2 {
-        address controller;
-        address depositAsset;
+        string depositAsset;
         uint256 depositFee;
+        bool isDepeg;
+        bool isGenericController;
         string minQueueDeposit;
         string name;
         address oracle;
         string relayFee;
-        uint256 strikePrice;
+        string strikePrice;
         address token;
         string uri;
     }
@@ -61,6 +67,7 @@ contract HelperV2 is Script {
         uint256 amountOfNewEpochs;
         uint256 amountOfNewMarkets;
         bool epochs;
+        bool isTestEnv;
         bool newMarkets;
         uint256 totalAmountOfEmittedTokens;
     }
@@ -69,6 +76,7 @@ contract HelperV2 is Script {
     ConfigVariablesV2 configVariables;
     ConfigAddressesV2 configAddresses;
     bool isTestEnv;
+    CarouselFactory factory;
 
     function setVariables() public {
         string memory root = vm.projectRoot();
@@ -77,19 +85,22 @@ contract HelperV2 is Script {
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".variables");
         configVariables = abi.decode(parseJsonByteCode, (ConfigVariablesV2));
+        isTestEnv = configVariables.isTestEnv;
     }
 
-    function contractToAddresses(
-        ConfigAddressesV2 memory _configAddresses
-    ) public {
+    function contractToAddresses(ConfigAddressesV2 memory _configAddresses)
+        public
+    {
         y2k = address(_configAddresses.y2k);
+        factory = CarouselFactory(_configAddresses.carouselFactory);
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
 
-    function getConfigAddresses(
-        bool _isTestEnv
-    ) public returns (ConfigAddressesV2 memory constans) {
+    function getConfigAddresses(bool _isTestEnv)
+        public
+        returns (ConfigAddressesV2 memory constans)
+    {
         string memory root = vm.projectRoot();
         string memory path;
         if (_isTestEnv) {
@@ -130,6 +141,9 @@ contract HelperV2 is Script {
     }
 
     function fundKeepers(uint256 _amount) public payable {
+         KeeperV2(configAddresses.resolveKeeperGeneric).deposit{value: _amount}(
+            _amount
+        );
         KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
             _amount
         );
@@ -138,15 +152,89 @@ contract HelperV2 is Script {
         }(_amount);
     }
 
-    function startKeepers(uint256 _marketIndex, uint256 _epochID) public {
-        KeeperV2(configAddresses.resolveKeeper).startTask(
-            _marketIndex,
-            _epochID
+    function startKeepers(
+        uint256 _marketId,
+        uint256 _epochId,
+        bool _isGenericController
+    ) public {
+        address resolver = _isGenericController
+            ? configAddresses.resolveKeeperGeneric
+            : configAddresses.resolveKeeper;
+        KeeperV2(resolver).startTask(
+                _marketId,
+                _epochId
         );
         KeeperV2Rollover(configAddresses.rolloverKeeper).startTask(
-            _marketIndex,
-            _epochID
+            _marketId,
+            _epochId
         );
+
+        if (
+            KeeperV2(resolver).tasks(
+                keccak256(abi.encodePacked(_marketId, _epochId))
+            ) == bytes32(0)
+        ) {
+            console2.log("resolveKeeper epochId not set");
+            revert("resolveKeeper epochId error");
+        }
+
+        if (
+            KeeperV2(configAddresses.rolloverKeeper).tasks(
+                keccak256(abi.encodePacked(_marketId, _epochId))
+            ) == bytes32(0)
+        ) {
+            console2.log("rolloverKeeper epochId not set");
+            revert("rolloverKeeper epochId error");
+        }
+
+         console2.log("------------------------KEEPER DETAILS----------------------");
+
+        console2.log("Resolve Keeper taskId: ");
+            console2.logBytes32(
+                KeeperV2(resolver).tasks(
+                    keccak256(abi.encodePacked(_marketId, _epochId))
+                )
+            );
+            console2.log("Rollover Keeper taskId: ");
+            console.logBytes32(
+                KeeperV2(configAddresses.rolloverKeeper).tasks(
+                    keccak256(abi.encodePacked(_marketId, _epochId))
+                )
+            );
+    }
+
+    function getController(bool isGenericControler)
+        public
+        returns (address controller)
+    {
+        return
+            isGenericControler
+                ? configAddresses.controllerGeneric
+                : configAddresses.controller;
+    }
+
+    function getDepositAsset(string memory _depositAsset)
+        public
+        returns (address depositAsset)
+    {
+        if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("WETH")))
+        ) {
+            return configAddresses.weth;
+        } else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("ARB")))
+        ) {
+            return configAddresses.arb;
+        } else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("Y2K")))
+        ) {
+            return configAddresses.y2k;
+        } else {
+            revert("depositAsset not found");
+        }
     }
 
     function verifyMarket() public view {
