@@ -16,8 +16,9 @@ import "../../src/v2/oracles/CVIPriceProvider.sol";
 import "../../src/v2/oracles/GdaiPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
-import {KeeperV2GenericController} from "../keepers/KeeperV2GenericController.sol";
-
+import {
+    KeeperV2GenericController
+} from "../keepers/KeeperV2GenericController.sol";
 
 //forge script V2DeploymentScript --rpc-url $ARBITRUM_RPC_URL --broadcast --verify -slow -vv
 
@@ -85,7 +86,23 @@ contract V2DeployContracts is Script, HelperV2 {
         );
 
         deployedVaultFactory.whitelistController(address(controllerGeneric));
+        // uint256[7] memory markets = [
+        //     102062669946436220800282965814418861703520361600036198831171353773735437582898,
+        //     111421210939391528484088102920415860233503986458498274079532691809454099237075,
+        //     11810749631572916259290140579407728535491467368654952084793878872665389831986,
+        //     13460764146036414337380196068365709247259621097717951186513179471480948962666,
+        //     43365822659564324551460842388001340228617494417519860688859686053122333904688,
+        //     78747529850370621525761201463833537338614899618597837920824482195739019216457,
+        //     93601944593345476072344843193813093085647514424424373919377230374357655731143
+        // ];
 
+        // CarouselFactory carouselFactory = CarouselFactory(addresses.carouselFactory);
+        // console.log("Carousel Factory address", address(carouselFactory));
+        // // iterrate over markets and change relayer fee
+        // for (uint256 i = 0; i < markets.length; i++) {
+        //     carouselFactory.changeRelayerFee(200000000000000, markets[i]);
+        // }
+        // carouselFactory.whitelistController(address(controllerGeneric));
 
         // uint256 timeOut = 12 hours;
         // address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
@@ -105,8 +122,8 @@ contract V2DeployContracts is Script, HelperV2 {
         //     timeOut
         // );
 
-        // address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
-        // GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
+        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
 
         // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
         // uint256 cviDecimals = 0;
@@ -153,7 +170,7 @@ contract V2DeployContracts is Script, HelperV2 {
         //     address(chainlinkPriceProvider)
         // );
         // console2.log("Redstone Price Provider", address(redstoneProvider));
-        // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
+        console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
 

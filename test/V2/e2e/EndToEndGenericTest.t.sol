@@ -215,8 +215,6 @@ contract EndToEndV2GenericTest is Helper {
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
         int256 strikePrice = (gdaiPriceProvider.getLatestPrice() + 1);
-        gdaiPriceProvider.updateStrikeHash(strikePrice);
-
         depegStrike = uint256(-strikePrice);
 
         string memory name = string("Gains Network DAI");
@@ -235,6 +233,7 @@ contract EndToEndV2GenericTest is Helper {
             );
         uint256 condition = 2;
         gdaiPriceProvider.setConditionType(depegMarketId, condition);
+        gdaiPriceProvider.updateStrikeHash(depegMarketId, strikePrice);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);

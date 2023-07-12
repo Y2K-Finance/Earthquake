@@ -1,6 +1,3 @@
-/******************************************************* 
-NOTE: Development in progress by JG. Reached functional milestone; Live VST data is accessible. 
-***/
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
@@ -10,13 +7,13 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GdaiPriceProvider is IConditionProvider, Ownable {
     IGdaiPriceFeed public immutable gdaiPriceFeed;
-    bytes public strikeHash;
     uint256 public immutable decimals;
     string public description;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
+    mapping(uint256 => bytes) public strikeHash;
 
-    event StrikeUpdated(bytes strikeHash, int256 strikePrice);
+    event StrikeUpdated(uint256 marketId, bytes strikeHash, int256 strikePrice);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed) {
@@ -39,10 +36,13 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         emit MarketConditionSet(_marketId, _condition);
     }
 
-    function updateStrikeHash(int256 strikePrice) external onlyOwner {
-        bytes memory _strikeHash = abi.encode(strikePrice);
-        strikeHash = _strikeHash;
-        emit StrikeUpdated(_strikeHash, strikePrice);
+    function updateStrikeHash(
+        uint256 _marketId,
+        int256 _strikePrice
+    ) external onlyOwner {
+        bytes memory _strikeHash = abi.encode(_strikePrice);
+        strikeHash[_marketId] = _strikeHash;
+        emit StrikeUpdated(_marketId, _strikeHash, _strikePrice);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -93,8 +93,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 _marketId
     ) public view virtual returns (bool condition, int256 price) {
         uint256 strikeUint;
-        // TODO: StrikeHash should link to marketId
-        int256 strikeInt = abi.decode(strikeHash, (int256));
+        int256 strikeInt = abi.decode(strikeHash[_marketId], (int256));
         uint256 conditionType = marketIdToConditionType[_marketId];
 
         if (strikeInt < 0) strikeUint = uint256(-strikeInt);
