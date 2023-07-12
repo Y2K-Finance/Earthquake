@@ -327,6 +327,7 @@ contract CarouselPausable is VaultV2Pausable {
         // get last index of queue
         uint256 i = length - 1;
         uint256 relayerFeeShortfall;
+        uint256 totalFeeAmount;
         while ((length - _operations) <= i) {
             // this loop impelements FILO (first in last out) stack to reduce gas cost and improve code readability
             // changing it to FIFO (first in first out) would require more code changes and would be more expensive
@@ -340,8 +341,8 @@ contract CarouselPausable is VaultV2Pausable {
                     uint256 assetsAfterFee
                 ) = getEpochDepositFee(_epochId, assetsToDeposit);
                 assetsToDeposit = assetsAfterFee;
+                totalFeeAmount += feeAmount;
                 _asset().safeTransfer(treasury(), feeAmount);
-                emit ProtocolFeeCollected(_epochId, feeAmount);
             }
 
             // if minDeposit has chagned during QueueItem is in the queue and relayerFee is now higher than deposit amount
@@ -367,6 +368,7 @@ contract CarouselPausable is VaultV2Pausable {
             }
         }
 
+        emit ProtocolFeeCollected(_epochId, totalFeeAmount);
         emit RelayerMinted(_epochId, _operations);
 
         asset.safeTransfer(
