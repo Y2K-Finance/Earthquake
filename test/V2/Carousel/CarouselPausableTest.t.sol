@@ -72,6 +72,11 @@ contract CarouselPausableTest is Helper {
         vault.pauseMarket();
         vm.expectRevert(VaultV2Pausable.MarketPaused.selector);
         vault.deposit(0, 10 ether, USER);
+
+        // can not setEmisions if market is paused
+        vm.expectRevert(VaultV2Pausable.MarketPaused.selector);
+        vault.setEmissions(_epochId, _emissions);
+
         vault.pauseMarket();
 
         vm.startPrank(USER);
@@ -104,8 +109,11 @@ contract CarouselPausableTest is Helper {
 
         vm.startPrank(relayer);
         // setting operations to 5 should still only mint 1 as queue length is 1
+        vm.expectEmit(true, true, false, false);
+        emit ProtocolFeeCollected(_epochId, 0);
         vault.mintDepositInQueue(_epochId, 5);
         vm.stopPrank();
+
         // test user balances
         assertEq(vault.balanceOf(USER, _epochId), 10 ether - relayerFee);
         // test relayer balance

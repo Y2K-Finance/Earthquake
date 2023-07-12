@@ -341,6 +341,7 @@ contract CarouselPausable is VaultV2Pausable {
                 ) = getEpochDepositFee(_epochId, assetsToDeposit);
                 assetsToDeposit = assetsAfterFee;
                 _asset().safeTransfer(treasury(), feeAmount);
+                emit ProtocolFeeCollected(_epochId, feeAmount);
             }
 
             // if minDeposit has chagned during QueueItem is in the queue and relayerFee is now higher than deposit amount
@@ -565,7 +566,7 @@ contract CarouselPausable is VaultV2Pausable {
     function setEmissions(
         uint256 _epochId,
         uint256 _emissionAmount
-    ) external onlyFactory epochIdExists(_epochId) {
+    ) external onlyFactory epochIdExists(_epochId) marketNotPaused {
         emissions[_epochId] = _emissionAmount;
     }
 
@@ -912,4 +913,10 @@ contract CarouselPausable is VaultV2Pausable {
         uint256 shares,
         uint256 epochId
     );
+
+    /** @notice Indexes protocol fees collected
+     * @param epochId market epoch ID
+     * @param fee the fee collected
+     */
+    event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
 }
