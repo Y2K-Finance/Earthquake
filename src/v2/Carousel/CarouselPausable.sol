@@ -520,6 +520,7 @@ contract CarouselPausable is VaultV2Pausable {
                 ) = getEpochDepositFee(_id, _assets);
                 assetsToDeposit = assetsAfterFee;
                 _asset().safeTransfer(treasury(), feeAmount);
+                emit ProtocolFeeCollected(_id, feeAmount);
             }
 
             _mintShares(_receiver, _id, assetsToDeposit);
