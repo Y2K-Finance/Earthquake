@@ -2,14 +2,15 @@
 pragma solidity 0.8.17;
 
 import "../Helper.sol";
-import "../../../src/v2/Carousel/CarouselFactory.sol";
+import "../../../src/v2/Carousel/CarouselFactoryPausable.sol";
+import "../../../src/v2/VaultV2Pausable.sol";
 import "../../../src/v2/TimeLock.sol";
 import "../../../src/v2/interfaces/ICarousel.sol";
 
-contract CarouselFactoryTest is Helper {
+contract CarouselFactoryPausableTest is Helper {
     using stdStorage for StdStorage;
 
-    CarouselFactory factory;
+    CarouselFactoryPausable factory;
     address controller;
     address emissionsToken;
     uint256 relayerFee;
@@ -20,7 +21,7 @@ contract CarouselFactoryTest is Helper {
 
         emissionsToken = address(new MintableToken("Emissions Token", "EMT"));
 
-        factory = new CarouselFactory(
+        factory = new CarouselFactoryPausable(
             WETH,
             TREASURY,
             address(timelock),
@@ -34,7 +35,7 @@ contract CarouselFactoryTest is Helper {
         depositFee = 50; // 1%
     }
 
-    function testCarouselMarketCreation() public {
+    function testCarouselMarketCreationPausable() public {
         address token = address(0x1);
         address oracle = address(0x3);
         address underlying = address(0x4);
@@ -44,7 +45,7 @@ contract CarouselFactoryTest is Helper {
         // test success case
         (address premium, address collateral, uint256 marketId) = factory
             .createNewCarouselMarket(
-                CarouselFactory.CarouselMarketConfigurationCalldata(
+                CarouselFactoryPausable.CarouselMarketConfigurationCalldata(
                     token,
                     strike,
                     oracle,
@@ -67,8 +68,8 @@ contract CarouselFactoryTest is Helper {
         assertEq(marketId, factory.getMarketId(token, strike, underlying));
 
         // test if counterparty is set
-        assertEq(IVaultV2(premium).counterPartyVault(), collateral);
-        assertEq(IVaultV2(collateral).counterPartyVault(), premium);
+        assertEq(IVaultV2Pausable(premium).counterPartyVault(), collateral);
+        assertEq(IVaultV2Pausable(collateral).counterPartyVault(), premium);
 
         // test late deposit fee on Vaults is set
         assertEq(ICarousel(premium).depositFee(), depositFee);
@@ -83,7 +84,7 @@ contract CarouselFactoryTest is Helper {
         assertEq(ICarousel(collateral).emissionsToken(), emissionsToken);
     }
 
-    function testCarouselEpochDeployment() public {
+    function testCarouselEpochDeploymentPausable() public {
         uint256 marketId = createMarketHelper();
 
         // test success case
@@ -122,6 +123,20 @@ contract CarouselFactoryTest is Helper {
         MintableToken(emissionsToken).approve(address(factory), 5000 ether);
         vm.stopPrank();
 
+        // revert if market is paused
+        factory.pauseMarket(marketId);
+        vm.expectRevert(VaultV2Pausable.MarketPaused.selector);
+        factory.createEpochWithEmissions(
+            marketId,
+            begin,
+            end,
+            fee,
+            premiumEmissions,
+            collatEmissions
+        );
+        factory.pauseMarket(marketId);
+
+        // success case
         (uint256 epochId2, address[2] memory vaults) = factory
             .createEpochWithEmissions(
                 marketId,
@@ -137,7 +152,7 @@ contract CarouselFactoryTest is Helper {
         assertEq(fee, fetchedFee);
 
         // test if epoch config is correct
-        (uint40 fetchedBegin, uint40 fetchedEnd, ) = IVaultV2(vaults[0])
+        (uint40 fetchedBegin, uint40 fetchedEnd, ) = IVaultV2Pausable(vaults[0])
             .getEpochConfig(epochId2);
         assertEq(begin, fetchedBegin);
         assertEq(end, fetchedEnd);
@@ -162,22 +177,22 @@ contract CarouselFactoryTest is Helper {
     }
 
     // test changeRelayerFee
-    function testChangeRelayerFee() public {
+    function testChangeRelayerFeePausable() public {
         uint256 marketId = createMarketHelper();
         uint256 newFee = 3 gwei;
-        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+        vm.expectRevert(VaultFactoryV2Pausable.NotTimeLocker.selector);
         factory.changeRelayerFee(newFee, marketId);
 
         // get time locker
         address timeLocker = address(factory.timelocker());
 
         vm.startPrank(timeLocker);
-        vm.expectRevert(CarouselFactory.InvalidRelayerFee.selector);
+        vm.expectRevert(CarouselFactoryPausable.InvalidRelayerFee.selector);
         factory.changeRelayerFee(9000, marketId); // revert if fee  is less than 10000 to not cause devide by zero error
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                VaultFactoryV2.MarketDoesNotExist.selector,
+                VaultFactoryV2Pausable.MarketDoesNotExist.selector,
                 100
             )
         );
@@ -201,17 +216,17 @@ contract CarouselFactoryTest is Helper {
     // function testChangeClosingTimeFrame() public {
     //     uint256 marketId = createMarketHelper();
     //     uint40 newTimeFrame = 1000;
-    //     vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+    //     vm.expectRevert(VaultFactoryV2Pausable.NotTimeLocker.selector);
     //     factory.changeClosingTimeFrame(newTimeFrame, marketId);
 
     //     // get time locker
     //     address timeLocker = address(factory.timelocker());
 
     //     vm.startPrank(timeLocker);
-    //     vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2.MarketDoesNotExist.selector, 100));
+    //     vm.expectRevert(abi.encodeWithSelector(VaultFactoryV2Pausable.MarketDoesNotExist.selector, 100));
     //     factory.changeClosingTimeFrame(newTimeFrame, 100); // revert if market does not exist
 
-    //     vm.expectRevert(CarouselFactory.InvalidClosingTimeFrame.selector);
+    //     vm.expectRevert(CarouselFactoryPausable.InvalidClosingTimeFrame.selector);
     //     factory.changeClosingTimeFrame(0, marketId); // revert if time frame is 0
 
     //     // test success case
@@ -223,22 +238,22 @@ contract CarouselFactoryTest is Helper {
     // }
 
     // test changeDepositFee
-    function testChangeDepositFee() public {
+    function testChangeDepositFeePausable() public {
         uint256 marketId = createMarketHelper();
         uint16 newFee = 25; // 2%
-        vm.expectRevert(VaultFactoryV2.NotTimeLocker.selector);
+        vm.expectRevert(VaultFactoryV2Pausable.NotTimeLocker.selector);
         factory.changeDepositFee(newFee, marketId, 0);
 
         // get time locker
         address timeLocker = address(factory.timelocker());
 
         vm.startPrank(timeLocker);
-        vm.expectRevert(CarouselFactory.InvalidDepositFee.selector);
+        vm.expectRevert(CarouselFactoryPausable.InvalidDepositFee.selector);
         factory.changeDepositFee(11000, marketId, 0); // revert if fee is greater than 100%
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                VaultFactoryV2.MarketDoesNotExist.selector,
+                VaultFactoryV2Pausable.MarketDoesNotExist.selector,
                 100
             )
         );
@@ -276,7 +291,7 @@ contract CarouselFactoryTest is Helper {
         string memory symbol = string("");
 
         (, , marketId) = factory.createNewCarouselMarket(
-            CarouselFactory.CarouselMarketConfigurationCalldata(
+            CarouselFactoryPausable.CarouselMarketConfigurationCalldata(
                 token,
                 strike,
                 oracle,

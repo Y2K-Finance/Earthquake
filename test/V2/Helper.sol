@@ -64,6 +64,8 @@ contract Helper is Test {
     string public ARBITRUM_GOERLI_RPC_URL =
         vm.envString("ARBITRUM_GOERLI_RPC_URL");
 
+    event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
+
     ////////////////////////////////////////////////
     //                Vault Helpers               //
     ////////////////////////////////////////////////

@@ -5,7 +5,7 @@ import {
     ReentrancyGuard
 } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./SemiFungibleVault.sol";
-import {IVaultV2} from "./interfaces/IVaultV2.sol";
+import {IVaultV2Pausable} from "./interfaces/IVaultV2Pausable.sol";
 import {IVaultFactoryV2} from "./interfaces/IVaultFactoryV2.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,9 +14,15 @@ import {
 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FixedPointMathLib} from "@solmate/utils/FixedPointMathLib.sol";
 
+import "forge-std/console.sol";
+
 /// @author Y2K Finance Team
 
-contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
+contract VaultV2Pausable is
+    IVaultV2Pausable,
+    SemiFungibleVault,
+    ReentrancyGuard
+{
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
 
@@ -33,6 +39,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     address public factory;
     address public controller;
     uint256[] public epochs;
+    bool public paused;
 
     mapping(uint256 => uint256) public finalTVL;
     mapping(uint256 => uint256) public claimTVL;
@@ -95,6 +102,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         override(SemiFungibleVault)
         epochIdExists(_id)
         epochHasNotStarted(_id)
+        marketNotPaused
         nonReentrant
     {
         if (_receiver == address(0)) revert AddressZero();
@@ -123,6 +131,7 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         virtual
         epochIdExists(_id)
         epochHasNotStarted(_id)
+        marketNotPaused
         nonReentrant
     {
         if (!isWETH) revert CanNotDepositETH();
@@ -190,7 +199,12 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
      */
     function totalAssets(
         uint256 _id
-    ) public view override(SemiFungibleVault, IVaultV2) returns (uint256) {
+    )
+        public
+        view
+        override(SemiFungibleVault, IVaultV2Pausable)
+        returns (uint256)
+    {
         // epochIdExists(_id)
         return totalSupply(_id);
     }
@@ -215,6 +229,8 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         if (epochExists[_epochId] == true) revert EpochAlreadyExists();
 
         if (_epochBegin >= _epochEnd) revert EpochEndMustBeAfterBegin();
+
+        if (paused) revert MarketPaused();
 
         epochExists[_epochId] = true;
 
@@ -253,6 +269,13 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     ) external onlyFactory {
         if (_counterPartyVault == address(0)) revert AddressZero();
         counterPartyVault = _counterPartyVault;
+    }
+
+    /**
+    @notice Factory function, pauses the market preventing deposits
+     */
+    function pauseMarket() external onlyFactory {
+        paused = !paused;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -428,6 +451,13 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
         _;
     }
 
+    /** @notice You can only call functions that use this modifier when market is not paused
+     */
+    modifier marketNotPaused() {
+        if (paused) revert MarketPaused();
+        _;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -448,4 +478,5 @@ contract VaultV2 is IVaultV2, SemiFungibleVault, ReentrancyGuard {
     error AlreadyInitialized();
     error InvalidEpoch();
     error CanNotDepositETH();
+    error MarketPaused();
 }
