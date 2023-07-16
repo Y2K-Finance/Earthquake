@@ -7,6 +7,8 @@ import "forge-std/Test.sol";
 //TODO change this after deploy  y2k token
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../src/v2/Carousel/CarouselFactory.sol";
+import "../../src/v2/Carousel/CarouselFactoryPausable.sol";
+
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../keepers/KeeperV2.sol";
@@ -25,12 +27,16 @@ contract HelperV2 is Script {
         address carouselFactory;
         address controller;
         address controllerGeneric;
+        address controllerGenericPausable;
         address gelatoOpsV2;
         address gelatoTaskTreasury;
+        address pausableCarouselFactory;
         address policy;
         address resolveKeeper;
         address resolveKeeperGeneric;
+        address resolveKeeperGenericPausable;
         address rolloverKeeper;
+        address rolloverKeeperPausable;
         address treasury;
         address weth;
         address y2k;
@@ -92,7 +98,7 @@ contract HelperV2 is Script {
         public
     {
         y2k = address(_configAddresses.y2k);
-        factory = CarouselFactory(_configAddresses.carouselFactory);
+        factory = CarouselFactory(_configAddresses.pausableCarouselFactory);
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
@@ -158,13 +164,23 @@ contract HelperV2 is Script {
         bool _isGenericController
     ) public {
         address resolver = _isGenericController
-            ? configAddresses.resolveKeeperGeneric
+            ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+                    configAddresses.resolveKeeperGeneric :
+                    configAddresses.resolveKeeperGenericPausable
             : configAddresses.resolveKeeper;
         KeeperV2(resolver).startTask(
                 _marketId,
                 _epochId
         );
-        KeeperV2Rollover(configAddresses.rolloverKeeper).startTask(
+
+        address rollover = 
+        _isGenericController
+            ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+                    configAddresses.rolloverKeeper :
+                    configAddresses.rolloverKeeperPausable
+            : configAddresses.rolloverKeeper;
+
+        KeeperV2Rollover(rollover).startTask(
             _marketId,
             _epochId
         );
@@ -179,7 +195,7 @@ contract HelperV2 is Script {
         }
 
         if (
-            KeeperV2(configAddresses.rolloverKeeper).tasks(
+            KeeperV2(rollover).tasks(
                 keccak256(abi.encodePacked(_marketId, _epochId))
             ) == bytes32(0)
         ) {
@@ -209,7 +225,7 @@ contract HelperV2 is Script {
     {
         return
             isGenericControler
-                ? configAddresses.controllerGeneric
+                ? configAddresses.controllerGenericPausable
                 : configAddresses.controller;
     }
 

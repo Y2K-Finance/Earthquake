@@ -202,6 +202,8 @@ contract VaultFactoryV2Pausable is Ownable {
 
         IVaultV2Pausable(vaults[0]).pauseMarket();
         IVaultV2Pausable(vaults[1]).pauseMarket();
+
+        emit MarketPaused(_marketId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -572,4 +574,9 @@ contract VaultFactoryV2Pausable is Ownable {
      * @param _controller Controller address
      */
     event ControllerWhitelisted(address _controller);
+
+    /** @notice Market is paused when event is emitted
+     * @param _marketId Target market index
+     */
+    event MarketPaused(uint256 _marketId);
 }
