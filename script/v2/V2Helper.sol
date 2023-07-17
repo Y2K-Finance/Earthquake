@@ -98,7 +98,7 @@ contract HelperV2 is Script {
         public
     {
         y2k = address(_configAddresses.y2k);
-        factory = CarouselFactory(_configAddresses.pausableCarouselFactory);
+        factory = CarouselFactory(_configAddresses.carouselFactory);
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }

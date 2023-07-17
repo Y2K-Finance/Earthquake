@@ -16,6 +16,7 @@ contract V2DeployConfig is HelperV2 {
         configAddresses = getConfigAddresses(configVariables.isTestEnv); //true if test env
         if (configVariables.isTestEnv) {
             console2.log("THIS IS A TEST ENV DEPLOYMENT");
+            revert();
         } else {
             console2.log("THIS IS A PRODUCTION ENV DEPLOYMENT");
         }

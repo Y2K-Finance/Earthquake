@@ -1,0 +1,147 @@
+{
+
+  "variables":{
+      "newMarkets": false,
+      "amountOfNewMarkets": 0,
+      "epochs": true,
+      "amountOfNewEpochs": 11,
+      "totalAmountOfEmittedTokens": 0,
+      "isTestEnv": false
+  },
+
+  "epochs": [
+      {
+          "name": "y2kMAI_963_WETH*",
+          "strikePrice": "963000000000000000",
+          "token": "0x3f56e0c36d275367b8c502090edf38289b3dea0d",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "isGenericController": false, 
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions":  "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "name": "y2kUSDD_970_ARB*",
+          "strikePrice": "970000000000000000",
+          "token": "0x680447595e8b7b3Aa1B43beB9f6098C79ac2Ab3f",
+          "depositAsset": "ARB",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500,
+          "isGenericController": false
+      },
+      {
+          "name": "y2kUSDD_970_WETH*",
+          "strikePrice": "970000000000000000",
+          "token": "0x680447595e8b7b3Aa1B43beB9f6098C79ac2Ab3f",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500,
+          "isGenericController": false
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kstETH_981_ARB*",
+          "strikePrice": "981000000000000000",
+          "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+          "depositAsset": "ARB",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kstETH_981_WETH*",
+          "strikePrice": "981000000000000000",
+          "token": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kBUSD_998_ARB*",
+          "strikePrice": "998000000000000000",
+          "token": "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "depositAsset": "ARB",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kBUSD_998_WETH*",
+          "strikePrice": "998000000000000000",
+          "token": "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kMIM_975_ARB*",
+          "strikePrice": "975000000000000000",
+          "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+          "depositAsset": "ARB",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kMIM_975_WETH*",
+          "strikePrice": "975000000000000000",
+          "token": "0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": true,
+          "name": "y2kVST_984_WETH*",
+          "strikePrice": "984000000000000000",
+          "token": "0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      },
+      {
+          "isGenericController": false,
+          "name": "y2kTUSD_991_WETH*",
+          "strikePrice": "991000000000000000",
+          "token": "0x4D15a3A2286D883AF0AA1B3f21367843FAc63E07",
+          "depositAsset": "WETH",
+          "epochBegin": 1689724800,
+          "epochEnd": 1690322400,
+          "collatEmissions": "56818181818200000000",
+          "premiumEmissions": "511363636364000000000",
+          "withdrawalFee": 500
+      }
+  ],
+  "markets": []
+  }
