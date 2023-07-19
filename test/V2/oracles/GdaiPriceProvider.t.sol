@@ -30,7 +30,6 @@ contract GdaiPriceProviderTest is Helper {
         vm.selectFork(arbForkId);
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
-        gdaiPriceProvider.updateStrikeHash(marketId, strikePrice);
         uint256 condition = 2;
         gdaiPriceProvider.setConditionType(marketId, condition);
     }
@@ -40,10 +39,6 @@ contract GdaiPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     function testGdaiCreation() public {
         assertEq(address(gdaiPriceProvider.gdaiPriceFeed()), GDAI_VAULT);
-        assertEq(
-            gdaiPriceProvider.strikeHash(marketId),
-            abi.encode(strikePrice)
-        );
         assertEq(
             gdaiPriceProvider.decimals(),
             IPriceFeedAdapter(GDAI_VAULT).decimals()
@@ -72,43 +67,18 @@ contract GdaiPriceProviderTest is Helper {
         assertTrue(answeredInRound != 0);
     }
 
-    function testUpdateStrike() public {
-        int256 newStrikePrice = -1;
-        vm.expectEmit(true, true, true, false);
-        emit StrikeUpdated(
-            marketId,
-            abi.encode(newStrikePrice),
-            newStrikePrice
-        );
-        gdaiPriceProvider.updateStrikeHash(marketId, newStrikePrice);
-        assertEq(
-            gdaiPriceProvider.strikeHash(marketId),
-            abi.encode(newStrikePrice)
-        );
-    }
-
     function testLatestPrice() public {
         int256 price = gdaiPriceProvider.getLatestPrice();
         assertTrue(price != 0);
-    }
-
-    function testConditionMetGDAI() public {
-        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
-            uint256(-strikePrice),
-            marketId
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
     }
 
     function testConditionOneMetGdai() public {
         uint256 conditionType = 1;
         uint256 marketIdOne = 1;
         gdaiPriceProvider.setConditionType(marketIdOne, conditionType);
-        int256 newStrike = -1 ether;
-        gdaiPriceProvider.updateStrikeHash(marketIdOne, newStrike);
+        int256 newStrike = -10 ether;
         (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
-            uint256(-newStrike),
+            uint256(newStrike),
             marketIdOne
         );
         assertTrue(price != 0);
@@ -117,7 +87,7 @@ contract GdaiPriceProviderTest is Helper {
 
     function testConditionTwoMetGdai() public {
         (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
-            uint256(-strikePrice),
+            uint256(strikePrice),
             marketId
         );
         assertTrue(price != 0);
@@ -144,16 +114,5 @@ contract GdaiPriceProviderTest is Helper {
 
         vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
         gdaiPriceProvider.setConditionType(0, 3);
-    }
-
-    function testRevertInvalidStrike() public {
-        vm.expectRevert(GdaiPriceProvider.InvalidStrike.selector);
-        gdaiPriceProvider.conditionMet(10 ether, marketId);
-    }
-
-    function testRevertNotOwner() public {
-        vm.expectRevert(bytes("Ownable: caller is not the owner"));
-        vm.prank(address(0x123));
-        gdaiPriceProvider.updateStrikeHash(marketId, 1);
     }
 }

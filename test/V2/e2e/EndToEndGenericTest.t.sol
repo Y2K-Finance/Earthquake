@@ -233,7 +233,6 @@ contract EndToEndV2GenericTest is Helper {
             );
         uint256 condition = 2;
         gdaiPriceProvider.setConditionType(depegMarketId, condition);
-        gdaiPriceProvider.updateStrikeHash(depegMarketId, strikePrice);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);

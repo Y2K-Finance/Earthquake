@@ -11,9 +11,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
     string public description;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
-    mapping(uint256 => bytes) public strikeHash;
 
-    event StrikeUpdated(uint256 marketId, bytes strikeHash, int256 strikePrice);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed) {
@@ -34,15 +32,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
-    }
-
-    function updateStrikeHash(
-        uint256 _marketId,
-        int256 _strikePrice
-    ) external onlyOwner {
-        bytes memory _strikeHash = abi.encode(_strikePrice);
-        strikeHash[_marketId] = _strikeHash;
-        emit StrikeUpdated(_marketId, _strikeHash, _strikePrice);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -92,17 +81,10 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 _strike,
         uint256 _marketId
     ) public view virtual returns (bool condition, int256 price) {
-        uint256 strikeUint;
-        int256 strikeInt = abi.decode(strikeHash[_marketId], (int256));
+        int256 strikeInt = int256(_strike);
         uint256 conditionType = marketIdToConditionType[_marketId];
-
-        if (strikeInt < 0) strikeUint = uint256(-strikeInt);
-        else strikeUint = uint256(strikeInt);
-        if (_strike != strikeUint) revert InvalidStrike();
-
         price = getLatestPrice();
 
-        // NOTE: Using strikeInt as number can be less than 0 for strike
         if (conditionType == 1) return (strikeInt < price, price);
         else if (conditionType == 2) return (strikeInt > price, price);
         else revert ConditionTypeNotSet();
@@ -112,7 +94,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error ZeroAddress();
-    error InvalidStrike();
     error InvalidInput();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
