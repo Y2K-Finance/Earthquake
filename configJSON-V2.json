@@ -1,12 +1,12 @@
 {
 
     "variables":{
-        "newMarkets": false,
-        "amountOfNewMarkets": 0,
-        "epochs": true,
-        "amountOfNewEpochs": 11,
+        "newMarkets": true,
+        "amountOfNewMarkets": 1,
+        "epochs": false,
+        "amountOfNewEpochs": 0,
         "totalAmountOfEmittedTokens": 0,
-        "isTestEnv": false
+        "isTestEnv": true
     },
 
     "epochs": [
@@ -143,5 +143,20 @@
             "withdrawalFee": 500
         }
     ],
-    "markets": []
+    "markets": [
+
+        {
+            "isGenericController": true, 
+            "isDepegCondition": false, 
+            "depositAsset": "WETH", 
+            "depositFee": 56, 
+            "minQueueDeposit": "25000000000000000", 
+            "name": "y2kGDAI_-0.06998_WETH*", 
+            "oracle": "0x3b06C8E7dA7771f53cD90Ae6610993c389b229d1", 
+            "relayFee": "200000000000000", 
+            "strikePrice": "-69989000000000000", 
+            "token": "0xd85E038593d7A098614721EaE955EC2022B9B91B", 
+            "uri": "https://y2k.finance"
+        }
+    ]
     }

@@ -61,12 +61,12 @@ contract V2DeployContracts is Script, HelperV2 {
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        CarouselFactoryPausable deployedVaultFactory = new CarouselFactoryPausable(
-            addresses.weth,
-            addresses.treasury,
-            msg.sender,
-            addresses.y2k
-        );
+        // CarouselFactoryPausable deployedVaultFactory = new CarouselFactoryPausable(
+        //     addresses.weth,
+        //     addresses.treasury,
+        //     msg.sender,
+        //     addresses.y2k
+        // );
 
         // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
         //     address(vaultFactory),
@@ -80,28 +80,12 @@ contract V2DeployContracts is Script, HelperV2 {
         //     addresses.carouselFactory,
         //     addresses.treasury);
 
-        ControllerGeneric controllerGeneric = new ControllerGeneric(
-            address(deployedVaultFactory),
-            addresses.treasury
-        );
+        // ControllerGeneric controllerGeneric = new ControllerGeneric(
+        //     address(deployedVaultFactory),
+        //     addresses.treasury
+        // );
 
-        deployedVaultFactory.whitelistController(address(controllerGeneric));
-        // uint256[7] memory markets = [
-        //     102062669946436220800282965814418861703520361600036198831171353773735437582898,
-        //     111421210939391528484088102920415860233503986458498274079532691809454099237075,
-        //     11810749631572916259290140579407728535491467368654952084793878872665389831986,
-        //     13460764146036414337380196068365709247259621097717951186513179471480948962666,
-        //     43365822659564324551460842388001340228617494417519860688859686053122333904688,
-        //     78747529850370621525761201463833537338614899618597837920824482195739019216457,
-        //     93601944593345476072344843193813093085647514424424373919377230374357655731143
-        // ];
-
-        // CarouselFactory carouselFactory = CarouselFactory(addresses.carouselFactory);
-        // console.log("Carousel Factory address", address(carouselFactory));
-        // // iterrate over markets and change relayer fee
-        // for (uint256 i = 0; i < markets.length; i++) {
-        //     carouselFactory.changeRelayerFee(200000000000000, markets[i]);
-        // }
+        // deployedVaultFactory.whitelistController(address(controllerGeneric));
         // carouselFactory.whitelistController(address(controllerGeneric));
 
         // uint256 timeOut = 12 hours;
@@ -161,9 +145,9 @@ contract V2DeployContracts is Script, HelperV2 {
         vm.stopBroadcast();
 
         // console2.log("TimeLock address", timeLock);
-        console2.log("Vault Factory address", address(deployedVaultFactory));
+        // console2.log("Vault Factory address", address(deployedVaultFactory));
         // console2.log("Controller address", address(controller));
-        console2.log("Controller Generic address", address(controllerGeneric));
+        // console2.log("Controller Generic address", address(controllerGeneric));
 
         // console2.log(
         //     "Chainlink Price Provider",
@@ -177,7 +161,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
         // console2.log("rolloverKeeper address", address(rolloverKeeper));
-        console2.log("Y2K token address", addresses.y2k);
+        // console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
     }

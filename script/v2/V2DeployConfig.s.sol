@@ -16,9 +16,9 @@ contract V2DeployConfig is HelperV2 {
         configAddresses = getConfigAddresses(configVariables.isTestEnv); //true if test env
         if (configVariables.isTestEnv) {
             console2.log("THIS IS A TEST ENV DEPLOYMENT");
-            revert();
         } else {
             console2.log("THIS IS A PRODUCTION ENV DEPLOYMENT");
+            revert();
         }
 
         console.log("Deployer", msg.sender);
@@ -69,7 +69,7 @@ contract V2DeployConfig is HelperV2 {
             address controller = getController(market.isGenericController);
             address depositAsset = getDepositAsset(market.depositAsset);
             uint256 strkePrice = stringToUint(market.strikePrice);
-            (address prem, address collat, uint256 marketId) = factory
+            (address prem, address collat, uint256 marketId) = pausableFactory
                 .createNewCarouselMarket(
                     CarouselFactory.CarouselMarketConfigurationCalldata(
                         market.token,
@@ -121,16 +121,16 @@ contract V2DeployConfig is HelperV2 {
             address controller = getController(market.isGenericController);
             address depositAsset = getDepositAsset(market.depositAsset);
             uint256 strkePrice = stringToUint(market.strikePrice);
-            if (!factory.controllers(controller)) {
+            if (!pausableFactory.controllers(controller)) {
                 console2.log("Controller not whitelisted", controller);
                 revert("Controller not whitelisted");
             }
-            uint256 previewMarketID = factory.getMarketId(
+            uint256 previewMarketID = pausableFactory.getMarketId(
                 market.token,
                 strkePrice,
                 depositAsset
             );
-            address vault = factory.marketIdToVaults(previewMarketID, 0);
+            address vault = pausableFactory.marketIdToVaults(previewMarketID, 0);
             if (vault != address(0)) {
                 console2.log("Market already deployed", previewMarketID);
                 console2.log(
@@ -164,16 +164,22 @@ contract V2DeployConfig is HelperV2 {
         ConfigEpochWithEmission[] memory epochs = getConfigEpochs();
         for (uint256 i = 0; i < epochs.length; ++i) {
             ConfigEpochWithEmission memory epoch = epochs[i];
+             CarouselFactory localFactory = 
+             epoch.isGenericController
+            ? keccak256(abi.encodePacked(epoch.name)) == keccak256(abi.encodePacked("y2kVST_984_WETH*")) ?
+                    factory :
+                    pausableFactory
+            : factory;
             address depositAsset = getDepositAsset(epoch.depositAsset);
             uint256 strikePrice = stringToUint(epoch.strikePrice);
-            uint256 marketId = factory.getMarketId(
+            uint256 marketId = localFactory.getMarketId(
                 epoch.token,
                 strikePrice,
                 depositAsset
             );
 
             (uint256 epochId, address[2] memory vaults) = CarouselFactory(
-                factory
+                localFactory
             ).createEpochWithEmissions(
                     marketId,
                     epoch.epochBegin,
@@ -220,6 +226,17 @@ contract V2DeployConfig is HelperV2 {
             );
             revert("Not enough allowance");
         }
+       if (
+            IERC20(y2k).allowance(configAddresses.policy, address(pausableFactory)) <
+            configVariables.totalAmountOfEmittedTokens
+        ) {
+            console2.log(
+                "Not enough allowance",
+                IERC20(y2k).allowance(address(this), address(pausableFactory))
+            );
+            revert("Not enough allowance");
+        }
+
         if (epochs.length != configVariables.amountOfNewEpochs) {
             console.log("epochs.length", epochs.length);
             console.log(
@@ -230,14 +247,22 @@ contract V2DeployConfig is HelperV2 {
         }
         for (uint256 i = 0; i < epochs.length; ++i) {
             ConfigEpochWithEmission memory epoch = epochs[i];
+            CarouselFactory localFactory = 
+             epoch.isGenericController
+            ? 
+                keccak256(abi.encodePacked(epoch.name)) == keccak256(abi.encodePacked("y2kVST_984_WETH*")) ?
+                    factory :
+                    pausableFactory
+            : factory;
+
             address depositAsset = getDepositAsset(epoch.depositAsset);
             uint256 strikePrice = stringToUint(epoch.strikePrice);
-            uint256 previewMarketID = factory.getMarketId(
+            uint256 previewMarketID = localFactory.getMarketId(
                 epoch.token,
                 strikePrice,
                 depositAsset
             );
-            address vault = factory.marketIdToVaults(previewMarketID, 0);
+            address vault = localFactory.marketIdToVaults(previewMarketID, 0);
             if (vault == address(0)) {
                 console2.log(
                     "Market not deployed",
