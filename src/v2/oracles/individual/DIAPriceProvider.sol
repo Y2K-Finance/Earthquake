@@ -4,8 +4,8 @@ NOTE: Development in progress by JG. Reached functional milestone; Live VST data
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
-import {IDIAPriceFeed} from "../interfaces/IDIAPriceFeed.sol";
+import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
+import {IDIAPriceFeed} from "../../interfaces/IDIAPriceFeed.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DIAPriceProvider is Ownable, IConditionProvider {

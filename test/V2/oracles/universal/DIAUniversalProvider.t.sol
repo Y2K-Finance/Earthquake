@@ -176,14 +176,14 @@ contract DIAUniversalProviderTest is Helper {
         diaPriceProvider.setConditionType(0, 3);
     }
 
-    function testRevertInvalidInputStringFeedDIAUni() public {
-        vm.expectRevert(DIAUniversalProvider.InvalidInput.selector);
-        diaPriceProvider.setPriceFeed(0, "", 1);
-    }
-
     function testRevertFeedAlreadySetFeedDIAUni() public {
         vm.expectRevert(DIAUniversalProvider.FeedAlreadySet.selector);
         diaPriceProvider.setPriceFeed(marketId, pairName, DIA_DECIMALS);
+    }
+
+    function testRevertInvalidInputStringFeedDIAUni() public {
+        vm.expectRevert(DIAUniversalProvider.InvalidInput.selector);
+        diaPriceProvider.setPriceFeed(0, "", 1);
     }
 
     function testRevertDescriptionNotSetLatestPriceDIAUni() public {

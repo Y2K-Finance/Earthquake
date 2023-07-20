@@ -118,7 +118,7 @@ contract ChainlinkUniversalProviderTest is Helper {
         assertTrue(answeredInRoundBtc != 0);
     }
 
-    function testLatestPriceChainlinkUni() public {]
+    function testLatestPriceChainlinkUni() public {
         // First market
         int256 price = chainlinkPriceProvider.getLatestPrice(marketId);
         assertTrue(price != 0);

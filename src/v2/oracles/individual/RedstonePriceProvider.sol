@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
-import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
-import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
+import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
+import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
+import {IPriceFeedAdapter} from "../../interfaces/IPriceFeedAdapter.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RedstonePriceProvider is Ownable, IConditionProvider {

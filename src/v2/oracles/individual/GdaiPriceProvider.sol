@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
-import {IGdaiPriceFeed} from "../interfaces/IGdaiPriceFeed.sol";
+import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
+import {IGdaiPriceFeed} from "../../interfaces/IGdaiPriceFeed.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GdaiPriceProvider is IConditionProvider, Ownable {

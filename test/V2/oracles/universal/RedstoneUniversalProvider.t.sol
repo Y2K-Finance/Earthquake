@@ -40,9 +40,6 @@ contract RedstoneUniversalProviderTest is Helper {
         uint256 condition = 2;
         redstoneProvider.setConditionType(marketId, condition);
         redstoneProvider.setPriceFeed(marketId, VST_PRICE_FEED);
-
-        redstoneProvider.setConditionType(secondMarketId, condition);
-        redstoneProvider.setPriceFeed(secondMarketId, SECOND_PRICE_FEED);
     }
 
     ////////////////////////////////////////////////
@@ -66,19 +63,6 @@ contract RedstoneUniversalProviderTest is Helper {
                 )
             )
         );
-
-        // Second market
-        // assertEq(
-        //     redstoneProvider.decimals(secondMarketId),
-        //     IPriceFeedAdapter(SECOND_PRICE_FEED).decimals()
-        // );
-        // assertEq(
-        //     redstoneProvider.description(secondMarketId),
-        //     string(
-        //         abi.encodePacked(
-        //             IPriceFeedAdapter(SECOND_PRICE_FEED).getDataFeedId()
-        //         )
-        //     )
     }
 
     ////////////////////////////////////////////////
@@ -97,29 +81,11 @@ contract RedstoneUniversalProviderTest is Helper {
         assertTrue(startedAt != 0);
         assertTrue(updatedAt != 0);
         assertTrue(answeredInRound == 0);
-
-        // Second Market
-        // (
-        //     uint80 roundIdSecond,
-        //     int256 priceSecond,
-        //     uint256 startedAtSecond,
-        //     uint256 updatedAtSecond,
-        //     uint80 answeredInRoundSecond
-        // ) = redstoneProvider.latestRoundData(secondMarketId);
-        // assertTrue(priceSecond != 0);
-        // assertTrue(roundIdSecond == 0);
-        // assertTrue(startedAtSecond != 0);
-        // assertTrue(updatedAtSecond != 0);
-        // assertTrue(answeredInRoundSecond == 0);
     }
 
     function testLatestPriceRedUni() public {
         int256 price = redstoneProvider.getLatestPrice(marketId);
         assertTrue(price != 0);
-
-        // Second Market
-        // price = redstoneProvider.getLatestPrice(secondMarketId);
-        // assertTrue(price != 0);
     }
 
     function testConditionOneMetRedUni() public {
@@ -133,16 +99,6 @@ contract RedstoneUniversalProviderTest is Helper {
         );
         assertTrue(price != 0);
         assertEq(condition, true);
-
-        uint256 secondMarketIdOne = 3;
-        // redstoneProvider.setConditionType(secondMarketIdOne, conditionType);
-        // redstoneProvider.setPriceFeed(secondMarketIdOne, SECOND_PRICE_FEED);
-        // (bool conditionSecond, int256 priceSecond) = redstoneProvider.conditionMet(
-        //     0.01 ether,
-        //     secondMarketIdOne
-        // );
-        // assertTrue(priceSecond != 0);
-        // assertEq(conditionSecond, true);
     }
 
     function testConditionTwoMetRedUni() public {
@@ -152,13 +108,6 @@ contract RedstoneUniversalProviderTest is Helper {
         );
         assertTrue(price != 0);
         assertEq(condition, true);
-
-        // (bool conditionSecond, int256 priceSecond) = redstoneProvider.conditionMet(
-        //     2 ether,
-        //     secondMarketId
-        // );
-        // assertTrue(priceSecond != 0);
-        // assertEq(conditionSecond, true);
     }
 
     ////////////////////////////////////////////////
@@ -229,8 +178,4 @@ contract RedstoneUniversalProviderTest is Helper {
         vm.expectRevert(RedstoneUniversalProvider.PriceTimedOut.selector);
         redstoneProvider.getLatestPrice(marketIdMock);
     }
-
-    // TODO: Condition type not set
-
-    // TODO: Zero Address in latestRoundData
 }

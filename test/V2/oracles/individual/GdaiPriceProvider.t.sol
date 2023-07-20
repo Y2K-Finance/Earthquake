@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Helper} from "../Helper.sol";
-import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
-import {TimeLock} from "../../../src/v2/TimeLock.sol";
-import {GdaiPriceProvider} from "../../../src/v2/oracles/GDaiPriceProvider.sol";
+import {Helper} from "../../Helper.sol";
+import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
+import {TimeLock} from "../../../../src/v2/TimeLock.sol";
+import {
+    GdaiPriceProvider
+} from "../../../../src/v2/oracles/individual/GDaiPriceProvider.sol";
 import {
     MockOracleAnswerOne,
     MockOracleGracePeriod,
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "./MockOracles.sol";
-import {IPriceFeedAdapter} from "./PriceInterfaces.sol";
+} from "../MockOracles.sol";
+import {IPriceFeedAdapter} from "../PriceInterfaces.sol";
 
 contract GdaiPriceProviderTest is Helper {
     GdaiPriceProvider public gdaiPriceProvider;
