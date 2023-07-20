@@ -196,11 +196,6 @@ contract ChainlinkUniversalProviderTest is Helper {
         chainlinkPriceProvider.setConditionType(0, 0);
     }
 
-    function testRevertFeedAlreadySetChainlinkUni() public {
-        vm.expectRevert(ChainlinkUniversalProvider.FeedAlreadySet.selector);
-        chainlinkPriceProvider.setPriceFeed(marketId, USDC_CHAINLINK);
-    }
-
     function testRevertZeroAddressSetFeedChainlinkUni() public {
         vm.expectRevert(ChainlinkUniversalProvider.ZeroAddress.selector);
         chainlinkPriceProvider.setPriceFeed(999, address(0));

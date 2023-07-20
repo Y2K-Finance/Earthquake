@@ -43,8 +43,6 @@ contract RedstoneUniversalProvider is Ownable, IUniversalProvider {
         uint256 _marketId,
         address priceFeed
     ) external onlyOwner {
-        if (address(marketIdToPriceFeed[_marketId]) != address(0))
-            revert FeedAlreadySet();
         if (priceFeed == address(0)) revert InvalidInput();
         marketIdToPriceFeed[_marketId] = IPriceFeedAdapter(priceFeed);
         emit PriceFeedSet(_marketId, priceFeed);
@@ -149,5 +147,4 @@ contract RedstoneUniversalProvider is Ownable, IUniversalProvider {
     error PriceTimedOut();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
-    error FeedAlreadySet();
 }

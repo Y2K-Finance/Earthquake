@@ -52,8 +52,6 @@ contract ChainlinkUniversalProvider is Ownable, IUniversalProvider {
         uint256 _marketId,
         address priceFeed
     ) external onlyOwner {
-        if (address(marketIdToPriceFeed[_marketId]) != address(0))
-            revert FeedAlreadySet();
         if (priceFeed == address(0)) revert ZeroAddress();
         marketIdToPriceFeed[_marketId] = AggregatorV3Interface(priceFeed);
         emit PriceFeedSet(_marketId, priceFeed);
@@ -160,5 +158,4 @@ contract ChainlinkUniversalProvider is Ownable, IUniversalProvider {
     error InvalidInput();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
-    error FeedAlreadySet();
 }

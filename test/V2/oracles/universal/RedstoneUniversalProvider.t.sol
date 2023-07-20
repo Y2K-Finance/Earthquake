@@ -135,11 +135,6 @@ contract RedstoneUniversalProviderTest is Helper {
         redstoneProvider.setConditionType(0, 3);
     }
 
-    function testRevertFeedSetRedUni() public {
-        vm.expectRevert(RedstoneUniversalProvider.FeedAlreadySet.selector);
-        redstoneProvider.setPriceFeed(marketId, VST_PRICE_FEED);
-    }
-
     function testRevertInvalidInputFeedRedUni() public {
         vm.expectRevert(RedstoneUniversalProvider.InvalidInput.selector);
         redstoneProvider.setPriceFeed(0, address(0));

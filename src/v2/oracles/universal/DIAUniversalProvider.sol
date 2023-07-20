@@ -48,7 +48,6 @@ contract DIAUniversalProvider is Ownable, IUniversalProvider {
         string memory _description,
         uint256 _decimals
     ) external onlyOwner {
-        if (marketIdToDecimals[_marketId] != 0) revert FeedAlreadySet();
         if (keccak256(abi.encode(_description)) == keccak256(abi.encode("")))
             revert InvalidInput();
 
@@ -150,7 +149,6 @@ contract DIAUniversalProvider is Ownable, IUniversalProvider {
     error InvalidInput();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
-    error FeedAlreadySet();
     error DescriptionNotSet();
     error OraclePriceZero();
 }
