@@ -150,15 +150,21 @@ contract HelperV2 is Script {
     }
 
     function fundKeepers(uint256 _amount) public payable {
-         KeeperV2(configAddresses.resolveKeeperGeneric).deposit{value: _amount}(
-            _amount
-        );
-        KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
-            _amount
-        );
-        KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
+        // KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
+        //     _amount
+        // );
+        // KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
+        //     value: _amount
+        // }(_amount);
+
+        KeeperV2Rollover(configAddresses.resolveKeeperGenericPausable).deposit{
             value: _amount
         }(_amount);
+        
+        KeeperV2Rollover(configAddresses.rolloverKeeperPausable).deposit{
+            value: _amount
+        }(_amount);
+
     }
 
     function startKeepers(
@@ -216,7 +222,7 @@ contract HelperV2 is Script {
             );
             console2.log("Rollover Keeper taskId: ");
             console.logBytes32(
-                KeeperV2(configAddresses.rolloverKeeper).tasks(
+                KeeperV2(rollover).tasks(
                     keccak256(abi.encodePacked(_marketId, _epochId))
                 )
             );
@@ -249,8 +255,13 @@ contract HelperV2 is Script {
         } else if (
             keccak256(abi.encodePacked(_depositAsset)) ==
             keccak256(abi.encodePacked(string("Y2K")))
-        ) {
+        ){
             return configAddresses.y2k;
+        } else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("DAI")))
+        ) {
+            return 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
         } else {
             revert("depositAsset not found");
         }
@@ -319,16 +330,4 @@ contract HelperV2 is Script {
         return uint256(intResult);
     }
 
-
-    // function stringToUint(string memory s) public pure returns (uint256) {
-    //     bytes memory b = bytes(s);
-    //     uint256 result = 0;
-    //     for (uint256 i = 0; i < b.length; i++) {            
-    //         uint256 c = uint256(uint8(b[i]));
-    //         if (c >= 48 && c <= 57) {
-    //             result = result * 10 + (c - 48);
-    //         }
-    //     }
-    //     return result;
-    // }
 }

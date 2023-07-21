@@ -18,7 +18,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         if (_priceFeed == address(0)) revert ZeroAddress();
         gdaiPriceFeed = IGdaiPriceFeed(_priceFeed);
         decimals = gdaiPriceFeed.decimals();
-        description = gdaiPriceFeed.symbol();
+        description = "gTrade pnl";
     }
 
     /*//////////////////////////////////////////////////////////////
