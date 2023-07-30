@@ -234,7 +234,7 @@ contract HelperV2 is Script {
     {
         return
             isGenericControler
-                ? configAddresses.controllerGenericPausable
+                ? configAddresses.controllerGeneric
                 : configAddresses.controller;
     }
 

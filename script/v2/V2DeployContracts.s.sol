@@ -29,7 +29,7 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(true);
+        ConfigAddressesV2 memory addresses = getConfigAddresses(false);
         // address weth = addresses.weth;
         // address treasury = addresses.treasury;
         // address emissionToken = addresses.y2k;
@@ -91,12 +91,18 @@ contract V2DeployContracts is Script, HelperV2 {
         // uint256 timeOut = 12 hours;
         // address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
         // address btcFeed = 0x6ce185860a4963106506C203335A2910413708e9;
-        // ChainlinkPriceProvider chainlinkPriceProvider = new ChainlinkPriceProvider(
+        // ChainlinkPriceProvider chainlinkPriceProviderMIM = new ChainlinkPriceProvider(
         //         arbitrumSequencer,
-        //         addresses.pausableCarouselFactory,
-        //         0x6ce185860a4963106506C203335A2910413708e9,
+        //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
+        //         0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b,
         //         timeOut
-        //     );
+        // );
+        //  ChainlinkPriceProvider chainlinkPriceProviderMAI = new ChainlinkPriceProvider(
+        //         arbitrumSequencer,
+        //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
+        //         0x59644ec622243878d1464A9504F9e9a31294128a,
+        //         timeOut
+        // );
 
         // address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
         // RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
@@ -136,7 +142,7 @@ contract V2DeployContracts is Script, HelperV2 {
         //     value: 50000000000000000
         // }(50000000000000000);
         // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
-        // KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
+        // KeeperV2Rollover rolloverKeeperPausable = new KeeperV2Rollover(
         //     payable(addresses.gelatoOpsV2),
         //     payable(addresses.gelatoTaskTreasury),
         //     address(deployedVaultFactory)
@@ -150,8 +156,12 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("Controller Generic address", address(controllerGeneric));
 
         // console2.log(
-        //     "Chainlink Price Provider",
-        //     address(chainlinkPriceProvider)
+        //     "Chainlink Price Provider MIM",
+        //     address(chainlinkPriceProviderMIM)
+        // );
+        // console2.log(
+        //     "Chainlink Price Provider MAI",
+        //     address(chainlinkPriceProviderMAI)
         // );
         // console2.log("Redstone Price Provider", address(redstoneProvider));
         console2.log("Gdai Price Provider", address(gdaiPriceProvider));
@@ -160,7 +170,7 @@ contract V2DeployContracts is Script, HelperV2 {
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
-        // console2.log("rolloverKeeper address", address(rolloverKeeper));
+        // console2.log("rolloverKeeper address", address(rolloverKeeperPausable));
         // console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
