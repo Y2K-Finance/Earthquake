@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Helper} from "../Helper.sol";
-import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
-import {TimeLock} from "../../../src/v2/TimeLock.sol";
-import {DIAPriceProvider} from "../../../src/v2/oracles/DIAPriceProvider.sol";
+import {Helper} from "../../Helper.sol";
+import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
+import {TimeLock} from "../../../../src/v2/TimeLock.sol";
+import {
+    DIAPriceProvider
+} from "../../../../src/v2/oracles/individual/DIAPriceProvider.sol";
 import {
     MockOracleAnswerOne,
     MockOracleGracePeriod,
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "./MockOracles.sol";
+} from "../MockOracles.sol";
 
 contract DIAPriceProviderTest is Helper {
     DIAPriceProvider public diaPriceProvider;

@@ -1,22 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {
-    AggregatorV3Interface
-} from "@chainlink/interfaces/AggregatorV3Interface.sol";
-import {
-    AggregatorV2V3Interface
-} from "@chainlink/interfaces/AggregatorV2V3Interface.sol";
-import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
-import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
+import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
+import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
+import {IPriceFeedAdapter} from "../../interfaces/IPriceFeedAdapter.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ChainlinkPriceProvider is Ownable, IConditionProvider {
-    uint16 private constant _GRACE_PERIOD_TIME = 3600;
+contract RedstonePriceProvider is Ownable, IConditionProvider {
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
-    AggregatorV2V3Interface public immutable sequencerUptimeFeed;
-    AggregatorV3Interface public immutable priceFeed;
+    IPriceFeedAdapter public priceFeedAdapter;
+    bytes32 public immutable dataFeedId;
     uint256 public immutable decimals;
     string public description;
 
@@ -25,21 +19,22 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(
-        address _sequencer,
         address _factory,
         address _priceFeed,
+        string memory _dataFeedSymbol,
         uint256 _timeOut
     ) {
         if (_factory == address(0)) revert ZeroAddress();
-        if (_sequencer == address(0)) revert ZeroAddress();
         if (_priceFeed == address(0)) revert ZeroAddress();
+        if (keccak256(bytes(_dataFeedSymbol)) == keccak256(bytes(string(""))))
+            revert InvalidInput();
         if (_timeOut == 0) revert InvalidInput();
         vaultFactory = IVaultFactoryV2(_factory);
-        sequencerUptimeFeed = AggregatorV2V3Interface(_sequencer);
-        priceFeed = AggregatorV3Interface(_priceFeed);
+        priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
+        description = _dataFeedSymbol;
+        dataFeedId = stringToBytes32(_dataFeedSymbol);
         timeOut = _timeOut;
-        decimals = priceFeed.decimals();
-        description = priceFeed.description();
+        decimals = priceFeedAdapter.decimals();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -69,36 +64,29 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
             uint80 answeredInRound
         )
     {
-        (roundId, price, startedAt, updatedAt, answeredInRound) = priceFeed
-            .latestRoundData();
+        (
+            roundId,
+            price,
+            startedAt,
+            updatedAt,
+            answeredInRound
+        ) = priceFeedAdapter.latestRoundData();
     }
 
-    /** @notice Fetch token price from priceFeed (Chainlink oracle address)
+    /** @notice Fetch token price from priceFeedAdapter (Redston oracle address)
      * @return int256 Current token price
      */
-    function getLatestPrice() public view returns (int256) {
-        (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed
-            .latestRoundData();
-
-        // Answer == 0: Sequencer is up || Answer == 1: Sequencer is down
-        if (!(answer == 0)) {
-            revert SequencerDown();
-        }
-
-        // Make sure the grace period has passed after the sequencer is back up - timeSinceUp <= PERIOD
-        if ((block.timestamp - startedAt) <= _GRACE_PERIOD_TIME) {
-            revert GracePeriodNotOver();
-        }
-
+    function getLatestPrice() public view virtual returns (int256) {
         (
-            uint80 roundID,
+            uint80 roundId,
             int256 price,
             ,
             uint256 updatedAt,
             uint80 answeredInRound
         ) = latestRoundData();
         if (price <= 0) revert OraclePriceZero();
-        if (answeredInRound < roundID) revert RoundIdOutdated();
+        if (answeredInRound < roundId) revert RoundIdOutdated();
+        // TODO: What is a suitable timeframe to set timeout as based on this info? Update at always timestamp?
         if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
 
         if (decimals < 18) {
@@ -112,9 +100,9 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
         return price;
     }
 
+    // NOTE: _marketId unused but receiving marketId makes Generic controller composabile for future
     /** @notice Fetch price and return condition
      * @param _strike Strike price
-     * @param _marketId Market id
      * @return boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
@@ -124,21 +112,33 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = marketIdToConditionType[_marketId];
         price = getLatestPrice();
+
         if (conditionType == 1) return (int256(_strike) < price, price);
         else if (conditionType == 2) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
     }
 
+    /** @notice Convert string to bytes32
+     * @param _symbol Symbol for token
+     * @return result Bytes32 representation of string
+     */
+    function stringToBytes32(
+        string memory _symbol
+    ) public pure returns (bytes32 result) {
+        if (bytes(_symbol).length > 32) revert InvalidInput();
+        assembly {
+            result := mload(add(_symbol, 32))
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
-    error SequencerDown();
-    error GracePeriodNotOver();
+    error ZeroAddress();
+    error InvalidInput();
     error OraclePriceZero();
     error RoundIdOutdated();
-    error ZeroAddress();
     error PriceTimedOut();
-    error InvalidInput();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
 }

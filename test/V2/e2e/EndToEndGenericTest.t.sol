@@ -11,13 +11,19 @@ import {
 } from "../../../src/v2/Controllers/ControllerGeneric.sol";
 import {
     RedstonePriceProvider
-} from "../../../src/v2/oracles/RedstonePriceProvider.sol";
+} from "../../../src/v2/oracles/individual/RedstonePriceProvider.sol";
 import {
     ChainlinkPriceProvider
-} from "../../../src/v2/oracles/ChainlinkPriceProvider.sol";
-import {GdaiPriceProvider} from "../../../src/v2/oracles/GdaiPriceProvider.sol";
-import {DIAPriceProvider} from "../../../src/v2/oracles/DIAPriceProvider.sol";
-import {CVIPriceProvider} from "../../../src/v2/oracles/CVIPriceProvider.sol";
+} from "../../../src/v2/oracles/individual/ChainlinkPriceProvider.sol";
+import {
+    GdaiPriceProvider
+} from "../../../src/v2/oracles/individual/GdaiPriceProvider.sol";
+import {
+    DIAPriceProvider
+} from "../../../src/v2/oracles/individual/DIAPriceProvider.sol";
+import {
+    CVIPriceProvider
+} from "../../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import {
     IPriceFeedAdapter
 } from "../../../src/v2/interfaces/IPriceFeedAdapter.sol";

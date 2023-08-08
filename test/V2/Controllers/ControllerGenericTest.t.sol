@@ -8,7 +8,7 @@ import {
 } from "../../../src/v2/Controllers/ControllerGeneric.sol";
 import {
     RedstonePriceProvider
-} from "../../../src/v2/oracles/RedstonePriceProvider.sol";
+} from "../../../src/v2/oracles/individual/RedstonePriceProvider.sol";
 import {MintableToken} from "../MintableToken.sol";
 import {TimeLock} from "../../../src/v2/TimeLock.sol";
 import {

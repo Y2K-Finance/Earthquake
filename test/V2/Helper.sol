@@ -37,6 +37,8 @@ contract Helper is Test {
         0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69;
     address public constant USDC_CHAINLINK =
         0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3;
+    address public constant BTC_CHAINLINK =
+        0x6ce185860a4963106506C203335A2910413708e9;
     address public constant ETH_VOL_CHAINLINK =
         0x1B8e08a5457b12ae3CbC4233e645AEE2fA809e39;
     address public constant USDC_TOKEN =
@@ -45,6 +47,7 @@ contract Helper is Test {
         0x449F0bC26B7Ad7b48DA2674Fb4030F0e9323b466;
     address public constant VST_PRICE_FEED =
         0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
+    address public constant SECOND_PRICE_FEED = address(0x123);
     address public constant GDAI_VAULT =
         0xd85E038593d7A098614721EaE955EC2022B9B91B;
     address public constant DIA_ORACLE_V2 =

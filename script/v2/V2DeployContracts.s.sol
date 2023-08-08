@@ -9,11 +9,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../src/v2/VaultFactoryV2.sol";
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "../../src/v2/Controllers/ControllerGeneric.sol";
-import "../../src/v2/oracles/ChainlinkPriceProvider.sol";
-import "../../src/v2/oracles/RedstonePriceProvider.sol";
-import "../../src/v2/oracles/DIAPriceProvider.sol";
-import "../../src/v2/oracles/CVIPriceProvider.sol";
-import "../../src/v2/oracles/GdaiPriceProvider.sol";
+import "../../src/v2/oracles/individual/ChainlinkPriceProvider.sol";
+import "../../src/v2/oracles/individual/RedstonePriceProvider.sol";
+import "../../src/v2/oracles/individual/DIAPriceProvider.sol";
+import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
+import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 import {

@@ -1,40 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IVaultFactoryV2} from "../interfaces/IVaultFactoryV2.sol";
-import {IConditionProvider} from "../interfaces/IConditionProvider.sol";
-import {IPriceFeedAdapter} from "../interfaces/IPriceFeedAdapter.sol";
+import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
+import {IUniversalProvider} from "../../interfaces/IUniversalProvider.sol";
+import {IPriceFeedAdapter} from "../../interfaces/IPriceFeedAdapter.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RedstonePriceProvider is Ownable, IConditionProvider {
+contract RedstoneUniversalProvider is Ownable, IUniversalProvider {
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
-    IPriceFeedAdapter public priceFeedAdapter;
-    bytes32 public immutable dataFeedId;
-    uint256 public immutable decimals;
-    string public description;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
+    mapping(uint256 => IPriceFeedAdapter) public marketIdToPriceFeed;
 
-    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
+    event MarketConditionSet(
+        uint256 indexed marketId,
+        uint256 indexed conditionType
+    );
+    event PriceFeedSet(uint256 indexed marketId, address indexed priceFeed);
 
-    constructor(
-        address _factory,
-        address _priceFeed,
-        string memory _dataFeedSymbol,
-        uint256 _timeOut
-    ) {
+    constructor(address _factory, uint256 _timeOut) {
         if (_factory == address(0)) revert ZeroAddress();
-        if (_priceFeed == address(0)) revert ZeroAddress();
-        if (keccak256(bytes(_dataFeedSymbol)) == keccak256(bytes(string(""))))
-            revert InvalidInput();
         if (_timeOut == 0) revert InvalidInput();
         vaultFactory = IVaultFactoryV2(_factory);
-        priceFeedAdapter = IPriceFeedAdapter(_priceFeed);
-        description = _dataFeedSymbol;
-        dataFeedId = stringToBytes32(_dataFeedSymbol);
         timeOut = _timeOut;
-        decimals = priceFeedAdapter.decimals();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -50,10 +39,34 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
         emit MarketConditionSet(_marketId, _condition);
     }
 
+    function setPriceFeed(
+        uint256 _marketId,
+        address priceFeed
+    ) external onlyOwner {
+        if (priceFeed == address(0)) revert InvalidInput();
+        marketIdToPriceFeed[_marketId] = IPriceFeedAdapter(priceFeed);
+        emit PriceFeedSet(_marketId, priceFeed);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
-    function latestRoundData()
+    function decimals(uint256 _marketId) public view returns (uint256) {
+        return marketIdToPriceFeed[_marketId].decimals();
+    }
+
+    function description(
+        uint256 _marketId
+    ) public view returns (string memory) {
+        return
+            string(
+                abi.encodePacked(marketIdToPriceFeed[_marketId].getDataFeedId())
+            );
+    }
+
+    function latestRoundData(
+        uint256 _marketId
+    )
         public
         view
         returns (
@@ -64,6 +77,10 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
             uint80 answeredInRound
         )
     {
+        IPriceFeedAdapter priceFeedAdapter = IPriceFeedAdapter(
+            marketIdToPriceFeed[_marketId]
+        );
+        if (address(priceFeedAdapter) == address(0)) revert ZeroAddress();
         (
             roundId,
             price,
@@ -76,24 +93,26 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
     /** @notice Fetch token price from priceFeedAdapter (Redston oracle address)
      * @return int256 Current token price
      */
-    function getLatestPrice() public view virtual returns (int256) {
+    function getLatestPrice(
+        uint256 _marketId
+    ) public view virtual returns (int256) {
         (
             uint80 roundId,
             int256 price,
             ,
             uint256 updatedAt,
             uint80 answeredInRound
-        ) = latestRoundData();
+        ) = latestRoundData(_marketId);
         if (price <= 0) revert OraclePriceZero();
         if (answeredInRound < roundId) revert RoundIdOutdated();
-        // TODO: What is a suitable timeframe to set timeout as based on this info? Update at always timestamp?
         if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
 
-        if (decimals < 18) {
-            uint256 calcDecimals = 10 ** (18 - (decimals));
+        uint256 feedDecimals = decimals(_marketId);
+        if (feedDecimals < 18) {
+            uint256 calcDecimals = 10 ** (18 - (feedDecimals));
             price = price * int256(calcDecimals);
-        } else if (decimals > 18) {
-            uint256 calcDecimals = 10 ** ((decimals - 18));
+        } else if (feedDecimals > 18) {
+            uint256 calcDecimals = 10 ** ((feedDecimals - 18));
             price = price / int256(calcDecimals);
         }
 
@@ -111,24 +130,11 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
         uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = marketIdToConditionType[_marketId];
-        price = getLatestPrice();
+        price = getLatestPrice(_marketId);
 
         if (conditionType == 1) return (int256(_strike) < price, price);
         else if (conditionType == 2) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
-    }
-
-    /** @notice Convert string to bytes32
-     * @param _symbol Symbol for token
-     * @return result Bytes32 representation of string
-     */
-    function stringToBytes32(
-        string memory _symbol
-    ) public pure returns (bytes32 result) {
-        if (bytes(_symbol).length > 32) revert InvalidInput();
-        assembly {
-            result := mload(add(_symbol, 32))
-        }
     }
 
     /*//////////////////////////////////////////////////////////////

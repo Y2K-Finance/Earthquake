@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Helper} from "../Helper.sol";
-import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
-import {CVIPriceProvider} from "../../../src/v2/oracles/CVIPriceProvider.sol";
-import {TimeLock} from "../../../src/v2/TimeLock.sol";
-import {MockOracleAnswerZeroCVI, MockOracleTimeOutCVI} from "./MockOracles.sol";
+import {Helper} from "../../Helper.sol";
+import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
+import {
+    CVIPriceProvider
+} from "../../../../src/v2/oracles/individual/CVIPriceProvider.sol";
+import {TimeLock} from "../../../../src/v2/TimeLock.sol";
+import {
+    MockOracleAnswerZeroCVI,
+    MockOracleTimeOutCVI
+} from "../MockOracles.sol";
 
 contract CVIPriceProviderTest is Helper {
     uint256 public arbForkId;

@@ -94,9 +94,9 @@ contract HelperV2 is Script {
         isTestEnv = configVariables.isTestEnv;
     }
 
-    function contractToAddresses(ConfigAddressesV2 memory _configAddresses)
-        public
-    {
+    function contractToAddresses(
+        ConfigAddressesV2 memory _configAddresses
+    ) public {
         y2k = address(_configAddresses.y2k);
         factory = CarouselFactory(_configAddresses.carouselFactory);
         pausableFactory = CarouselFactory(
@@ -106,10 +106,9 @@ contract HelperV2 is Script {
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
 
-    function getConfigAddresses(bool _isTestEnv)
-        public
-        returns (ConfigAddressesV2 memory constans)
-    {
+    function getConfigAddresses(
+        bool _isTestEnv
+    ) public returns (ConfigAddressesV2 memory constans) {
         string memory root = vm.projectRoot();
         string memory path;
         if (_isTestEnv) {
@@ -214,7 +213,9 @@ contract HelperV2 is Script {
             revert("rolloverKeeper epochId error");
         }
 
-         console2.log("------------------------KEEPER DETAILS----------------------");
+        console2.log(
+            "------------------------KEEPER DETAILS----------------------"
+        );
 
         console2.log("Resolve Keeper taskId: ");
             console2.logBytes32(
@@ -230,20 +231,18 @@ contract HelperV2 is Script {
             );
     }
 
-    function getController(bool isGenericControler)
-        public
-        returns (address controller)
-    {
+    function getController(
+        bool isGenericControler
+    ) public view returns (address controller) {
         return
             isGenericControler
                 ? configAddresses.controllerGeneric
                 : configAddresses.controller;
     }
 
-    function getDepositAsset(string memory _depositAsset)
-        public
-        returns (address depositAsset)
-    {
+    function getDepositAsset(
+        string memory _depositAsset
+    ) public view returns (address depositAsset) {
         if (
             keccak256(abi.encodePacked(_depositAsset)) ==
             keccak256(abi.encodePacked(string("WETH")))

@@ -14,4 +14,6 @@ interface IPriceFeedAdapter {
         );
 
     function decimals() external view returns (uint256);
+
+    function getDataFeedId() external view returns (bytes32);
 }

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Helper} from "../Helper.sol";
-import {VaultFactoryV2} from "../../../src/v2/VaultFactoryV2.sol";
+import {Helper} from "../../Helper.sol";
+import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
 import {
     RedstonePriceProvider
-} from "../../../src/v2/oracles/RedstonePriceProvider.sol";
-import {TimeLock} from "../../../src/v2/TimeLock.sol";
+} from "../../../../src/v2/oracles/individual/RedstonePriceProvider.sol";
+import {TimeLock} from "../../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "./MockOracles.sol";
-import {IPriceFeedAdapter} from "./PriceInterfaces.sol";
+} from "../MockOracles.sol";
+import {IPriceFeedAdapter} from "../PriceInterfaces.sol";
 
 contract RedstonePriceProviderTest is Helper {
     uint256 public arbForkId;
