@@ -18,6 +18,7 @@ contract V2DeployConfig is HelperV2 {
             console2.log("THIS IS A TEST ENV DEPLOYMENT");
         } else {
             console2.log("THIS IS A PRODUCTION ENV DEPLOYMENT");
+            // revert("THIS IS A PRODUCTION ENV DEPLOYMENT");
         }
 
         console.log("Deployer", msg.sender);

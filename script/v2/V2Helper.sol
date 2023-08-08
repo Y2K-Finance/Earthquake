@@ -172,10 +172,11 @@ contract HelperV2 is Script {
         uint256 _epochId,
         bool _isGenericController
     ) public {
-        address resolver = _isGenericController
-            ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
-                    configAddresses.resolveKeeperGeneric :
-                    configAddresses.resolveKeeperGenericPausable
+        address resolver = _isGenericController ?
+            // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+            //         configAddresses.resolveKeeperGeneric :
+            //         configAddresses.resolveKeeperGenericPausable
+            configAddresses.resolveKeeperGeneric
             : configAddresses.resolveKeeper;
         KeeperV2(resolver).startTask(
                 _marketId,
@@ -183,10 +184,11 @@ contract HelperV2 is Script {
         );
 
         address rollover = 
-        _isGenericController
-            ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
-                    configAddresses.rolloverKeeper :
-                    configAddresses.rolloverKeeperPausable
+        _isGenericController ? 
+            // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+            //         configAddresses.rolloverKeeper :
+            //         configAddresses.rolloverKeeperPausable
+            configAddresses.rolloverKeeper
             : configAddresses.rolloverKeeper;
 
         KeeperV2Rollover(rollover).startTask(

@@ -1,8 +1,8 @@
 {
   "variables": {
     "newMarkets": false,
-    "marketIds": [],
     "amountOfNewMarkets": 0,
+    "marketIds": [],
     "newEpochs": true,
     "amountOfNewEpochs": 8,
     "epochsIds": [
