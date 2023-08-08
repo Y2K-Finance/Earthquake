@@ -735,7 +735,7 @@ contract CarouselPausable is VaultV2Pausable {
                 rolloverQueue[i].epochId == _epochId &&
                 (assets >= rolloverQueue[i].shares) // check if position is in profit and getting rollover
             ) {
-                tvl += assets;
+                tvl += rolloverQueue[i].shares;
             }
         }
     }
@@ -752,7 +752,7 @@ contract CarouselPausable is VaultV2Pausable {
             if (
                 assets >= rolloverQueue[i].shares // check if position is in profit and getting rollover
             ) {
-                tvl += assets;
+                tvl += rolloverQueue[i].shares;
             }
         }
     }

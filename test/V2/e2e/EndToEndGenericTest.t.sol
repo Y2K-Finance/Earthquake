@@ -215,8 +215,6 @@ contract EndToEndV2GenericTest is Helper {
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
         int256 strikePrice = (gdaiPriceProvider.getLatestPrice() + 1);
-        gdaiPriceProvider.updateStrikeHash(strikePrice);
-
         depegStrike = uint256(-strikePrice);
 
         string memory name = string("Gains Network DAI");

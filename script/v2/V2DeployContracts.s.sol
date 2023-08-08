@@ -16,8 +16,9 @@ import "../../src/v2/oracles/CVIPriceProvider.sol";
 import "../../src/v2/oracles/GdaiPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
-import {KeeperV2GenericController} from "../keepers/KeeperV2GenericController.sol";
-
+import {
+    KeeperV2GenericController
+} from "../keepers/KeeperV2GenericController.sol";
 
 //forge script V2DeploymentScript --rpc-url $ARBITRUM_RPC_URL --broadcast --verify -slow -vv
 
@@ -28,7 +29,7 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(true);
+        ConfigAddressesV2 memory addresses = getConfigAddresses(false);
         // address weth = addresses.weth;
         // address treasury = addresses.treasury;
         // address emissionToken = addresses.y2k;
@@ -60,12 +61,12 @@ contract V2DeployContracts is Script, HelperV2 {
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        CarouselFactoryPausable deployedVaultFactory = new CarouselFactoryPausable(
-            addresses.weth,
-            addresses.treasury,
-            msg.sender,
-            addresses.y2k
-        );
+        // CarouselFactoryPausable deployedVaultFactory = new CarouselFactoryPausable(
+        //     addresses.weth,
+        //     addresses.treasury,
+        //     msg.sender,
+        //     addresses.y2k
+        // );
 
         // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
         //     address(vaultFactory),
@@ -79,23 +80,29 @@ contract V2DeployContracts is Script, HelperV2 {
         //     addresses.carouselFactory,
         //     addresses.treasury);
 
-        ControllerGeneric controllerGeneric = new ControllerGeneric(
-            address(deployedVaultFactory),
-            addresses.treasury
-        );
+        // ControllerGeneric controllerGeneric = new ControllerGeneric(
+        //     address(deployedVaultFactory),
+        //     addresses.treasury
+        // );
 
-        deployedVaultFactory.whitelistController(address(controllerGeneric));
-
+        // deployedVaultFactory.whitelistController(address(controllerGeneric));
+        // carouselFactory.whitelistController(address(controllerGeneric));
 
         // uint256 timeOut = 12 hours;
         // address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
         // address btcFeed = 0x6ce185860a4963106506C203335A2910413708e9;
-        // ChainlinkPriceProvider chainlinkPriceProvider = new ChainlinkPriceProvider(
+        // ChainlinkPriceProvider chainlinkPriceProviderMIM = new ChainlinkPriceProvider(
         //         arbitrumSequencer,
-        //         addresses.pausableCarouselFactory,
-        //         0x6ce185860a4963106506C203335A2910413708e9,
+        //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
+        //         0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b,
         //         timeOut
-        //     );
+        // );
+        //  ChainlinkPriceProvider chainlinkPriceProviderMAI = new ChainlinkPriceProvider(
+        //         arbitrumSequencer,
+        //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
+        //         0x59644ec622243878d1464A9504F9e9a31294128a,
+        //         timeOut
+        // );
 
         // address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
         // RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
@@ -105,8 +112,8 @@ contract V2DeployContracts is Script, HelperV2 {
         //     timeOut
         // );
 
-        // address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
-        // GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
+        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
 
         // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
         // uint256 cviDecimals = 0;
@@ -135,7 +142,7 @@ contract V2DeployContracts is Script, HelperV2 {
         //     value: 50000000000000000
         // }(50000000000000000);
         // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
-        // KeeperV2Rollover rolloverKeeper = new KeeperV2Rollover(
+        // KeeperV2Rollover rolloverKeeperPausable = new KeeperV2Rollover(
         //     payable(addresses.gelatoOpsV2),
         //     payable(addresses.gelatoTaskTreasury),
         //     address(deployedVaultFactory)
@@ -144,23 +151,27 @@ contract V2DeployContracts is Script, HelperV2 {
         vm.stopBroadcast();
 
         // console2.log("TimeLock address", timeLock);
-        console2.log("Vault Factory address", address(deployedVaultFactory));
+        // console2.log("Vault Factory address", address(deployedVaultFactory));
         // console2.log("Controller address", address(controller));
-        console2.log("Controller Generic address", address(controllerGeneric));
+        // console2.log("Controller Generic address", address(controllerGeneric));
 
         // console2.log(
-        //     "Chainlink Price Provider",
-        //     address(chainlinkPriceProvider)
+        //     "Chainlink Price Provider MIM",
+        //     address(chainlinkPriceProviderMIM)
+        // );
+        // console2.log(
+        //     "Chainlink Price Provider MAI",
+        //     address(chainlinkPriceProviderMAI)
         // );
         // console2.log("Redstone Price Provider", address(redstoneProvider));
-        // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
+        console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
-        // console2.log("rolloverKeeper address", address(rolloverKeeper));
-        console2.log("Y2K token address", addresses.y2k);
+        // console2.log("rolloverKeeper address", address(rolloverKeeperPausable));
+        // console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
     }

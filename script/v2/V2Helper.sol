@@ -83,7 +83,7 @@ contract HelperV2 is Script {
     ConfigAddressesV2 configAddresses;
     bool isTestEnv;
     CarouselFactory factory;
-
+    CarouselFactory pausableFactory;
     function setVariables() public {
         string memory root = vm.projectRoot();
         // TODO: Set the variables correctly
@@ -99,6 +99,9 @@ contract HelperV2 is Script {
     {
         y2k = address(_configAddresses.y2k);
         factory = CarouselFactory(_configAddresses.carouselFactory);
+        pausableFactory = CarouselFactory(
+            _configAddresses.pausableCarouselFactory
+        );
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
     }
@@ -147,15 +150,21 @@ contract HelperV2 is Script {
     }
 
     function fundKeepers(uint256 _amount) public payable {
-         KeeperV2(configAddresses.resolveKeeperGeneric).deposit{value: _amount}(
-            _amount
-        );
-        KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
-            _amount
-        );
-        KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
+        // KeeperV2(configAddresses.resolveKeeper).deposit{value: _amount}(
+        //     _amount
+        // );
+        // KeeperV2Rollover(configAddresses.rolloverKeeper).deposit{
+        //     value: _amount
+        // }(_amount);
+
+        KeeperV2Rollover(configAddresses.resolveKeeperGenericPausable).deposit{
             value: _amount
         }(_amount);
+        
+        KeeperV2Rollover(configAddresses.rolloverKeeperPausable).deposit{
+            value: _amount
+        }(_amount);
+
     }
 
     function startKeepers(
@@ -163,10 +172,11 @@ contract HelperV2 is Script {
         uint256 _epochId,
         bool _isGenericController
     ) public {
-        address resolver = _isGenericController
-            ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
-                    configAddresses.resolveKeeperGeneric :
-                    configAddresses.resolveKeeperGenericPausable
+        address resolver = _isGenericController ?
+            // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+            //         configAddresses.resolveKeeperGeneric :
+            //         configAddresses.resolveKeeperGenericPausable
+            configAddresses.resolveKeeperGeneric
             : configAddresses.resolveKeeper;
         KeeperV2(resolver).startTask(
                 _marketId,
@@ -174,10 +184,11 @@ contract HelperV2 is Script {
         );
 
         address rollover = 
-        _isGenericController
-            ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
-                    configAddresses.rolloverKeeper :
-                    configAddresses.rolloverKeeperPausable
+        _isGenericController ? 
+            // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+            //         configAddresses.rolloverKeeper :
+            //         configAddresses.rolloverKeeperPausable
+            configAddresses.rolloverKeeper
             : configAddresses.rolloverKeeper;
 
         KeeperV2Rollover(rollover).startTask(
@@ -213,7 +224,7 @@ contract HelperV2 is Script {
             );
             console2.log("Rollover Keeper taskId: ");
             console.logBytes32(
-                KeeperV2(configAddresses.rolloverKeeper).tasks(
+                KeeperV2(rollover).tasks(
                     keccak256(abi.encodePacked(_marketId, _epochId))
                 )
             );
@@ -225,7 +236,7 @@ contract HelperV2 is Script {
     {
         return
             isGenericControler
-                ? configAddresses.controllerGenericPausable
+                ? configAddresses.controllerGeneric
                 : configAddresses.controller;
     }
 
@@ -246,8 +257,13 @@ contract HelperV2 is Script {
         } else if (
             keccak256(abi.encodePacked(_depositAsset)) ==
             keccak256(abi.encodePacked(string("Y2K")))
-        ) {
+        ){
             return configAddresses.y2k;
+        } else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("DAI")))
+        ) {
+            return 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
         } else {
             revert("depositAsset not found");
         }
@@ -268,15 +284,52 @@ contract HelperV2 is Script {
         // //TODO add more checks
     }
 
-    function stringToUint(string memory s) public pure returns (uint256) {
+
+    function stringToInt(string memory s) public pure returns (int256) {
+        // Convert the string into a bytes representation for easier manipulation
         bytes memory b = bytes(s);
-        uint256 result = 0;
-        for (uint256 i = 0; i < b.length; i++) {
+
+        // Initialize the result as 0
+        int256 result = 0;
+
+        // A flag to check if the number is negative
+        bool isNegative = false;
+
+        // We assume the number starts at the beginning of the string
+        uint256 start = 0;
+
+        // Check if the first character is a negative sign ("-")
+        if (b.length > 0 && b[0] == bytes1(0x2D)) {
+            isNegative = true;  // Set the flag if it's negative
+            start = 1;          // Start parsing from the next character
+        }
+
+        // Loop through each character of the string
+        for (uint256 i = start; i < b.length; i++) {
+            // Convert the character into its ASCII value
             uint256 c = uint256(uint8(b[i]));
+
+            // Check if the character is a digit (ASCII values from 48 to 57 represent '0' to '9')
             if (c >= 48 && c <= 57) {
-                result = result * 10 + (c - 48);
+                // Convert the character to its integer value and add it to the result
+                result = result * 10 + (int256(c) - 48);
             }
         }
+
+        // If the number was negative, negate the result
+        if (isNegative) {
+            result = -result;
+        }
+
         return result;
     }
+
+    function stringToUint(string memory s) public pure returns (uint256) {
+        // First, convert the string to an int256
+        int256 intResult = stringToInt(s);
+
+        // Then, cast the int256 to a uint256 and return
+        return uint256(intResult);
+    }
+
 }

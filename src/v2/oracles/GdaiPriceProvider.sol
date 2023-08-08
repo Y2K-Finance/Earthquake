@@ -1,6 +1,3 @@
-/******************************************************* 
-NOTE: Development in progress by JG. Reached functional milestone; Live VST data is accessible. 
-***/
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
@@ -10,20 +7,18 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GdaiPriceProvider is IConditionProvider, Ownable {
     IGdaiPriceFeed public immutable gdaiPriceFeed;
-    bytes public strikeHash;
     uint256 public immutable decimals;
     string public description;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
 
-    event StrikeUpdated(bytes strikeHash, int256 strikePrice);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed) {
         if (_priceFeed == address(0)) revert ZeroAddress();
         gdaiPriceFeed = IGdaiPriceFeed(_priceFeed);
         decimals = gdaiPriceFeed.decimals();
-        description = gdaiPriceFeed.symbol();
+        description = "gTrade pnl";
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -37,12 +32,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
-    }
-
-    function updateStrikeHash(int256 strikePrice) external onlyOwner {
-        bytes memory _strikeHash = abi.encode(strikePrice);
-        strikeHash = _strikeHash;
-        emit StrikeUpdated(_strikeHash, strikePrice);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -92,18 +81,10 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 _strike,
         uint256 _marketId
     ) public view virtual returns (bool condition, int256 price) {
-        uint256 strikeUint;
-        // TODO: StrikeHash should link to marketId
-        int256 strikeInt = abi.decode(strikeHash, (int256));
+        int256 strikeInt = int256(_strike);
         uint256 conditionType = marketIdToConditionType[_marketId];
-
-        if (strikeInt < 0) strikeUint = uint256(-strikeInt);
-        else strikeUint = uint256(strikeInt);
-        if (_strike != strikeUint) revert InvalidStrike();
-
         price = getLatestPrice();
 
-        // NOTE: Using strikeInt as number can be less than 0 for strike
         if (conditionType == 1) return (strikeInt < price, price);
         else if (conditionType == 2) return (strikeInt > price, price);
         else revert ConditionTypeNotSet();
@@ -113,7 +94,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error ZeroAddress();
-    error InvalidStrike();
     error InvalidInput();
     error ConditionTypeNotSet();
     error ConditionTypeSet();

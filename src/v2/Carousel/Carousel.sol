@@ -680,7 +680,7 @@ contract Carousel is VaultV2 {
         entitledAmount = _assets.mulDivDown(emissions[_id], finalTVL[_id]);
     }
 
-    /** @notice returns the emissions to withdraw
+    /** @notice returns the amount of assets to withdraw
      * @param _id epoch id
      * @param _assets amount of shares
      * @return entitledShareAmount amount of emissions to withdraw
@@ -734,7 +734,7 @@ contract Carousel is VaultV2 {
                 rolloverQueue[i].epochId == _epochId &&
                 (assets >= rolloverQueue[i].shares) // check if position is in profit and getting rollover
             ) {
-                tvl += assets;
+                tvl += rolloverQueue[i].shares;
             }
         }
     }
@@ -751,7 +751,7 @@ contract Carousel is VaultV2 {
             if (
                 assets >= rolloverQueue[i].shares // check if position is in profit and getting rollover
             ) {
-                tvl += assets;
+                tvl += rolloverQueue[i].shares;
             }
         }
     }
