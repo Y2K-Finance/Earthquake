@@ -5,7 +5,6 @@ libs = ['lib']
 test = 'test/V2'
 
 
-remappings = ["@openzeppelin/=lib/openzeppelin-contracts/","@chainlink=lib/chainlink/contracts/src/v0.8","@solmate=lib/solmate/src"]
 fs_permissions = [{ access = "read", path = "./"}]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
