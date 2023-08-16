@@ -19,14 +19,11 @@ contract PythPriceProvider is Ownable, IConditionProvider {
 
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
-    constructor(
-        address _pythContract,
-        bytes32 _priceFeedId,
-        uint256 _timeOut
-    ) {
+    error ExponentTooSmall(int256 expo);
+
+    constructor(address _pythContract, bytes32 _priceFeedId, uint256 _timeOut) {
         if (_pythContract == address(0)) revert ZeroAddress();
-        if (_priceFeedId == bytes32(0))
-            revert InvalidInput();
+        if (_priceFeedId == bytes32(0)) revert InvalidInput();
         if (_timeOut == 0) revert InvalidInput();
         pyth = IPyth(_pythContract);
         priceFeedId = _priceFeedId;
@@ -72,16 +69,15 @@ contract PythPriceProvider is Ownable, IConditionProvider {
         PythStructs.Price memory answer = pyth.getPrice(priceFeedId);
         if (answer.price <= 0) revert OraclePriceNegative();
         // TODO: What is a suitable timeframe to set timeout as based on this info? Update at always timestamp?
-        if ((block.timestamp - answer.publishTime) > timeOut) revert PriceTimedOut();
+        if ((block.timestamp - answer.publishTime) > timeOut)
+            revert PriceTimedOut();
 
         int256 price = answer.price;
-        if (answer.expo < 18) {
-            uint256 calcDecimals = 10 ** (int256(18 - answer.expo).toUint256());
-            price = price * int256(calcDecimals);
-        } else if (answer.expo > 18) {
-            uint256 calcDecimals = 10 ** (int256(answer.expo - 18).toUint256());
-            price = price / int256(calcDecimals);
+        int256 calcDecimals = answer.expo + 18;
+        if (calcDecimals < 0) {
+            revert ExponentTooSmall(answer.expo);
         }
+        price = price * int256(10 ** (calcDecimals.toUint256()));
 
         return price;
     }
