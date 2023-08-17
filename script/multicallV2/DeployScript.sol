@@ -138,8 +138,12 @@ contract V2DeployConfig is HelperV2 {
         // ConfigAddressesV2 memory addresses = getConfigAddresses(false);
         // IERC20(0x5D59e5837F7e5d0F710178Eda34d9eCF069B36D2).approve(0x16B8004f5440f95D3347e55776066032a701c0E8, type(uint256).max);
         ConfigEpochWithEmission[] memory epochs = getConfigEpochs();
-        MultiCaller.EpochConfig[] memory _epochConfig;
-        MultiCaller.KeeperConfig[] memory _keeperConfig;
+        MultiCaller.EpochConfig[]
+            memory _epochConfig = new MultiCaller.EpochConfig[](epochs.length);
+        MultiCaller.KeeperConfig[]
+            memory _keeperConfig = new MultiCaller.KeeperConfig[](
+                epochs.length
+            );
 
         for (uint256 i = 0; i < epochs.length; ++i) {
             ConfigEpochWithEmission memory epoch = epochs[i];

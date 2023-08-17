@@ -7,6 +7,7 @@ import {
     IConditionProvider
 } from "../../src/v2/interfaces/IConditionProvider.sol";
 import {KeeperV2} from "../keepers/KeeperV2.sol";
+import "forge-std/console.sol";
 
 contract MultiCaller is Ownable {
     struct EpochConfig {
@@ -64,8 +65,10 @@ contract MultiCaller is Ownable {
         EpochConfig[] calldata _epochConfig,
         KeeperConfig[] calldata _keeperConfig
     ) external payable onlyOwner {
-        uint256[] memory epochId;
-        VaultAddresses[] memory vaults;
+        uint256[] memory epochId = new uint256[](_epochConfig.length);
+        VaultAddresses[] memory vaults = new VaultAddresses[](
+            _epochConfig.length
+        );
 
         for (uint i; i < _epochConfig.length - 1; ) {
             (epochId[i], vaults[i].vaults) = carouselFactory
@@ -77,12 +80,8 @@ contract MultiCaller is Ownable {
                     _epochConfig[i].premiumEmissions,
                     _epochConfig[i].collatEmissions
                 );
-            unchecked {
-                i++;
-            }
 
             uint256 currentId = epochId[i];
-
             KeeperV2(_keeperConfig[i].resolver).startTask(
                 _epochConfig[i].marketId,
                 currentId
@@ -91,6 +90,14 @@ contract MultiCaller is Ownable {
                 _epochConfig[i].marketId,
                 currentId
             );
+
+            unchecked {
+                i++;
+            }
         }
+    }
+
+    function transferFactoryOwnership(address newOwner) external onlyOwner {
+        carouselFactory.transferOwnership(newOwner);
     }
 }
