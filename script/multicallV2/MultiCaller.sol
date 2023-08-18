@@ -9,6 +9,7 @@ import {
 import {KeeperV2} from "../keepers/KeeperV2.sol";
 import "forge-std/console.sol";
 
+/// @notice The multicaller contract to deploy markets and epochs
 contract MultiCaller is Ownable {
     struct EpochConfig {
         uint256 marketId;
