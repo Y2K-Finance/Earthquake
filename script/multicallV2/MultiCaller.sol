@@ -41,11 +41,11 @@ contract MultiCaller is Ownable {
             calldata _marketConfig,
         uint256[] calldata _depegCondition
     ) external payable onlyOwner {
-        address[] memory prem;
-        address[] memory collat;
-        uint256[] memory marketId;
+        address[] memory prem = new address[](_marketConfig.length);
+        address[] memory collat = new address[](_marketConfig.length);
+        uint256[] memory marketId = new uint256[](_marketConfig.length);
 
-        for (uint i; i < _marketConfig.length - 1; ) {
+        for (uint256 i; i < _marketConfig.length - 1; ) {
             (prem[i], collat[i], marketId[i]) = carouselFactory
                 .createNewCarouselMarket(_marketConfig[i]);
 

@@ -67,8 +67,10 @@ contract V2DeployConfig is HelperV2 {
         ConfigMarketV2[] memory markets = getConfigMarket();
 
         CarouselFactory.CarouselMarketConfigurationCalldata[]
-            memory _marketConfig;
-        uint256[] memory _depegCondition;
+            memory _marketConfig = new CarouselFactory.CarouselMarketConfigurationCalldata[](
+                markets.length
+            );
+        uint256[] memory _depegCondition = new uint256[](markets.length);
 
         for (uint256 i = 0; i < markets.length; ++i) {
             ConfigMarketV2 memory market = markets[i];

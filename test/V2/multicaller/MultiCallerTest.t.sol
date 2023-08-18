@@ -123,14 +123,13 @@ contract MultiCallerTest is Helper, HelperV2 {
             uint256[] memory _depegCondition
         )
     {
-        console.log("getting market info");
         ConfigMarketV2[] memory markets = getConfigMarket();
+        _marketConfig = new CarouselFactory.CarouselMarketConfigurationCalldata[](
+            markets.length
+        );
+        _depegCondition = new uint256[](markets.length);
 
-        CarouselFactory.CarouselMarketConfigurationCalldata[]
-            memory _marketConfig;
-        uint256[] memory _depegCondition;
-
-        for (uint256 i = 0; i < markets.length; ++i) {
+        for (uint256 i = 0; i < markets.length; ) {
             ConfigMarketV2 memory market = markets[i];
             address controller = getController(market.isGenericController);
             address depositAsset = getDepositAsset(market.depositAsset);
@@ -151,6 +150,9 @@ contract MultiCallerTest is Helper, HelperV2 {
 
             if (market.isGenericController) {
                 _depegCondition[i] = market.isDepeg ? 2 : 1;
+            }
+            unchecked {
+                i++;
             }
         }
     }
