@@ -7,7 +7,7 @@ import {VaultV2Creator} from "./libraries/VaultV2Creator.sol";
 
 /// @author Y2K Finance Team
 
-contract VaultFactoryV2 is Ownable {
+contract VaultFactoryV2Whitelist is Ownable {
     address public immutable WETH;
     bytes internal constant COLLAT = "COLLATERAL";
     bytes internal constant PREMIUM = "PREMIUM";
@@ -174,9 +174,10 @@ contract VaultFactoryV2 is Ownable {
     ) internal returns (uint256 epochId, address[2] memory vaults) {
         vaults = marketIdToVaults[_marketId];
 
-        if (vaults[0] == address(0) || vaults[1] == address(0)) {
-            revert MarketDoesNotExist(_marketId);
-        }
+        // TODO: If market did not exist then the modifier check would revert
+        // if (vaults[0] == address(0) || vaults[1] == address(0)) {
+        //     revert MarketDoesNotExist(_marketId);
+        // }
 
         if (_withdrawalFee == 0) revert FeeCannotBe0();
 
@@ -280,7 +281,7 @@ contract VaultFactoryV2 is Ownable {
     @param deployer Array of addresses to whitelist
      */
     function whitelistDeployer(address[] calldata deployer) external onlyOwner {
-        for (uint256 i; i < deployer.length - 1; ) {
+        for (uint256 i; i < deployer.length; ) {
             address deployerAddr = deployer[i];
             whitelistedDeployer[deployerAddr] = !whitelistedDeployer[
                 deployerAddr
@@ -300,7 +301,7 @@ contract VaultFactoryV2 is Ownable {
         address[] calldata _manager,
         uint256 _marketId
     ) external onlyEpochManager(_marketId) {
-        for (uint256 i; i < _manager.length - 1; ) {
+        for (uint256 i; i < _manager.length; ) {
             epochManager[_manager[i]][_marketId] = !epochManager[_manager[i]][
                 _marketId
             ];
