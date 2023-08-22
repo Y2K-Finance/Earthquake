@@ -264,6 +264,34 @@ contract FactoryV2WhitelistTest is Helper {
         assertEq(epochs[1], epochId2);
     }
 
+    function testDeployerAssignEpochManager() public {
+        uint256 marketId = createMarketHelper();
+
+        // test success case
+        uint40 begin = uint40(0x3);
+        uint40 end = uint40(0x4);
+        uint16 fee = uint16(0x5);
+
+        address[] memory newDeployer = new address[](1);
+        newDeployer[0] = USER2;
+        factory.updateEpochManager(newDeployer, marketId);
+
+        vm.startPrank(USER2);
+        (uint256 epochId, ) = factory.createEpoch(marketId, begin, end, fee);
+        vm.stopPrank();
+
+        // test if epoch config is correct
+        address[2] memory vaults = factory.getVaults(marketId);
+        (uint40 fetchedBegin, uint40 fetchedEnd, ) = IVaultV2(vaults[0])
+            .getEpochConfig(epochId);
+        assertEq(begin, fetchedBegin);
+        assertEq(end, fetchedEnd);
+
+        // test if epoch is added to market
+        uint256[] memory epochs = factory.getEpochsByMarketId(marketId);
+        assertEq(epochs[0], epochId);
+    }
+
     function testSetTreasury() public {
         // test revert cases
         vm.expectRevert(VaultFactoryV2Whitelist.NotTimeLocker.selector);
