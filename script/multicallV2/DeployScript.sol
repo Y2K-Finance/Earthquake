@@ -95,6 +95,8 @@ contract V2DeployConfig is HelperV2 {
                 _depegCondition[i] = market.isDepeg ? 2 : 1;
             }
         }
+
+        multiCallContract.deployMarkets(_marketConfig, _depegCondition);
     }
 
     function validateMarkets() public {
@@ -195,6 +197,8 @@ contract V2DeployConfig is HelperV2 {
                     : configAddresses.rolloverKeeperPausable
                 : configAddresses.rolloverKeeper;
         }
+
+        multiCallContract.deployEpochs(_epochConfig, _keeperConfig);
     }
 
     function validateEpochs() public {

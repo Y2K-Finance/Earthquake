@@ -13,6 +13,7 @@ import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../keepers/KeeperV2.sol";
 import "../keepers/KeeperV2Rollover.sol";
+import "../multicallV2/MultiCaller.sol";
 
 /// @author MiguelBits
 
@@ -30,6 +31,7 @@ contract HelperV2 is Script {
         address controllerGenericPausable;
         address gelatoOpsV2;
         address gelatoTaskTreasury;
+        address multiCaller;
         address pausableCarouselFactory;
         address policy;
         address resolveKeeper;
@@ -84,6 +86,7 @@ contract HelperV2 is Script {
     bool isTestEnv;
     CarouselFactory factory;
     CarouselFactory pausableFactory;
+    MultiCaller multiCallContract;
 
     function setVariables() public {
         string memory root = vm.projectRoot();
@@ -105,6 +108,7 @@ contract HelperV2 is Script {
         );
         // keeperDepeg = KeeperGelatoDepeg(configAddresses.keeperDepeg);
         // keeperEndEpoch = KeeperGelatoEndEpoch(configAddresses.keeperEndEpoch);
+        multiCallContract = MultiCaller(_configAddresses.multiCaller);
     }
 
     function getConfigAddresses(
@@ -171,19 +175,13 @@ contract HelperV2 is Script {
         uint256 _epochId,
         bool _isGenericController
     ) public {
-        address resolver = _isGenericController
-            ? // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
-            //         configAddresses.resolveKeeperGeneric :
-            //         configAddresses.resolveKeeperGenericPausable
-            configAddresses.resolveKeeperGeneric
+        address resolver = _isGenericController // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ? //         configAddresses.resolveKeeperGeneric : //         configAddresses.resolveKeeperGenericPausable
+            ? configAddresses.resolveKeeperGeneric
             : configAddresses.resolveKeeper;
         KeeperV2(resolver).startTask(_marketId, _epochId);
 
-        address rollover = _isGenericController
-            ? // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
-            //         configAddresses.rolloverKeeper :
-            //         configAddresses.rolloverKeeperPausable
-            configAddresses.rolloverKeeper
+        address rollover = _isGenericController // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ? //         configAddresses.rolloverKeeper : //         configAddresses.rolloverKeeperPausable
+            ? configAddresses.rolloverKeeper
             : configAddresses.rolloverKeeper;
 
         KeeperV2Rollover(rollover).startTask(_marketId, _epochId);
