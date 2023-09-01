@@ -16,11 +16,12 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
         uint128 answer;
         uint256 requiredBond;
         bool activeAssertion;
+        bytes32 assertionId;
     }
 
     // Uma V3
     uint64 public constant assertionLiveness = 7200; // 2 hours.
-    address immutable currency; // Currency used for all prediction markets
+    address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
     IOptimisticOracleV3 public immutable umaV3;
 
@@ -29,13 +30,14 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     IVaultFactoryV2 public immutable vaultFactory;
     uint256 public immutable decimals;
     string public description;
-
-    string public outcome;
-    string public assertedOutcome;
     bytes public assertionDescription;
-    MarketAnswer public marketAnswer;
+
+    string public constant OUTCOME = "true";
+    string public assertedOutcome;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
+    mapping(uint256 => MarketAnswer) public marketIdToAnswer;
+    mapping(bytes32 => uint256) public assertionIdToMarket;
 
     event MarketAsserted(
         uint256 marketId,
@@ -47,33 +49,38 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
 
     constructor(
         address _factory,
+        uint256 _decimals,
+        string memory _description,
         uint256 _timeOut,
         address _umaV3,
-        string memory _description,
         bytes32 _defaultIdentifier,
-        uint256 _decimals,
-        address _currency
+        address _currency,
+        bytes memory _assertionDescription
     ) {
         if (_factory == address(0)) revert ZeroAddress();
-        if (_timeOut == 0) revert InvalidInput();
-        if (_umaV3 == address(0)) revert ZeroAddress();
+        if (_decimals == 0) revert InvalidInput();
         if (keccak256(bytes(_description)) == keccak256(bytes(string(""))))
             revert InvalidInput();
+        if (_timeOut == 0) revert InvalidInput();
+        if (_umaV3 == address(0)) revert ZeroAddress();
         if (
             keccak256(abi.encodePacked(_defaultIdentifier)) ==
+            keccak256(abi.encodePacked(bytes32("")))
+        ) revert InvalidInput();
+        if (_currency == address(0)) revert ZeroAddress();
+        if (
+            keccak256(abi.encodePacked(_assertionDescription)) ==
             keccak256(bytes(""))
         ) revert InvalidInput();
-        if (_decimals == 0) revert InvalidInput();
-        if (_currency == address(0)) revert InvalidInput();
 
         vaultFactory = IVaultFactoryV2(_factory);
-        timeOut = _timeOut;
-
-        umaV3 = IOptimisticOracleV3(_umaV3);
-        description = _description;
         decimals = _decimals;
-        currency = _currency;
+        description = _description;
+        timeOut = _timeOut;
+        umaV3 = IOptimisticOracleV3(_umaV3);
         defaultIdentifier = _defaultIdentifier;
+        currency = _currency;
+        assertionDescription = _assertionDescription;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -101,6 +108,10 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     ) public {
         if (msg.sender != address(umaV3)) revert InvalidCaller();
 
+        uint256 marketId = assertionIdToMarket[_assertionId];
+        MarketAnswer memory marketAnswer = marketIdToAnswer[marketId];
+        if (_assertionId != marketAnswer.assertionId) revert InvalidCallback();
+
         marketAnswer.updatedAt = uint128(block.timestamp);
         marketAnswer.answer = _assertedTruthfully ? 1 : 0;
         marketAnswer.activeAssertion = false;
@@ -114,6 +125,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     function fetchAssertion(
         uint256 _marketId
     ) external returns (bytes32 assertionId) {
+        MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
         if (marketAnswer.activeAssertion == true) revert AssertionActive();
         // Configure bond and claim information
         uint256 minimumBond = umaV3.getMinimumBond(address(currency));
@@ -137,20 +149,25 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
             bytes32(0) // No domain
         );
 
-        marketAnswer.activeAssertion = true;
+        assertionIdToMarket[assertionId] = _marketId;
+        marketIdToAnswer[_marketId].activeAssertion = true;
+        marketIdToAnswer[_marketId].assertionId = assertionId;
+
         emit MarketAsserted(_marketId, assertedOutcome, assertionId);
     }
 
     /** @notice Fetch the assertion state of the market
      * @return bool If assertion is true or false for the market condition
      */
-    function checkAssertion() public view virtual returns (bool) {
-        MarketAnswer memory market = marketAnswer;
+    function checkAssertion(
+        uint256 _marketId
+    ) public view virtual returns (bool) {
+        MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
 
-        if ((block.timestamp - market.updatedAt) > timeOut)
+        if ((block.timestamp - marketAnswer.updatedAt) > timeOut)
             revert PriceTimedOut();
 
-        if (market.answer == 1) return true;
+        if (marketAnswer.answer == 1) return true;
         else return true;
     }
 
@@ -165,7 +182,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
         uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = marketIdToConditionType[_marketId];
-        bool condition = checkAssertion();
+        bool condition = checkAssertion(_marketId);
 
         if (conditionType == 1) return (condition, price);
         else if (conditionType == 2) return (condition, price);
@@ -196,7 +213,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
                 "As of assertion timestamp ",
                 _toUtf8BytesUint(block.timestamp),
                 ", the described prediction market outcome is: ",
-                outcome,
+                OUTCOME,
                 ". The market description is: ",
                 assertionDescription
             );
@@ -241,4 +258,5 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     error ConditionTypeSet();
     error InvalidCaller();
     error AssertionActive();
+    error InvalidCallback();
 }
