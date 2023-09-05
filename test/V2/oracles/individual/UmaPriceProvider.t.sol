@@ -12,12 +12,15 @@ import {
     MockOracleRoundOutdated,
     MockOracleTimeOut
 } from "../MockOracles.sol";
+import {MockUma} from "../MockUma.sol";
+import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 
 contract UmaPriceProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
     UmaPriceProvider public umaPriceProvider;
     uint256 public marketId = 2;
+    ERC20 public wethAsset;
 
     ////////////////////////////////////////////////
     //                HELPERS                     //
@@ -25,12 +28,14 @@ contract UmaPriceProviderTest is Helper {
     uint256 public UMA_DECIMALS = 18;
     address public UMA_OO_V3 = address(0x123);
     string public UMA_DESCRIPTION = "USDC";
+    uint256 public REQUIRED_BOND = 1e6;
     bytes32 public defaultIdentifier = bytes32("abc");
     bytes public assertionDescription;
 
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
+        wethAsset = ERC20(WETH_ADDRESS);
 
         // TODO: Should this be encoded or encode packed?
         assertionDescription = abi.encode("USDC/USD price is less than 0.97");
@@ -38,14 +43,14 @@ contract UmaPriceProviderTest is Helper {
         address timelock = address(new TimeLock(ADMIN));
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
         umaPriceProvider = new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
             defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         uint256 condition = 2;
@@ -56,13 +61,18 @@ contract UmaPriceProviderTest is Helper {
     //                STATE                       //
     ////////////////////////////////////////////////
     function testUmaCreation() public {
-        assertEq(address(umaPriceProvider.vaultFactory()), address(factory));
-        assertEq(umaPriceProvider.decimals(), UMA_DECIMALS);
-        assertEq(umaPriceProvider.description(), UMA_DESCRIPTION);
-        assertEq(umaPriceProvider.timeOut(), TIME_OUT);
+        assertEq(umaPriceProvider.assertionLiveness(), 7200);
+        assertEq(umaPriceProvider.currency(), WETH_ADDRESS);
         assertEq(address(umaPriceProvider.umaV3()), UMA_OO_V3);
         assertEq(umaPriceProvider.defaultIdentifier(), defaultIdentifier);
-        assertEq(umaPriceProvider.currency(), WETH_ADDRESS);
+        assertEq(umaPriceProvider.requiredBond(), REQUIRED_BOND);
+
+        assertEq(umaPriceProvider.timeOut(), TIME_OUT);
+        assertEq(umaPriceProvider.decimals(), UMA_DECIMALS);
+        assertEq(umaPriceProvider.description(), UMA_DESCRIPTION);
+        assertEq(umaPriceProvider.assertionDescription(), assertionDescription);
+
+        assertEq(umaPriceProvider.marketIdToConditionType(marketId), 2);
     }
 
     ////////////////////////////////////////////////
@@ -88,52 +98,165 @@ contract UmaPriceProviderTest is Helper {
         assertTrue(price == 0);
     }
 
-    function testConditionMetUma() public {
+    function testConditionOneMetUma() public {
+        MockUma mockUma = new MockUma();
+
+        // Deploying new umaPriceProvider
+        umaPriceProvider = new UmaPriceProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.setConditionType(marketId, 1);
+
         // Configuring the assertionInfo
-        // TODO: Need mock umaOOV3 to return an assertionId
-        vm.prank(UMA_OO_V3);
-        bytes32 assertionId = bytes32("");
-        umaPriceProvider.assertionResolvedCallback(assertionId, true);
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+
+        vm.expectEmit(true, true, false, false);
+        emit MarketAsserted(marketId, bytes32(abi.encode(0x12)));
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
+
+        // Checking assertion links to marketId
+        uint256 _marketId = umaPriceProvider.assertionIdToMarket(_assertionId);
+        assertEq(_marketId, marketId);
+
+        // Checking marketId info is correct
+        (
+            bool activeAssertion,
+            uint128 updatedAt,
+            uint8 answer,
+            bytes32 assertionIdReturned
+        ) = umaPriceProvider.marketIdToAnswer(_marketId);
+        assertEq(activeAssertion, true);
+        assertEq(updatedAt, uint128(0));
+        assertEq(answer, 0);
+        assertEq(assertionIdReturned, _assertionId);
+
+        vm.expectEmit(true, true, false, false);
+        emit AssertionResolved(_assertionId, true);
+        mockUma.assertionResolvedCallback(
+            address(umaPriceProvider),
+            _assertionId,
+            true
+        );
+
+        // Checking resolved callback info
+        (
+            activeAssertion,
+            updatedAt,
+            answer,
+            assertionIdReturned
+        ) = umaPriceProvider.marketIdToAnswer(_marketId);
+        assertEq(activeAssertion, false);
+        assertEq(updatedAt, uint128(block.timestamp));
+        assertEq(answer, 1);
 
         (bool condition, int256 price) = umaPriceProvider.conditionMet(
             2 ether,
             marketId
         );
-        assertTrue(price != 0);
-        assertEq(condition, true);
-    }
-
-    function testConditionOneMetUma() public {
-        uint256 conditionType = 1;
-        uint256 marketIdOne = 1;
-        umaPriceProvider.setConditionType(marketIdOne, conditionType);
-
-        // Configuring the assertionInfo
-        vm.prank(UMA_OO_V3);
-        // TODO: Need mock umaOOV3 to return an assertionId
-        bytes32 assertionId = bytes32("");
-        umaPriceProvider.assertionResolvedCallback(assertionId, true);
-
-        (bool condition, int256 price) = umaPriceProvider.conditionMet(
-            0.01 ether,
-            marketIdOne
-        );
-        assertTrue(price != 0);
+        assertTrue(price == 0);
         assertEq(condition, true);
     }
 
     function testConditionTwoMetUma() public {
+        MockUma mockUma = new MockUma();
+
+        // Deploying new umaPriceProvider
+        umaPriceProvider = new UmaPriceProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.setConditionType(marketId, 2);
+
         // Configuring the assertionInfo
-        vm.prank(UMA_OO_V3);
-        // TODO: Need mock umaOOV3 to return an assertionId
-        bytes32 assertionId = bytes32("");
-        umaPriceProvider.assertionResolvedCallback(assertionId, true);
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
+        mockUma.assertionResolvedCallback(
+            address(umaPriceProvider),
+            _assertionId,
+            true
+        );
+
         (bool condition, int256 price) = umaPriceProvider.conditionMet(
             2 ether,
             marketId
         );
-        assertTrue(price != 0);
+        assertTrue(price == 0);
         assertEq(condition, true);
+    }
+
+    function testCheckAssertionTrue() public {
+        MockUma mockUma = new MockUma();
+
+        // Deploying new umaPriceProvider
+        umaPriceProvider = new UmaPriceProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.setConditionType(marketId, 2);
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
+        mockUma.assertionResolvedCallback(
+            address(umaPriceProvider),
+            _assertionId,
+            true
+        );
+
+        bool condition = umaPriceProvider.checkAssertion(marketId);
+        assertEq(condition, true);
+    }
+
+    function testCheckAssertionFalse() public {
+        MockUma mockUma = new MockUma();
+
+        // Deploying new umaPriceProvider
+        umaPriceProvider = new UmaPriceProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.setConditionType(marketId, 2);
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
+        mockUma.assertionResolvedCallback(
+            address(umaPriceProvider),
+            _assertionId,
+            false
+        );
+
+        bool condition = umaPriceProvider.checkAssertion(marketId);
+        assertEq(condition, false);
     }
 
     ////////////////////////////////////////////////
@@ -141,100 +264,100 @@ contract UmaPriceProviderTest is Helper {
     ////////////////////////////////////////////////
 
     function testRevertConstructorInputsUma() public {
-        vm.expectRevert(UmaPriceProvider.ZeroAddress.selector);
-        new UmaPriceProvider(
-            address(0),
-            UMA_DECIMALS,
-            UMA_DESCRIPTION,
-            TIME_OUT,
-            UMA_OO_V3,
-            defaultIdentifier,
-            WETH_ADDRESS,
-            assertionDescription
-        );
-
         vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
         new UmaPriceProvider(
-            address(factory),
             0,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
             defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
         new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             string(""),
             TIME_OUT,
             UMA_OO_V3,
             defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
         new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             0,
             UMA_OO_V3,
             defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         vm.expectRevert(UmaPriceProvider.ZeroAddress.selector);
         new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             address(0),
             defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
         new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
             bytes32(""),
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         vm.expectRevert(UmaPriceProvider.ZeroAddress.selector);
         new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
             defaultIdentifier,
             address(0),
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
 
         vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
         new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
             defaultIdentifier,
             WETH_ADDRESS,
-            bytes("")
+            bytes(""),
+            REQUIRED_BOND
+        );
+
+        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
+        new UmaPriceProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            UMA_OO_V3,
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            0
         );
     }
 
@@ -256,20 +379,39 @@ contract UmaPriceProviderTest is Helper {
         umaPriceProvider.assertionResolvedCallback(bytes32(""), true);
     }
 
-    function testRevertInvalidCallbackCallback() public {
-        vm.expectRevert(UmaPriceProvider.InvalidCallback.selector);
-
-        bytes32 assertionId = bytes32("12");
+    function testRevertAssertionInactive() public {
         vm.prank(UMA_OO_V3);
-        umaPriceProvider.assertionResolvedCallback(assertionId, true);
+
+        vm.expectRevert(UmaPriceProvider.AssertionInactive.selector);
+        umaPriceProvider.assertionResolvedCallback(
+            bytes32(abi.encode(0x12)),
+            true
+        );
     }
 
     function testRevertAssertionActive() public {
-        uint256 marketId = 1;
-        // TODO: Need to create an active assertion
+        MockUma mockUma = new MockUma();
+
+        // Deploying new umaPriceProvider
+        umaPriceProvider = new UmaPriceProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.setConditionType(marketId, 1);
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+        umaPriceProvider.fetchAssertion(marketId);
 
         vm.expectRevert(UmaPriceProvider.AssertionActive.selector);
-        umaPriceProvider.fetchAssertion(_marketId);
+        umaPriceProvider.fetchAssertion(marketId);
     }
 
     function testRevertTimeOutUma() public {
@@ -277,14 +419,14 @@ contract UmaPriceProviderTest is Helper {
             new MockOracleTimeOut(block.timestamp, TIME_OUT)
         );
         umaPriceProvider = new UmaPriceProvider(
-            address(factory),
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
             defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription
+            assertionDescription,
+            REQUIRED_BOND
         );
         vm.expectRevert(UmaPriceProvider.PriceTimedOut.selector);
         umaPriceProvider.checkAssertion(123);

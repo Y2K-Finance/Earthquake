@@ -7,6 +7,9 @@ import {VaultV2} from "../../src/v2/VaultV2.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Helper is Test {
+    event MarketAsserted(uint256 marketId, bytes32 assertionId);
+    event AssertionResolved(bytes32 assertionId, bool assertion);
+
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
     uint256 public constant COLLATERAL_MINUS_FEES_DIV10 = 2198999999839855145;
