@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IOptimisticOracleV3} from "../../interfaces/IOptimisticOracleV3.sol";
@@ -12,52 +11,46 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract UmaPriceProvider is Ownable, IConditionProvider {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
-        uint128 updatedAt;
-        uint128 answer;
-        uint256 requiredBond;
         bool activeAssertion;
+        uint128 updatedAt;
+        uint8 answer;
         bytes32 assertionId;
     }
+
+    string public constant OUTCOME_1 = "true";
+    string public constant OUTCOME_2 = "false";
 
     // Uma V3
     uint64 public constant assertionLiveness = 7200; // 2 hours.
     address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
     IOptimisticOracleV3 public immutable umaV3;
+    uint256 public immutable requiredBond; // Bond required to assert on a market
 
     // Market info
     uint256 public immutable timeOut;
-    IVaultFactoryV2 public immutable vaultFactory;
     uint256 public immutable decimals;
     string public description;
     bytes public assertionDescription;
-
-    string public constant OUTCOME = "true";
-    string public assertedOutcome;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
     mapping(uint256 => MarketAnswer) public marketIdToAnswer;
     mapping(bytes32 => uint256) public assertionIdToMarket;
 
-    event MarketAsserted(
-        uint256 marketId,
-        string assertedOutcome,
-        bytes32 assertionId
-    );
-    event AnswerResolved(bytes32 assertionId, bool assertion);
+    event MarketAsserted(uint256 marketId, bytes32 assertionId);
+    event AssertionResolved(bytes32 assertionId, bool assertion);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(
-        address _factory,
         uint256 _decimals,
         string memory _description,
         uint256 _timeOut,
         address _umaV3,
         bytes32 _defaultIdentifier,
         address _currency,
-        bytes memory _assertionDescription
+        bytes memory _assertionDescription,
+        uint256 _requiredBond
     ) {
-        if (_factory == address(0)) revert ZeroAddress();
         if (_decimals == 0) revert InvalidInput();
         if (keccak256(bytes(_description)) == keccak256(bytes(string(""))))
             revert InvalidInput();
@@ -72,8 +65,8 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
             keccak256(abi.encodePacked(_assertionDescription)) ==
             keccak256(bytes(""))
         ) revert InvalidInput();
+        if (_requiredBond == 0) revert InvalidInput();
 
-        vaultFactory = IVaultFactoryV2(_factory);
         decimals = _decimals;
         description = _description;
         timeOut = _timeOut;
@@ -81,6 +74,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
         defaultIdentifier = _defaultIdentifier;
         currency = _currency;
         assertionDescription = _assertionDescription;
+        requiredBond = _requiredBond;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -97,7 +91,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                 PUBLIC
+                                 EXTERNAL
     //////////////////////////////////////////////////////////////*/
     // Callback from settled assertion.
     // If the assertion was resolved true, then the asserter gets the reward and the market is marked as resolved.
@@ -105,22 +99,20 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     function assertionResolvedCallback(
         bytes32 _assertionId,
         bool _assertedTruthfully
-    ) public {
+    ) external {
         if (msg.sender != address(umaV3)) revert InvalidCaller();
 
         uint256 marketId = assertionIdToMarket[_assertionId];
         MarketAnswer memory marketAnswer = marketIdToAnswer[marketId];
-        if (_assertionId != marketAnswer.assertionId) revert InvalidCallback();
+        if (marketAnswer.activeAssertion == false) revert AssertionInactive();
 
         marketAnswer.updatedAt = uint128(block.timestamp);
         marketAnswer.answer = _assertedTruthfully ? 1 : 0;
         marketAnswer.activeAssertion = false;
+        marketIdToAnswer[marketId] = marketAnswer;
 
-        emit AnswerResolved(_assertionId, _assertedTruthfully);
+        emit AssertionResolved(_assertionId, _assertedTruthfully);
     }
-
-    // Dispute callback does nothing.
-    function assertionDisputedCallback(bytes32 assertionId) public {}
 
     function fetchAssertion(
         uint256 _marketId
@@ -130,9 +122,11 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
         // Configure bond and claim information
         uint256 minimumBond = umaV3.getMinimumBond(address(currency));
 
-        uint256 requiredBond = marketAnswer.requiredBond;
-        uint256 bond = requiredBond > minimumBond ? requiredBond : minimumBond;
-        bytes memory claim = _composeClaim();
+        uint256 reqBond = requiredBond;
+        uint256 bond = reqBond > minimumBond ? reqBond : minimumBond;
+
+        uint256 conditionType = marketIdToConditionType[_marketId];
+        bytes memory claim = _composeClaim(conditionType);
 
         // Transfer bond from sender and request assertion
         ERC20(currency).safeTransferFrom(msg.sender, address(this), bond);
@@ -149,11 +143,12 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
             bytes32(0) // No domain
         );
 
+        // TODO: Do we need this?
         assertionIdToMarket[assertionId] = _marketId;
         marketIdToAnswer[_marketId].activeAssertion = true;
         marketIdToAnswer[_marketId].assertionId = assertionId;
 
-        emit MarketAsserted(_marketId, assertedOutcome, assertionId);
+        emit MarketAsserted(_marketId, assertionId);
     }
 
     /** @notice Fetch the assertion state of the market
@@ -168,7 +163,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
             revert PriceTimedOut();
 
         if (marketAnswer.answer == 1) return true;
-        else return true;
+        else return false;
     }
 
     // NOTE: _marketId unused but receiving marketId makes Generic controller composabile for future
@@ -207,13 +202,15 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     /*//////////////////////////////////////////////////////////////
                                  INTERNAL
     //////////////////////////////////////////////////////////////*/
-    function _composeClaim() internal view returns (bytes memory) {
+    function _composeClaim(
+        uint256 _conditionType
+    ) internal view returns (bytes memory) {
         return
             abi.encodePacked(
                 "As of assertion timestamp ",
                 _toUtf8BytesUint(block.timestamp),
                 ", the described prediction market outcome is: ",
-                OUTCOME,
+                _conditionType == 1 ? OUTCOME_1 : OUTCOME_2,
                 ". The market description is: ",
                 assertionDescription
             );
@@ -251,12 +248,11 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     //////////////////////////////////////////////////////////////*/
     error ZeroAddress();
     error InvalidInput();
-    error ConditionNotMet();
-    error RoundIdOutdated();
     error PriceTimedOut();
     error ConditionTypeNotSet();
     error ConditionTypeSet();
     error InvalidCaller();
     error AssertionActive();
+    error AssertionInactive();
     error InvalidCallback();
 }
