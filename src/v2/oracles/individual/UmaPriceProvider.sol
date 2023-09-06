@@ -21,7 +21,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     string public constant OUTCOME_2 = "false";
 
     // Uma V3
-    uint64 public constant assertionLiveness = 7200; // 2 hours.
+    uint64 public constant ASSERTION_LIVENESS = 7200; // 2 hours.
     address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
     IOptimisticOracleV3 public immutable umaV3;
@@ -119,14 +119,12 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
     ) external returns (bytes32 assertionId) {
         MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
         if (marketAnswer.activeAssertion == true) revert AssertionActive();
+
         // Configure bond and claim information
         uint256 minimumBond = umaV3.getMinimumBond(address(currency));
-
         uint256 reqBond = requiredBond;
         uint256 bond = reqBond > minimumBond ? reqBond : minimumBond;
-
-        uint256 conditionType = marketIdToConditionType[_marketId];
-        bytes memory claim = _composeClaim(conditionType);
+        bytes memory claim = _composeClaim(marketIdToConditionType[_marketId]);
 
         // Transfer bond from sender and request assertion
         ERC20(currency).safeTransferFrom(msg.sender, address(this), bond);
@@ -136,14 +134,13 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
             msg.sender, // Asserter
             address(this), // Receive callback to this contract
             address(0), // No sovereign security
-            assertionLiveness,
+            ASSERTION_LIVENESS,
             IERC20(currency),
             bond,
             defaultIdentifier,
             bytes32(0) // No domain
         );
 
-        // TODO: Do we need this?
         assertionIdToMarket[assertionId] = _marketId;
         marketIdToAnswer[_marketId].activeAssertion = true;
         marketIdToAnswer[_marketId].assertionId = assertionId;
@@ -184,7 +181,7 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
         else revert ConditionTypeNotSet();
     }
 
-    // Unused
+    // NOTE: Unused logic as no prices returned by Uma
     function getLatestPrice() external view returns (int256) {}
 
     function latestRoundData()
