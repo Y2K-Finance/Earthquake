@@ -61,10 +61,10 @@ contract UmaPriceProviderTest is Helper {
     //                STATE                       //
     ////////////////////////////////////////////////
     function testUmaCreation() public {
-        assertEq(umaPriceProvider.assertionLiveness(), 7200);
+        assertEq(umaPriceProvider.ASSERTION_LIVENESS(), 7200);
         assertEq(umaPriceProvider.currency(), WETH_ADDRESS);
-        assertEq(address(umaPriceProvider.umaV3()), UMA_OO_V3);
         assertEq(umaPriceProvider.defaultIdentifier(), defaultIdentifier);
+        assertEq(address(umaPriceProvider.umaV3()), UMA_OO_V3);
         assertEq(umaPriceProvider.requiredBond(), REQUIRED_BOND);
 
         assertEq(umaPriceProvider.timeOut(), TIME_OUT);
@@ -118,13 +118,14 @@ contract UmaPriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
 
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, false, false, true);
         emit MarketAsserted(marketId, bytes32(abi.encode(0x12)));
         bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
 
         // Checking assertion links to marketId
         uint256 _marketId = umaPriceProvider.assertionIdToMarket(_assertionId);
         assertEq(_marketId, marketId);
+        assertEq(wethAsset.balanceOf(address(mockUma)), 1e6);
 
         // Checking marketId info is correct
         (
@@ -138,7 +139,7 @@ contract UmaPriceProviderTest is Helper {
         assertEq(answer, 0);
         assertEq(assertionIdReturned, _assertionId);
 
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(true, false, false, true);
         emit AssertionResolved(_assertionId, true);
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),

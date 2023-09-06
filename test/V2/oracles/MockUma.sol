@@ -33,6 +33,7 @@ contract MockUma {
         bytes32 defaultIdentifier,
         bytes32 domain
     ) external payable returns (bytes32 assertionId) {
+        currency.transferFrom(msg.sender, address(this), bond);
         assertionId = bytes32(abi.encode(0x12));
     }
 
