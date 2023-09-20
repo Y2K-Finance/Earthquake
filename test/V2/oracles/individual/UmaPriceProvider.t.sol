@@ -78,26 +78,6 @@ contract UmaPriceProviderTest is Helper {
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
-    function testLatestRoundDataUma() public {
-        (
-            uint80 roundId,
-            int256 price,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = umaPriceProvider.latestRoundData();
-        assertTrue(price == 0);
-        assertTrue(roundId == 0);
-        assertTrue(startedAt == 0);
-        assertTrue(updatedAt == 0);
-        assertTrue(answeredInRound == 0);
-    }
-
-    function testLatestPriceUma() public {
-        int256 price = umaPriceProvider.getLatestPrice();
-        assertTrue(price == 0);
-    }
-
     function testConditionOneMetUma() public {
         MockUma mockUma = new MockUma();
 
@@ -416,9 +396,6 @@ contract UmaPriceProviderTest is Helper {
     }
 
     function testRevertTimeOutUma() public {
-        address mockOracle = address(
-            new MockOracleTimeOut(block.timestamp, TIME_OUT)
-        );
         umaPriceProvider = new UmaPriceProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,

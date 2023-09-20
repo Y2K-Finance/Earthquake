@@ -35,9 +35,35 @@ contract MockUma {
     ) external payable returns (bytes32 assertionId) {
         currency.transferFrom(msg.sender, address(this), bond);
         assertionId = bytes32(abi.encode(0x12));
+
+        removeUnusedWarning(
+            claim,
+            asserter,
+            callBackAddress,
+            sovereignSecurity,
+            assertionLiveness,
+            defaultIdentifier,
+            domain
+        );
     }
 
-    function getMinimumBond(address currency) external pure returns (uint256) {
+    function removeUnusedWarning(
+        bytes calldata claim,
+        address asserter,
+        address callBackAddress,
+        address sovereignSecurity,
+        uint64 assertionLiveness,
+        bytes32 defaultIdentifier,
+        bytes32 domain
+    ) internal pure {
+        asserter = callBackAddress;
+        sovereignSecurity = callBackAddress;
+        assertionLiveness += 1;
+        defaultIdentifier = domain;
+        domain = keccak256(claim);
+    }
+
+    function getMinimumBond() external pure returns (uint256) {
         return 1e6;
     }
 }
