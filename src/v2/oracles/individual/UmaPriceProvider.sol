@@ -8,7 +8,7 @@ import {SafeTransferLib} from "lib/solmate/src/utils/SafeTransferLib.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract UmaPriceProvider is Ownable, IConditionProvider {
+contract UmaPriceProvider is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
@@ -180,21 +180,6 @@ contract UmaPriceProvider is Ownable, IConditionProvider {
         else if (conditionType == 2) return (condition, price);
         else revert ConditionTypeNotSet();
     }
-
-    // NOTE: Unused logic as no prices returned by Uma
-    function getLatestPrice() external view returns (int256) {}
-
-    function latestRoundData()
-        public
-        view
-        returns (
-            uint80 roundId,
-            int256 price,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        )
-    {}
 
     /*//////////////////////////////////////////////////////////////
                                  INTERNAL
