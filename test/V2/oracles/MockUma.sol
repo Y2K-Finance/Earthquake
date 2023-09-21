@@ -63,7 +63,9 @@ contract MockUma {
         domain = keccak256(claim);
     }
 
-    function getMinimumBond() external pure returns (uint256) {
+    function getMinimumBond(address addr) external pure returns (uint256) {
+        address muteWarning = addr;
+        addr = muteWarning;
         return 1e6;
     }
 }
