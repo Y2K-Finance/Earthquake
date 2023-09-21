@@ -14,6 +14,7 @@ import "../../src/v2/oracles/individual/RedstonePriceProvider.sol";
 import "../../src/v2/oracles/individual/DIAPriceProvider.sol";
 import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
+import "../../src/v2/oracles/individual/UmaPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 import {
@@ -126,6 +127,25 @@ contract V2DeployContracts is Script, HelperV2 {
         // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
         // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
 
+        uint256 timeOut = 2 hours;
+        uint256 umaDecimals = 18;
+        address umaOOV3 = address(0x123);
+        string memory umaDescription = "USDC";
+        uint256 requiredBond = 1e6;
+        bytes32 defaultIdentifier = bytes32("abc");
+        bytes memory assertionDescription = "abc";
+        address currency = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH_ADDRESS
+        UmaPriceProvider umaPriceProvider = new UmaPriceProvider(
+            umaDecimals,
+            umaDescription,
+            timeOut,
+            umaOOV3,
+            defaultIdentifier,
+            currency,
+            assertionDescription,
+            requiredBond
+        );
+
         // vaultFactory.whitelistController(address(controller));
         // KeeperV2 resolveKeeper = new KeeperV2(
         //     payable(addresses.gelatoOpsV2),
@@ -167,6 +187,7 @@ contract V2DeployContracts is Script, HelperV2 {
         console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
+        console2.log("Uma Price Provider", address(umaPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
