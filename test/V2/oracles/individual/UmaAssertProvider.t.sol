@@ -4,8 +4,8 @@ pragma solidity 0.8.17;
 import {Helper} from "../../Helper.sol";
 import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
 import {
-    UmaPriceProvider
-} from "../../../../src/v2/oracles/individual/UmaPriceProvider.sol";
+    UmaAssertProvider
+} from "../../../../src/v2/oracles/individual/UmaAssertProvider.sol";
 import {TimeLock} from "../../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerZero,
@@ -15,10 +15,10 @@ import {
 import {MockUma} from "../MockUma.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 
-contract UmaPriceProviderTest is Helper {
+contract UmaAssertProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
-    UmaPriceProvider public umaPriceProvider;
+    UmaAssertProvider public umaPriceProvider;
     uint256 public marketId = 2;
     ERC20 public wethAsset;
 
@@ -38,11 +38,13 @@ contract UmaPriceProviderTest is Helper {
         wethAsset = ERC20(WETH_ADDRESS);
 
         // TODO: Should this be encoded or encode packed?
-        assertionDescription = abi.encode("USDC/USD price is less than 0.97");
+        assertionDescription = abi.encode(
+            "USDC/USD exchange rate is above 0.997"
+        );
 
         address timelock = address(new TimeLock(ADMIN));
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
-        umaPriceProvider = new UmaPriceProvider(
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -81,8 +83,8 @@ contract UmaPriceProviderTest is Helper {
     function testConditionOneMetUma() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new umaPriceProvider
-        umaPriceProvider = new UmaPriceProvider(
+        // Deploying new UmaAssertProvider
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -149,8 +151,8 @@ contract UmaPriceProviderTest is Helper {
     function testConditionTwoMetUma() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new umaPriceProvider
-        umaPriceProvider = new UmaPriceProvider(
+        // Deploying new UmaAssertProvider
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -183,8 +185,8 @@ contract UmaPriceProviderTest is Helper {
     function testCheckAssertionTrue() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new umaPriceProvider
-        umaPriceProvider = new UmaPriceProvider(
+        // Deploying new UmaAssertProvider
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -213,8 +215,8 @@ contract UmaPriceProviderTest is Helper {
     function testCheckAssertionFalse() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new umaPriceProvider
-        umaPriceProvider = new UmaPriceProvider(
+        // Deploying new UmaAssertProvider
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -245,8 +247,8 @@ contract UmaPriceProviderTest is Helper {
     ////////////////////////////////////////////////
 
     function testRevertConstructorInputsUma() public {
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        new UmaAssertProvider(
             0,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -257,8 +259,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             string(""),
             TIME_OUT,
@@ -269,8 +271,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             0,
@@ -281,8 +283,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.ZeroAddress.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.ZeroAddress.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -293,8 +295,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -305,8 +307,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.ZeroAddress.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.ZeroAddress.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -317,8 +319,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -329,8 +331,8 @@ contract UmaPriceProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
-        new UmaPriceProvider(
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -343,27 +345,27 @@ contract UmaPriceProviderTest is Helper {
     }
 
     function testRevertConditionTypeSetUma() public {
-        vm.expectRevert(UmaPriceProvider.ConditionTypeSet.selector);
+        vm.expectRevert(UmaAssertProvider.ConditionTypeSet.selector);
         umaPriceProvider.setConditionType(2, 0);
     }
 
     function testRevertInvalidInputConditionUma() public {
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
         umaPriceProvider.setConditionType(0, 0);
 
-        vm.expectRevert(UmaPriceProvider.InvalidInput.selector);
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
         umaPriceProvider.setConditionType(0, 3);
     }
 
     function testRevertInvalidCallerCallback() public {
-        vm.expectRevert(UmaPriceProvider.InvalidCaller.selector);
+        vm.expectRevert(UmaAssertProvider.InvalidCaller.selector);
         umaPriceProvider.assertionResolvedCallback(bytes32(""), true);
     }
 
     function testRevertAssertionInactive() public {
         vm.prank(UMA_OO_V3);
 
-        vm.expectRevert(UmaPriceProvider.AssertionInactive.selector);
+        vm.expectRevert(UmaAssertProvider.AssertionInactive.selector);
         umaPriceProvider.assertionResolvedCallback(
             bytes32(abi.encode(0x12)),
             true
@@ -373,8 +375,8 @@ contract UmaPriceProviderTest is Helper {
     function testRevertAssertionActive() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new umaPriceProvider
-        umaPriceProvider = new UmaPriceProvider(
+        // Deploying new UmaAssertProvider
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -391,12 +393,12 @@ contract UmaPriceProviderTest is Helper {
         wethAsset.approve(address(umaPriceProvider), 1e18);
         umaPriceProvider.fetchAssertion(marketId);
 
-        vm.expectRevert(UmaPriceProvider.AssertionActive.selector);
+        vm.expectRevert(UmaAssertProvider.AssertionActive.selector);
         umaPriceProvider.fetchAssertion(marketId);
     }
 
     function testRevertTimeOutUma() public {
-        umaPriceProvider = new UmaPriceProvider(
+        umaPriceProvider = new UmaAssertProvider(
             UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
@@ -406,7 +408,7 @@ contract UmaPriceProviderTest is Helper {
             assertionDescription,
             REQUIRED_BOND
         );
-        vm.expectRevert(UmaPriceProvider.PriceTimedOut.selector);
+        vm.expectRevert(UmaAssertProvider.PriceTimedOut.selector);
         umaPriceProvider.checkAssertion(123);
     }
 }

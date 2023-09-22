@@ -8,7 +8,8 @@ import {SafeTransferLib} from "lib/solmate/src/utils/SafeTransferLib.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract UmaPriceProvider is Ownable {
+/// @notice This provider is build to work where you need to define between x and y e.g. there was a hack between Aug31st
+contract UmaAssertProviderV2 is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
@@ -17,8 +18,8 @@ contract UmaPriceProvider is Ownable {
         bytes32 assertionId;
     }
 
-    string public constant OUTCOME_1 = "true";
-    string public constant OUTCOME_2 = "false";
+    string public constant OUTCOME_1 = "true. ";
+    string public constant OUTCOME_2 = "false. ";
 
     // Uma V3
     uint64 public constant ASSERTION_LIVENESS = 7200; // 2 hours.
@@ -32,6 +33,7 @@ contract UmaPriceProvider is Ownable {
     uint256 public immutable decimals;
     string public description;
     bytes public assertionDescription;
+    uint256 public coverageStart;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
     mapping(uint256 => MarketAnswer) public marketIdToAnswer;
@@ -40,7 +42,18 @@ contract UmaPriceProvider is Ownable {
     event MarketAsserted(uint256 marketId, bytes32 assertionId);
     event AssertionResolved(bytes32 assertionId, bool assertion);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
+    event CoverageStartUpdated(uint256 startTime);
 
+    /**
+        @param _decimals is decimals for the provider maker if relevant
+        @param _description is for the price provider market
+        @param _timeOut is the max time between receiving callback and resolving market condition
+        @param _umaV3 is the V3 Uma Optimistic Oracle
+        @param _defaultIdentifier is UMA DVM identifier to use for price requests in the event of a dispute. Must be pre-approved.
+        @param _currency is currency used to post the bond
+        @param _assertionDescription is description used for the market
+        @param _requiredBond is bond amount of currency to pull from the caller and hold in escrow until the assertion is resolved. This must be >= getMinimumBond(address(currency)). 
+     */
     constructor(
         uint256 _decimals,
         string memory _description,
@@ -75,6 +88,7 @@ contract UmaPriceProvider is Ownable {
         currency = _currency;
         assertionDescription = _assertionDescription;
         requiredBond = _requiredBond;
+        coverageStart = block.timestamp;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -88,6 +102,12 @@ contract UmaPriceProvider is Ownable {
         if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
+    }
+
+    function updateCoverageStart(uint256 _coverageStart) external onlyOwner {
+        if (_coverageStart < coverageStart) revert InvalidInput();
+        coverageStart = _coverageStart;
+        emit CoverageStartUpdated(_coverageStart);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -184,6 +204,12 @@ contract UmaPriceProvider is Ownable {
     /*//////////////////////////////////////////////////////////////
                                  INTERNAL
     //////////////////////////////////////////////////////////////*/
+    /**
+        @param _conditionType is the condition type for the market
+        @dev encode claim would look like: "As of assertion timestamp <timestamp>, <assertionDescription> <outcome> <assertionStrike>"
+        Where inputs could be: "As of assertion timestamp 1625097600, <USDC/USD exchange rate is> <above> <0.997>"
+        @return bytes for the claim
+     */
     function _composeClaim(
         uint256 _conditionType
     ) internal view returns (bytes memory) {
@@ -191,10 +217,11 @@ contract UmaPriceProvider is Ownable {
             abi.encodePacked(
                 "As of assertion timestamp ",
                 _toUtf8BytesUint(block.timestamp),
-                ", the described prediction market outcome is: ",
+                ", the following statement is",
                 _conditionType == 1 ? OUTCOME_1 : OUTCOME_2,
-                ". The market description is: ",
-                assertionDescription
+                assertionDescription,
+                "This occured after the timestamp of ",
+                coverageStart
             );
     }
 

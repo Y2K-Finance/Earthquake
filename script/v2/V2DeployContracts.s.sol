@@ -15,7 +15,7 @@ import "../../src/v2/oracles/individual/DIAPriceProvider.sol";
 import "../../src/v2/oracles/individual/PythPriceProvider.sol";
 import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
-import "../../src/v2/oracles/individual/UmaPriceProvider.sol";
+import "../../src/v2/oracles/individual/UmaAssertProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 import {KeeperV2GenericController} from "../keepers/KeeperV2GenericController.sol";
@@ -133,9 +133,10 @@ contract V2DeployContracts is Script, HelperV2 {
         string memory umaDescription = "USDC";
         uint256 requiredBond = 1e6;
         bytes32 defaultIdentifier = bytes32("abc");
-        bytes memory assertionDescription = "abc";
+        bytes
+            memory assertionDescription = "The USDC/USD exchange is above 0.997";
         address currency = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH_ADDRESS
-        UmaPriceProvider umaPriceProvider = new UmaPriceProvider(
+        UmaAssertProvider umaPriceProvider = new UmaAssertProvider(
             umaDecimals,
             umaDescription,
             timeOut,
