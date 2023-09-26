@@ -51,7 +51,7 @@ contract RedstoneCoreUniversalProvider is Ownable, MainDemoConsumerBase, IUniver
         uint256 length = _marketIds.length;
         for (uint256 i = 0; i < length; i += 1) {
             marketIdToPrice[_marketIds[i]] = prices[i];
-            marketIdToUpdatedAt[_marketIds[i]] = block.timestamp;
+            marketIdToUpdatedAt[_marketIds[i]] = extractTimestampsAndAssertAllAreEqual();
         }
     }
     /*//////////////////////////////////////////////////////////////
