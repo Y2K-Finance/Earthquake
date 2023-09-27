@@ -3,9 +3,9 @@ pragma solidity 0.8.17;
 
 import {IUniversalProvider} from "../../interfaces/IUniversalProvider.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import "@redstone-finance/evm-connector/contracts/data-services/MainDemoConsumerBase.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/PrimaryProdDataServiceConsumerBase.sol";
 
-contract RedstoneCoreUniversalProvider is Ownable, MainDemoConsumerBase, IUniversalProvider {
+contract RedstoneCoreUniversalProvider is Ownable, PrimaryProdDataServiceConsumerBase, IUniversalProvider {
     uint256 public immutable timeOut;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
