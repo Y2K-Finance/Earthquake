@@ -340,6 +340,12 @@ contract MockOracleConditionMetCVI {
 
 ////////////////// Pyth Implementation //////////////////
 contract MockOracleAnswerNegativePyth {
+    function getPriceUnsafe(
+        bytes32
+    ) external view returns (PythStructs.Price memory price) {
+        price = PythStructs.Price(-1, 0, -8, block.timestamp);
+    }
+
     function getPriceNoOlderThan(
         bytes32,
         uint
@@ -349,6 +355,12 @@ contract MockOracleAnswerNegativePyth {
 }
 
 contract MockOracleExponentTooSmallPyth {
+    function getPriceUnsafe(
+        bytes32
+    ) external view returns (PythStructs.Price memory price) {
+        price = PythStructs.Price(-899898, 0, -19, block.timestamp);
+    }
+
     function getPriceNoOlderThan(
         bytes32,
         uint

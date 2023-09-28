@@ -11,6 +11,8 @@ import {
     MockOracleExponentTooSmallPyth
 } from "../MockOracles.sol";
 import {IPriceFeedAdapter} from "../PriceInterfaces.sol";
+import {IPyth} from "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
+import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
 contract PythPriceProviderTest is Helper {
     uint256 public arbForkId;
@@ -28,7 +30,8 @@ contract PythPriceProviderTest is Helper {
         pythProvider = new PythPriceProvider(
             PYTH_CONTRACT,
             PYTH_FDUSD_FEED_ID,
-            TIME_OUT);
+            TIME_OUT
+        );
 
         uint256 condition = 2;
         pythProvider.setConditionType(marketId, condition);
@@ -38,24 +41,23 @@ contract PythPriceProviderTest is Helper {
     //                STATE                       //
     ////////////////////////////////////////////////
 
-    function testRedStoneCreation() public {
+    function testCreation() public {
         assertEq(pythProvider.timeOut(), TIME_OUT);
         assertEq(pythProvider.priceFeedId(), PYTH_FDUSD_FEED_ID);
         assertEq(address(pythProvider.pyth()), PYTH_CONTRACT);
-        assertEq(pythProvider.decimals(), 18);
+
+        PythStructs.Price memory answer = IPyth(PYTH_CONTRACT).getPriceUnsafe(
+            PYTH_FDUSD_FEED_ID
+        );
+        assertEq(pythProvider.decimals(), uint256(int256(-answer.expo)));
     }
 
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
     function testLatestRoundDataPyth() public {
-        (
-            uint80 roundId,
-            int256 price,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = pythProvider.latestRoundData();
+        (, int256 price, , uint256 updatedAt, ) = pythProvider
+            .latestRoundData();
         assertTrue(price != 0);
         assertTrue(updatedAt != 0);
     }
@@ -125,7 +127,7 @@ contract PythPriceProviderTest is Helper {
 
     function testRevertOraclePriceNegative() public {
         address mockPyth = address(new MockOracleAnswerNegativePyth());
-        pythProvider =  new PythPriceProvider(
+        pythProvider = new PythPriceProvider(
             mockPyth,
             PYTH_FDUSD_FEED_ID,
             TIME_OUT
@@ -136,11 +138,20 @@ contract PythPriceProviderTest is Helper {
 
     function testRevertOracleExponentTooSmall() public {
         address mockPyth = address(new MockOracleExponentTooSmallPyth());
-        pythProvider =  new PythPriceProvider(
+        pythProvider = new PythPriceProvider(
             mockPyth,
             PYTH_FDUSD_FEED_ID,
-            TIME_OUT        );
-        vm.expectRevert(PythPriceProvider.ExponentTooSmall.selector);
+            TIME_OUT
+        );
+        PythStructs.Price memory answer = IPyth(mockPyth).getPriceUnsafe(
+            PYTH_FDUSD_FEED_ID
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PythPriceProvider.ExponentTooSmall.selector,
+                answer.expo
+            )
+        );
         pythProvider.getLatestPrice();
     }
 }
