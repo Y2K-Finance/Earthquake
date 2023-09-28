@@ -21,7 +21,7 @@ contract PythPriceProvider is Ownable, IConditionProvider {
 
     error ExponentTooSmall(int256 expo);
 
-    constructor(address _pythContract, bytes32 _priceFeedId, uint256 _timeOut, uint256 _decimals) {
+    constructor(address _pythContract, bytes32 _priceFeedId, uint256 _timeOut) {
         if (_pythContract == address(0)) revert ZeroAddress();
         if (_priceFeedId == bytes32(0)) revert InvalidInput();
         if (_timeOut == 0) revert InvalidInput();
