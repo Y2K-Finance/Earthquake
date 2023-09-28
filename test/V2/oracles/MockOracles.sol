@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+
 contract MockOracleAnswerZero {
     uint256 public decimals = 0;
     string public description = "MOCK";
@@ -333,5 +335,24 @@ contract MockOracleConditionMetCVI {
     ) external view returns (bool, int256) {
         (uint256 price, , ) = getCVILatestRoundData();
         return (int256(_strike) > int256(price), int256(price));
+    }
+}
+
+////////////////// Pyth Implementation //////////////////
+contract MockOracleAnswerNegativePyth {
+    function getPriceNoOlderThan(
+        bytes32,
+        uint
+    ) external view returns (PythStructs.Price memory price) {
+        price = PythStructs.Price(-1, 0, -8, block.timestamp);
+    }
+}
+
+contract MockOracleExponentTooSmallPyth {
+    function getPriceNoOlderThan(
+        bytes32,
+        uint
+    ) external view returns (PythStructs.Price memory price) {
+        price = PythStructs.Price(899898, 0, -19, block.timestamp);
     }
 }

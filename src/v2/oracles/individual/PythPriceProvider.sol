@@ -11,7 +11,7 @@ contract PythPriceProvider is Ownable, IConditionProvider {
     using SafeCast for int256;
 
     IPyth public immutable pyth;
-
+    uint256 public immutable decimals;
     uint256 public immutable timeOut;
     bytes32 public immutable priceFeedId;
 
@@ -21,13 +21,14 @@ contract PythPriceProvider is Ownable, IConditionProvider {
 
     error ExponentTooSmall(int256 expo);
 
-    constructor(address _pythContract, bytes32 _priceFeedId, uint256 _timeOut) {
+    constructor(address _pythContract, bytes32 _priceFeedId, uint256 _timeOut, uint256 _decimals) {
         if (_pythContract == address(0)) revert ZeroAddress();
         if (_priceFeedId == bytes32(0)) revert InvalidInput();
         if (_timeOut == 0) revert InvalidInput();
         pyth = IPyth(_pythContract);
         priceFeedId = _priceFeedId;
         timeOut = _timeOut;
+        decimals = _decimals;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -57,7 +58,7 @@ contract PythPriceProvider is Ownable, IConditionProvider {
             uint80 answeredInRound
         )
     {
-        PythStructs.Price memory answer = pyth.getPrice(priceFeedId);
+        PythStructs.Price memory answer = pyth.getPriceUnsafe(priceFeedId);
         updatedAt = answer.publishTime;
         price = (int256(answer.price));
     }
@@ -66,14 +67,11 @@ contract PythPriceProvider is Ownable, IConditionProvider {
      * @return int256 Current token price
      */
     function getLatestPrice() public view virtual returns (int256) {
-        PythStructs.Price memory answer = pyth.getPrice(priceFeedId);
+        PythStructs.Price memory answer = pyth.getPriceNoOlderThan(priceFeedId, timeOut);
         if (answer.price <= 0) revert OraclePriceNegative();
-        // TODO: What is a suitable timeframe to set timeout as based on this info? Update at always timestamp?
-        if ((block.timestamp - answer.publishTime) > timeOut)
-            revert PriceTimedOut();
 
         int256 price = answer.price;
-        int256 calcDecimals = answer.expo + 18;
+        int256 calcDecimals = answer.expo + int256(decimals);
         if (calcDecimals < 0) {
             revert ExponentTooSmall(answer.expo);
         }
