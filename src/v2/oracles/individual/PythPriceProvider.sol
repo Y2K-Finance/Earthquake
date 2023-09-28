@@ -28,7 +28,8 @@ contract PythPriceProvider is Ownable, IConditionProvider {
         pyth = IPyth(_pythContract);
         priceFeedId = _priceFeedId;
         timeOut = _timeOut;
-        decimals = _decimals;
+        PythStructs.Price memory answer = pyth.getPriceUnsafe(priceFeedId);
+        decimals = (int256(-answer.expo)).toUint256();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -71,12 +72,11 @@ contract PythPriceProvider is Ownable, IConditionProvider {
         if (answer.price <= 0) revert OraclePriceNegative();
 
         int256 price = answer.price;
-        int256 calcDecimals = answer.expo + int256(decimals);
+        int256 calcDecimals = answer.expo + 18;
         if (calcDecimals < 0) {
             revert ExponentTooSmall(answer.expo);
         }
         price = price * int256(10 ** (calcDecimals.toUint256()));
-
         return price;
     }
 
