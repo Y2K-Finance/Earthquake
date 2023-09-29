@@ -27,13 +27,13 @@ contract UmaAssertProvider is Ownable {
     address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
     IOptimisticOracleV3 public immutable umaV3;
-    uint256 public immutable requiredBond; // Bond required to assert on a market
 
     // Market info
     uint256 public immutable timeOut;
     uint256 public immutable decimals;
     string public description;
     bytes public assertionDescription;
+    uint256 public requiredBond; // Bond required to assert on a market
 
     mapping(uint256 => uint256) public marketIdToConditionType;
     mapping(uint256 => MarketAnswer) public marketIdToAnswer;
@@ -42,6 +42,7 @@ contract UmaAssertProvider is Ownable {
     event MarketAsserted(uint256 marketId, bytes32 assertionId);
     event AssertionResolved(bytes32 assertionId, bool assertion);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
+    event BondUpdated(uint256 newBond);
 
     /**
         @param _decimals is decimals for the provider maker if relevant
@@ -100,6 +101,12 @@ contract UmaAssertProvider is Ownable {
         if (_condition != 1 && _condition != 2) revert InvalidInput();
         marketIdToConditionType[_marketId] = _condition;
         emit MarketConditionSet(_marketId, _condition);
+    }
+
+    function updateRequiredBond(uint256 newBond) external onlyOwner {
+        if (newBond == 0) revert InvalidInput();
+        requiredBond = newBond;
+        emit BondUpdated(newBond);
     }
 
     /*//////////////////////////////////////////////////////////////
