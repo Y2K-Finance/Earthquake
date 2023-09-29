@@ -77,6 +77,15 @@ contract UmaAssertProviderTest is Helper {
         assertEq(umaPriceProvider.marketIdToConditionType(marketId), 2);
     }
 
+    function testUpdateRequiredBond() public {
+        uint256 newBond = 1e6;
+
+        vm.expectEmit(true, true, false, false);
+        emit BondUpdated(newBond);
+        umaPriceProvider.updateRequiredBond(newBond);
+        assertEq(umaPriceProvider.requiredBond(), newBond);
+    }
+
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
@@ -245,7 +254,6 @@ contract UmaAssertProviderTest is Helper {
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-
     function testRevertConstructorInputsUma() public {
         vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
         new UmaAssertProvider(
@@ -355,6 +363,11 @@ contract UmaAssertProviderTest is Helper {
 
         vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
         umaPriceProvider.setConditionType(0, 3);
+    }
+
+    function testRevertInvalidInpudRequiredBond() public {
+        vm.expectRevert(UmaAssertProvider.InvalidInput.selector);
+        umaPriceProvider.updateRequiredBond(0);
     }
 
     function testRevertInvalidCallerCallback() public {

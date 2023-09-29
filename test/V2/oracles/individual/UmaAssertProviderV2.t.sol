@@ -82,6 +82,15 @@ contract UmaAssertProviderV2Test is Helper {
         assertEq(umaPriceProvider.coverageStart(), block.timestamp * 2);
     }
 
+    function testUpdateRequiredBond() public {
+        uint256 newBond = 1e6;
+
+        vm.expectEmit(true, true, false, false);
+        emit BondUpdated(newBond);
+        umaPriceProvider.updateRequiredBond(newBond);
+        assertEq(umaPriceProvider.requiredBond(), newBond);
+    }
+
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
@@ -250,7 +259,6 @@ contract UmaAssertProviderV2Test is Helper {
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-
     function testRevertConstructorInputsUma() public {
         vm.expectRevert(UmaAssertProviderV2.InvalidInput.selector);
         new UmaAssertProviderV2(
@@ -365,6 +373,11 @@ contract UmaAssertProviderV2Test is Helper {
     function testRevertInvalidInputUpdateCoverageStart() public {
         vm.expectRevert(UmaAssertProviderV2.InvalidInput.selector);
         umaPriceProvider.updateCoverageStart(0);
+    }
+
+    function testRevertInvalidInpudRequiredBond() public {
+        vm.expectRevert(UmaAssertProviderV2.InvalidInput.selector);
+        umaPriceProvider.updateRequiredBond(0);
     }
 
     function testRevertInvalidCallerCallback() public {

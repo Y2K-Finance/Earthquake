@@ -9,6 +9,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract Helper is Test {
     event MarketAsserted(uint256 marketId, bytes32 assertionId);
     event AssertionResolved(bytes32 assertionId, bool assertion);
+    event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
+    event BondUpdated(uint256 newBond);
 
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
@@ -74,8 +76,6 @@ contract Helper is Test {
     string public ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
     string public ARBITRUM_GOERLI_RPC_URL =
         vm.envString("ARBITRUM_GOERLI_RPC_URL");
-
-    event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
 
     ////////////////////////////////////////////////
     //                Vault Helpers               //
