@@ -11,13 +11,14 @@ contract RedstoneCoreUniversalProvider is Ownable, PrimaryProdDataServiceConsume
     mapping(uint256 => uint256) public marketIdToConditionType;
     mapping(uint256 => bytes32) public marketIdToDataFeed;
     mapping(uint256 => uint256) public marketIdToPrice;
+    mapping(uint256 => uint256) public marketIdToDecimals;
     mapping(uint256 => uint256) public marketIdToUpdatedAt;
 
     event MarketConditionSet(
         uint256 indexed marketId,
         uint256 indexed conditionType
     );
-    event DataFeedSet(uint256 indexed marketId, bytes32 priceFeed);
+    event DataFeedSet(uint256 indexed marketId, bytes32 priceFeed, uint256 decimals);
 
     constructor(uint256 _timeOut) {
         if (_timeOut == 0) revert InvalidInput();
@@ -39,11 +40,13 @@ contract RedstoneCoreUniversalProvider is Ownable, PrimaryProdDataServiceConsume
 
     function setPriceFeed(
         uint256 _marketId,
-        bytes32 dataFeed
+        bytes32 dataFeed,
+        uint256 decimals
     ) external onlyOwner {
         if (dataFeed == bytes32(0)) revert InvalidInput();
         marketIdToDataFeed[_marketId] = dataFeed;
-        emit DataFeedSet(_marketId, dataFeed);
+        marketIdToDecimals[_marketId] = decimals;
+        emit DataFeedSet(_marketId, dataFeed, decimals);
     }
 
     function updatePrices(uint256[] memory _marketIds) external {
@@ -51,12 +54,25 @@ contract RedstoneCoreUniversalProvider is Ownable, PrimaryProdDataServiceConsume
         uint256 length = _marketIds.length;
         for (uint256 i = 0; i < length; i += 1) {
             marketIdToPrice[_marketIds[i]] = prices[i];
-            marketIdToUpdatedAt[_marketIds[i]] = extractTimestampsAndAssertAllAreEqual();
+            marketIdToUpdatedAt[_marketIds[i]] = extractTimestampsAndAssertAllAreEqual() / 1000;
         }
     }
     /*//////////////////////////////////////////////////////////////
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
+    function decimals(uint256 marketId) public view returns (uint256 decimals) {
+        decimals = marketIdToDecimals[marketId];
+    }
+
+    function description(
+        uint256 _marketId
+    ) public view returns (string memory) {
+        return
+            string(
+                abi.encodePacked(marketIdToDataFeed[_marketId])
+            );
+    }
+ 
     function getCurrentPrices(uint256[] memory _marketIds) public view returns (uint256[] memory prices, uint256[] memory updatedAt) {
         uint256 length = _marketIds.length;
         prices = new uint256[](length);
@@ -78,15 +94,6 @@ contract RedstoneCoreUniversalProvider is Ownable, PrimaryProdDataServiceConsume
     function extractPrice(uint256[] memory _marketIds) public view returns (uint256[] memory price) {
         bytes32[] memory dataFeeds = getDataFeeds(_marketIds);
         return getOracleNumericValuesFromTxMsg(dataFeeds);
-    }
-
-    function description(
-        uint256 _marketId
-    ) public view returns (string memory) {
-        return
-            string(
-                abi.encodePacked(marketIdToDataFeed[_marketId])
-            );
     }
 
     function latestRoundData(
@@ -149,10 +156,6 @@ contract RedstoneCoreUniversalProvider is Ownable, PrimaryProdDataServiceConsume
         if (conditionType == 1) return (int256(_strike) < price, price);
         else if (conditionType == 2) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
-    }
-
-    function decimals(uint256) public pure returns (uint256) {
-        return 8;
     }
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
