@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MockOracleAnswerZero {
     uint256 public decimals = 0;
@@ -366,5 +367,50 @@ contract MockOracleExponentTooSmallPyth {
         uint
     ) external view returns (PythStructs.Price memory price) {
         price = PythStructs.Price(899898, 0, -19, block.timestamp);
+    }
+}
+
+contract MockUmaV2 {
+    function requestPrice(
+        bytes32 identifier,
+        uint256 timestamp,
+        bytes memory ancillaryData,
+        IERC20 currency,
+        uint256 reward
+    ) external returns (uint256 totalBond) {}
+
+    function setBond(
+        bytes32 identifier,
+        uint256 timestamp,
+        bytes memory ancillaryData,
+        uint256 bond
+    ) external returns (uint256 totalBond) {}
+
+    function setCustomLiveness(
+        bytes32 identifier,
+        uint256 timestamp,
+        bytes memory ancillaryData,
+        uint256 customLiveness
+    ) external {}
+
+    function setCallbacks(
+        bytes32 identifier,
+        uint256 timestamp,
+        bytes memory ancillaryData,
+        bool callbackOnPriceProposed,
+        bool callbackOnPriceDisputed,
+        bool callbackOnPriceSettled
+    ) external {}
+}
+
+contract MockUmaFinder {
+    address public mockUmaV2;
+
+    constructor(address _mockUmaV2) {
+        mockUmaV2 = _mockUmaV2;
+    }
+
+    function getImplementationAddress(bytes32) external view returns (address) {
+        return mockUmaV2;
     }
 }
