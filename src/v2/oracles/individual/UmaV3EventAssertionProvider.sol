@@ -9,7 +9,7 @@ import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice This provider is build to work where you need to define between x and y e.g. there was a hack between Aug31st
-contract UmaAssertProviderV2 is Ownable {
+contract UmaV3EventAssertionProvider is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
