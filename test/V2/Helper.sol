@@ -11,6 +11,7 @@ contract Helper is Test {
     event AssertionResolved(bytes32 assertionId, bool assertion);
     event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
     event BondUpdated(uint256 newBond);
+    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
