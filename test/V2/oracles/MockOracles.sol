@@ -125,7 +125,7 @@ contract MockOracleConditionNotMet {
 
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256
     ) external view returns (bool, int256 price) {
         (, price, , , ) = latestRoundData();
         return (int256(_strike) > price, price);
@@ -202,7 +202,7 @@ contract MockOracleConditionMet {
 
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256
     ) external view returns (bool, int256 price) {
         (, price, , , ) = latestRoundData();
         return (int256(_strike) > price, price);

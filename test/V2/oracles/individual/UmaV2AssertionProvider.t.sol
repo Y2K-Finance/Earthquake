@@ -4,8 +4,8 @@ pragma solidity 0.8.17;
 import {Helper} from "../../Helper.sol";
 import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
 import {
-    UmaV2PriceProvider
-} from "../../../../src/v2/oracles/individual/UmaV2PriceProvider.sol";
+    UmaV2AssertionProvider
+} from "../../../../src/v2/oracles/individual/UmaV2AssertionProvider.sol";
 import {TimeLock} from "../../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerOne,
@@ -20,10 +20,10 @@ import {
 // Uma address all networks: https://docs.uma.xyz/resources/network-addresses
 // Uma addresses on Arbitrum: https://github.com/UMAprotocol/protocol/blob/master/packages/core/networks/42161.json
 
-contract UmaV2PriceProviderTest is Helper {
+contract UmaV2AssertionProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
-    UmaV2PriceProvider public umaV2PriceProvider;
+    UmaV2AssertionProvider public umaV2AssertionProvider;
     uint256 public marketId = 2;
 
     ////////////////////////////////////////////////
@@ -52,10 +52,9 @@ contract UmaV2PriceProviderTest is Helper {
         ancillaryData = "base: FUSD, quote: USDC, baseChain: ArbitrumOne, rounding: 6, configurations: {}";
         requiredBond = 1e6;
 
-        umaV2PriceProvider = new UmaV2PriceProvider(
+        umaV2AssertionProvider = new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
@@ -63,65 +62,75 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
         uint256 condition = 2;
-        umaV2PriceProvider.setConditionType(marketId, condition);
+        umaV2AssertionProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
     //                STATE                       //
     ////////////////////////////////////////////////
-
-    function testUmaV2Price() public {
-        assertEq(umaV2PriceProvider.ORACLE_LIVENESS_TIME(), 3600 * 2);
-        assertEq(umaV2PriceProvider.PRICE_IDENTIFIER(), "TOKEN_PRICE");
-        assertEq(umaV2PriceProvider.timeOut(), TIME_OUT);
-        assertEq(address(umaV2PriceProvider.vaultFactory()), address(factory));
-        assertEq(address(umaV2PriceProvider.oo()), umaV2);
-        assertEq(address(umaV2PriceProvider.finder()), UMAV2_FINDER);
-        assertEq(umaV2PriceProvider.decimals(), umaDecimals);
-        assertEq(address(umaV2PriceProvider.currency()), umaCurrency);
-        assertEq(umaV2PriceProvider.description(), umaDescription);
-        assertEq(umaV2PriceProvider.ancillaryData(), ancillaryData);
-        assertEq(umaV2PriceProvider.requiredBond(), requiredBond);
+    function testUmaV2AssertionProvider() public {
+        assertEq(umaV2AssertionProvider.ORACLE_LIVENESS_TIME(), 3600 * 2);
+        assertEq(umaV2AssertionProvider.PRICE_IDENTIFIER(), "YES_OR_NO_QUERY");
+        assertEq(umaV2AssertionProvider.timeOut(), TIME_OUT);
+        assertEq(
+            address(umaV2AssertionProvider.vaultFactory()),
+            address(factory)
+        );
+        assertEq(address(umaV2AssertionProvider.oo()), umaV2);
+        assertEq(address(umaV2AssertionProvider.finder()), UMAV2_FINDER);
+        assertEq(address(umaV2AssertionProvider.currency()), umaCurrency);
+        assertEq(umaV2AssertionProvider.description(), umaDescription);
+        assertEq(umaV2AssertionProvider.ancillaryData(), ancillaryData);
+        assertEq(umaV2AssertionProvider.requiredBond(), requiredBond);
+        assertEq(umaV2AssertionProvider.coverageStart(), block.timestamp);
     }
 
     ////////////////////////////////////////////////
     //                ADMIN                       //
     ////////////////////////////////////////////////
-    function testSetConditionTypeUmaV2Price() public {
+    function testSetConditionTypeUmaV2Assert() public {
         uint256 _marketId = 911;
         uint256 _condition = 1;
 
         vm.expectEmit(true, true, true, true);
         emit MarketConditionSet(_marketId, _condition);
-        umaV2PriceProvider.setConditionType(_marketId, _condition);
+        umaV2AssertionProvider.setConditionType(_marketId, _condition);
 
-        assertEq(umaV2PriceProvider.marketIdToConditionType(_marketId), 1);
+        assertEq(umaV2AssertionProvider.marketIdToConditionType(_marketId), 1);
     }
 
-    function testUpdateRequiredBondUmaV2Price() public {
+    function testUpdateCoverageStartUmaV2Assert() public {
+        uint256 newCoverageStart = block.timestamp + 1 days;
+        vm.expectEmit(true, true, true, true);
+        emit CoverageStartUpdated(newCoverageStart);
+        umaV2AssertionProvider.updateCoverageStart(newCoverageStart);
+
+        assertEq(umaV2AssertionProvider.coverageStart(), newCoverageStart);
+    }
+
+    function testUpdateRequiredBondUmaV2Assert() public {
         uint256 newBond = 1000;
         vm.expectEmit(true, true, true, true);
         emit BondUpdated(newBond);
-        umaV2PriceProvider.updateRequiredBond(newBond);
+        umaV2AssertionProvider.updateRequiredBond(newBond);
 
-        assertEq(umaV2PriceProvider.requiredBond(), newBond);
+        assertEq(umaV2AssertionProvider.requiredBond(), newBond);
     }
 
     ////////////////////////////////////////////////
     //                  PUBLIC CALLBACK           //
     ////////////////////////////////////////////////
-    function testPriceSettledUmaV2Price() public {
+    function testPriceSettledUmaV2Assert() public {
         bytes32 emptyBytes32;
         bytes memory emptyBytes;
-        int256 price = 2e6;
+        int256 price = 1;
 
-        // Deploying new umaV2PriceProvider with mock contract
+        // Deploying new UmaV2AssertionProvider with mock contract
         MockUmaV2 mockUmaV2 = new MockUmaV2();
         MockUmaFinder umaMockFinder = new MockUmaFinder(address(mockUmaV2));
-        umaV2PriceProvider = new UmaV2PriceProvider(
+        umaV2AssertionProvider = new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             address(umaMockFinder),
             umaCurrency,
@@ -131,12 +140,12 @@ contract UmaV2PriceProviderTest is Helper {
 
         // Configuring the pending answer
         uint256 previousTimestamp = block.timestamp;
-        umaV2PriceProvider.requestLatestPrice();
+        umaV2AssertionProvider.requestLatestAssertion();
         vm.warp(block.timestamp + 1 days);
 
         // Configuring the answer via the callback
         vm.prank(address(mockUmaV2));
-        umaV2PriceProvider.priceSettled(
+        umaV2AssertionProvider.priceSettled(
             emptyBytes32,
             block.timestamp,
             emptyBytes,
@@ -148,7 +157,7 @@ contract UmaV2PriceProviderTest is Helper {
             uint256 startedAt,
             uint256 updatedAt,
             uint80 answeredInRound
-        ) = umaV2PriceProvider.answer();
+        ) = umaV2AssertionProvider.answer();
 
         // Checking the data
         assertEq(roundId, 1);
@@ -161,79 +170,57 @@ contract UmaV2PriceProviderTest is Helper {
     ////////////////////////////////////////////////
     //                PUBLIC FUNCTIONS            //
     ////////////////////////////////////////////////
-    function testrequestLatestPriceUmaV2Price() public {
-        umaV2PriceProvider.requestLatestPrice();
-        (, , uint256 startedAt, , ) = umaV2PriceProvider.pendingAnswer();
+    function testrequestLatestAssertionUmaV2Assert() public {
+        umaV2AssertionProvider.requestLatestAssertion();
+        (, , uint256 startedAt, , ) = umaV2AssertionProvider.pendingAnswer();
         assertEq(startedAt, block.timestamp);
     }
 
-    function testLatestRoundDataUmaV2Price() public {
-        // Config the data using the mock oracle
-        _configureSettledPrice();
-
-        (
-            uint80 roundId,
-            int256 _price,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = umaV2PriceProvider.latestRoundData();
-        assertTrue(_price != 0);
-        assertTrue(roundId != 0);
-        assertTrue(startedAt != 0);
-        assertTrue(updatedAt != 0);
-        assertTrue(answeredInRound != 0);
-    }
-
-    function testLatestPriceUmaV2Price() public {
-        // Config the data using the mock oracle
-        _configureSettledPrice();
-
-        int256 price = umaV2PriceProvider.getLatestPrice();
-        assertTrue(price != 0);
-        uint256 calcDecimals = 10 ** (18 - (umaDecimals));
-        int256 expectedPrice = 2e6 * int256(calcDecimals);
-        assertEq(price, expectedPrice);
-    }
-
-    function testConditionOneMetUmaV2Price() public {
+    function testCheckAssertionUmaV2Assert() public {
         // Config the data with mock oracle
-        _configureSettledPrice();
+        _configureSettledPrice(true);
+
+        bool condition = umaV2AssertionProvider.checkAssertion();
+        assertEq(condition, true);
+    }
+
+    function testConditionOneMetUmaV2AssertProvider() public {
+        // Config the data with mock oracle
+        _configureSettledPrice(true);
 
         uint256 conditionType = 1;
         uint256 marketIdOne = 1;
-        umaV2PriceProvider.setConditionType(marketIdOne, conditionType);
-        (bool condition, int256 price) = umaV2PriceProvider.conditionMet(
+        umaV2AssertionProvider.setConditionType(marketIdOne, conditionType);
+        (bool condition, ) = umaV2AssertionProvider.conditionMet(
             0.001 ether,
             marketIdOne
         );
-        assertTrue(price != 0);
+
         assertEq(condition, true);
     }
 
-    function testConditionTwoMetUmaV2Price() public {
+    function testConditionTwoMetUmaV2Assert() public {
         // Config the data with mock oracle
-        _configureSettledPrice();
+        _configureSettledPrice(false);
 
         uint256 conditionType = 2;
-        umaV2PriceProvider.setConditionType(marketId, conditionType);
-        (bool condition, int256 price) = umaV2PriceProvider.conditionMet(
+        umaV2AssertionProvider.setConditionType(marketId, conditionType);
+        (bool condition, ) = umaV2AssertionProvider.conditionMet(
             2 ether,
             marketId
         );
-        assertTrue(price != 0);
-        assertEq(condition, true);
+
+        assertEq(condition, false);
     }
 
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
-    function testRevertConstructorInputsUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.ZeroAddress.selector);
-        new UmaV2PriceProvider(
+    function testRevertConstructorInputsUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.ZeroAddress.selector);
+        new UmaV2AssertionProvider(
             address(0),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
@@ -241,11 +228,10 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
 
-        vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        new UmaV2PriceProvider(
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        new UmaV2AssertionProvider(
             address(factory),
             0,
-            umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
@@ -253,11 +239,10 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
 
-        vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        new UmaV2PriceProvider(
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             "",
             UMAV2_FINDER,
             umaCurrency,
@@ -265,11 +250,10 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
 
-        vm.expectRevert(UmaV2PriceProvider.ZeroAddress.selector);
-        new UmaV2PriceProvider(
+        vm.expectRevert(UmaV2AssertionProvider.ZeroAddress.selector);
+        new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             address(0),
             umaCurrency,
@@ -277,11 +261,10 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
 
-        vm.expectRevert(UmaV2PriceProvider.ZeroAddress.selector);
-        new UmaV2PriceProvider(
+        vm.expectRevert(UmaV2AssertionProvider.ZeroAddress.selector);
+        new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             address(0),
@@ -289,11 +272,10 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
 
-        vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        new UmaV2PriceProvider(
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
@@ -301,11 +283,10 @@ contract UmaV2PriceProviderTest is Helper {
             requiredBond
         );
 
-        vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        new UmaV2PriceProvider(
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
@@ -314,24 +295,29 @@ contract UmaV2PriceProviderTest is Helper {
         );
     }
 
-    function testRevertConditionTypeSetUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.ConditionTypeSet.selector);
-        umaV2PriceProvider.setConditionType(2, 0);
+    function testRevertConditionTypeSetUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.ConditionTypeSet.selector);
+        umaV2AssertionProvider.setConditionType(2, 0);
     }
 
-    function testRevertInvalidInputConditionUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        umaV2PriceProvider.setConditionType(0, 0);
+    function testRevertInvalidInputConditionUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        umaV2AssertionProvider.setConditionType(0, 0);
     }
 
-    function testRevertInvalidInputUpdateRequiredBondUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        umaV2PriceProvider.updateRequiredBond(0);
+    function testRevertInvalidInputCoverageStartUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        umaV2AssertionProvider.updateCoverageStart(0);
     }
 
-    function testRevertInvalidCallerPriceSettledUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.InvalidCaller.selector);
-        umaV2PriceProvider.priceSettled(
+    function testRevertInvalidInputUpdateRequiredBondUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
+        umaV2AssertionProvider.updateRequiredBond(0);
+    }
+
+    function testRevertInvalidCallerPriceSettledUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.InvalidCaller.selector);
+        umaV2AssertionProvider.priceSettled(
             bytes32(0),
             block.timestamp,
             bytes(""),
@@ -339,48 +325,48 @@ contract UmaV2PriceProviderTest is Helper {
         );
     }
 
-    function testRevertRequestInProgRequestLatestPriceUmaV2Price() public {
-        umaV2PriceProvider.requestLatestPrice();
-        vm.expectRevert(UmaV2PriceProvider.RequestInProgress.selector);
-        umaV2PriceProvider.requestLatestPrice();
+    function testRevertRequestInProgRequestLatestAssertionUmaV2Assert() public {
+        umaV2AssertionProvider.requestLatestAssertion();
+        vm.expectRevert(UmaV2AssertionProvider.RequestInProgress.selector);
+        umaV2AssertionProvider.requestLatestAssertion();
     }
 
-    function testRevertOraclePriceZeroUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.OraclePriceZero.selector);
-        umaV2PriceProvider.getLatestPrice();
+    function testRevertOraclePriceZeroCheckAssertionUmaV2Assert() public {
+        vm.expectRevert(UmaV2AssertionProvider.OraclePriceZero.selector);
+        umaV2AssertionProvider.checkAssertion();
     }
 
-    function testRevertPricedTimedOutUmaV2Price() public {
-        _configureSettledPrice();
+    function testRevertPriceTimedOutCheckAssertionUmaV2Assert() public {
+        // Config the data with mock oracle
+        _configureSettledPrice(true);
+
         vm.warp(block.timestamp + 2 days);
-
-        vm.expectRevert(UmaV2PriceProvider.PriceTimedOut.selector);
-        umaV2PriceProvider.getLatestPrice();
+        vm.expectRevert(UmaV2AssertionProvider.PriceTimedOut.selector);
+        umaV2AssertionProvider.checkAssertion();
     }
 
-    function testRevertConditionTypeNotSetUmaV2Price() public {
-        _configureSettledPrice();
+    function testRevertConditionTypeNotSetUmaV2Assert() public {
+        _configureSettledPrice(true);
 
-        vm.expectRevert(UmaV2PriceProvider.ConditionTypeNotSet.selector);
-        umaV2PriceProvider.conditionMet(0.001 ether, 1);
+        vm.expectRevert(UmaV2AssertionProvider.ConditionTypeNotSet.selector);
+        umaV2AssertionProvider.conditionMet(0.001 ether, 1);
     }
 
     ////////////////////////////////////////////////
     //                    HELPER                  //
     ////////////////////////////////////////////////
-    function _configureSettledPrice() internal {
+    function _configureSettledPrice(bool condition) internal {
         // Config the data using the mock oracle
         bytes32 emptyBytes32;
         bytes memory emptyBytes;
-        int256 price = 2e6;
+        int256 price = condition ? int256(1) : int256(0);
 
-        // Deploying new umaV2PriceProvider with mock contract
+        // Deploying new UmaV2AssertionProvider with mock contract
         MockUmaV2 mockUmaV2 = new MockUmaV2();
         MockUmaFinder umaMockFinder = new MockUmaFinder(address(mockUmaV2));
-        umaV2PriceProvider = new UmaV2PriceProvider(
+        umaV2AssertionProvider = new UmaV2AssertionProvider(
             address(factory),
             TIME_OUT,
-            umaDecimals,
             umaDescription,
             address(umaMockFinder),
             umaCurrency,
@@ -389,12 +375,12 @@ contract UmaV2PriceProviderTest is Helper {
         );
 
         // Configuring the pending answer
-        umaV2PriceProvider.requestLatestPrice();
+        umaV2AssertionProvider.requestLatestAssertion();
         vm.warp(block.timestamp + 1 days);
 
         // Configuring the answer via the callback
         vm.prank(address(mockUmaV2));
-        umaV2PriceProvider.priceSettled(
+        umaV2AssertionProvider.priceSettled(
             emptyBytes32,
             block.timestamp,
             emptyBytes,
