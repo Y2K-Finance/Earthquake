@@ -192,12 +192,12 @@ contract UmaV3EventAssertionProvider is Ownable {
 
     // NOTE: _marketId unused but receiving marketId makes Generic controller composabile for future
     /** @notice Fetch price and return condition
-     * @param _strike Strike price
+     * @param _marketId the marketId for the market
      * @return boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
     function conditionMet(
-        uint256 _strike,
+        uint256,
         uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = marketIdToConditionType[_marketId];

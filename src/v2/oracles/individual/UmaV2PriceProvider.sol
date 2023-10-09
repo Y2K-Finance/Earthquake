@@ -7,10 +7,8 @@ import {IFinder} from "../../interfaces/IFinder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "forge-std/console.sol";
-
 contract UmaV2PriceProvider is Ownable {
-    struct MarketAnswer {
+    struct PriceAnswer {
         uint80 roundId;
         int256 price;
         uint256 startedAt;
@@ -30,16 +28,16 @@ contract UmaV2PriceProvider is Ownable {
 
     string public description;
     string public ancillaryData;
-    MarketAnswer public answer;
-    MarketAnswer public pendingAnswer;
+    PriceAnswer public answer;
+    PriceAnswer public pendingAnswer;
     uint256 public requiredBond;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
 
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
-    event PriceRequested();
-    event PriceSettled(int256 price);
     event BondUpdated(uint256 newBond);
+    event PriceSettled(int256 price);
+    event PriceRequested();
 
     constructor(
         address _factory,
@@ -103,8 +101,8 @@ contract UmaV2PriceProvider is Ownable {
     ) external {
         if (msg.sender != address(oo)) revert InvalidCaller();
 
-        MarketAnswer memory _pendingAnswer = pendingAnswer;
-        MarketAnswer memory _answer = answer;
+        PriceAnswer memory _pendingAnswer = pendingAnswer;
+        PriceAnswer memory _answer = answer;
 
         _answer.startedAt = _pendingAnswer.startedAt;
         _answer.updatedAt = _timestamp;
@@ -151,7 +149,7 @@ contract UmaV2PriceProvider is Ownable {
             true
         );
 
-        MarketAnswer memory _pendingAnswer;
+        PriceAnswer memory _pendingAnswer;
         _pendingAnswer.startedAt = block.timestamp;
         pendingAnswer = _pendingAnswer;
 
@@ -169,7 +167,7 @@ contract UmaV2PriceProvider is Ownable {
             uint80 answeredInRound
         )
     {
-        MarketAnswer memory _answer = answer;
+        PriceAnswer memory _answer = answer;
         price = _answer.price;
         updatedAt = _answer.updatedAt;
         roundId = _answer.roundId;
