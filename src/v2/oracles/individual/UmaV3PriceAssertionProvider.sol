@@ -10,7 +10,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice Assertion provider where the condition can be checked without a required begin time e.g. 1 PEPE > $1000 or BTC market > 2x ETH market cap
 /// @dev This provider would not work if you needed to check if x happened between time y and z
-contract UmaAssertProvider is Ownable {
+contract UmaV3PriceAssertionProvider is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;

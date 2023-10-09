@@ -15,7 +15,7 @@ import "../../src/v2/oracles/individual/DIAPriceProvider.sol";
 import "../../src/v2/oracles/individual/PythPriceProvider.sol";
 import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
-import "../../src/v2/oracles/individual/UmaAssertProvider.sol";
+import "../../src/v2/oracles/individual/UmaV3PriceAssertionProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 import {KeeperV2GenericController} from "../keepers/KeeperV2GenericController.sol";
@@ -136,16 +136,16 @@ contract V2DeployContracts is Script, HelperV2 {
         bytes
             memory assertionDescription = "The USDC/USD exchange is above 0.997";
         address currency = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH_ADDRESS
-        UmaAssertProvider umaPriceProvider = new UmaAssertProvider(
-            umaDecimals,
-            umaDescription,
-            timeOut,
-            umaOOV3,
-            defaultIdentifier,
-            currency,
-            assertionDescription,
-            requiredBond
-        );
+        UmaV3PriceAssertionProvider umaPriceProvider = new UmaV3PriceAssertionProvider(
+                umaDecimals,
+                umaDescription,
+                timeOut,
+                umaOOV3,
+                defaultIdentifier,
+                currency,
+                assertionDescription,
+                requiredBond
+            );
 
         // vaultFactory.whitelistController(address(controller));
 
