@@ -17,6 +17,8 @@ import {
     MockUmaFinder
 } from "../MockOracles.sol";
 
+// The configuration information for TOKEN_PRICE query: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-121.md
+// Price feeds to use in config: https://github.com/UMAprotocol/protocol/tree/master/packages/financial-templates-lib/src/price-feed
 // Uma address all networks: https://docs.uma.xyz/resources/network-addresses
 // Uma addresses on Arbitrum: https://github.com/UMAprotocol/protocol/blob/master/packages/core/networks/42161.json
 
@@ -46,10 +48,9 @@ contract UmaV2PriceProviderTest is Helper {
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
 
         umaDecimals = 8;
-        umaDescription = "FUSD/ETH";
+        umaDescription = "FUSD/USD";
         umaCurrency = USDC_TOKEN;
-        // TODO: Need to review how the configuration section should be composed
-        ancillaryData = "base: FUSD, quote: USDC, baseChain: ArbitrumOne, rounding: 6, configurations: {}";
+        ancillaryData = "base:FUSD,baseAddress:0x630410530785377d49992824a70b43bd5c482c9a,baseChain: 42161,quote:USD,quoteDetails:United States Dollar,rounding:6,fallback:"https://www.coingecko.com/en/coins/uma",configuration:{"type": "medianizer","minTimeBetweenUpdates": 60,"twapLength": 600,"medianizedFeeds":[{"type": "cryptowatch", "exchange": "coinbase-pro", "pair": "umausd" }, { "type": "cryptowatch", "exchange": "binance", "pair": "umausdt" }, { "type": "cryptowatch", "exchange": "okex", "pair": "umausdt" }]}";
         requiredBond = 1e6;
 
         umaV2PriceProvider = new UmaV2PriceProvider(

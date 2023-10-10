@@ -17,6 +17,7 @@ import {
     MockUmaFinder
 } from "../MockOracles.sol";
 
+// Specification for YER_NO_QUERY on Uma: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-107.md
 // Uma address all networks: https://docs.uma.xyz/resources/network-addresses
 // Uma addresses on Arbitrum: https://github.com/UMAprotocol/protocol/blob/master/packages/core/networks/42161.json
 
@@ -49,7 +50,7 @@ contract UmaV2AssertionProviderTest is Helper {
         umaDescription = "FUSD/ETH";
         umaCurrency = USDC_TOKEN;
         // TODO: Need to review how the configuration section should be composed
-        ancillaryData = "base: FUSD, quote: USDC, baseChain: ArbitrumOne, rounding: 6, configurations: {}";
+        ancillaryData = "q: Curve USDC pool on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: ";
         requiredBond = 1e6;
 
         umaV2AssertionProvider = new UmaV2AssertionProvider(
