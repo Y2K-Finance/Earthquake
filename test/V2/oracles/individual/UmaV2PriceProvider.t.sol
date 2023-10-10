@@ -50,7 +50,7 @@ contract UmaV2PriceProviderTest is Helper {
         umaDecimals = 8;
         umaDescription = "FUSD/USD";
         umaCurrency = USDC_TOKEN;
-        ancillaryData = "base:FUSD,baseAddress:0x630410530785377d49992824a70b43bd5c482c9a,baseChain: 42161,quote:USD,quoteDetails:United States Dollar,rounding:6,fallback:"https://www.coingecko.com/en/coins/uma",configuration:{"type": "medianizer","minTimeBetweenUpdates": 60,"twapLength": 600,"medianizedFeeds":[{"type": "cryptowatch", "exchange": "coinbase-pro", "pair": "umausd" }, { "type": "cryptowatch", "exchange": "binance", "pair": "umausdt" }, { "type": "cryptowatch", "exchange": "okex", "pair": "umausdt" }]}";
+        ancillaryData = 'base:FUSD,baseAddress:0x630410530785377d49992824a70b43bd5c482c9a,baseChain: 42161,quote:USD,quoteDetails:United States Dollar,rounding:6,fallback:"https://www.coingecko.com/en/coins/uma",configuration:{"type": "medianizer","minTimeBetweenUpdates": 60,"twapLength": 600,"medianizedFeeds":[{"type": "cryptowatch", "exchange": "coinbase-pro", "pair": "umausd" }, { "type": "cryptowatch", "exchange": "binance", "pair": "umausdt" }, { "type": "cryptowatch", "exchange": "okex", "pair": "umausdt" }]}';
         requiredBond = 1e6;
 
         umaV2PriceProvider = new UmaV2PriceProvider(
@@ -65,6 +65,7 @@ contract UmaV2PriceProviderTest is Helper {
         );
         uint256 condition = 2;
         umaV2PriceProvider.setConditionType(marketId, condition);
+        deal(USDC_TOKEN, address(umaV2PriceProvider), 1000e6);
     }
 
     ////////////////////////////////////////////////
