@@ -7,6 +7,15 @@ import {IFinder} from "../../interfaces/IFinder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+    @notice The defintion information the Uma YER_OR_NO_QUERY is as follows.
+        Points to remember: (1) No possible defintion for data sources, (2) Sources entirely up to voters, (3) No price feeds providable
+        Custom return values can be defined for four return types: 
+        - P1 --> for no (default return 0 if not set)
+        - P2 --> for yes (default return 1 if not set)
+        - P3 --> for undetermined (default return 2 if not set)
+        - P4 --> undetermined and there's an early expiration of a specific last possible timestamp listed (default return of mint int256 if not set)
+ */
 contract UmaV2AssertionProvider is Ownable {
     struct AssertionAnswer {
         uint80 roundId;
@@ -18,7 +27,8 @@ contract UmaV2AssertionProvider is Ownable {
 
     uint256 public constant ORACLE_LIVENESS_TIME = 3600 * 2;
     bytes32 public constant PRICE_IDENTIFIER = "YES_OR_NO_QUERY";
-    string public constant ANCILLARY_TAIL = "A:1 for YES, B:2 for NO";
+    string public constant ANCILLARY_TAIL =
+        ". P1: 0 for NO, P2: 1 for YES, P3: 2 for UNDETERMINED";
 
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;

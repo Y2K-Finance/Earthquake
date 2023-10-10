@@ -7,6 +7,17 @@ import {IFinder} from "../../interfaces/IFinder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+    @notice The definition information the Uma TOKEN_PRICE is as follows.
+        Price returned and the params required are:
+            base: collateral token symbol to be priced
+            baseAddress: base token deployment address on Ethereum or other chain if provided
+            baseChain (optional): chainId
+            quote: quote token symbol to be priced
+            rounding: defines how many digits should remain to the right of decimals
+            fallback: data endpoint to user as fallback either for the whole base/quote or part of it
+            configuration: price feed config formatted as JSON that can be used to construct price feed
+ */
 contract UmaV2PriceProvider is Ownable {
     struct PriceAnswer {
         uint80 roundId;
