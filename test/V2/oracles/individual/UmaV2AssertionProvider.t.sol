@@ -49,7 +49,6 @@ contract UmaV2AssertionProviderTest is Helper {
         umaDecimals = 8;
         umaDescription = "FUSD/ETH";
         umaCurrency = USDC_TOKEN;
-        // TODO: Need to review how the configuration section should be composed
         ancillaryData = "q: Curve USDC pool on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: ";
         requiredBond = 1e6;
 
@@ -64,6 +63,7 @@ contract UmaV2AssertionProviderTest is Helper {
         );
         uint256 condition = 2;
         umaV2AssertionProvider.setConditionType(marketId, condition);
+        deal(USDC_TOKEN, address(umaV2AssertionProvider), 1000e6);
     }
 
     ////////////////////////////////////////////////

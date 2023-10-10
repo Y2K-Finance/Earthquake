@@ -142,17 +142,12 @@ contract UmaV2AssertionProvider is Ownable {
             coverageStart,
             ANCILLARY_TAIL
         );
+        currency.approve(address(oo), requiredBond);
         oo.requestPrice(
             PRICE_IDENTIFIER,
             block.timestamp,
             _bytesAncillary,
             currency,
-            0
-        );
-        oo.setBond(
-            PRICE_IDENTIFIER,
-            block.timestamp,
-            _bytesAncillary,
             requiredBond
         );
         oo.setCustomLiveness(
