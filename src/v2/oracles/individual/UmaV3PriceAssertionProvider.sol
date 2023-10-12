@@ -110,7 +110,7 @@ contract UmaV3PriceAssertionProvider is Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                 EXTERNAL
+                                 CALLBACK
     //////////////////////////////////////////////////////////////*/
     // Callback from settled assertion.
     // If the assertion was resolved true, then the asserter gets the reward and the market is marked as resolved.
@@ -133,6 +133,9 @@ contract UmaV3PriceAssertionProvider is Ownable {
         emit AssertionResolved(_assertionId, _assertedTruthfully);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                 EXTERNAL
+    //////////////////////////////////////////////////////////////*/
     function fetchAssertion(
         uint256 _marketId
     ) external returns (bytes32 assertionId) {
