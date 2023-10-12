@@ -2,3 +2,4 @@
 @chainlink=lib/chainlink/contracts/src/v0.8
 @solmate=lib/solmate/src
 @pythnetwork/pyth-sdk-solidity=lib/pyth-sdk-solidity
+@redstone-finance/evm-connector/contracts/=lib/redstone-oracles-monorepo/packages/evm-connector/contracts/

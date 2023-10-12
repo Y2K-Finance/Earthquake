@@ -1,3 +1,6 @@
 [submodule "lib/pyth-sdk-solidity"]
 	path = lib/pyth-sdk-solidity
 	url = https://github.com/pyth-network/pyth-sdk-solidity
+[submodule "lib/redstone-oracles-monorepo"]
+	path = lib/redstone-oracles-monorepo
+	url = https://github.com/redstone-finance/redstone-oracles-monorepo
