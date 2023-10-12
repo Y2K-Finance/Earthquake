@@ -8,14 +8,22 @@ import {SafeTransferLib} from "lib/solmate/src/utils/SafeTransferLib.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @notice This provider is build to work where you need to define between x and y e.g. there was a hack between Aug31st
-contract UmaV3EventAssertionProvider is Ownable {
+import "forge-std/console.sol";
+
+/// @notice Assertion provider where the condition can be checked without a required begin time e.g. 1 PEPE > $1000 or BTC market > 2x ETH market cap
+/// @dev This provider would not work if you needed to check if x happened between time y and z
+contract UmaV3DynamicAssertionProvider is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
         uint128 updatedAt;
         uint8 answer;
         bytes32 assertionId;
+    }
+
+    struct AssertionData {
+        uint128 assertionData;
+        uint128 updatedAt;
     }
 
     string public constant OUTCOME_1 = "true. ";
@@ -32,8 +40,8 @@ contract UmaV3EventAssertionProvider is Ownable {
     uint256 public immutable decimals;
     string public description;
     bytes public assertionDescription;
+    AssertionData public assertionData; // The uint data value for the market
     uint256 public requiredBond; // Bond required to assert on a market
-    uint256 public coverageStart;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
     mapping(uint256 => MarketAnswer) public marketIdToAnswer;
@@ -42,8 +50,8 @@ contract UmaV3EventAssertionProvider is Ownable {
     event MarketAsserted(uint256 marketId, bytes32 assertionId);
     event AssertionResolved(bytes32 assertionId, bool assertion);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
-    event CoverageStartUpdated(uint256 startTime);
     event BondUpdated(uint256 newBond);
+    event AssertionDataUpdated(uint256 newData);
 
     /**
         @param _decimals is decimals for the provider maker if relevant
@@ -89,7 +97,7 @@ contract UmaV3EventAssertionProvider is Ownable {
         currency = _currency;
         assertionDescription = _assertionDescription;
         requiredBond = _requiredBond;
-        coverageStart = block.timestamp;
+        assertionData.updatedAt = uint128(block.timestamp);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -105,16 +113,28 @@ contract UmaV3EventAssertionProvider is Ownable {
         emit MarketConditionSet(_marketId, _condition);
     }
 
-    function updateCoverageStart(uint256 _coverageStart) external onlyOwner {
-        if (_coverageStart < coverageStart) revert InvalidInput();
-        coverageStart = _coverageStart;
-        emit CoverageStartUpdated(_coverageStart);
-    }
-
     function updateRequiredBond(uint256 newBond) external onlyOwner {
         if (newBond == 0) revert InvalidInput();
         requiredBond = newBond;
         emit BondUpdated(newBond);
+    }
+
+    function updateAssertionData(uint256 _newData) public onlyOwner {
+        if (_newData == 0) revert InvalidInput();
+        assertionData = AssertionData({
+            assertionData: uint128(_newData),
+            updatedAt: uint128(block.timestamp)
+        });
+
+        emit AssertionDataUpdated(_newData);
+    }
+
+    function updateAssertionDataAndFetch(
+        uint256 _newData,
+        uint256 _marketId
+    ) external onlyOwner returns (bytes32) {
+        updateAssertionData(_newData);
+        return fetchAssertion(_marketId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -147,9 +167,11 @@ contract UmaV3EventAssertionProvider is Ownable {
 
     function fetchAssertion(
         uint256 _marketId
-    ) external returns (bytes32 assertionId) {
+    ) public returns (bytes32 assertionId) {
         MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
         if (marketAnswer.activeAssertion == true) revert AssertionActive();
+        if ((block.timestamp - assertionData.updatedAt) > timeOut)
+            revert AssertionDataEmpty();
 
         // Configure bond and claim information
         uint256 minimumBond = umaV3.getMinimumBond(address(currency));
@@ -231,8 +253,7 @@ contract UmaV3EventAssertionProvider is Ownable {
                 ", the following statement is",
                 _conditionType == 1 ? OUTCOME_1 : OUTCOME_2,
                 assertionDescription,
-                "This occured after the timestamp of ",
-                coverageStart
+                assertionData.assertionData
             );
     }
 
@@ -275,4 +296,5 @@ contract UmaV3EventAssertionProvider is Ownable {
     error AssertionActive();
     error AssertionInactive();
     error InvalidCallback();
+    error AssertionDataEmpty();
 }

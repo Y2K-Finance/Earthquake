@@ -13,6 +13,7 @@ contract Helper is Test {
     event BondUpdated(uint256 newBond);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
     event CoverageStartUpdated(uint256 startTime);
+    event AssertionDataUpdated(uint256 newData);
 
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
