@@ -38,7 +38,9 @@ contract V2DeployConfig is HelperV2 {
 
         // fundKeepers(40000000000000000);
 
-        deploy();
+        // deploy();
+
+        deployNullEpoch();
 
         vm.stopBroadcast();
     }
@@ -331,5 +333,24 @@ contract V2DeployConfig is HelperV2 {
         console2.log(
             "------------------------------------------------------------"
         );
+    }
+
+    uint256[] public marketIds = 
+        [
+            102062669946436220800282965814418861703520361600036198831171353773735437582898,
+            19463494430787374236800916328272982194211552759358049028102840161626064590799,
+            43365822659564324551460842388001340228617494417519860688859686053122333904688,
+            2331975465739044783693470748756652505041645629776698023032314532662570347594
+        ];
+
+
+    function deployNullEpoch() public {
+        // loop thwourh marketIds
+        for (uint256 i = 0; i < marketIds.length; ++i) {
+            uint256 marketId = marketIds[i];
+            (uint256 epochId, address[2] memory vaults) = factory.createEpochWithEmissions(marketId, uint40(block.timestamp + uint256(10 minutes)), uint40(block.timestamp + uint256(15 minutes)), 1, 0, 0);
+            Carousel(vaults[0]).getDepositQueueLength() > 0 ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100) : console2.log("No deposit in queue");
+            Carousel(vaults[1]).getDepositQueueLength() > 0 ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100) : console2.log("No deposit in queue");
+        }
     }
 }

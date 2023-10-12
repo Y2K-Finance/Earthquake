@@ -8,6 +8,7 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../src/v2/Carousel/CarouselFactory.sol";
 import "../../src/v2/Carousel/CarouselFactoryPausable.sol";
+import "../../src/v2/Carousel/Carousel.sol";
 
 import "../../src/v2/Controllers/ControllerPeggedAssetV2.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
