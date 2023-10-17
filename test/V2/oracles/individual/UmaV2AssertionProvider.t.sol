@@ -2,7 +2,6 @@
 pragma solidity 0.8.17;
 
 import {Helper} from "../../Helper.sol";
-import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
 import {
     UmaV2AssertionProvider
 } from "../../../../src/v2/oracles/individual/UmaV2AssertionProvider.sol";
@@ -23,7 +22,6 @@ import {
 
 contract UmaV2AssertionProviderTest is Helper {
     uint256 public arbForkId;
-    VaultFactoryV2 public factory;
     UmaV2AssertionProvider public umaV2AssertionProvider;
     uint256 public marketId = 2;
 
@@ -37,29 +35,25 @@ contract UmaV2AssertionProviderTest is Helper {
     string public umaDescription;
     address public umaCurrency;
     string public ancillaryData;
-    uint256 public requiredBond;
+    uint256 public reward;
 
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
 
-        address timelock = address(new TimeLock(ADMIN));
-        factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
-
         umaDecimals = 8;
         umaDescription = "FUSD/ETH";
         umaCurrency = USDC_TOKEN;
         ancillaryData = "q: Curve USDC pool on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: ";
-        requiredBond = 1e6;
+        reward = 1e6;
 
         umaV2AssertionProvider = new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
         uint256 condition = 2;
         umaV2AssertionProvider.setConditionType(marketId, condition);
@@ -73,16 +67,12 @@ contract UmaV2AssertionProviderTest is Helper {
         assertEq(umaV2AssertionProvider.ORACLE_LIVENESS_TIME(), 3600 * 2);
         assertEq(umaV2AssertionProvider.PRICE_IDENTIFIER(), "YES_OR_NO_QUERY");
         assertEq(umaV2AssertionProvider.timeOut(), TIME_OUT);
-        assertEq(
-            address(umaV2AssertionProvider.vaultFactory()),
-            address(factory)
-        );
         assertEq(address(umaV2AssertionProvider.oo()), umaV2);
         assertEq(address(umaV2AssertionProvider.finder()), UMAV2_FINDER);
         assertEq(address(umaV2AssertionProvider.currency()), umaCurrency);
         assertEq(umaV2AssertionProvider.description(), umaDescription);
         assertEq(umaV2AssertionProvider.ancillaryData(), ancillaryData);
-        assertEq(umaV2AssertionProvider.requiredBond(), requiredBond);
+        assertEq(umaV2AssertionProvider.reward(), reward);
         assertEq(umaV2AssertionProvider.coverageStart(), block.timestamp);
     }
 
@@ -109,13 +99,13 @@ contract UmaV2AssertionProviderTest is Helper {
         assertEq(umaV2AssertionProvider.coverageStart(), newCoverageStart);
     }
 
-    function testUpdateRequiredBondUmaV2Assert() public {
-        uint256 newBond = 1000;
+    function testUpdateRewardUmaV2Assert() public {
+        uint256 newReward = 1000;
         vm.expectEmit(true, true, true, true);
-        emit BondUpdated(newBond);
-        umaV2AssertionProvider.updateRequiredBond(newBond);
+        emit RewardUpdated(newReward);
+        umaV2AssertionProvider.updateReward(newReward);
 
-        assertEq(umaV2AssertionProvider.requiredBond(), newBond);
+        assertEq(umaV2AssertionProvider.reward(), newReward);
     }
 
     ////////////////////////////////////////////////
@@ -130,13 +120,12 @@ contract UmaV2AssertionProviderTest is Helper {
         MockUmaV2 mockUmaV2 = new MockUmaV2();
         MockUmaFinder umaMockFinder = new MockUmaFinder(address(mockUmaV2));
         umaV2AssertionProvider = new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             address(umaMockFinder),
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         // Configuring the pending answer
@@ -218,75 +207,58 @@ contract UmaV2AssertionProviderTest is Helper {
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
     function testRevertConstructorInputsUmaV2Assert() public {
-        vm.expectRevert(UmaV2AssertionProvider.ZeroAddress.selector);
-        new UmaV2AssertionProvider(
-            address(0),
-            TIME_OUT,
-            umaDescription,
-            UMAV2_FINDER,
-            umaCurrency,
-            ancillaryData,
-            requiredBond
-        );
-
         vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
         new UmaV2AssertionProvider(
-            address(factory),
             0,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
         new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             "",
             UMAV2_FINDER,
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2AssertionProvider.ZeroAddress.selector);
         new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             address(0),
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2AssertionProvider.ZeroAddress.selector);
         new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             UMAV2_FINDER,
             address(0),
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
         new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
             "",
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
         new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             UMAV2_FINDER,
@@ -311,9 +283,9 @@ contract UmaV2AssertionProviderTest is Helper {
         umaV2AssertionProvider.updateCoverageStart(0);
     }
 
-    function testRevertInvalidInputUpdateRequiredBondUmaV2Assert() public {
+    function testRevertInvalidInputUpdateRewardUmaV2Assert() public {
         vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
-        umaV2AssertionProvider.updateRequiredBond(0);
+        umaV2AssertionProvider.updateReward(0);
     }
 
     function testRevertInvalidCallerPriceSettledUmaV2Assert() public {
@@ -366,13 +338,12 @@ contract UmaV2AssertionProviderTest is Helper {
         MockUmaV2 mockUmaV2 = new MockUmaV2();
         MockUmaFinder umaMockFinder = new MockUmaFinder(address(mockUmaV2));
         umaV2AssertionProvider = new UmaV2AssertionProvider(
-            address(factory),
             TIME_OUT,
             umaDescription,
             address(umaMockFinder),
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         // Configuring the pending answer

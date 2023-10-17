@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IUmaV2} from "../../interfaces/IUmaV2.sol";
 import {IFinder} from "../../interfaces/IFinder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -31,7 +30,6 @@ contract UmaV2PriceProvider is Ownable {
     bytes32 public constant PRICE_IDENTIFIER = "TOKEN_PRICE";
 
     uint256 public immutable timeOut;
-    IVaultFactoryV2 public immutable vaultFactory;
     IUmaV2 public immutable oo;
     IFinder public immutable finder;
     uint256 public immutable decimals;
@@ -41,26 +39,24 @@ contract UmaV2PriceProvider is Ownable {
     string public ancillaryData;
     PriceAnswer public answer;
     PriceAnswer public pendingAnswer;
-    uint256 public requiredBond;
+    uint256 public reward;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
 
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
-    event BondUpdated(uint256 newBond);
+    event RewardUpdated(uint256 newReward);
     event PriceSettled(int256 price);
     event PriceRequested();
 
     constructor(
-        address _factory,
         uint256 _timeOut,
         uint256 _decimals,
         string memory _description,
         address _finder,
         address _currency,
         string memory _ancillaryData,
-        uint256 _requiredBond
+        uint256 _reward
     ) {
-        if (_factory == address(0)) revert ZeroAddress();
         if (_timeOut == 0) revert InvalidInput();
         if (keccak256(bytes(_description)) == keccak256(""))
             revert InvalidInput();
@@ -68,9 +64,8 @@ contract UmaV2PriceProvider is Ownable {
         if (_currency == address(0)) revert ZeroAddress();
         if (keccak256(bytes(_ancillaryData)) == keccak256(""))
             revert InvalidInput();
-        if (_requiredBond == 0) revert InvalidInput();
+        if (_reward == 0) revert InvalidInput();
 
-        vaultFactory = IVaultFactoryV2(_factory);
         timeOut = _timeOut;
         decimals = _decimals;
         description = _description;
@@ -79,7 +74,7 @@ contract UmaV2PriceProvider is Ownable {
         oo = IUmaV2(finder.getImplementationAddress("OptimisticOracleV2"));
         currency = IERC20(_currency);
         ancillaryData = _ancillaryData;
-        requiredBond = _requiredBond;
+        reward = _reward;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -95,10 +90,10 @@ contract UmaV2PriceProvider is Ownable {
         emit MarketConditionSet(_marketId, _condition);
     }
 
-    function updateRequiredBond(uint256 newBond) external onlyOwner {
-        if (newBond == 0) revert InvalidInput();
-        requiredBond = newBond;
-        emit BondUpdated(newBond);
+    function updateReward(uint256 newReward) external onlyOwner {
+        if (newReward == 0) revert InvalidInput();
+        reward = newReward;
+        emit RewardUpdated(newReward);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -132,13 +127,13 @@ contract UmaV2PriceProvider is Ownable {
         if (pendingAnswer.startedAt != 0) revert RequestInProgress();
 
         bytes memory _bytesAncillary = abi.encodePacked(ancillaryData);
-        currency.approve(address(oo), requiredBond);
+        currency.approve(address(oo), reward);
         oo.requestPrice(
             PRICE_IDENTIFIER,
             block.timestamp,
             _bytesAncillary,
             currency,
-            requiredBond
+            reward
         );
         oo.setCustomLiveness(
             PRICE_IDENTIFIER,
