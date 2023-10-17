@@ -2,7 +2,6 @@
 pragma solidity 0.8.17;
 
 import {Helper} from "../../Helper.sol";
-import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
 import {
     UmaV2PriceProvider
 } from "../../../../src/v2/oracles/individual/UmaV2PriceProvider.sol";
@@ -24,7 +23,6 @@ import {
 
 contract UmaV2PriceProviderTest is Helper {
     uint256 public arbForkId;
-    VaultFactoryV2 public factory;
     UmaV2PriceProvider public umaV2PriceProvider;
     uint256 public marketId = 2;
 
@@ -38,30 +36,26 @@ contract UmaV2PriceProviderTest is Helper {
     string public umaDescription;
     address public umaCurrency;
     string public ancillaryData;
-    uint256 public requiredBond;
+    uint256 public reward;
 
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
 
-        address timelock = address(new TimeLock(ADMIN));
-        factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
-
         umaDecimals = 8;
         umaDescription = "FUSD/USD";
         umaCurrency = USDC_TOKEN;
         ancillaryData = 'base:FUSD,baseAddress:0x630410530785377d49992824a70b43bd5c482c9a,baseChain: 42161,quote:USD,quoteDetails:United States Dollar,rounding:6,fallback:"https://www.coingecko.com/en/coins/uma",configuration:{"type": "medianizer","minTimeBetweenUpdates": 60,"twapLength": 600,"medianizedFeeds":[{"type": "cryptowatch", "exchange": "coinbase-pro", "pair": "umausd" }, { "type": "cryptowatch", "exchange": "binance", "pair": "umausdt" }, { "type": "cryptowatch", "exchange": "okex", "pair": "umausdt" }]}';
-        requiredBond = 1e6;
+        reward = 1e6;
 
         umaV2PriceProvider = new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
         uint256 condition = 2;
         umaV2PriceProvider.setConditionType(marketId, condition);
@@ -76,14 +70,13 @@ contract UmaV2PriceProviderTest is Helper {
         assertEq(umaV2PriceProvider.ORACLE_LIVENESS_TIME(), 3600 * 2);
         assertEq(umaV2PriceProvider.PRICE_IDENTIFIER(), "TOKEN_PRICE");
         assertEq(umaV2PriceProvider.timeOut(), TIME_OUT);
-        assertEq(address(umaV2PriceProvider.vaultFactory()), address(factory));
         assertEq(address(umaV2PriceProvider.oo()), umaV2);
         assertEq(address(umaV2PriceProvider.finder()), UMAV2_FINDER);
         assertEq(umaV2PriceProvider.decimals(), umaDecimals);
         assertEq(address(umaV2PriceProvider.currency()), umaCurrency);
         assertEq(umaV2PriceProvider.description(), umaDescription);
         assertEq(umaV2PriceProvider.ancillaryData(), ancillaryData);
-        assertEq(umaV2PriceProvider.requiredBond(), requiredBond);
+        assertEq(umaV2PriceProvider.reward(), reward);
     }
 
     ////////////////////////////////////////////////
@@ -100,13 +93,13 @@ contract UmaV2PriceProviderTest is Helper {
         assertEq(umaV2PriceProvider.marketIdToConditionType(_marketId), 1);
     }
 
-    function testUpdateRequiredBondUmaV2Price() public {
-        uint256 newBond = 1000;
+    function testUpdateRewardUmaV2Price() public {
+        uint256 newReward = 1000;
         vm.expectEmit(true, true, true, true);
-        emit BondUpdated(newBond);
-        umaV2PriceProvider.updateRequiredBond(newBond);
+        emit RewardUpdated(newReward);
+        umaV2PriceProvider.updateReward(newReward);
 
-        assertEq(umaV2PriceProvider.requiredBond(), newBond);
+        assertEq(umaV2PriceProvider.reward(), newReward);
     }
 
     ////////////////////////////////////////////////
@@ -121,14 +114,13 @@ contract UmaV2PriceProviderTest is Helper {
         MockUmaV2 mockUmaV2 = new MockUmaV2();
         MockUmaFinder umaMockFinder = new MockUmaFinder(address(mockUmaV2));
         umaV2PriceProvider = new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
             address(umaMockFinder),
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         // Configuring the pending answer
@@ -231,81 +223,63 @@ contract UmaV2PriceProviderTest is Helper {
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
     function testRevertConstructorInputsUmaV2Price() public {
-        vm.expectRevert(UmaV2PriceProvider.ZeroAddress.selector);
-        new UmaV2PriceProvider(
-            address(0),
-            TIME_OUT,
-            umaDecimals,
-            umaDescription,
-            UMAV2_FINDER,
-            umaCurrency,
-            ancillaryData,
-            requiredBond
-        );
-
         vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
         new UmaV2PriceProvider(
-            address(factory),
             0,
             umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
         new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             "",
             UMAV2_FINDER,
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2PriceProvider.ZeroAddress.selector);
         new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
             address(0),
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2PriceProvider.ZeroAddress.selector);
         new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             address(0),
             ancillaryData,
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
         new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
             UMAV2_FINDER,
             umaCurrency,
             "",
-            requiredBond
+            reward
         );
 
         vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
         new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
@@ -326,9 +300,9 @@ contract UmaV2PriceProviderTest is Helper {
         umaV2PriceProvider.setConditionType(0, 0);
     }
 
-    function testRevertInvalidInputUpdateRequiredBondUmaV2Price() public {
+    function testRevertInvalidInputupdateRewardUmaV2Price() public {
         vm.expectRevert(UmaV2PriceProvider.InvalidInput.selector);
-        umaV2PriceProvider.updateRequiredBond(0);
+        umaV2PriceProvider.updateReward(0);
     }
 
     function testRevertInvalidCallerPriceSettledUmaV2Price() public {
@@ -380,14 +354,13 @@ contract UmaV2PriceProviderTest is Helper {
         MockUmaV2 mockUmaV2 = new MockUmaV2();
         MockUmaFinder umaMockFinder = new MockUmaFinder(address(mockUmaV2));
         umaV2PriceProvider = new UmaV2PriceProvider(
-            address(factory),
             TIME_OUT,
             umaDecimals,
             umaDescription,
             address(umaMockFinder),
             umaCurrency,
             ancillaryData,
-            requiredBond
+            reward
         );
 
         // Configuring the pending answer

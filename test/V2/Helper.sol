@@ -11,6 +11,7 @@ contract Helper is Test {
     event AssertionResolved(bytes32 assertionId, bool assertion);
     event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
     event BondUpdated(uint256 newBond);
+    event RewardUpdated(uint256 newReward);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
     event CoverageStartUpdated(uint256 startTime);
     event AssertionDataUpdated(uint256 newData);
