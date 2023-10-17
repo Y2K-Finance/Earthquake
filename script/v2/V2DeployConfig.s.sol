@@ -38,9 +38,9 @@ contract V2DeployConfig is HelperV2 {
 
         // fundKeepers(40000000000000000);
 
-        // deploy();
+        deploy();
 
-        deployNullEpoch();
+        // deployNullEpoch();
 
         vm.stopBroadcast();
     }
@@ -48,11 +48,11 @@ contract V2DeployConfig is HelperV2 {
     function deploy() public {
         if (configVariables.newMarkets) {
             //deploy new markets
-            // validateMarkets();
+            validateMarkets();
             console2.log(
                 "-------------------------DEPLOY MARKETS----------------------"
             );
-            // deployMarkets();
+            deployMarkets();
         }
         if (configVariables.epochs) {
             // IERC20(y2k).approve(address(factory), type(uint256).max);
