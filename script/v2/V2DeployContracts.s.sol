@@ -29,7 +29,7 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(false);
+        ConfigAddressesV2 memory addresses = getConfigAddresses(true); // false = prod, true = testing
         // address weth = addresses.weth;
         // address treasury = addresses.treasury;
         // address emissionToken = addresses.y2k;
@@ -61,31 +61,32 @@ contract V2DeployContracts is Script, HelperV2 {
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        // CarouselFactoryPausable deployedVaultFactory = new CarouselFactoryPausable(
-        //     addresses.weth,
-        //     addresses.treasury,
-        //     msg.sender,
-        //     addresses.y2k
-        // );
+        CarouselFactory deployedVaultFactory = new CarouselFactory(
+            addresses.weth,
+            addresses.treasury,
+            msg.sender,
+            addresses.y2k
+        );
 
-        // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
-        //     address(vaultFactory),
-        //     addresses.arbitrum_sequencer
-        // );
+        ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
+            address(deployedVaultFactory),
+            addresses.arbitrum_sequencer
+        );
         // ControllerPeggedAssetV2 controller = ControllerPeggedAssetV2(0x68620dD41351Ff8d31702CE9B77d04805179eCe1);
 
         // vaultFactory.whitelistController(address(controller));
 
-        // ControllerGeneric controllerGeneric = new ControllerGeneric(
-        //     addresses.carouselFactory,
-        //     addresses.treasury);
+        ControllerGeneric controllerGeneric = new ControllerGeneric(
+            address(deployedVaultFactory),
+            addresses.treasury);
 
         // ControllerGeneric controllerGeneric = new ControllerGeneric(
         //     address(deployedVaultFactory),
         //     addresses.treasury
         // );
 
-        // deployedVaultFactory.whitelistController(address(controllerGeneric));
+        deployedVaultFactory.whitelistController(address(controllerGeneric));
+        deployedVaultFactory.whitelistController(address(controller));
         // carouselFactory.whitelistController(address(controllerGeneric));
 
         // uint256 timeOut = 12 hours;
@@ -112,8 +113,8 @@ contract V2DeployContracts is Script, HelperV2 {
         //     timeOut
         // );
 
-        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
-        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
+        // address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+        // GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
 
         // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
         // uint256 cviDecimals = 0;
@@ -151,9 +152,9 @@ contract V2DeployContracts is Script, HelperV2 {
         vm.stopBroadcast();
 
         // console2.log("TimeLock address", timeLock);
-        // console2.log("Vault Factory address", address(deployedVaultFactory));
-        // console2.log("Controller address", address(controller));
-        // console2.log("Controller Generic address", address(controllerGeneric));
+        console2.log("Vault Factory address", address(deployedVaultFactory));
+        console2.log("Controller address", address(controller));
+        console2.log("Controller Generic address", address(controllerGeneric));
 
         // console2.log(
         //     "Chainlink Price Provider MIM",
@@ -164,14 +165,14 @@ contract V2DeployContracts is Script, HelperV2 {
         //     address(chainlinkPriceProviderMAI)
         // );
         // console2.log("Redstone Price Provider", address(redstoneProvider));
-        console2.log("Gdai Price Provider", address(gdaiPriceProvider));
+        // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
         // console2.log("rolloverKeeper address", address(rolloverKeeperPausable));
-        // console2.log("Y2K token address", addresses.y2k);
+        console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
     }
