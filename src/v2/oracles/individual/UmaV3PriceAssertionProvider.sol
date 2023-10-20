@@ -38,11 +38,13 @@ contract UmaV3PriceAssertionProvider is Ownable {
     mapping(uint256 => uint256) public marketIdToConditionType;
     mapping(uint256 => MarketAnswer) public marketIdToAnswer;
     mapping(bytes32 => uint256) public assertionIdToMarket;
+    mapping(address => bool) public whitelistRelayer;
 
     event MarketAsserted(uint256 marketId, bytes32 assertionId);
     event AssertionResolved(bytes32 assertionId, bool assertion);
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
     event BondUpdated(uint256 newBond);
+    event RelayerUpdated(address relayer, bool state);
 
     /**
         @param _decimals is decimals for the provider maker if relevant
@@ -109,6 +111,13 @@ contract UmaV3PriceAssertionProvider is Ownable {
         emit BondUpdated(newBond);
     }
 
+    function updateRelayer(address _relayer) external onlyOwner {
+        if (_relayer == address(0)) revert ZeroAddress();
+        bool relayerState = whitelistRelayer[_relayer];
+        whitelistRelayer[_relayer] = !relayerState;
+        emit RelayerUpdated(_relayer, relayerState);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  CALLBACK
     //////////////////////////////////////////////////////////////*/
@@ -139,6 +148,8 @@ contract UmaV3PriceAssertionProvider is Ownable {
     function fetchAssertion(
         uint256 _marketId
     ) external returns (bytes32 assertionId) {
+        if (whitelistRelayer[msg.sender] == false) revert InvalidCaller();
+
         MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
         if (marketAnswer.activeAssertion == true) revert AssertionActive();
 

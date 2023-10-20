@@ -15,6 +15,7 @@ import {
     MockUmaV2,
     MockUmaFinder
 } from "../MockOracles.sol";
+import "forge-std/console.sol";
 
 // Specification for YER_NO_QUERY on Uma: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-107.md
 // Uma address all networks: https://docs.uma.xyz/resources/network-addresses
@@ -74,6 +75,18 @@ contract UmaV2AssertionProviderTest is Helper {
         assertEq(umaV2AssertionProvider.ancillaryData(), ancillaryData);
         assertEq(umaV2AssertionProvider.reward(), reward);
         assertEq(umaV2AssertionProvider.coverageStart(), block.timestamp);
+
+        string
+            memory ancillaryDataHead = "q: Aave USDC.e pool (address: 0x625E7708f30cA75bfd92586e17077590C60eb4cD) on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: string";
+        uint256 coverageStart = 1697498162;
+        string
+            memory ancillaryDataTail = ". P1: 0 for NO, P2: 1 for YES, P3: 2 for UNDETERMINED";
+        bytes memory output = abi.encodePacked(
+            ancillaryDataHead,
+            coverageStart,
+            ancillaryDataTail
+        );
+        console.logBytes(output);
     }
 
     ////////////////////////////////////////////////

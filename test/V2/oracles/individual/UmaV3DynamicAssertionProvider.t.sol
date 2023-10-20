@@ -57,6 +57,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         uint256 condition = 2;
         umaPriceProvider.setConditionType(marketId, condition);
+        umaPriceProvider.updateRelayer(address(this));
     }
 
     ////////////////////////////////////////////////
@@ -78,6 +79,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         assertEq(assertionData, 0);
         assertEq(updatedAt, block.timestamp);
         assertEq(umaPriceProvider.marketIdToConditionType(marketId), 2);
+        assertEq(umaPriceProvider.whitelistRelayer(address(this)), true);
     }
 
     function testUpdateRequiredBond() public {
@@ -116,6 +118,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
         umaPriceProvider.setConditionType(marketId, 1);
+        umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
@@ -147,6 +150,18 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         assertEq(assertionIdReturned, _assertionId);
     }
 
+    function testUpdateRelayer() public {
+        address newRelayer = address(0x123);
+
+        vm.expectEmit(true, true, false, false);
+        emit RelayerUpdated(newRelayer, true);
+        umaPriceProvider.updateRelayer(newRelayer);
+        assertEq(umaPriceProvider.whitelistRelayer(newRelayer), true);
+
+        umaPriceProvider.updateRelayer(newRelayer);
+        assertEq(umaPriceProvider.whitelistRelayer(newRelayer), false);
+    }
+
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
@@ -165,6 +180,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
         umaPriceProvider.setConditionType(marketId, 1);
+        umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
@@ -238,6 +254,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
         umaPriceProvider.setConditionType(marketId, 2);
+        umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
@@ -279,6 +296,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
         umaPriceProvider.setConditionType(marketId, 2);
+        umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
@@ -316,6 +334,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
         umaPriceProvider.setConditionType(marketId, 2);
+        umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
@@ -459,6 +478,11 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         umaPriceProvider.updateRequiredBond(0);
     }
 
+    function testRevertZeroAddressUpdateRelayer() public {
+        vm.expectRevert(UmaV3DynamicAssertionProvider.ZeroAddress.selector);
+        umaPriceProvider.updateRelayer(address(0));
+    }
+
     function testRevertInvalidInputAssertionData() public {
         vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
         umaPriceProvider.updateAssertionData(0);
@@ -496,6 +520,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
         umaPriceProvider.setConditionType(marketId, 1);
+        umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
@@ -504,6 +529,13 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         vm.expectRevert(UmaV3DynamicAssertionProvider.AssertionActive.selector);
         umaPriceProvider.fetchAssertion(marketId);
+    }
+
+    function testRevertFetchAssertionInvalidCaller() public {
+        vm.startPrank(address(0x123));
+        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidCaller.selector);
+        umaPriceProvider.fetchAssertion(marketId);
+        vm.stopPrank();
     }
 
     function testRevertAssertionDataEmpty() public {
