@@ -61,32 +61,32 @@ contract V2DeployContracts is Script, HelperV2 {
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        CarouselFactory deployedVaultFactory = new CarouselFactory(
-            addresses.weth,
-            addresses.treasury,
-            msg.sender,
-            addresses.y2k
-        );
+        // CarouselFactory deployedVaultFactory = new CarouselFactory(
+        //     addresses.weth,
+        //     addresses.treasury,
+        //     msg.sender,
+        //     addresses.y2k
+        // );
 
-        ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
-            address(deployedVaultFactory),
-            addresses.arbitrum_sequencer
-        );
+        // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
+        //     address(deployedVaultFactory),
+        //     addresses.arbitrum_sequencer
+        // );
         // ControllerPeggedAssetV2 controller = ControllerPeggedAssetV2(0x68620dD41351Ff8d31702CE9B77d04805179eCe1);
 
         // vaultFactory.whitelistController(address(controller));
 
-        ControllerGeneric controllerGeneric = new ControllerGeneric(
-            address(deployedVaultFactory),
-            addresses.treasury);
+        // ControllerGeneric controllerGeneric = new ControllerGeneric(
+        //     address(deployedVaultFactory),
+        //     addresses.treasury);
 
         // ControllerGeneric controllerGeneric = new ControllerGeneric(
         //     address(deployedVaultFactory),
         //     addresses.treasury
         // );
 
-        deployedVaultFactory.whitelistController(address(controllerGeneric));
-        deployedVaultFactory.whitelistController(address(controller));
+        // deployedVaultFactory.whitelistController(address(controllerGeneric));
+        // deployedVaultFactory.whitelistController(address(controller));
         // carouselFactory.whitelistController(address(controllerGeneric));
 
         // uint256 timeOut = 12 hours;
@@ -152,9 +152,9 @@ contract V2DeployContracts is Script, HelperV2 {
         vm.stopBroadcast();
 
         // console2.log("TimeLock address", timeLock);
-        console2.log("Vault Factory address", address(deployedVaultFactory));
-        console2.log("Controller address", address(controller));
-        console2.log("Controller Generic address", address(controllerGeneric));
+        // console2.log("Vault Factory address", address(deployedVaultFactory));
+        // console2.log("Controller address", address(controller));
+        // console2.log("Controller Generic address", address(controllerGeneric));
 
         // console2.log(
         //     "Chainlink Price Provider MIM",
@@ -172,7 +172,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
         // console2.log("rolloverKeeper address", address(rolloverKeeperPausable));
-        console2.log("Y2K token address", addresses.y2k);
+        // console2.log("Y2K token address", addresses.y2k);
 
         console2.log("\n");
     }

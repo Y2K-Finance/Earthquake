@@ -52,7 +52,7 @@ contract V2DeployConfig is HelperV2 {
             console2.log(
                 "-------------------------DEPLOY MARKETS----------------------"
             );
-            deployMarkets();
+            // deployMarkets();
         }
         if (configVariables.epochs) {
             // IERC20(y2k).approve(address(factory), type(uint256).max);
@@ -97,6 +97,17 @@ contract V2DeployConfig is HelperV2 {
                 console2.log(
                     "-----------------------NEXT MARKETS----------------------"
                 );
+            }
+            // if controller is generic, set depeg condition (depeg 2, repeg 1)
+            if (market.isGenericController) {
+                if(!market.isGenericController && !market.isDepeg) {
+                    revert("Depeg only supported for generic controller");
+                }
+                // setDepegCondition(
+                //     market.oracle,
+                //     marketId,
+                //     market.isDepeg
+                // );
             }
             console2.log("\n");
         }
@@ -200,7 +211,7 @@ contract V2DeployConfig is HelperV2 {
             console2.log("epochId: ", epochId);
             console2.log("marketId: ", marketId);
 
-            deployKeeper(marketId, epochId, vaults, epoch);
+            // deployKeeper(marketId, epochId, vaults, epoch);
 
             console2.log("\n");
         }
@@ -310,7 +321,7 @@ contract V2DeployConfig is HelperV2 {
         }
 
         // deploy rollover and resolve keeper
-        startKeepers(marketId, epochId, epoch.isGenericController);
+        // startKeepers(marketId, epochId, false);
 
         console2.log(
             "------------------------------------------------------------"

@@ -48,7 +48,6 @@ contract HelperV2 is Script {
         string depositAsset;
         uint40 epochBegin;
         uint40 epochEnd;
-        bool isGenericController;
         string name;
         string premiumEmissions;
         string strikePrice;
