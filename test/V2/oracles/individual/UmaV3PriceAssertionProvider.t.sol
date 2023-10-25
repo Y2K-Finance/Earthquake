@@ -11,8 +11,8 @@ import {
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "../MockOracles.sol";
-import {MockUma} from "../MockUma.sol";
+} from "../mocks/MockOracles.sol";
+import {MockUma} from "../mocks/MockUma.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 
 contract UmaV3EventAssertionProviderTest is Helper {

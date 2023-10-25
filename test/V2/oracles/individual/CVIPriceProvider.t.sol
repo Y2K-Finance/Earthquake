@@ -10,7 +10,7 @@ import {TimeLock} from "../../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerZeroCVI,
     MockOracleTimeOutCVI
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 
 contract CVIPriceProviderTest is Helper {
     uint256 public arbForkId;

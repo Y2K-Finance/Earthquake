@@ -55,7 +55,7 @@ contract PythPriceProvider is Ownable, IConditionProvider {
     function getLatestPrice() public view virtual returns (int256) {
         PythStructs.Price memory answer = pyth.getPriceNoOlderThan(
             priceFeedId,
-            timeOut
+            block.timestamp - timeOut
         );
         if (answer.price <= 0) revert OraclePriceNegative();
 
