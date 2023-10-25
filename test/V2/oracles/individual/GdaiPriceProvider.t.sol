@@ -13,7 +13,7 @@ import {
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 import {IPriceFeedAdapter} from "../PriceInterfaces.sol";
 
 contract GdaiPriceProviderTest is Helper {

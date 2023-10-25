@@ -13,7 +13,7 @@ import {
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 
 contract DIAUniversalProviderTest is Helper {
     DIAUniversalProvider public diaPriceProvider;

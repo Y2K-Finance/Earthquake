@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {IUniversalProvider} from "../../interfaces/IUniversalProvider.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/PrimaryProdDataServiceConsumerBase.sol";
+import {console} from "forge-std/console.sol";
 
 contract RedstoneCoreUniversalProvider is
     Ownable,
@@ -58,13 +59,18 @@ contract RedstoneCoreUniversalProvider is
     }
 
     function updatePrices(uint256[] memory _marketIds) external {
+        console.log("market id length", _marketIds.length);
         uint256[] memory prices = extractPrice(_marketIds);
+        console.log("prices length", prices.length);
         uint256 length = _marketIds.length;
-        for (uint256 i = 0; i < length; i += 1) {
+        for (uint256 i; i < length; ) {
             marketIdToPrice[_marketIds[i]] = prices[i];
             marketIdToUpdatedAt[_marketIds[i]] =
                 extractTimestampsAndAssertAllAreEqual() /
                 1000;
+            unchecked {
+                i++;
+            }
         }
     }
 
@@ -104,8 +110,11 @@ contract RedstoneCoreUniversalProvider is
     ) public view returns (bytes32[] memory dataFeeds) {
         uint256 length = _marketIds.length;
         dataFeeds = new bytes32[](length);
-        for (uint256 i = 0; i < length; i += 1) {
+        for (uint256 i; i < length; ) {
             dataFeeds[i] = marketIdToDataFeed[_marketIds[i]];
+            unchecked {
+                i++;
+            }
         }
     }
 
@@ -113,6 +122,10 @@ contract RedstoneCoreUniversalProvider is
         uint256[] memory _marketIds
     ) public view returns (uint256[] memory price) {
         bytes32[] memory dataFeeds = getDataFeeds(_marketIds);
+        // TODO: Remove
+        for (uint i; i < dataFeeds.length; i += 1) {
+            console.logBytes32(dataFeeds[i]);
+        }
         return getOracleNumericValuesFromTxMsg(dataFeeds);
     }
 

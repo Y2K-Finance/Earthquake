@@ -14,7 +14,7 @@ import {
     MockOracleTimeOut,
     MockUmaV2,
     MockUmaFinder
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 
 // The configuration information for TOKEN_PRICE query: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-121.md
 // Price feeds to use in config: https://github.com/UMAprotocol/protocol/tree/master/packages/financial-templates-lib/src/price-feed

@@ -14,7 +14,7 @@ import {
     MockOracleTimeOut,
     MockUmaV2,
     MockUmaFinder
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 import "forge-std/console.sol";
 
 // Specification for YER_NO_QUERY on Uma: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-107.md
