@@ -18,6 +18,7 @@ import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
 import "../../src/v2/oracles/individual/UmaV2PriceProvider.sol";
 import "../../src/v2/oracles/individual/UmaV2AssertionProvider.sol";
 import "../../src/v2/oracles/individual/UmaV3PriceAssertionProvider.sol";
+import "../../src/v2/oracles/individual/PythPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 import {KeeperV2GenericController} from "../keepers/KeeperV2GenericController.sol";
@@ -180,6 +181,15 @@ contract V2DeployContracts is Script, HelperV2 {
         //         requiredBond
         //     );
 
+        // address pythContract = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
+        // // bytes32 fdUsdFeedId = 0xccdc1a08923e2e4f4b1e6ea89de6acbc5fe1948e9706f5604b8cb50bc1ed3979;
+        // bytes32 cUsdFeedId = 0x8f218655050a1476b780185e89f19d2b1e1f49e9bd629efad6ac547a946bf6ab;
+        // PythPriceProvider pythProvider = new PythPriceProvider(
+        //     pythContract,
+        //     cUsdFeedId,
+        //     timeOut
+        // );
+
         // vaultFactory.whitelistController(address(controller));
 
         /*//////////////////////////////////////////////////////////////
@@ -282,7 +292,8 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
-        console2.log("Uma V2 Price Provider", address(umaV2PriceProvider));
+        // console2.log("Uma V2 Price Provider", address(umaV2PriceProvider));
+        // console.log("Pyth Price Provider", address(pythProvider));
         // console2.log(
         //     "Uma V2 Assertion Provider",
         //     address(umaV2AssertionProvider)
