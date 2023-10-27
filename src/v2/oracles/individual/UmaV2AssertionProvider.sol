@@ -134,9 +134,10 @@ contract UmaV2AssertionProvider is Ownable {
 
         bytes memory _bytesAncillary = abi.encodePacked(
             ancillaryData,
-            coverageStart,
+            _toUtf8BytesUint(coverageStart),
             ANCILLARY_TAIL
         );
+        currency.transferFrom(msg.sender, address(this), reward);
         currency.approve(address(oo), reward);
         oo.requestPrice(
             PRICE_IDENTIFIER,
@@ -196,6 +197,36 @@ contract UmaV2AssertionProvider is Ownable {
         if (conditionType == 1) return (condition, price);
         else if (conditionType == 2) return (condition, price);
         else revert ConditionTypeNotSet();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 INTERNAL
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Converts a uint into a base-10, UTF-8 representation stored in a `string` type.
+     * @dev This method is based off of this code: https://stackoverflow.com/a/65707309.
+     * @dev Pulled from UMA protocol packages: https://github.com/UMAprotocol/protocol/blob/9bfbbe98bed0ac7d9c924115018bb0e26987e2b5/packages/core/contracts/common/implementation/AncillaryData.sol
+     */
+    function _toUtf8BytesUint(uint256 x) internal pure returns (bytes memory) {
+        if (x == 0) {
+            return "0";
+        }
+        uint256 j = x;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len;
+        while (x != 0) {
+            k = k - 1;
+            uint8 temp = (48 + uint8(x - (x / 10) * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            x /= 10;
+        }
+        return bstr;
     }
 
     /*//////////////////////////////////////////////////////////////

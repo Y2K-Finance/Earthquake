@@ -264,7 +264,7 @@ contract UmaV3DynamicAssertionProvider is Ownable {
                 ", the following statement is",
                 _conditionType == 1 ? OUTCOME_1 : OUTCOME_2,
                 assertionDescription,
-                assertionData.assertionData
+                _toUtf8BytesUint(assertionData.assertionData)
             );
     }
 

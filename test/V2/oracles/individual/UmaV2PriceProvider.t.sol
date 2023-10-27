@@ -15,6 +15,7 @@ import {
     MockUmaV2,
     MockUmaFinder
 } from "../mocks/MockOracles.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // The configuration information for TOKEN_PRICE query: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-121.md
 // Price feeds to use in config: https://github.com/UMAprotocol/protocol/tree/master/packages/financial-templates-lib/src/price-feed
@@ -59,7 +60,8 @@ contract UmaV2PriceProviderTest is Helper {
         );
         uint256 condition = 2;
         umaV2PriceProvider.setConditionType(marketId, condition);
-        deal(USDC_TOKEN, address(umaV2PriceProvider), 1000e6);
+        deal(USDC_TOKEN, address(this), 1000e6);
+        IERC20(USDC_TOKEN).approve(address(umaV2PriceProvider), 1000e6);
     }
 
     ////////////////////////////////////////////////
@@ -122,6 +124,7 @@ contract UmaV2PriceProviderTest is Helper {
             ancillaryData,
             reward
         );
+        IERC20(USDC_TOKEN).approve(address(umaV2PriceProvider), 1000e6);
 
         // Configuring the pending answer
         uint256 previousTimestamp = block.timestamp;
@@ -362,6 +365,7 @@ contract UmaV2PriceProviderTest is Helper {
             ancillaryData,
             reward
         );
+        IERC20(USDC_TOKEN).approve(address(umaV2PriceProvider), 1000e6);
 
         // Configuring the pending answer
         umaV2PriceProvider.requestLatestPrice();

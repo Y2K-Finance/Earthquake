@@ -243,7 +243,7 @@ contract UmaV3EventAssertionProvider is Ownable {
                 _conditionType == 1 ? OUTCOME_1 : OUTCOME_2,
                 assertionDescription,
                 "This occured after the timestamp of ",
-                coverageStart
+                _toUtf8BytesUint(coverageStart)
             );
     }
 

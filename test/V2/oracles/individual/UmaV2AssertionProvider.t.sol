@@ -15,7 +15,7 @@ import {
     MockUmaV2,
     MockUmaFinder
 } from "../mocks/MockOracles.sol";
-import "forge-std/console.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // Specification for YER_NO_QUERY on Uma: https://github.com/UMAprotocol/UMIPs/blob/master/UMIPs/umip-107.md
 // Uma address all networks: https://docs.uma.xyz/resources/network-addresses
@@ -58,7 +58,8 @@ contract UmaV2AssertionProviderTest is Helper {
         );
         uint256 condition = 2;
         umaV2AssertionProvider.setConditionType(marketId, condition);
-        deal(USDC_TOKEN, address(umaV2AssertionProvider), 1000e6);
+        deal(USDC_TOKEN, address(this), 1000e6);
+        IERC20(USDC_TOKEN).approve(address(umaV2AssertionProvider), 1000e6);
     }
 
     ////////////////////////////////////////////////
@@ -86,7 +87,6 @@ contract UmaV2AssertionProviderTest is Helper {
             coverageStart,
             ancillaryDataTail
         );
-        console.logBytes(output);
     }
 
     ////////////////////////////////////////////////
@@ -140,6 +140,7 @@ contract UmaV2AssertionProviderTest is Helper {
             ancillaryData,
             reward
         );
+        IERC20(USDC_TOKEN).approve(address(umaV2AssertionProvider), 1000e6);
 
         // Configuring the pending answer
         uint256 previousTimestamp = block.timestamp;
@@ -358,6 +359,7 @@ contract UmaV2AssertionProviderTest is Helper {
             ancillaryData,
             reward
         );
+        IERC20(USDC_TOKEN).approve(address(umaV2AssertionProvider), 1000e6);
 
         // Configuring the pending answer
         umaV2AssertionProvider.requestLatestAssertion();
