@@ -127,6 +127,7 @@ contract UmaV2PriceProvider is Ownable {
         if (pendingAnswer.startedAt != 0) revert RequestInProgress();
 
         bytes memory _bytesAncillary = abi.encodePacked(ancillaryData);
+        currency.transferFrom(msg.sender, address(this), reward);
         currency.approve(address(oo), reward);
         oo.requestPrice(
             PRICE_IDENTIFIER,
