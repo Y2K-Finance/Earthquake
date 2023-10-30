@@ -52,7 +52,7 @@ contract V2DeployConfig is HelperV2 {
             console2.log(
                 "-------------------------DEPLOY MARKETS----------------------"
             );
-            // deployMarkets();
+            deployMarkets();
         }
         if (configVariables.epochs) {
             // IERC20(y2k).approve(address(factory), type(uint256).max);

@@ -15,6 +15,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../keepers/KeeperV2.sol";
 import "../keepers/KeeperV2Rollover.sol";
 
+// import Farm Contracts
+
+import {StakingRewards} from "../../src/v2/Farms/StakingRewards.sol";
+
+
 /// @author MiguelBits
 
 contract HelperV2 is Script {
