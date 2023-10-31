@@ -12,8 +12,6 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
     uint256 public immutable decimals;
     string public description;
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
-
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed, uint256 _timeOut, uint256 _decimals) {
@@ -23,19 +21,6 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
         timeOut = _timeOut;
         decimals = _decimals;
         description = "CVI";
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                 ADMIN
-    //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -91,12 +76,23 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
      */
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256 /* _marketId */
     ) public view virtual returns (bool, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
+        uint256 conditionType = _strike % 2 ** 1;
+        assembly {
+            // conditionType := and(
+            //     0x000000000000000000000000000000000000000000000000000000000000000f,
+            //     _strike
+            // )
+            _strike := and(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0,
+                _strike
+            )
+        }
+
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);
-        else if (conditionType == 2) return (int256(_strike) > price, price);
+        else if (conditionType == 0) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
     }
 

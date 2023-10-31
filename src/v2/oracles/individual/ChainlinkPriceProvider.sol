@@ -11,6 +11,8 @@ import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+import "forge-std/console.sol";
+
 contract ChainlinkPriceProvider is Ownable, IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     uint256 public immutable timeOut;
@@ -19,8 +21,6 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
     AggregatorV3Interface public immutable priceFeed;
     uint256 public immutable decimals;
     string public description;
-
-    mapping(uint256 => uint256) public marketIdToConditionType;
 
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
@@ -40,19 +40,6 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
         timeOut = _timeOut;
         decimals = priceFeed.decimals();
         description = priceFeed.description();
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                 ADMIN
-    //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -122,10 +109,21 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
         uint256 _strike,
         uint256 _marketId
     ) public view virtual returns (bool, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
+        uint256 conditionType = _strike % 2 ** 1;
+        assembly {
+            // conditionType := and(
+            //     0x000000000000000000000000000000000000000000000000000000000000000f,
+            //     _strike
+            // )
+            _strike := and(
+                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0,
+                _strike
+            )
+        }
+
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);
-        else if (conditionType == 2) return (int256(_strike) > price, price);
+        else if (conditionType == 0) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
     }
 

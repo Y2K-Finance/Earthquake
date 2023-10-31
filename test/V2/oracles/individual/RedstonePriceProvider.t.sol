@@ -36,9 +36,6 @@ contract RedstonePriceProviderTest is Helper {
             "VST",
             TIME_OUT
         );
-
-        uint256 condition = 2;
-        redstoneProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -80,9 +77,10 @@ contract RedstonePriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionMet() public {
+    function testConditionMetPrice() public {
+        uint256 strike = 10001;
         (bool condition, int256 price) = redstoneProvider.conditionMet(
-            2 ether,
+            strike,
             marketId
         );
         assertTrue(price != 0);
@@ -90,11 +88,10 @@ contract RedstonePriceProviderTest is Helper {
     }
 
     function testConditionOneMetRedstone() public {
-        uint256 conditionType = 1;
+        uint256 strike = 10000000000000001; // 0.01 ether with 1 for first byte || 100011100001101111001001101111110000010000000000000001
         uint256 marketIdOne = 1;
-        redstoneProvider.setConditionType(marketIdOne, conditionType);
         (bool condition, int256 price) = redstoneProvider.conditionMet(
-            0.01 ether,
+            strike,
             marketIdOne
         );
         assertTrue(price != 0);
@@ -102,8 +99,9 @@ contract RedstonePriceProviderTest is Helper {
     }
 
     function testConditionTwoMetRedstone() public {
+        uint256 strike = 2 ether; // 2000000000000000000 || 1101111000001011011010110011101001110110010000000000000000000
         (bool condition, int256 price) = redstoneProvider.conditionMet(
-            2 ether,
+            strike,
             marketId
         );
         assertTrue(price != 0);
@@ -141,19 +139,6 @@ contract RedstonePriceProviderTest is Helper {
 
         vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
         new RedstonePriceProvider(address(factory), USDC_CHAINLINK, "USDC", 0);
-    }
-
-    function testRevertConditionTypeSetRedstone() public {
-        vm.expectRevert(RedstonePriceProvider.ConditionTypeSet.selector);
-        redstoneProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionRedstone() public {
-        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneProvider.setConditionType(0, 0);
-
-        vm.expectRevert(RedstonePriceProvider.InvalidInput.selector);
-        redstoneProvider.setConditionType(0, 3);
     }
 
     function testRevertOraclePriceZero() public {

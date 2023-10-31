@@ -32,8 +32,6 @@ contract GdaiPriceProviderTest is Helper {
         vm.selectFork(arbForkId);
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
-        uint256 condition = 2;
-        gdaiPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -74,11 +72,51 @@ contract GdaiPriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionOneMetGdai() public {
-        uint256 conditionType = 1;
+    function testConditionGdaiMasking() public {
         uint256 marketIdOne = 1;
-        gdaiPriceProvider.setConditionType(marketIdOne, conditionType);
-        int256 newStrike = -10 ether;
+
+        int256 newStrike = -10000000000000000053; // Last bit is a 1
+        (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+
+        newStrike = -22221500120503074015; // Last bit is a 1
+        (condition, price) = gdaiPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+
+        newStrike = -10000000000000000012; // Last bit is a 0
+        (condition, price) = gdaiPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = -60304060891237008086; // Last bit is a 0
+        (condition, price) = gdaiPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = -70000000300000000048; // Last bit is a 0
+        (condition, price) = gdaiPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+    }
+
+    function testConditionOneMetGdai() public {
+        uint256 marketIdOne = 1;
+
+        int256 newStrike = -10000000000000000001;
         (bool condition, int256 price) = gdaiPriceProvider.conditionMet(
             uint256(newStrike),
             marketIdOne
@@ -103,18 +141,5 @@ contract GdaiPriceProviderTest is Helper {
     function testRevertConstructorInputs() public {
         vm.expectRevert(GdaiPriceProvider.ZeroAddress.selector);
         new GdaiPriceProvider(address(0));
-    }
-
-    function testRevertConditionTypeSetGdai() public {
-        vm.expectRevert(GdaiPriceProvider.ConditionTypeSet.selector);
-        gdaiPriceProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionGdai() public {
-        vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
-        gdaiPriceProvider.setConditionType(0, 0);
-
-        vm.expectRevert(GdaiPriceProvider.InvalidInput.selector);
-        gdaiPriceProvider.setConditionType(0, 3);
     }
 }

@@ -40,8 +40,6 @@ contract ChainlinkPriceProviderTest is Helper {
             USDC_CHAINLINK,
             TIME_OUT
         );
-        uint256 condition = 2;
-        chainlinkPriceProvider.setConditionType(marketId, condition);
 
         // NOTE: Keeping the vol tests in for now
         vm.selectFork(arbGoerliForkId);
@@ -51,9 +49,6 @@ contract ChainlinkPriceProviderTest is Helper {
             ETH_VOL_CHAINLINK,
             TIME_OUT
         );
-        condition = 1;
-        uint256 marketIdOne = 1;
-        chainlinkPriceProviderV2.setConditionType(marketIdOne, condition);
 
         vm.selectFork(arbForkId);
     }
@@ -132,11 +127,11 @@ contract ChainlinkPriceProviderTest is Helper {
     }
 
     function testConditionOneMetChainlink() public {
-        uint256 conditionType = 1;
         uint256 marketIdOne = 1;
-        chainlinkPriceProvider.setConditionType(marketIdOne, conditionType);
+        uint256 strikePrice = 1000000000000001;
+
         (bool condition, int256 price) = chainlinkPriceProvider.conditionMet(
-            0.001 ether,
+            strikePrice,
             marketIdOne
         );
         assertTrue(price != 0);
@@ -144,8 +139,9 @@ contract ChainlinkPriceProviderTest is Helper {
     }
 
     function testConditionTwoMetChainlink() public {
+        uint256 strikePrice = 2 ether;
         (bool condition, int256 price) = chainlinkPriceProvider.conditionMet(
-            2 ether,
+            strikePrice,
             marketId
         );
         assertTrue(price != 0);
@@ -187,16 +183,6 @@ contract ChainlinkPriceProviderTest is Helper {
             USDC_CHAINLINK,
             0
         );
-    }
-
-    function testRevertConditionTypeSetChainlink() public {
-        vm.expectRevert(ChainlinkPriceProvider.ConditionTypeSet.selector);
-        chainlinkPriceProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionChainlink() public {
-        vm.expectRevert(ChainlinkPriceProvider.InvalidInput.selector);
-        chainlinkPriceProvider.setConditionType(0, 0);
     }
 
     function testRevertSequencerDownChainlink() public {

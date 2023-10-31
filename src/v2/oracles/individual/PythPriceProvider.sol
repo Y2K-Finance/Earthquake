@@ -68,7 +68,10 @@ contract PythPriceProvider is Ownable, IConditionProvider {
      * @return int256 Current token price
      */
     function getLatestPrice() public view virtual returns (int256) {
-        PythStructs.Price memory answer = pyth.getPriceNoOlderThan(priceFeedId, timeOut);
+        PythStructs.Price memory answer = pyth.getPriceNoOlderThan(
+            priceFeedId,
+            timeOut
+        );
         if (answer.price <= 0) revert OraclePriceNegative();
 
         int256 price = answer.price;
