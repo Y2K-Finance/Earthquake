@@ -79,16 +79,7 @@ contract CVIPriceProvider is Ownable, IConditionProvider {
         uint256 /* _marketId */
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = _strike % 2 ** 1;
-        assembly {
-            // conditionType := and(
-            //     0x000000000000000000000000000000000000000000000000000000000000000f,
-            //     _strike
-            // )
-            _strike := and(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0,
-                _strike
-            )
-        }
+        if (conditionType == 1) _strike -= 1;
 
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);

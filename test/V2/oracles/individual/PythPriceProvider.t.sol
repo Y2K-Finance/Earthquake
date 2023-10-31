@@ -32,9 +32,6 @@ contract PythPriceProviderTest is Helper {
             PYTH_FDUSD_FEED_ID,
             TIME_OUT
         );
-
-        uint256 condition = 2;
-        pythProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -77,11 +74,11 @@ contract PythPriceProviderTest is Helper {
     }
 
     function testConditionOneMetPyth() public {
-        uint256 conditionType = 1;
         uint256 marketIdOne = 1;
-        pythProvider.setConditionType(marketIdOne, conditionType);
+        uint256 strikePrice = 10000000000000001;
+
         (bool condition, int256 price) = pythProvider.conditionMet(
-            0.01 ether,
+            strikePrice,
             marketIdOne
         );
         assertTrue(price != 0);
@@ -89,8 +86,9 @@ contract PythPriceProviderTest is Helper {
     }
 
     function testConditionTwoMetPyth() public {
+        uint256 strikePrice = 2 ether;
         (bool condition, int256 price) = pythProvider.conditionMet(
-            2 ether,
+            strikePrice,
             marketId
         );
         assertTrue(price != 0);
@@ -110,19 +108,6 @@ contract PythPriceProviderTest is Helper {
 
         vm.expectRevert(PythPriceProvider.InvalidInput.selector);
         new PythPriceProvider(PYTH_CONTRACT, PYTH_FDUSD_FEED_ID, 0);
-    }
-
-    function testRevertConditionTypeSetPyth() public {
-        vm.expectRevert(PythPriceProvider.ConditionTypeSet.selector);
-        pythProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionPyth() public {
-        vm.expectRevert(PythPriceProvider.InvalidInput.selector);
-        pythProvider.setConditionType(0, 0);
-
-        vm.expectRevert(PythPriceProvider.InvalidInput.selector);
-        pythProvider.setConditionType(0, 3);
     }
 
     function testRevertOraclePriceNegative() public {

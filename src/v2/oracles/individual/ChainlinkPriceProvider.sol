@@ -11,8 +11,6 @@ import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "forge-std/console.sol";
-
 contract ChainlinkPriceProvider is Ownable, IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     uint256 public immutable timeOut;
@@ -101,25 +99,15 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
 
     /** @notice Fetch price and return condition
      * @param _strike Strike price
-     * @param _marketId Market id
      * @return boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256 /* _marketId */
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = _strike % 2 ** 1;
-        assembly {
-            // conditionType := and(
-            //     0x000000000000000000000000000000000000000000000000000000000000000f,
-            //     _strike
-            // )
-            _strike := and(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0,
-                _strike
-            )
-        }
+        if (conditionType == 1) _strike -= 1;
 
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);

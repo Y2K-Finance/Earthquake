@@ -5,8 +5,6 @@ import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {IGdaiPriceFeed} from "../../interfaces/IGdaiPriceFeed.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "forge-std/console.sol";
-
 contract GdaiPriceProvider is IConditionProvider, Ownable {
     IGdaiPriceFeed public immutable gdaiPriceFeed;
     uint256 public immutable decimals;
@@ -69,17 +67,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 /* _marketId */
     ) public view virtual returns (bool condition, int256 price) {
         int256 strikeInt = int256(_strike);
-        console.log("Strike", _strike);
         uint256 conditionType = _strike % 2 ** 1;
-
-        assembly {
-            strikeInt := and(
-                0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0,
-                strikeInt
-            )
-        }
-        console.logInt(strikeInt);
-        console.log("conditionType", conditionType);
 
         price = getLatestPrice();
         if (conditionType == 1) return (strikeInt < price, price);
