@@ -17,29 +17,29 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 contract UmaV2AssertionProvider is Ownable {
     struct AssertionAnswer {
-        uint80 roundId;
-        int256 assertion;
-        uint256 startedAt;
+        uint8 roundId;
+        uint8 answeredInRound;
+        int8 assertion;
+        uint128 pendingRequestAt;
         uint256 updatedAt;
-        uint80 answeredInRound;
     }
 
+    uint256 public constant REQUEST_TIMEOUT = 3600 * 3;
     uint256 public constant ORACLE_LIVENESS_TIME = 3600 * 2;
     bytes32 public constant PRICE_IDENTIFIER = "YES_OR_NO_QUERY";
     string public constant ANCILLARY_TAIL =
         ". P1: 0 for NO, P2: 1 for YES, P3: 2 for UNDETERMINED";
 
-    uint256 public immutable timeOut;
+    uint256 public immutable assertionTimeOut;
     IUmaV2 public immutable oo;
     IFinder public immutable finder;
     IERC20 public immutable currency;
 
+    AssertionAnswer public answer;
+    uint128 public reward;
+    uint128 public coverageStart;
     string public description;
     string public ancillaryData;
-    AssertionAnswer public answer;
-    AssertionAnswer public pendingAnswer;
-    uint256 public reward;
-    uint256 public coverageStart;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
 
@@ -50,14 +50,14 @@ contract UmaV2AssertionProvider is Ownable {
     event PriceRequested();
 
     constructor(
-        uint256 _timeOut,
+        uint256 _assertionTimeOut,
         string memory _description,
         address _finder,
         address _currency,
         string memory _ancillaryData,
-        uint256 _reward
+        uint128 _reward
     ) {
-        if (_timeOut == 0) revert InvalidInput();
+        if (_assertionTimeOut == 0) revert InvalidInput();
         if (keccak256(bytes(_description)) == keccak256(""))
             revert InvalidInput();
         if (_finder == address(0)) revert ZeroAddress();
@@ -66,7 +66,7 @@ contract UmaV2AssertionProvider is Ownable {
             revert InvalidInput();
         if (_reward == 0) revert InvalidInput();
 
-        timeOut = _timeOut;
+        assertionTimeOut = _assertionTimeOut;
         description = _description;
 
         finder = IFinder(_finder);
@@ -74,7 +74,7 @@ contract UmaV2AssertionProvider is Ownable {
         currency = IERC20(_currency);
         ancillaryData = _ancillaryData;
         reward = _reward;
-        coverageStart = block.timestamp;
+        coverageStart = uint128(block.timestamp);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -90,13 +90,13 @@ contract UmaV2AssertionProvider is Ownable {
         emit MarketConditionSet(_marketId, _condition);
     }
 
-    function updateCoverageStart(uint256 _coverageStart) external onlyOwner {
+    function updateCoverageStart(uint128 _coverageStart) external onlyOwner {
         if (_coverageStart < coverageStart) revert InvalidInput();
         coverageStart = _coverageStart;
         emit CoverageStartUpdated(_coverageStart);
     }
 
-    function updateReward(uint256 newReward) external onlyOwner {
+    function updateReward(uint128 newReward) external onlyOwner {
         if (newReward == 0) revert InvalidInput();
         reward = newReward;
         emit RewardUpdated(newReward);
@@ -113,14 +113,12 @@ contract UmaV2AssertionProvider is Ownable {
     ) external {
         if (msg.sender != address(oo)) revert InvalidCaller();
 
-        AssertionAnswer memory _pendingAnswer = pendingAnswer;
-        AssertionAnswer memory _answer = answer;
-
-        _answer.startedAt = _pendingAnswer.startedAt;
-        _answer.updatedAt = _timestamp;
-        _answer.assertion = _price;
-        _answer.roundId = 1;
-        _answer.answeredInRound = 1;
+        AssertionAnswer memory _answer;
+        _answer.updatedAt = uint128(_timestamp);
+        _answer.assertion = int8(_price);
+        _answer.roundId = answer.roundId + 1;
+        _answer.answeredInRound = answer.answeredInRound + 1;
+        _answer.pendingRequestAt = answer.pendingRequestAt;
         answer = _answer;
 
         emit PriceSettled(_price);
@@ -130,7 +128,8 @@ contract UmaV2AssertionProvider is Ownable {
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
     function requestLatestAssertion() external {
-        if (pendingAnswer.startedAt != 0) revert RequestInProgress();
+        if (answer.pendingRequestAt + REQUEST_TIMEOUT > block.timestamp)
+            revert RequestInProgress();
 
         bytes memory _bytesAncillary = abi.encodePacked(
             ancillaryData,
@@ -161,9 +160,7 @@ contract UmaV2AssertionProvider is Ownable {
             true
         );
 
-        AssertionAnswer memory _pendingAnswer;
-        _pendingAnswer.startedAt = block.timestamp;
-        pendingAnswer = _pendingAnswer;
+        answer.pendingRequestAt = uint128(block.timestamp);
 
         emit PriceRequested();
     }
@@ -175,7 +172,7 @@ contract UmaV2AssertionProvider is Ownable {
         AssertionAnswer memory assertionAnswer = answer;
 
         if (assertionAnswer.updatedAt == 0) revert OraclePriceZero();
-        if ((block.timestamp - assertionAnswer.updatedAt) > timeOut)
+        if ((block.timestamp - assertionAnswer.updatedAt) > assertionTimeOut)
             revert PriceTimedOut();
 
         if (assertionAnswer.assertion == 1) return true;
