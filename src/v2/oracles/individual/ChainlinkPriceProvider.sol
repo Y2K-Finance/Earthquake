@@ -107,7 +107,6 @@ contract ChainlinkPriceProvider is Ownable, IConditionProvider {
         uint256 /* _marketId */
     ) public view virtual returns (bool, int256 price) {
         uint256 conditionType = _strike % 2 ** 1;
-        if (conditionType == 1) _strike -= 1;
 
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);

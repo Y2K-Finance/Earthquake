@@ -74,12 +74,6 @@ contract V2DeployConfig is HelperV2 {
             address depositAsset = getDepositAsset(market.depositAsset);
             uint256 strikePrice = stringToUint(market.strikePrice);
             CarouselFactory localFactory = factory;
-            if (market.isGenericController) {
-                if (market.isDepeg && strikePrice % 2 ** 1 != 0)
-                    strikePrice += 1;
-                else if (!market.isDepeg && strikePrice % 2 ** 1 != 1)
-                    strikePrice += 1;
-            }
             (address prem, address collat, uint256 marketId) = localFactory
                 .createNewCarouselMarket(
                     CarouselFactory.CarouselMarketConfigurationCalldata(
@@ -145,6 +139,13 @@ contract V2DeployConfig is HelperV2 {
                     depositAsset
                 );
                 revert("Market already deployed");
+            }
+
+            if (market.isGenericController) {
+                if (market.isDepeg && strikePrice % 2 ** 1 != 0)
+                    revert("Strike price must be even");
+                else if (!market.isDepeg && strikePrice % 2 ** 1 != 1)
+                    revert("Strike price must be odd");
             }
         }
     }

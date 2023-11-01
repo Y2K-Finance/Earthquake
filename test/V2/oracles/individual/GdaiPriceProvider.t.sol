@@ -72,7 +72,7 @@ contract GdaiPriceProviderTest is Helper {
         assertTrue(price != 0);
     }
 
-    function testConditionGdaiMasking() public {
+    function testConditionModuloGdai() public {
         uint256 marketIdOne = 1;
 
         int256 newStrike = -10000000000000000053; // Last bit is a 1
@@ -88,7 +88,6 @@ contract GdaiPriceProviderTest is Helper {
             uint256(newStrike),
             marketIdOne
         );
-        assertTrue(price != 0);
         assertEq(condition, true);
 
         newStrike = -10000000000000000012; // Last bit is a 0

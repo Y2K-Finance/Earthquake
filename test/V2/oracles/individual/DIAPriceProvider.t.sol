@@ -29,7 +29,6 @@ contract DIAPriceProviderTest is Helper {
         vm.selectFork(arbForkId);
 
         diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2, DIA_DECIMALS);
-        uint256 condition = 2;
     }
 
     ////////////////////////////////////////////////
@@ -87,6 +86,67 @@ contract DIAPriceProviderTest is Helper {
         );
         assertTrue(price != 0);
         assertEq(condition, true);
+    }
+
+    function testConditionModuloDIA() public {
+        uint256 marketIdOne = 1;
+
+        uint256 newStrike = 84847783399292726464738939392022; // Last bit is a 0
+        (bool condition, int256 price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+
+        newStrike = 112384757584930384785590; // Last bit is a 0
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 90002873714; // Last bit is a 0
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 4235662; // Last bit is a 0
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 3248901; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 7668937287; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 9983736474893928272637484839393938477463737221; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 765435346282947654937364747858498282761689; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
     }
 
     ////////////////////////////////////////////////

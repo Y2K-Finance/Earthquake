@@ -148,6 +148,66 @@ contract ChainlinkPriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
+    function testConditionModuloChainlink() public {
+        uint256 marketIdOne = 1;
+
+        uint256 newStrike = 213455566777700000002; // Last bit is a 0
+        (bool condition, int256 price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 102223334448556960000002226; // Last bit is a 0
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 2134438; // Last bit is a 0
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 601882234; // Last bit is a 0
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 376599999919; // Last bit is a 1
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 788561; // Last bit is a 1
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 7888885647778390201112345655; // Last bit is a 1
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 8889949596059547392010293; // Last bit is a 1
+        (condition, price) = chainlinkPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+    }
+
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////

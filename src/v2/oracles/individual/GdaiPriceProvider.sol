@@ -67,7 +67,7 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         uint256 /* _marketId */
     ) public view virtual returns (bool condition, int256 price) {
         int256 strikeInt = int256(_strike);
-        uint256 conditionType = strikeInt % 2 ** 1;
+        uint256 conditionType = _strike % 2 ** 1;
 
         price = getLatestPrice();
         if (conditionType == 1) return (strikeInt < price, price);

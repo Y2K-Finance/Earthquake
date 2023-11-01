@@ -80,7 +80,7 @@ contract CVIPriceProviderTest is Helper {
 
     function testConditionTwoMetCVI() public {
         uint256 marketIdTwo = 2;
-        uint256 strikePrice = 0.1 ether;
+        uint256 strikePrice = 0.1 ether * 10 ** 18;
 
         (bool condition, int256 price) = cviPriceProvider.conditionMet(
             strikePrice,
@@ -88,6 +88,66 @@ contract CVIPriceProviderTest is Helper {
         );
         assertTrue(price != 0);
         assertEq(condition, true);
+    }
+
+    function testConditionModuloCVI() public {
+        uint256 marketIdOne = 1;
+
+        uint256 newStrike = 32222872726273485958746564738398; // Last bit is a 0
+        (bool condition, int256 price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 8889999573829384654738291019874637282864372; // Last bit is a 0
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 335162336; // Last bit is a 0
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 574832910; // Last bit is a 0
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 778872637281; // Last bit is a 1
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 2271718293; // Last bit is a 1
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 9900000000049475684939287919117; // Last bit is a 1
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 11901981727465654748499383745647383899283; // Last bit is a 1
+        (condition, price) = cviPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
     }
 
     ////////////////////////////////////////////////
