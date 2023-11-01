@@ -19,15 +19,16 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 contract UmaV2PriceProvider is Ownable {
     struct PriceAnswer {
-        uint80 roundId;
-        int256 price;
-        uint256 startedAt;
-        uint256 updatedAt;
-        uint80 answeredInRound;
+        uint128 roundId;
+        uint128 answeredInRound;
+        int128 price;
+        uint128 updatedAt;
+        uint256 pendingRequestAt;
     }
 
     uint256 public constant ORACLE_LIVENESS_TIME = 3600 * 2;
     bytes32 public constant PRICE_IDENTIFIER = "TOKEN_PRICE";
+    uint256 public constant REQUEST_TIMEOUT = 3600 * 3;
 
     uint256 public immutable timeOut;
     IUmaV2 public immutable oo;
@@ -35,11 +36,10 @@ contract UmaV2PriceProvider is Ownable {
     uint256 public immutable decimals;
     IERC20 public immutable currency;
 
+    PriceAnswer public answer;
+    uint256 public reward;
     string public description;
     string public ancillaryData;
-    PriceAnswer public answer;
-    PriceAnswer public pendingAnswer;
-    uint256 public reward;
 
     mapping(uint256 => uint256) public marketIdToConditionType;
 
@@ -107,14 +107,12 @@ contract UmaV2PriceProvider is Ownable {
     ) external {
         if (msg.sender != address(oo)) revert InvalidCaller();
 
-        PriceAnswer memory _pendingAnswer = pendingAnswer;
-        PriceAnswer memory _answer = answer;
-
-        _answer.startedAt = _pendingAnswer.startedAt;
-        _answer.updatedAt = _timestamp;
-        _answer.price = _price;
-        _answer.roundId = 1;
-        _answer.answeredInRound = 1;
+        PriceAnswer memory _answer;
+        _answer.updatedAt = uint128(_timestamp);
+        _answer.price = int128(_price);
+        _answer.roundId = answer.roundId + 1;
+        _answer.answeredInRound = answer.answeredInRound + 1;
+        _answer.pendingRequestAt = answer.pendingRequestAt;
         answer = _answer;
 
         emit PriceSettled(_price);
@@ -124,7 +122,8 @@ contract UmaV2PriceProvider is Ownable {
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
     function requestLatestPrice() external {
-        if (pendingAnswer.startedAt != 0) revert RequestInProgress();
+        if (answer.pendingRequestAt + REQUEST_TIMEOUT > block.timestamp)
+            revert RequestInProgress();
 
         bytes memory _bytesAncillary = abi.encodePacked(ancillaryData);
         currency.transferFrom(msg.sender, address(this), reward);
@@ -151,9 +150,7 @@ contract UmaV2PriceProvider is Ownable {
             true
         );
 
-        PriceAnswer memory _pendingAnswer;
-        _pendingAnswer.startedAt = block.timestamp;
-        pendingAnswer = _pendingAnswer;
+        answer.pendingRequestAt = block.timestamp;
 
         emit PriceRequested();
     }
@@ -164,17 +161,17 @@ contract UmaV2PriceProvider is Ownable {
         returns (
             uint80 roundId,
             int256 price,
-            uint256 startedAt,
+            uint256 pendingRequestAt,
             uint256 updatedAt,
             uint80 answeredInRound
         )
     {
         PriceAnswer memory _answer = answer;
+        roundId = uint80(_answer.roundId);
         price = _answer.price;
         updatedAt = _answer.updatedAt;
-        roundId = _answer.roundId;
-        startedAt = _answer.startedAt;
-        answeredInRound = _answer.answeredInRound;
+        pendingRequestAt = _answer.pendingRequestAt;
+        answeredInRound = uint80(_answer.answeredInRound);
     }
 
     /** @notice Fetch token price from priceFeed (Chainlink oracle address)

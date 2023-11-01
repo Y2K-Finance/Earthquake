@@ -133,7 +133,7 @@ contract V2DeployContracts is Script, HelperV2 {
         uint256 timeOut = 2 hours;
         address umaCurrency = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         address umaV2Finder = 0xB0b9f73B424AD8dc58156C2AE0D7A1115D1EcCd1;
-        uint256 reward = 5e6;
+        uint128 reward = 5e6;
 
         // uint256 umaDecimals = 18;
         // string memory umaDescription = "FUSD/USD";
