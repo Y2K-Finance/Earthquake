@@ -1,24 +1,24 @@
-{"configAddresses":
-  {
+{
+  "configAddresses": {
     "admin": "0x45aA9d8B9D567489be9DeFcd085C6bA72BBf344F",
     "arb": "0x912CE59144191C1204E64559FE8253a0e49E6548",
     "arbitrum_sequencer": "0xFdB631F5EE196F0ed6FAa767959853A9F217697D",
     "carouselFactory": "0xC3179AC01b7D68aeD4f27a19510ffe2bfb78Ab3e",
     "controller": "0xC0655f3dace795cc48ea1E2e7BC012c1eec912dC",
-    "controllerGeneric" : "0xDff5d76A5EcD9E3190FE8974c920775c987c442e",
-    "controllerGenericPausable" : "0xEe7bE0f184372103C5d6766118B6307a00b16962",
+    "controllerGeneric": "0xDff5d76A5EcD9E3190FE8974c920775c987c442e",
+    "controllerGenericPausable": "0xEe7bE0f184372103C5d6766118B6307a00b16962",
     "gelatoOpsV2": "0xB3f5503f93d5Ef84b06993a1975B9D21B962892F",
     "gelatoTaskTreasury": "0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A",
+    "multiCaller": "0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A",
     "pausableCarouselFactory": "0xCe74c745DBb3620B9B31A08C6f913ac361d987A7",
     "resolveKeeper": "0xE6d0df110806E3E8aFc883e84cA336583e3F2e10",
     "resolveKeeperGeneric": "0x899550a6e2482315e5D0462093daa74B66E75c70",
     "rolloverKeeper": "0xc90bf709A2438b7F32eB797B6cb9460785Ea86af",
-    "resolveKeeperGenericPausable":"0x1C06C766dc2e192E74403CedE9F6CFf4f6523Aa3",
-    "rolloverKeeperPausable":"0x814f58Fe25785fc0d5209E4c7b7671f5D95008E1",
+    "resolveKeeperGenericPausable": "0x1C06C766dc2e192E74403CedE9F6CFf4f6523Aa3",
+    "rolloverKeeperPausable": "0x814f58Fe25785fc0d5209E4c7b7671f5D95008E1",
     "policy": "0x5c84cf4d91dc0acde638363ec804792bb2108258",
     "treasury": "0x5c84cf4d91dc0acde638363ec804792bb2108258",
     "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-    "y2k": "0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f"    
-    }
+    "y2k": "0x65c936f008BC34fE819bce9Fa5afD9dc2d49977f"
+  }
 }
-
