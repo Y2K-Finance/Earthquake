@@ -86,8 +86,6 @@ contract ControllerGenericTest is Helper {
                 address(controller)
             )
         );
-        uint256 condition = 2;
-        redstoneProvider.setConditionType(marketId, condition);
 
         begin = uint40(block.timestamp - 5 days);
         end = uint40(block.timestamp - 3 days);

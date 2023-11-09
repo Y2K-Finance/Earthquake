@@ -98,8 +98,6 @@ contract EndToEndV2GenericTest is Helper {
                 address(controller)
             )
         );
-        uint256 condition = 2;
-        redstoneProvider.setConditionType(marketId, condition);
 
         depegStrike = 0.1 ether * 10 ** 18;
         (depegPremium, depegCollateral, depegMarketId) = factory
@@ -114,7 +112,6 @@ contract EndToEndV2GenericTest is Helper {
                     address(controller)
                 )
             );
-        redstoneProvider.setConditionType(depegMarketId, condition);
 
         begin = uint40(block.timestamp);
         end = uint40(block.timestamp + 3 days);
@@ -161,8 +158,6 @@ contract EndToEndV2GenericTest is Helper {
                     address(controller)
                 )
             );
-        uint256 condition = 2;
-        chainlinkProvider.setConditionType(depegMarketId, condition);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);
@@ -204,8 +199,6 @@ contract EndToEndV2GenericTest is Helper {
                     address(controller)
                 )
             );
-        uint256 condition = 1;
-        chainlinkProvider.setConditionType(depegMarketId, condition);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);
@@ -221,6 +214,7 @@ contract EndToEndV2GenericTest is Helper {
 
         gdaiPriceProvider = new GdaiPriceProvider(GDAI_VAULT);
         int256 strikePrice = (gdaiPriceProvider.getLatestPrice() + 1);
+        if (strikePrice % 2 ** 1 != 0) strikePrice += 1;
         depegStrike = uint256(-strikePrice);
 
         string memory name = string("Gains Network DAI");
@@ -237,8 +231,6 @@ contract EndToEndV2GenericTest is Helper {
                     address(controller)
                 )
             );
-        uint256 condition = 2;
-        gdaiPriceProvider.setConditionType(depegMarketId, condition);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);
@@ -270,8 +262,6 @@ contract EndToEndV2GenericTest is Helper {
                     address(controller)
                 )
             );
-        uint256 condition = 2;
-        diaPriceProvider.setConditionType(depegMarketId, condition);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);
@@ -307,8 +297,6 @@ contract EndToEndV2GenericTest is Helper {
                     address(controller)
                 )
             );
-        uint256 condition = 1;
-        cviPriceProvider.setConditionType(depegMarketId, condition);
 
         (depegEpochId, ) = factory.createEpoch(depegMarketId, begin, end, fee);
         MintableToken(UNDERLYING).mint(USER);

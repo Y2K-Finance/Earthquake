@@ -10,8 +10,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
     uint256 public immutable decimals;
     string public description;
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
-
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed) {
@@ -19,19 +17,6 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
         gdaiPriceFeed = IGdaiPriceFeed(_priceFeed);
         decimals = gdaiPriceFeed.decimals();
         description = "gTrade pnl";
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                 ADMIN
-    //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -79,14 +64,14 @@ contract GdaiPriceProvider is IConditionProvider, Ownable {
      */
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256 /* _marketId */
     ) public view virtual returns (bool condition, int256 price) {
         int256 strikeInt = int256(_strike);
-        uint256 conditionType = marketIdToConditionType[_marketId];
-        price = getLatestPrice();
+        uint256 conditionType = _strike % 2 ** 1;
 
+        price = getLatestPrice();
         if (conditionType == 1) return (strikeInt < price, price);
-        else if (conditionType == 2) return (strikeInt > price, price);
+        else if (conditionType == 0) return (strikeInt > price, price);
         else revert ConditionTypeNotSet();
     }
 

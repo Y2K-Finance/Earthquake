@@ -13,11 +13,4 @@ interface IConditionProvider {
         external
         view
         returns (uint80, int256, uint256, uint256, uint80);
-
-    function marketIdToConditionType(uint256 _marketId)
-        external
-        view
-        returns (uint256);
-    
-    function setConditionType(uint256 _marketId, uint256 _condition) external;
 }

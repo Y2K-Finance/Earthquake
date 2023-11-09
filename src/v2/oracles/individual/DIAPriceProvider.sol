@@ -13,27 +13,12 @@ contract DIAPriceProvider is Ownable, IConditionProvider {
     uint256 public immutable decimals;
     string public constant description = "BTC/USD";
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
-
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(address _priceFeed, uint256 _decimals) {
         if (_priceFeed == address(0)) revert ZeroAddress();
         diaPriceFeed = IDIAPriceFeed(_priceFeed);
         decimals = _decimals;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                 ADMIN
-    //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -67,19 +52,18 @@ contract DIAPriceProvider is Ownable, IConditionProvider {
      * @dev The strike is hashed as an int256 to enable comparison vs. price for earthquake
         and conditional check vs. strike to ensure vaidity
      * @param _strike Strike price
-     * @param _marketId Market ID
      * @return condition boolean If condition is met i.e. strike > price
      * @return price current price for token
      */
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256 /* _marketId */
     ) public view virtual returns (bool condition, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
-        (price, ) = _getLatestPrice();
+        uint256 conditionType = _strike % 2 ** 1;
 
+        (price, ) = _getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);
-        else if (conditionType == 2) return (int256(_strike) > price, price);
+        else if (conditionType == 0) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
     }
 

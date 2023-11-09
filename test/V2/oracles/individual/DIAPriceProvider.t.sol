@@ -19,7 +19,6 @@ contract DIAPriceProviderTest is Helper {
     DIAPriceProvider public diaPriceProvider;
     uint256 public arbForkId;
     string public pairName = "BTC/USD";
-    uint256 public strikePrice = 50_000e8;
     uint256 public marketId = 2;
 
     ////////////////////////////////////////////////
@@ -30,8 +29,6 @@ contract DIAPriceProviderTest is Helper {
         vm.selectFork(arbForkId);
 
         diaPriceProvider = new DIAPriceProvider(DIA_ORACLE_V2, DIA_DECIMALS);
-        uint256 condition = 2;
-        diaPriceProvider.setConditionType(marketId, condition);
     }
 
     ////////////////////////////////////////////////
@@ -70,11 +67,11 @@ contract DIAPriceProviderTest is Helper {
     }
 
     function testConditionOneMetDIA() public {
-        uint256 conditionType = 1;
         uint256 marketIdOne = 1;
-        diaPriceProvider.setConditionType(marketIdOne, conditionType);
+        uint256 strike = 10_000_000_0001; // 10e8 with extra byte as 1
+
         (bool condition, int256 price) = diaPriceProvider.conditionMet(
-            10e6,
+            strike,
             marketIdOne
         );
         assertTrue(price != 0);
@@ -82,6 +79,7 @@ contract DIAPriceProviderTest is Helper {
     }
 
     function testConditionTwoMetDIA() public {
+        uint256 strikePrice = 50_000e8; // 50k with extra byte as 1
         (bool condition, int256 price) = diaPriceProvider.conditionMet(
             strikePrice,
             marketId
@@ -90,24 +88,72 @@ contract DIAPriceProviderTest is Helper {
         assertEq(condition, true);
     }
 
+    function testConditionModuloDIA() public {
+        uint256 marketIdOne = 1;
+
+        uint256 newStrike = 84847783399292726464738939392022; // Last bit is a 0
+        (bool condition, int256 price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertTrue(price != 0);
+        assertEq(condition, true);
+
+        newStrike = 112384757584930384785590; // Last bit is a 0
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 90002873714; // Last bit is a 0
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 4235662; // Last bit is a 0
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 3248901; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 7668937287; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, true);
+
+        newStrike = 9983736474893928272637484839393938477463737221; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+
+        newStrike = 765435346282947654937364747858498282761689; // Last bit is a 1
+        (condition, price) = diaPriceProvider.conditionMet(
+            uint256(newStrike),
+            marketIdOne
+        );
+        assertEq(condition, false);
+    }
+
     ////////////////////////////////////////////////
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
     function testRevertConstructorInputs() public {
         vm.expectRevert(DIAPriceProvider.ZeroAddress.selector);
         new DIAPriceProvider(address(0), DIA_DECIMALS);
-    }
-
-    function testRevertConditionTypeSetDIA() public {
-        vm.expectRevert(DIAPriceProvider.ConditionTypeSet.selector);
-        diaPriceProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionDIA() public {
-        vm.expectRevert(DIAPriceProvider.InvalidInput.selector);
-        diaPriceProvider.setConditionType(0, 0);
-
-        vm.expectRevert(DIAPriceProvider.InvalidInput.selector);
-        diaPriceProvider.setConditionType(0, 3);
     }
 }

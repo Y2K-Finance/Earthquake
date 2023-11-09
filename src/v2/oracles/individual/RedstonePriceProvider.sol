@@ -14,8 +14,6 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
     uint256 public immutable decimals;
     string public description;
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
-
     event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
 
     constructor(
@@ -35,19 +33,6 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
         dataFeedId = stringToBytes32(_dataFeedSymbol);
         timeOut = _timeOut;
         decimals = priceFeedAdapter.decimals();
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                 ADMIN
-    //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -108,13 +93,13 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
      */
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256 /* _marketId */
     ) public view virtual returns (bool, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
-        price = getLatestPrice();
+        uint256 conditionType = _strike % 2 ** 1;
 
+        price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);
-        else if (conditionType == 2) return (int256(_strike) > price, price);
+        else if (conditionType == 0) return (int256(_strike) > price, price);
         else revert ConditionTypeNotSet();
     }
 

@@ -72,13 +72,13 @@ contract V2DeployConfig is HelperV2 {
             ConfigMarketV2 memory market = markets[i];
             address controller = getController(market.isGenericController);
             address depositAsset = getDepositAsset(market.depositAsset);
-            uint256 strkePrice = stringToUint(market.strikePrice);
+            uint256 strikePrice = stringToUint(market.strikePrice);
             CarouselFactory localFactory = factory;
             (address prem, address collat, uint256 marketId) = localFactory
                 .createNewCarouselMarket(
                     CarouselFactory.CarouselMarketConfigurationCalldata(
                         market.token,
-                        strkePrice,
+                        strikePrice,
                         market.oracle,
                         depositAsset,
                         market.name,
@@ -96,17 +96,6 @@ contract V2DeployConfig is HelperV2 {
             if (i < markets.length - 1) {
                 console2.log(
                     "-----------------------NEXT MARKETS----------------------"
-                );
-            }
-            // if controller is generic, set depeg condition (depeg 2, repeg 1)
-            if (market.isGenericController) {
-                if(!market.isGenericController && !market.isDepeg) {
-                    revert("Depeg only supported for generic controller");
-                }
-                setDepegCondition(
-                    market.oracle,
-                    marketId,
-                    market.isDepeg
                 );
             }
             console2.log("\n");
@@ -128,16 +117,16 @@ contract V2DeployConfig is HelperV2 {
             ConfigMarketV2 memory market = markets[i];
             address controller = getController(market.isGenericController);
             address depositAsset = getDepositAsset(market.depositAsset);
-            uint256 strkePrice = stringToUint(market.strikePrice);
+            uint256 strikePrice = stringToUint(market.strikePrice);
             CarouselFactory localFactory = factory;
             if (!localFactory.controllers(controller)) {
                 console2.log("Controller not whitelisted", controller);
                 revert("Controller not whitelisted");
             }
-  
+
             uint256 previewMarketID = localFactory.getMarketId(
                 market.token,
-                strkePrice,
+                strikePrice,
                 depositAsset
             );
             address vault = localFactory.marketIdToVaults(previewMarketID, 0);
@@ -146,25 +135,18 @@ contract V2DeployConfig is HelperV2 {
                 console2.log(
                     "Market: ",
                     market.token,
-                    strkePrice,
+                    strikePrice,
                     depositAsset
                 );
                 revert("Market already deployed");
             }
-        }
-    }
 
-    function setDepegCondition(
-        address _oracle,
-        uint256 _marketId,
-        bool _isDepegCondition
-    ) public {
-        if (_isDepegCondition) {
-            console2.log("Set depeg condition");
-            IConditionProvider(_oracle).setConditionType(_marketId, 2);
-        } else {
-            console2.log("Set repeg condition");
-            IConditionProvider(_oracle).setConditionType(_marketId, 1);
+            if (market.isGenericController) {
+                if (market.isDepeg && strikePrice % 2 ** 1 != 0)
+                    revert("Strike price must be even");
+                else if (!market.isDepeg && strikePrice % 2 ** 1 != 1)
+                    revert("Strike price must be odd");
+            }
         }
     }
 
@@ -236,16 +218,16 @@ contract V2DeployConfig is HelperV2 {
             );
             revert("Not enough allowance");
         }
-    //    if (
-    //         IERC20(y2k).allowance(configAddresses.policy, address(pausableFactory)) <
-    //         configVariables.totalAmountOfEmittedTokens
-    //     ) {
-    //         console2.log(
-    //             "Not enough allowance",
-    //             IERC20(y2k).allowance(address(this), address(pausableFactory))
-    //         );
-    //         revert("Not enough allowance");
-    //     }
+        //    if (
+        //         IERC20(y2k).allowance(configAddresses.policy, address(pausableFactory)) <
+        //         configVariables.totalAmountOfEmittedTokens
+        //     ) {
+        //         console2.log(
+        //             "Not enough allowance",
+        //             IERC20(y2k).allowance(address(this), address(pausableFactory))
+        //         );
+        //         revert("Not enough allowance");
+        //     }
 
         if (epochs.length != configVariables.amountOfNewEpochs) {
             console.log("epochs.length", epochs.length);
@@ -259,7 +241,7 @@ contract V2DeployConfig is HelperV2 {
             ConfigEpochWithEmission memory epoch = epochs[i];
             CarouselFactory localFactory = factory;
             //  epoch.isGenericController
-            // ? 
+            // ?
             //     keccak256(abi.encodePacked(epoch.name)) == keccak256(abi.encodePacked("y2kVST_984_WETH*")) ?
             //         factory :
             //         pausableFactory
@@ -335,22 +317,32 @@ contract V2DeployConfig is HelperV2 {
         );
     }
 
-    uint256[] public marketIds = 
-        [
-            102062669946436220800282965814418861703520361600036198831171353773735437582898,
-            19463494430787374236800916328272982194211552759358049028102840161626064590799,
-            43365822659564324551460842388001340228617494417519860688859686053122333904688,
-            2331975465739044783693470748756652505041645629776698023032314532662570347594
-        ];
-
+    uint256[] public marketIds = [
+        102062669946436220800282965814418861703520361600036198831171353773735437582898,
+        19463494430787374236800916328272982194211552759358049028102840161626064590799,
+        43365822659564324551460842388001340228617494417519860688859686053122333904688,
+        2331975465739044783693470748756652505041645629776698023032314532662570347594
+    ];
 
     function deployNullEpoch() public {
         // loop thwourh marketIds
         for (uint256 i = 0; i < marketIds.length; ++i) {
             uint256 marketId = marketIds[i];
-            (uint256 epochId, address[2] memory vaults) = factory.createEpochWithEmissions(marketId, uint40(block.timestamp + uint256(10 minutes)), uint40(block.timestamp + uint256(15 minutes)), 1, 0, 0);
-            Carousel(vaults[0]).getDepositQueueLength() > 0 ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100) : console2.log("No deposit in queue");
-            Carousel(vaults[1]).getDepositQueueLength() > 0 ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100) : console2.log("No deposit in queue");
+            (uint256 epochId, address[2] memory vaults) = factory
+                .createEpochWithEmissions(
+                    marketId,
+                    uint40(block.timestamp + uint256(10 minutes)),
+                    uint40(block.timestamp + uint256(15 minutes)),
+                    1,
+                    0,
+                    0
+                );
+            Carousel(vaults[0]).getDepositQueueLength() > 0
+                ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100)
+                : console2.log("No deposit in queue");
+            Carousel(vaults[1]).getDepositQueueLength() > 0
+                ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100)
+                : console2.log("No deposit in queue");
         }
     }
 }
