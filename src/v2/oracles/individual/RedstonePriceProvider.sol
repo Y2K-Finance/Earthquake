@@ -4,9 +4,8 @@ pragma solidity 0.8.17;
 import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {IPriceFeedAdapter} from "../../interfaces/IPriceFeedAdapter.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RedstonePriceProvider is Ownable, IConditionProvider {
+contract RedstonePriceProvider is IConditionProvider {
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
     IPriceFeedAdapter public priceFeedAdapter;

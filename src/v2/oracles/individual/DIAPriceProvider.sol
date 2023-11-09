@@ -6,9 +6,8 @@ pragma solidity 0.8.17;
 
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {IDIAPriceFeed} from "../../interfaces/IDIAPriceFeed.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract DIAPriceProvider is Ownable, IConditionProvider {
+contract DIAPriceProvider is IConditionProvider {
     IDIAPriceFeed public diaPriceFeed;
     uint256 public immutable decimals;
     string public constant description = "BTC/USD";
