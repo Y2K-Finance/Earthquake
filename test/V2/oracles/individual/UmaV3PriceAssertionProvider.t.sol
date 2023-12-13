@@ -100,6 +100,19 @@ contract UmaV3EventAssertionProviderTest is Helper {
         assertEq(umaPriceProvider.whitelistRelayer(newRelayer), false);
     }
 
+    function testWithdrawBond() public {
+        uint256 bondAmount = 1e18;
+        deal(WETH_ADDRESS, address(umaPriceProvider), bondAmount);
+        ERC20 bondAsset = ERC20(WETH_ADDRESS);
+
+        assertEq(bondAsset.balanceOf(address(umaPriceProvider)), bondAmount);
+        assertEq(bondAsset.balanceOf(address(this)), 0);
+
+        umaPriceProvider.withdrawBond();
+        assertEq(bondAsset.balanceOf(address(umaPriceProvider)), 0);
+        assertEq(bondAsset.balanceOf(address(this)), bondAmount);
+    }
+
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
@@ -267,6 +280,42 @@ contract UmaV3EventAssertionProviderTest is Helper {
 
         bool condition = umaPriceProvider.checkAssertion(marketId);
         assertEq(condition, false);
+    }
+
+    function testFetchAssertionWithBalance() public {
+        MockUma mockUma = new MockUma();
+
+        // Deploying new UmaV3PriceAssertionProvider
+        umaPriceProvider = new UmaV3PriceAssertionProvider(
+            UMA_DECIMALS,
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            defaultIdentifier,
+            WETH_ADDRESS,
+            assertionDescription,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.setConditionType(marketId, 2);
+        umaPriceProvider.updateRelayer(address(this));
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(umaPriceProvider), 1e18);
+        uint256 umaProviderBal = wethAsset.balanceOf(address(umaPriceProvider));
+        uint256 senderBal = wethAsset.balanceOf(address(this));
+        assertEq(umaProviderBal, 1e18);
+        assertEq(senderBal, 0);
+
+        // Querying for assertion
+        vm.warp(block.timestamp + 2 days);
+        umaPriceProvider.fetchAssertion(marketId);
+
+        // Checking umaPriceProvide balance declined
+        assertEq(
+            wethAsset.balanceOf(address(umaPriceProvider)),
+            umaProviderBal - REQUIRED_BOND
+        );
+        assertEq(wethAsset.balanceOf(address(this)), 0);
     }
 
     ////////////////////////////////////////////////

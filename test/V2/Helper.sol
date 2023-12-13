@@ -16,6 +16,7 @@ contract Helper is Test {
     event CoverageStartUpdated(uint256 startTime);
     event AssertionDataUpdated(uint256 newData);
     event RelayerUpdated(address relayer, bool state);
+    event DescriptionSet(uint256 marketId, string description);
 
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;

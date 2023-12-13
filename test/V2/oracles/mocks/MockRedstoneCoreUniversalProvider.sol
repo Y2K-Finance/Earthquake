@@ -19,7 +19,7 @@ contract MockRedstoneCoreUniversalProvider is RedstoneCoreUniversalProvider {
     }
 
     function getAuthorisedSignerIndex(
-        address signerAddress
+        address
     ) public view virtual override returns (uint8) {
         // authorize everyone
         return 0;

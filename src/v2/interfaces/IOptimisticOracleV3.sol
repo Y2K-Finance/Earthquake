@@ -17,4 +17,6 @@ interface IOptimisticOracleV3 {
     ) external payable returns (bytes32 assertionId);
 
     function getMinimumBond(address currency) external returns (uint256);
+
+    function defaultIdentifier() external returns (bytes32);
 }

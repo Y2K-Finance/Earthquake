@@ -22,6 +22,15 @@ contract MockUma {
         );
     }
 
+    function defaultIdentifier() external pure returns (bytes32) {
+        return
+            bytes32(
+                abi.encode(
+                    0x4153534552545f54525554480000000000000000000000000000000000000000
+                )
+            );
+    }
+
     function assertTruth(
         bytes calldata claim,
         address asserter,
@@ -53,13 +62,13 @@ contract MockUma {
         address callBackAddress,
         address sovereignSecurity,
         uint64 assertionLiveness,
-        bytes32 defaultIdentifier,
+        bytes32 _defaultIdentifier,
         bytes32 domain
     ) internal pure {
         asserter = callBackAddress;
         sovereignSecurity = callBackAddress;
         assertionLiveness += 1;
-        defaultIdentifier = domain;
+        _defaultIdentifier = domain;
         domain = keccak256(claim);
     }
 
