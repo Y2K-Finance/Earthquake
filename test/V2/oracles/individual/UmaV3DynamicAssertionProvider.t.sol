@@ -14,6 +14,9 @@ import {
 } from "../mocks/MockOracles.sol";
 import {MockUma} from "../mocks/MockUma.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
+import {
+    IOptimisticOracleV3
+} from "../../../../src/v2/interfaces/IOptimisticOracleV3.sol";
 
 contract UmaV3DynamicAssertionProviderTest is Helper {
     uint256 public arbForkId;
@@ -25,60 +28,49 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     ////////////////////////////////////////////////
     //                HELPERS                     //
     ////////////////////////////////////////////////
-    uint256 public UMA_DECIMALS = 18;
-    address public UMA_OO_V3 = address(0x123);
-    string public UMA_DESCRIPTION = "USDC";
-    uint256 public REQUIRED_BOND = 1e6;
-    bytes32 public defaultIdentifier = bytes32("abc");
-    bytes public assertionDescription;
+    uint256 public constant UMA_DECIMALS = 18;
+    address public constant UMA_OO_V3 =
+        0xa6147867264374F324524E30C02C331cF28aa879;
+    string public constant UMA_DESCRIPTION = "USDC";
+    uint256 public constant REQUIRED_BOND = 1e6;
 
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
         wethAsset = ERC20(WETH_ADDRESS);
 
-        // TODO: Should this be encoded or encode packed?
-        assertionDescription = abi.encode(
-            "USDC/USD exchange rate is above 0.997"
-        );
-
         address timelock = address(new TimeLock(ADMIN));
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
         umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
 
-        uint256 condition = 2;
-        umaPriceProvider.setConditionType(marketId, condition);
         umaPriceProvider.updateRelayer(address(this));
     }
 
     ////////////////////////////////////////////////
     //                STATE                       //
     ////////////////////////////////////////////////
-    function testUmaCreation() public {
+    function testUmaCreationDynamic() public {
         assertEq(umaPriceProvider.ASSERTION_LIVENESS(), 7200);
         assertEq(umaPriceProvider.currency(), WETH_ADDRESS);
-        assertEq(umaPriceProvider.defaultIdentifier(), defaultIdentifier);
+        assertEq(
+            umaPriceProvider.defaultIdentifier(),
+            IOptimisticOracleV3(UMA_OO_V3).defaultIdentifier()
+        );
         assertEq(address(umaPriceProvider.umaV3()), UMA_OO_V3);
         assertEq(umaPriceProvider.requiredBond(), REQUIRED_BOND);
 
         assertEq(umaPriceProvider.timeOut(), TIME_OUT);
-        assertEq(umaPriceProvider.decimals(), UMA_DECIMALS);
         assertEq(umaPriceProvider.description(), UMA_DESCRIPTION);
-        assertEq(umaPriceProvider.assertionDescription(), assertionDescription);
         (uint256 assertionData, uint256 updatedAt) = umaPriceProvider
             .assertionData();
         assertEq(assertionData, 0);
         assertEq(updatedAt, block.timestamp);
-        assertEq(umaPriceProvider.marketIdToConditionType(marketId), 2);
         assertEq(umaPriceProvider.whitelistRelayer(address(this)), true);
     }
 
@@ -89,6 +81,22 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         emit BondUpdated(newBond);
         umaPriceProvider.updateRequiredBond(newBond);
         assertEq(umaPriceProvider.requiredBond(), newBond);
+    }
+
+    function testSetAssertionDescription() public {
+        string memory newDescription = " USDC/USD exchange rate is above";
+
+        vm.expectEmit(true, true, false, false);
+        emit DescriptionSet(marketId, newDescription);
+        umaPriceProvider.setAssertionDescription(marketId, newDescription);
+        assertEq(
+            keccak256(
+                abi.encodePacked(
+                    umaPriceProvider.marketIdToAssertionDescription(marketId)
+                )
+            ),
+            keccak256(abi.encodePacked(newDescription))
+        );
     }
 
     function testUpdateAssertionData() public {
@@ -106,18 +114,16 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function testUpdateAssertionDataAndFetch() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3PriceAssertionProvider
+        // Deploying new UmaV3DynamicAssertionProvider
         umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
-        umaPriceProvider.setConditionType(marketId, 1);
+        string memory newDescription = " USDC/USD exchange rate is above";
+        umaPriceProvider.setAssertionDescription(marketId, newDescription);
         umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
@@ -162,24 +168,57 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         assertEq(umaPriceProvider.whitelistRelayer(newRelayer), false);
     }
 
+    function testWithdrawBond() public {
+        uint256 bondAmount = 1e18;
+        deal(WETH_ADDRESS, address(umaPriceProvider), bondAmount);
+        ERC20 bondAsset = ERC20(WETH_ADDRESS);
+
+        assertEq(bondAsset.balanceOf(address(umaPriceProvider)), bondAmount);
+        assertEq(bondAsset.balanceOf(address(this)), 0);
+
+        umaPriceProvider.withdrawBond();
+        assertEq(bondAsset.balanceOf(address(umaPriceProvider)), 0);
+        assertEq(bondAsset.balanceOf(address(this)), bondAmount);
+    }
+
+    function testResetMarketAnswerAfterTimeout() public {
+        // Setting truthy state and checking is truth
+        uint256 customMarketId = 3;
+        MockUma mockUma = _stagingTruthyAssertion();
+        _stagingTruthyAssertionCustom(customMarketId, mockUma);
+
+        // Checking both markets state set to true
+        assertEq(umaPriceProvider.checkAssertion(marketId), true);
+        assertEq(umaPriceProvider.checkAssertion(customMarketId), true);
+
+        // Moving timer and resetting answer as timeOut has passed
+        uint256[] memory _markets = new uint256[](2);
+        _markets[0] = marketId;
+        _markets[1] = customMarketId;
+        vm.warp(block.timestamp + umaPriceProvider.timeOut() + 1);
+        umaPriceProvider.resetAnswerAfterTimeout(_markets);
+
+        // Checking both markets answer is now zero
+        assertEq(umaPriceProvider.checkAssertion(marketId), false);
+        assertEq(umaPriceProvider.checkAssertion(customMarketId), false);
+    }
+
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
-    function testConditionOneMetUma() public {
+    function testConditionMetUmaDynamic() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3PriceAssertionProvider
+        // Deploying new UmaV3DynamicAssertionProvider
         umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
-        umaPriceProvider.setConditionType(marketId, 1);
+        string memory newDescription = " USDC/USD exchange rate is above";
+        umaPriceProvider.setAssertionDescription(marketId, newDescription);
         umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
@@ -231,48 +270,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         assertEq(updatedAt, uint128(block.timestamp));
         assertEq(answer, 1);
 
-        (bool condition, int256 price) = umaPriceProvider.conditionMet(
-            2 ether,
-            marketId
-        );
-        assertTrue(price == 0);
-        assertEq(condition, true);
-    }
-
-    function testConditionTwoMetUma() public {
-        MockUma mockUma = new MockUma();
-
-        // Deploying new UmaV3PriceAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
-            UMA_DESCRIPTION,
-            TIME_OUT,
-            address(mockUma),
-            defaultIdentifier,
-            WETH_ADDRESS,
-            assertionDescription,
-            REQUIRED_BOND
-        );
-        umaPriceProvider.setConditionType(marketId, 2);
-        umaPriceProvider.updateRelayer(address(this));
-
-        // Configuring the assertionInfo
-        deal(WETH_ADDRESS, address(this), 1e18);
-        wethAsset.approve(address(umaPriceProvider), 1e18);
-
-        // Moving forward so the constructor data is invalid
-        vm.warp(block.timestamp + 2 days);
-        uint256 _newData = 4e6;
-        umaPriceProvider.updateAssertionData(_newData);
-
-        // Querying for assertion
-        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
-        mockUma.assertionResolvedCallback(
-            address(umaPriceProvider),
-            _assertionId,
-            true
-        );
-
+        // Checking condition met is true and price is 0
         (bool condition, int256 price) = umaPriceProvider.conditionMet(
             2 ether,
             marketId
@@ -282,63 +280,38 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     }
 
     function testCheckAssertionTrue() public {
-        MockUma mockUma = new MockUma();
-
-        // Deploying new UmaV3PriceAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
-            UMA_DESCRIPTION,
-            TIME_OUT,
-            address(mockUma),
-            defaultIdentifier,
-            WETH_ADDRESS,
-            assertionDescription,
-            REQUIRED_BOND
-        );
-        umaPriceProvider.setConditionType(marketId, 2);
-        umaPriceProvider.updateRelayer(address(this));
-
-        // Configuring the assertionInfo
-        deal(WETH_ADDRESS, address(this), 1e18);
-        wethAsset.approve(address(umaPriceProvider), 1e18);
-
-        // Moving forward so the constructor data is invalid
-        vm.warp(block.timestamp + 2 days);
-        uint256 _newData = 4e6;
-        umaPriceProvider.updateAssertionData(_newData);
-
-        // Querying for assertion
-        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
-        mockUma.assertionResolvedCallback(
-            address(umaPriceProvider),
-            _assertionId,
-            true
-        );
-
+        _stagingTruthyAssertion();
         bool condition = umaPriceProvider.checkAssertion(marketId);
         assertEq(condition, true);
     }
 
     function testCheckAssertionFalse() public {
+        vm.warp(block.timestamp + 2 days);
+        bool condition = umaPriceProvider.checkAssertion(marketId);
+        assertEq(condition, false);
+    }
+
+    function testFetchAssertionContractHasBalance() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3PriceAssertionProvider
+        // Deploying new UmaV3DynamicAssertionProvider
         umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
-        umaPriceProvider.setConditionType(marketId, 2);
+        string memory newDescription = " USDC/USD exchange rate is above";
+        umaPriceProvider.setAssertionDescription(marketId, newDescription);
         umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
-        deal(WETH_ADDRESS, address(this), 1e18);
-        wethAsset.approve(address(umaPriceProvider), 1e18);
+        deal(WETH_ADDRESS, address(umaPriceProvider), 1e18);
+        uint256 umaProviderBal = wethAsset.balanceOf(address(umaPriceProvider));
+        uint256 senderBal = wethAsset.balanceOf(address(this));
+        assertEq(umaProviderBal, 1e18);
+        assertEq(senderBal, 0);
 
         // Moving forward so the constructor data is invalid
         vm.warp(block.timestamp + 2 days);
@@ -346,15 +319,14 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         umaPriceProvider.updateAssertionData(_newData);
 
         // Querying for assertion
-        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
-        mockUma.assertionResolvedCallback(
-            address(umaPriceProvider),
-            _assertionId,
-            false
-        );
+        umaPriceProvider.fetchAssertion(marketId);
 
-        bool condition = umaPriceProvider.checkAssertion(marketId);
-        assertEq(condition, false);
+        // Checking umaPriceProvide balance declined
+        assertEq(
+            wethAsset.balanceOf(address(umaPriceProvider)),
+            umaProviderBal - REQUIRED_BOND
+        );
+        assertEq(wethAsset.balanceOf(address(this)), 0);
     }
 
     ////////////////////////////////////////////////
@@ -363,114 +335,48 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function testRevertConstructorInputsUma() public {
         vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
         new UmaV3DynamicAssertionProvider(
-            0,
-            UMA_DESCRIPTION,
-            TIME_OUT,
-            UMA_OO_V3,
-            defaultIdentifier,
-            WETH_ADDRESS,
-            assertionDescription,
-            REQUIRED_BOND
-        );
-
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             string(""),
             TIME_OUT,
             UMA_OO_V3,
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
 
         vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
         new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             0,
             UMA_OO_V3,
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
 
         vm.expectRevert(UmaV3DynamicAssertionProvider.ZeroAddress.selector);
         new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             address(0),
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
-            REQUIRED_BOND
-        );
-
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
-            UMA_DESCRIPTION,
-            TIME_OUT,
-            UMA_OO_V3,
-            bytes32(""),
-            WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
 
         vm.expectRevert(UmaV3DynamicAssertionProvider.ZeroAddress.selector);
         new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
-            defaultIdentifier,
             address(0),
-            assertionDescription,
             REQUIRED_BOND
         );
 
         vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
         new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
-            defaultIdentifier,
             WETH_ADDRESS,
-            bytes(""),
-            REQUIRED_BOND
-        );
-
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
-            UMA_DESCRIPTION,
-            TIME_OUT,
-            UMA_OO_V3,
-            defaultIdentifier,
-            WETH_ADDRESS,
-            assertionDescription,
             0
         );
-    }
-
-    function testRevertConditionTypeSetUma() public {
-        vm.expectRevert(
-            UmaV3DynamicAssertionProvider.ConditionTypeSet.selector
-        );
-        umaPriceProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionUma() public {
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        umaPriceProvider.setConditionType(0, 0);
-
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        umaPriceProvider.setConditionType(0, 3);
     }
 
     function testRevertInvalidInputRequiredBond() public {
@@ -486,6 +392,16 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function testRevertInvalidInputAssertionData() public {
         vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
         umaPriceProvider.updateAssertionData(0);
+    }
+
+    function testRevertSetAssertionDescription() public {
+        string memory newDescription = " USDC/USD exchange rate is above";
+        umaPriceProvider.setAssertionDescription(marketId, newDescription);
+
+        vm.expectRevert(
+            UmaV3DynamicAssertionProvider.DescriptionAlreadySet.selector
+        );
+        umaPriceProvider.setAssertionDescription(marketId, string(""));
     }
 
     function testRevertInvalidCallerCallback() public {
@@ -505,21 +421,17 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         );
     }
 
-    function testRevertAssertionActive() public {
+    function testRevertCheckAssertionActive() public {
         MockUma mockUma = new MockUma();
 
         // Deploying new UmaV3DynamicAssertionProvider
         umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
-            defaultIdentifier,
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
-        umaPriceProvider.setConditionType(marketId, 1);
         umaPriceProvider.updateRelayer(address(this));
 
         // Configuring the assertionInfo
@@ -531,6 +443,28 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         umaPriceProvider.fetchAssertion(marketId);
     }
 
+    function testRevertFetchAssertionActive() public {
+        MockUma mockUma = new MockUma();
+
+        // Deploying new UmaV3DynamicAssertionProvider
+        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+            UMA_DESCRIPTION,
+            TIME_OUT,
+            address(mockUma),
+            WETH_ADDRESS,
+            REQUIRED_BOND
+        );
+        umaPriceProvider.updateRelayer(address(this));
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+        umaPriceProvider.fetchAssertion(marketId);
+
+        vm.expectRevert(UmaV3DynamicAssertionProvider.AssertionActive.selector);
+        umaPriceProvider.checkAssertion(marketId);
+    }
+
     function testRevertFetchAssertionInvalidCaller() public {
         vm.startPrank(address(0x123));
         vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidCaller.selector);
@@ -538,26 +472,86 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         vm.stopPrank();
     }
 
-    function testRevertAssertionDataEmpty() public {
+    function testRevertAssertionDataOutdated() public {
         vm.warp(block.timestamp + 2 days);
         vm.expectRevert(
-            UmaV3DynamicAssertionProvider.AssertionDataEmpty.selector
+            UmaV3DynamicAssertionProvider.AssertionDataOutdated.selector
         );
         umaPriceProvider.fetchAssertion(marketId);
     }
 
-    function testRevertTimeOutUma() public {
+    function testRevertCooldownPending() public {
+        _stagingTruthyAssertion();
+
+        vm.expectRevert(UmaV3DynamicAssertionProvider.CooldownPending.selector);
+        umaPriceProvider.fetchAssertion(marketId);
+    }
+
+    function testRevertPriceTimeOutUma() public {
+        _stagingTruthyAssertion();
+
+        vm.warp(block.timestamp + umaPriceProvider.timeOut() + 1);
+        vm.expectRevert(UmaV3DynamicAssertionProvider.PriceTimedOut.selector);
+        umaPriceProvider.checkAssertion(marketId);
+    }
+
+    ////////////////////////////////////////////////
+    //                  STAGING                  //
+    ////////////////////////////////////////////////
+    function _stagingTruthyAssertion() internal returns (MockUma mockUma) {
+        mockUma = new MockUma();
+
+        // Deploying new UmaV3DynamicAssertionProvider
         umaPriceProvider = new UmaV3DynamicAssertionProvider(
-            UMA_DECIMALS,
             UMA_DESCRIPTION,
             TIME_OUT,
-            UMA_OO_V3,
-            defaultIdentifier,
+            address(mockUma),
             WETH_ADDRESS,
-            assertionDescription,
             REQUIRED_BOND
         );
-        vm.expectRevert(UmaV3DynamicAssertionProvider.PriceTimedOut.selector);
-        umaPriceProvider.checkAssertion(123);
+        string memory newDescription = " USDC/USD exchange rate is above";
+        umaPriceProvider.setAssertionDescription(marketId, newDescription);
+        umaPriceProvider.updateRelayer(address(this));
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+
+        // Moving forward so the constructor data is invalid
+        vm.warp(block.timestamp + 2 days);
+        uint256 _newData = 4e6;
+        umaPriceProvider.updateAssertionData(_newData);
+
+        // Querying for assertion
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
+        mockUma.assertionResolvedCallback(
+            address(umaPriceProvider),
+            _assertionId,
+            true
+        );
+    }
+
+    function _stagingTruthyAssertionCustom(
+        uint256 _marketId,
+        MockUma mockUma
+    ) internal {
+        string memory newDescription = " USDC/USD exchange rate is above";
+        umaPriceProvider.setAssertionDescription(_marketId, newDescription);
+
+        // Configuring the assertionInfo
+        deal(WETH_ADDRESS, address(this), 1e18);
+        wethAsset.approve(address(umaPriceProvider), 1e18);
+
+        // Moving forward so the constructor data is invalid
+        uint256 _newData = 4e6;
+        umaPriceProvider.updateAssertionData(_newData);
+
+        // Querying for assertion
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(_marketId);
+        mockUma.assertionResolvedCallback(
+            address(umaPriceProvider),
+            _assertionId,
+            true
+        );
     }
 }

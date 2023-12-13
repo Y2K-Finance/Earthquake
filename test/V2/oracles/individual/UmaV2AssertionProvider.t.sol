@@ -77,16 +77,16 @@ contract UmaV2AssertionProviderTest is Helper {
         assertEq(umaV2AssertionProvider.reward(), reward);
         assertEq(umaV2AssertionProvider.coverageStart(), block.timestamp);
 
-        string
-            memory ancillaryDataHead = "q: Aave USDC.e pool (address: 0x625E7708f30cA75bfd92586e17077590C60eb4cD) on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: string";
-        uint256 coverageStart = 1697498162;
-        string
-            memory ancillaryDataTail = ". P1: 0 for NO, P2: 1 for YES, P3: 2 for UNDETERMINED";
-        bytes memory output = abi.encodePacked(
-            ancillaryDataHead,
-            coverageStart,
-            ancillaryDataTail
-        );
+        // string
+        //     memory ancillaryDataHead = "q: Aave USDC.e pool (address: 0x625E7708f30cA75bfd92586e17077590C60eb4cD) on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: string";
+        // uint256 coverageStart = 1697498162;
+        // string
+        //     memory ancillaryDataTail = ". P1: 0 for NO, P2: 1 for YES, P3: 2 for UNDETERMINED";
+        // bytes memory output = abi.encodePacked(
+        //     ancillaryDataHead,
+        //     coverageStart,
+        //     ancillaryDataTail
+        // );
     }
 
     ////////////////////////////////////////////////

@@ -118,6 +118,12 @@ contract UmaV3PriceAssertionProvider is Ownable {
         emit RelayerUpdated(_relayer, relayerState);
     }
 
+    function withdrawBond() external onlyOwner {
+        ERC20 bondCurrency = ERC20(currency);
+        uint256 balance = bondCurrency.balanceOf(address(this));
+        bondCurrency.safeTransfer(msg.sender, balance);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  CALLBACK
     //////////////////////////////////////////////////////////////*/
@@ -160,7 +166,9 @@ contract UmaV3PriceAssertionProvider is Ownable {
         bytes memory claim = _composeClaim(marketIdToConditionType[_marketId]);
 
         // Transfer bond from sender and request assertion
-        ERC20(currency).safeTransferFrom(msg.sender, address(this), bond);
+        ERC20 bondCurrency = ERC20(currency);
+        if (bondCurrency.balanceOf(address(this)) < bond)
+            ERC20(currency).safeTransferFrom(msg.sender, address(this), bond);
         ERC20(currency).safeApprove(address(umaV3), bond);
         assertionId = umaV3.assertTruth(
             claim,

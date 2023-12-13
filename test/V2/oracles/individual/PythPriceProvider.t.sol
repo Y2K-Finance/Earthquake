@@ -48,13 +48,8 @@ contract PythPriceProviderTest is Helper {
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
     function testLatestRoundDataPyth() public {
-        (
-            uint80 roundId,
-            int256 price,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = pythProvider.latestRoundData();
+        (, int256 price, , uint256 updatedAt, ) = pythProvider
+            .latestRoundData();
         assertTrue(price != 0);
         assertTrue(updatedAt != 0);
     }

@@ -7,10 +7,10 @@ import {IOptimisticOracleV3} from "../../interfaces/IOptimisticOracleV3.sol";
 import {SafeTransferLib} from "lib/solmate/src/utils/SafeTransferLib.sol";
 import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "forge-std/console.sol";
 
-/// @notice Assertion provider where the condition can be checked without a required begin time e.g. 1 PEPE > $1000 or BTC market > 2x ETH market cap
+/// @notice Assertion provider for one data point with differing description
+/// @dev Example: (a) ETH vol is above <dataPoint>, and (b) ETH vol is below <dataPoint>
 /// @dev This provider would not work if you needed to check if x happened between time y and z
 contract UmaV3DynamicAssertionProvider is Ownable {
     using SafeTransferLib for ERC20;
@@ -26,78 +26,59 @@ contract UmaV3DynamicAssertionProvider is Ownable {
         uint128 updatedAt;
     }
 
-    string public constant OUTCOME_1 = "true. ";
-    string public constant OUTCOME_2 = "false. ";
-
     // Uma V3
     uint64 public constant ASSERTION_LIVENESS = 7200; // 2 hours.
+    uint256 public constant ASSERTION_COOLDOWN = 300; // 5 minutes.
     address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
     IOptimisticOracleV3 public immutable umaV3;
 
     // Market info
     uint256 public immutable timeOut;
-    uint256 public immutable decimals;
     string public description;
-    bytes public assertionDescription;
     AssertionData public assertionData; // The uint data value for the market
     uint256 public requiredBond; // Bond required to assert on a market
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
+    mapping(uint256 => string) public marketIdToAssertionDescription;
     mapping(uint256 => MarketAnswer) public marketIdToAnswer;
     mapping(bytes32 => uint256) public assertionIdToMarket;
     mapping(address => bool) public whitelistRelayer;
 
     event MarketAsserted(uint256 marketId, bytes32 assertionId);
     event AssertionResolved(bytes32 assertionId, bool assertion);
-    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
+    event DescriptionSet(uint256 marketId, string description);
     event BondUpdated(uint256 newBond);
     event AssertionDataUpdated(uint256 newData);
     event RelayerUpdated(address relayer, bool state);
+    event BondWithdrawn(uint256 amount);
+    event AnswersReset(uint256[] marketIds);
 
     /**
-        @param _decimals is decimals for the provider maker if relevant
         @param _description is for the price provider market
         @param _timeOut is the max time between receiving callback and resolving market condition
         @param _umaV3 is the V3 Uma Optimistic Oracle
-        @param _defaultIdentifier is UMA DVM identifier to use for price requests in the event of a dispute. Must be pre-approved.
         @param _currency is currency used to post the bond
-        @param _assertionDescription is description used for the market
         @param _requiredBond is bond amount of currency to pull from the caller and hold in escrow until the assertion is resolved. This must be >= getMinimumBond(address(currency)). 
      */
     constructor(
-        uint256 _decimals,
         string memory _description,
         uint256 _timeOut,
         address _umaV3,
-        bytes32 _defaultIdentifier,
         address _currency,
-        bytes memory _assertionDescription,
         uint256 _requiredBond
     ) {
-        if (_decimals == 0) revert InvalidInput();
         if (keccak256(bytes(_description)) == keccak256(bytes(string(""))))
             revert InvalidInput();
         if (_timeOut == 0) revert InvalidInput();
         if (_umaV3 == address(0)) revert ZeroAddress();
-        if (
-            keccak256(abi.encodePacked(_defaultIdentifier)) ==
-            keccak256(abi.encodePacked(bytes32("")))
-        ) revert InvalidInput();
         if (_currency == address(0)) revert ZeroAddress();
-        if (
-            keccak256(abi.encodePacked(_assertionDescription)) ==
-            keccak256(bytes(""))
-        ) revert InvalidInput();
         if (_requiredBond == 0) revert InvalidInput();
 
-        decimals = _decimals;
         description = _description;
         timeOut = _timeOut;
         umaV3 = IOptimisticOracleV3(_umaV3);
-        defaultIdentifier = _defaultIdentifier;
+        defaultIdentifier = umaV3.defaultIdentifier();
         currency = _currency;
-        assertionDescription = _assertionDescription;
         requiredBond = _requiredBond;
         assertionData.updatedAt = uint128(block.timestamp);
     }
@@ -105,45 +86,147 @@ contract UmaV3DynamicAssertionProvider is Ownable {
     /*//////////////////////////////////////////////////////////////
                                  ADMIN
     //////////////////////////////////////////////////////////////*/
-    function setConditionType(
+    /**
+        @notice Defines the assertion description for a market
+        @dev Can only be set once and the assertionData is expected to be updated for assertions
+     */
+    function setAssertionDescription(
         uint256 _marketId,
-        uint256 _condition
+        string calldata _description
     ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
+        if (
+            keccak256(
+                abi.encodePacked(marketIdToAssertionDescription[_marketId])
+            ) != keccak256(abi.encodePacked(""))
+        ) revert DescriptionAlreadySet();
+        marketIdToAssertionDescription[_marketId] = _description;
+        emit DescriptionSet(_marketId, _description);
     }
 
+    /**
+        @notice Updates the default bond used by this contract when asserting on Uma
+        @param newBond is the new bond amount
+     */
     function updateRequiredBond(uint256 newBond) external onlyOwner {
         if (newBond == 0) revert InvalidInput();
         requiredBond = newBond;
         emit BondUpdated(newBond);
     }
 
-    function updateAssertionData(uint256 _newData) public onlyOwner {
-        if (_newData == 0) revert InvalidInput();
-        assertionData = AssertionData({
-            assertionData: uint128(_newData),
-            updatedAt: uint128(block.timestamp)
-        });
-
-        emit AssertionDataUpdated(_newData);
+    /**
+        @notice Updates the data being used to assert in the uma assertion request
+        @param _newData is the new data for the assertion
+     */
+    function updateAssertionData(uint256 _newData) external onlyOwner {
+        _updateAssertionData(_newData);
     }
 
+    /**
+        @notice Updates the assertion data and makes a request to Uma V3 for a market
+        @dev Updated data will be used for assertion then a callback will be received after LIVENESS_PERIOD
+        @param _newData is the new data for the assertion
+        @param _marketId is the marketId for the market
+     */
     function updateAssertionDataAndFetch(
         uint256 _newData,
         uint256 _marketId
     ) external onlyOwner returns (bytes32) {
-        updateAssertionData(_newData);
-        return fetchAssertion(_marketId);
+        _updateAssertionData(_newData);
+        return _fetchAssertion(_marketId);
     }
 
+    /**
+        @notice Toggles relayer status for an address
+        @param _relayer is the address to update
+     */
     function updateRelayer(address _relayer) external onlyOwner {
         if (_relayer == address(0)) revert ZeroAddress();
         bool relayerState = whitelistRelayer[_relayer];
         whitelistRelayer[_relayer] = !relayerState;
         emit RelayerUpdated(_relayer, relayerState);
+    }
+
+    /**
+        @notice Withdraws the balance of the currency in the contract 
+        @dev This is likely to be the bond value remaining in the contract
+     */
+    function withdrawBond() external onlyOwner {
+        ERC20 bondCurrency = ERC20(currency);
+        uint256 balance = bondCurrency.balanceOf(address(this));
+        bondCurrency.safeTransfer(msg.sender, balance);
+        emit BondWithdrawn(balance);
+    }
+
+    /**
+        @notice Resets answer to 0
+        @dev If the answer has expired then it can be reset - allowing checks to default to false
+        @param _marketId is the marketId for the market
+     */
+    function resetAnswerAfterTimeout(
+        uint256[] memory _marketId
+    ) external onlyOwner {
+        for (uint i; i < _marketId.length; ) {
+            uint256 currentId = _marketId[i];
+            MarketAnswer memory marketAnswer = marketIdToAnswer[currentId];
+
+            if (
+                marketAnswer.answer == 1 &&
+                (block.timestamp - marketAnswer.updatedAt) > timeOut
+            ) marketIdToAnswer[currentId].answer = 0;
+
+            unchecked {
+                i++;
+            }
+        }
+        emit AnswersReset(_marketId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 EXTERNAL
+    //////////////////////////////////////////////////////////////*/
+    /**
+        @notice Fetches the assertion from the UMA V3 Optimistic Oracle
+        @param _marketId is the marketId for the market
+        @return assertionId is the id for the assertion
+     */
+    function fetchAssertion(uint256 _marketId) external returns (bytes32) {
+        return _fetchAssertion(_marketId);
+    }
+
+    /** 
+        @notice Fetch the assertion state of the market
+        @dev If asserition is active then will revert
+        @dev If assertion is true and timedOut then will revert
+        @param _marketId is the marketId for the market
+        @return bool If assertion is true or false for the market condition
+     */
+    function checkAssertion(
+        uint256 _marketId
+    ) public view virtual returns (bool) {
+        MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
+
+        if (marketAnswer.activeAssertion == true) revert AssertionActive();
+        if (
+            marketAnswer.answer == 1 &&
+            (block.timestamp - marketAnswer.updatedAt) > timeOut
+        ) revert PriceTimedOut();
+
+        if (marketAnswer.answer == 1) return true;
+        else return false;
+    }
+
+    // NOTE: _marketId unused but receiving marketId makes Generic controller composabile for future
+    /** @notice Fetch price and return condition
+     * @param _marketId the marketId for the market
+     * @return boolean If condition is met i.e. strike > price
+     * @return price Current price for token
+     */
+    function conditionMet(
+        uint256,
+        uint256 _marketId
+    ) public view virtual returns (bool, int256 price) {
+        bool _conditionMet = checkAssertion(_marketId);
+        return (_conditionMet, price);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -171,31 +254,57 @@ contract UmaV3DynamicAssertionProvider is Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                 EXTERNAL
+                                 INTERNAL
     //////////////////////////////////////////////////////////////*/
+    /**
+        @param _newData is the new data for the assertion
+        @dev updates the assertion data
+     */
+    function _updateAssertionData(uint256 _newData) private {
+        if (_newData == 0) revert InvalidInput();
+        assertionData = AssertionData({
+            assertionData: uint128(_newData),
+            updatedAt: uint128(block.timestamp)
+        });
 
-    function fetchAssertion(
+        emit AssertionDataUpdated(_newData);
+    }
+
+    /**
+        @dev AssertionDataOutdated check ensures the data being asserted is up to date
+        @dev CooldownPending check ensures the cooldown period has passed since the last assertion
+        @param _marketId is the marketId for the market
+     */
+    function _fetchAssertion(
         uint256 _marketId
-    ) public returns (bytes32 assertionId) {
+    ) private returns (bytes32 assertionId) {
         if (whitelistRelayer[msg.sender] == false) revert InvalidCaller();
 
         MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
         if (marketAnswer.activeAssertion == true) revert AssertionActive();
+        if (block.timestamp - marketAnswer.updatedAt < ASSERTION_COOLDOWN)
+            revert CooldownPending();
         if ((block.timestamp - assertionData.updatedAt) > timeOut)
-            revert AssertionDataEmpty();
+            revert AssertionDataOutdated();
 
         // Configure bond and claim information
         uint256 minimumBond = umaV3.getMinimumBond(address(currency));
         uint256 reqBond = requiredBond;
         uint256 bond = reqBond > minimumBond ? reqBond : minimumBond;
-        bytes memory claim = _composeClaim(marketIdToConditionType[_marketId]);
+        bytes memory claim = _composeClaim(
+            marketIdToAssertionDescription[_marketId]
+        );
 
         // Transfer bond from sender and request assertion
-        ERC20(currency).safeTransferFrom(msg.sender, address(this), bond);
-        ERC20(currency).safeApprove(address(umaV3), bond);
+        ERC20 bondCurrency = ERC20(currency);
+        if (bondCurrency.balanceOf(address(this)) < bond)
+            bondCurrency.safeTransferFrom(msg.sender, address(this), bond);
+        bondCurrency.safeApprove(address(umaV3), bond);
+
+        // Request assertion from UMA V3
         assertionId = umaV3.assertTruth(
             claim,
-            msg.sender, // Asserter
+            address(this), // Asserter
             address(this), // Receive callback to this contract
             address(0), // No sovereign security
             ASSERTION_LIVENESS,
@@ -206,64 +315,28 @@ contract UmaV3DynamicAssertionProvider is Ownable {
         );
 
         assertionIdToMarket[assertionId] = _marketId;
-        marketIdToAnswer[_marketId].activeAssertion = true;
-        marketIdToAnswer[_marketId].assertionId = assertionId;
+        marketAnswer.activeAssertion = true;
+        marketAnswer.assertionId = assertionId;
+        if (marketAnswer.answer == 1) marketAnswer.answer = 0;
+        marketIdToAnswer[_marketId] = marketAnswer;
 
         emit MarketAsserted(_marketId, assertionId);
     }
 
-    /** @notice Fetch the assertion state of the market
-     * @return bool If assertion is true or false for the market condition
-     */
-    function checkAssertion(
-        uint256 _marketId
-    ) public view virtual returns (bool) {
-        MarketAnswer memory marketAnswer = marketIdToAnswer[_marketId];
-
-        if ((block.timestamp - marketAnswer.updatedAt) > timeOut)
-            revert PriceTimedOut();
-
-        if (marketAnswer.answer == 1) return true;
-        else return false;
-    }
-
-    // NOTE: _marketId unused but receiving marketId makes Generic controller composabile for future
-    /** @notice Fetch price and return condition
-     * @param _marketId the marketId for the market
-     * @return boolean If condition is met i.e. strike > price
-     * @return price Current price for token
-     */
-    function conditionMet(
-        uint256,
-        uint256 _marketId
-    ) public view virtual returns (bool, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
-        bool condition = checkAssertion(_marketId);
-
-        if (conditionType == 1) return (condition, price);
-        else if (conditionType == 2) return (condition, price);
-        else revert ConditionTypeNotSet();
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                 INTERNAL
-    //////////////////////////////////////////////////////////////*/
     /**
-        @param _conditionType is the condition type for the market
-        @dev encode claim would look like: "As of assertion timestamp <timestamp>, <assertionDescription> <outcome> <assertionStrike>"
+        @param _assertionDescription assertion description fetched with the marketId
+        @dev encode claim would look like: "As of assertion timestamp <timestamp>, <assertionDescription> <assertionStrike>"
         Where inputs could be: "As of assertion timestamp 1625097600, <USDC/USD exchange rate is> <above> <0.997>"
         @return bytes for the claim
      */
     function _composeClaim(
-        uint256 _conditionType
+        string memory _assertionDescription
     ) internal view returns (bytes memory) {
         return
             abi.encodePacked(
                 "As of assertion timestamp ",
                 _toUtf8BytesUint(block.timestamp),
-                ", the following statement is",
-                _conditionType == 1 ? OUTCOME_1 : OUTCOME_2,
-                assertionDescription,
+                _assertionDescription,
                 _toUtf8BytesUint(assertionData.assertionData)
             );
     }
@@ -301,11 +374,10 @@ contract UmaV3DynamicAssertionProvider is Ownable {
     error ZeroAddress();
     error InvalidInput();
     error PriceTimedOut();
-    error ConditionTypeNotSet();
-    error ConditionTypeSet();
     error InvalidCaller();
     error AssertionActive();
     error AssertionInactive();
-    error InvalidCallback();
-    error AssertionDataEmpty();
+    error AssertionDataOutdated();
+    error CooldownPending();
+    error DescriptionAlreadySet();
 }
