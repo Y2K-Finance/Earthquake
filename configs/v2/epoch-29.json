@@ -9,10 +9,10 @@
     },
 	"markets": [
     {
-      "isGenericController": false,
+      "isGenericController": true,
       "isDepegCondition": true,
       "depositAsset": "WETH",
-      "depositFee": 0,
+      "depositFee": "0",
       "minQueueDeposit": "25000000000000000",
       "name": "y2kCUSD_976_WETH*",
       "oracle": "0x23771dde70538Bf036Bb1219a3efa27B8b200920",
@@ -25,7 +25,7 @@
       "isGenericController": true,
       "isDepegCondition": true,
       "depositAsset": "WETH",
-      "depositFee": 0,
+      "depositFee": "0",
       "minQueueDeposit": "25000000000000000",
       "name": "y2kPYUSD_990_WETH*",
       "oracle": "0x5caf79209fda2e2caaf5337e265e01d32115282a",

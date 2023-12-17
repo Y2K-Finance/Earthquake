@@ -142,12 +142,12 @@ contract V2DeployContracts is Script, HelperV2 {
             //     cviDecimals
             // );
 
-            // address _pyth = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
-            // bytes32 _priceFeedId = 0x8f218655050a1476b780185e89f19d2b1e1f49e9bd629efad6ac547a946bf6ab;
-            // uint256 _timeOut = 24 hours;
-            // PythPriceProvider pythPriceProvider = new PythPriceProvider(
-            //   _pyth, _priceFeedId, _timeOut
-            // );
+            address _pyth = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
+            bytes32 _priceFeedId = 0xc1da1b73d7f01e7ddd54b3766cf7fcd644395ad14f70aa706ec5384c59e76692;
+            uint256 _timeOut = 24 hours;
+            PythPriceProvider pythPriceProvider = new PythPriceProvider(
+              _pyth, _priceFeedId, _timeOut
+            );
 
             
         /*//////////////////////////////////////////////////////////////
@@ -195,7 +195,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
-        // console2.log("Pyth Price Provider", address(pythPriceProvider));
+        console2.log("Pyth Price Provider", address(pythPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
