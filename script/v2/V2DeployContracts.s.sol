@@ -164,7 +164,6 @@ contract V2DeployContracts is Script, HelperV2 {
         //     );
 
         // uint256 umaDecimals = 18;
-        address umaOOV3 = 0xa6147867264374F324524E30C02C331cF28aa879;
         // string memory umaDescription = "USDC";
         // uint256 requiredBond = 1e6;
         // bytes32 defaultIdentifier = bytes32("abc");
@@ -182,9 +181,10 @@ contract V2DeployContracts is Script, HelperV2 {
         //         requiredBond
         //     );
 
+        address umaOOV3 = 0xa6147867264374F324524E30C02C331cF28aa879;
         string memory marketDescription = "ETH Volatility";
-        uint256 requiredBond = 1e6;
-        address currency = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH_ADDRESS
+        uint256 requiredBond = 501e6;
+        address currency = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // USDC.e
         UmaV3DynamicAssertionProvider umaV3Provider = new UmaV3DynamicAssertionProvider(
                 marketDescription,
                 timeOut,
@@ -249,7 +249,7 @@ contract V2DeployContracts is Script, HelperV2 {
         //     "Uma V2 Assertion Provider",
         //     address(umaV2AssertionProvider)
         // );
-        // console2.log("Uma V3 Provider", address(umaV3Provider));
+        console2.log("Uma V3 Provider", address(umaV3Provider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));
