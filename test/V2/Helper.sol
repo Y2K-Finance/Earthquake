@@ -7,6 +7,17 @@ import {VaultV2} from "../../src/v2/VaultV2.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Helper is Test {
+    event MarketAsserted(uint256 marketId, bytes32 assertionId);
+    event AssertionResolved(bytes32 assertionId, bool assertion);
+    event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
+    event BondUpdated(uint256 newBond);
+    event RewardUpdated(uint256 newReward);
+    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
+    event CoverageStartUpdated(uint256 startTime);
+    event AssertionDataUpdated(uint256 newData);
+    event RelayerUpdated(address relayer, bool state);
+    event DescriptionSet(uint256 marketId, string description);
+
     uint256 public constant STRIKE = 1000000000000000000;
     uint256 public constant COLLATERAL_MINUS_FEES = 21989999998398551453;
     uint256 public constant COLLATERAL_MINUS_FEES_DIV10 = 2198999999839855145;
@@ -63,6 +74,7 @@ contract Helper is Test {
     address public constant RELAYER = address(0x55);
     address public UNDERLYING = address(0x123);
     address public TOKEN = address(new MintableToken("Token", "tkn"));
+    address public WETH_ADDRESS = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     // keeper variables
     address public ops = 0xB3f5503f93d5Ef84b06993a1975B9D21B962892F;
     address public treasuryTask = 0xB2f34fd4C16e656163dADFeEaE4Ae0c1F13b140A;
@@ -70,8 +82,6 @@ contract Helper is Test {
     string public ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
     string public ARBITRUM_GOERLI_RPC_URL =
         vm.envString("ARBITRUM_GOERLI_RPC_URL");
-
-    event ProtocolFeeCollected(uint256 indexed epochId, uint256 indexed fee);
 
     ////////////////////////////////////////////////
     //                Vault Helpers               //

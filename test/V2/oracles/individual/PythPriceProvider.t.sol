@@ -9,10 +9,8 @@ import {TimeLock} from "../../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerNegativePyth,
     MockOracleExponentTooSmallPyth
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 import {IPriceFeedAdapter} from "../PriceInterfaces.sol";
-import {IPyth} from "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
-import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
 contract PythPriceProviderTest is Helper {
     uint256 public arbForkId;
@@ -26,6 +24,7 @@ contract PythPriceProviderTest is Helper {
     function setUp() public {
         arbForkId = vm.createFork(ARBITRUM_RPC_URL);
         vm.selectFork(arbForkId);
+        vm.warp(1698034887);
 
         pythProvider = new PythPriceProvider(
             PYTH_CONTRACT,
@@ -38,15 +37,11 @@ contract PythPriceProviderTest is Helper {
     //                STATE                       //
     ////////////////////////////////////////////////
 
-    function testCreation() public {
+    function testPythCreation() public {
         assertEq(pythProvider.timeOut(), TIME_OUT);
         assertEq(pythProvider.priceFeedId(), PYTH_FDUSD_FEED_ID);
         assertEq(address(pythProvider.pyth()), PYTH_CONTRACT);
-
-        PythStructs.Price memory answer = IPyth(PYTH_CONTRACT).getPriceUnsafe(
-            PYTH_FDUSD_FEED_ID
-        );
-        assertEq(pythProvider.decimals(), uint256(int256(-answer.expo)));
+        assertEq(pythProvider.decimals(), 8);
     }
 
     ////////////////////////////////////////////////
@@ -62,15 +57,6 @@ contract PythPriceProviderTest is Helper {
     function testLatestPricePyth() public {
         int256 price = pythProvider.getLatestPrice();
         assertTrue(price != 0);
-    }
-
-    function testConditionMet() public {
-        (bool condition, int256 price) = pythProvider.conditionMet(
-            2 ether,
-            marketId
-        );
-        assertTrue(price != 0);
-        assertEq(condition, true);
     }
 
     function testConditionOneMetPyth() public {
@@ -128,13 +114,10 @@ contract PythPriceProviderTest is Helper {
             PYTH_FDUSD_FEED_ID,
             TIME_OUT
         );
-        PythStructs.Price memory answer = IPyth(mockPyth).getPriceUnsafe(
-            PYTH_FDUSD_FEED_ID
-        );
         vm.expectRevert(
             abi.encodeWithSelector(
                 PythPriceProvider.ExponentTooSmall.selector,
-                answer.expo
+                int256(-19)
             )
         );
         pythProvider.getLatestPrice();

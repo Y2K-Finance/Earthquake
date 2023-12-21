@@ -14,6 +14,11 @@ import "../../src/v2/oracles/individual/RedstonePriceProvider.sol";
 import "../../src/v2/oracles/individual/DIAPriceProvider.sol";
 import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
+import "../../src/v2/oracles/individual/UmaV2PriceProvider.sol";
+import "../../src/v2/oracles/individual/UmaV2AssertionProvider.sol";
+import "../../src/v2/oracles/individual/UmaV3PriceProvider.sol";
+import "../../src/v2/oracles/individual/UmaV3AssertionProvider.sol";
+import "../../src/v2/oracles/individual/PythPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
 import {
@@ -112,8 +117,8 @@ contract V2DeployContracts is Script, HelperV2 {
         //     timeOut
         // );
 
-        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
-        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
+        // address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+        // GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
 
         // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
         // uint256 cviDecimals = 0;
@@ -125,6 +130,77 @@ contract V2DeployContracts is Script, HelperV2 {
 
         // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
         // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
+
+        uint256 timeOut = 2 hours;
+        // address umaCurrency = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+        // address umaV2Finder = 0xB0b9f73B424AD8dc58156C2AE0D7A1115D1EcCd1;
+        // uint128 reward = 5e6;
+
+        // uint256 umaDecimals = 18;
+        // string memory umaDescription = "FUSD/USD";
+        // string
+        //     memory ancillaryData = 'base:FDUSD,baseAddress:0xc5f0f7b66764F6ec8C8Dff7BA683102295E16409,baseChain: 1,quote:USD,quoteDetails:United States Dollar,rounding:18,fallback:"https://www.coingecko.com/en/coins/first-digital-usd",configuration:{"type": "medianizer","minTimeBetweenUpdates": 60,"twapLength": 600,"medianizedFeeds":[{ "type": "cryptowatch", "exchange": "binance", "pair": "fdusdusdt" }]}';
+
+        // UmaV2PriceProvider umaV2PriceProvider = new UmaV2PriceProvider(
+        //     timeOut,
+        //     umaDecimals,
+        //     umaDescription,
+        //     umaV2Finder,
+        //     umaCurrency,
+        //     ancillaryData,
+        //     reward
+        // );
+
+        // string memory umaDescription = "AAVE aUSDC Hack Market";
+        // string
+        //     memory ancillaryData = "q: Aave USDC.e pool (address: 0x625E7708f30cA75bfd92586e17077590C60eb4cD) on Arbitrum One was hacked or compromised leading to locked funds or >25% loss in TVL value after the timestamp of: ";
+        // UmaV2AssertionProvider umaV2AssertionProvider = new UmaV2AssertionProvider(
+        //         timeOut,
+        //         umaDescription,
+        //         umaV2Finder,
+        //         umaCurrency,
+        //         ancillaryData,
+        //         reward
+        //     );
+
+        // uint256 umaDecimals = 18;
+        // string memory umaDescription = "USDC";
+        // uint256 requiredBond = 1e6;
+        // bytes32 defaultIdentifier = bytes32("abc");
+        // bytes
+        //     memory assertionDescription = "The USDC/USD exchange is above 0.997";
+        // address currency = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH_ADDRESS
+        // UmaV3PriceProvider umaPriceProvider = new UmaV3PriceProvider(
+        //         umaDecimals,
+        //         umaDescription,
+        //         timeOut,
+        //         umaOOV3,
+        //         defaultIdentifier,
+        //         currency,
+        //         assertionDescription,
+        //         requiredBond
+        //     );
+
+        address umaOOV3 = 0xa6147867264374F324524E30C02C331cF28aa879;
+        string memory marketDescription = "ETH Volatility";
+        uint256 requiredBond = 501e6;
+        address currency = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // USDC.e
+        UmaV3AssertionProvider umaV3Provider = new UmaV3AssertionProvider(
+            marketDescription,
+            timeOut,
+            umaOOV3,
+            currency,
+            requiredBond
+        );
+
+        // address pythContract = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
+        // // bytes32 fdUsdFeedId = 0xccdc1a08923e2e4f4b1e6ea89de6acbc5fe1948e9706f5604b8cb50bc1ed3979;
+        // bytes32 cUsdFeedId = 0x8f218655050a1476b780185e89f19d2b1e1f49e9bd629efad6ac547a946bf6ab;
+        // PythPriceProvider pythProvider = new PythPriceProvider(
+        //     pythContract,
+        //     cUsdFeedId,
+        //     timeOut
+        // );
 
         // vaultFactory.whitelistController(address(controller));
         // KeeperV2 resolveKeeper = new KeeperV2(
@@ -164,9 +240,16 @@ contract V2DeployContracts is Script, HelperV2 {
         //     address(chainlinkPriceProviderMAI)
         // );
         // console2.log("Redstone Price Provider", address(redstoneProvider));
-        console2.log("Gdai Price Provider", address(gdaiPriceProvider));
+        // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
+        // console.log("Pyth Price Provider", address(pythProvider));
+        // console2.log("Uma V2 Price Provider", address(umaV2PriceProvider));
+        // console2.log(
+        //     "Uma V2 Assertion Provider",
+        //     address(umaV2AssertionProvider)
+        // );
+        console2.log("Uma V3 Provider", address(umaV3Provider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));

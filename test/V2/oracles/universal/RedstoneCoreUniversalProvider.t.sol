@@ -3,40 +3,13 @@ pragma solidity 0.8.17;
 
 import {Helper} from "../../Helper.sol";
 import {
+    MockRedstoneCoreUniversalProvider,
     RedstoneCoreUniversalProvider
-} from "../../../../src/v2/oracles/universal/RedstoneCoreUniversalProvider.sol";
+} from "../mocks/MockRedstoneCoreUniversalProvider.sol";
 import "forge-std/Script.sol";
 
-contract MockRedstoneCoreUniversalProvider is RedstoneCoreUniversalProvider {
-    constructor(uint256 _timeOut) RedstoneCoreUniversalProvider(_timeOut) {}
-
-    function getUniqueSignersThreshold()
-        public
-        view
-        virtual
-        override
-        returns (uint8)
-    {
-        return 1;
-    }
-
-    function getAuthorisedSignerIndex(
-        address signerAddress
-    ) public view virtual override returns (uint8) {
-        // authorize everyone
-        return 0;
-    }
-
-    function validateTimestamp(
-        uint256 receivedTimestampMilliseconds
-    ) public view override {
-        // allow any timestamp
-    }
-}
-
-// cd ./lib/redstone-oracles-monorepo/packages/protocol && yarn && yarn build
-// delete ./lib/redstone-oracles-monorepo/node_modules/@chainlink
-// forge test --match-path test/V2/oracles/universal/RedstoneCoreUniversalProviderTest.t.sol -vvvv --ffi
+// NOTE: If test failing run the following command to install packages correctly
+// cd ./lib/redstone-oracles-monorepo/packages/protocol && yarn && yarn build && cd ../../../../ && rm -r ./lib/redstone-oracles-monorepo/node_modules/@chainlink
 contract RedstoneCoreUniversalProviderTest is Helper {
     uint256 public arbForkId;
     MockRedstoneCoreUniversalProvider public redstoneCoreProvider;
@@ -71,20 +44,26 @@ contract RedstoneCoreUniversalProviderTest is Helper {
     function getRedstonePayload(
         // dataFeedId:value:decimals
         string memory priceFeed
-    ) public returns (bytes memory) {
+    ) public returns (bytes memory payload) {
         string[] memory args = new string[](3);
         args[0] = "node";
-        args[1] = "getRedstonePayload.js";
+        args[1] = "./test/V2/oracles/getRedstonePayload.js";
         args[2] = priceFeed;
 
-        return vm.ffi(args);
+        payload = vm.ffi(args);
+        console.log("payload length", payload.length);
+        console.logBytes(payload);
     }
 
     function updatePrice(
         string memory payload,
         uint256[] memory _marketIds
     ) public {
+        // updatePrice("BTC:270:8,ETH:16:8", marketIds);
         bytes memory redstonePayload = getRedstonePayload(payload);
+        uint256[] memory newIds = new uint256[](2);
+        newIds[0] = btcMarketId;
+        newIds[1] = ethMarketId;
 
         bytes memory encodedFunction = abi.encodeWithSignature(
             "updatePrices(uint256[])",
@@ -94,6 +73,11 @@ contract RedstoneCoreUniversalProviderTest is Helper {
             encodedFunction,
             redstonePayload
         );
+
+        console.log("length of market inputs", newIds.length);
+        console.logBytes(encodedFunction);
+        console.logBytes(redstonePayload);
+        console.logBytes(encodedFunctionWithRedstonePayload);
 
         // Securely getting oracle value
         (bool success, ) = address(redstoneCoreProvider).call(
@@ -119,8 +103,8 @@ contract RedstoneCoreUniversalProviderTest is Helper {
     ////////////////////////////////////////////////
     //                FUNCTIONS                  //
     ////////////////////////////////////////////////
-    function testLatestRoundDataRedUni() public {
-        updatePrice("BTC:270:8,ETH:16:8", marketIds);
+    function testLatestRoundDataRedCUni() public {
+        updatePrice("BTC:120:8,ETH:69:8", marketIds);
         (
             uint80 roundId,
             int256 price,
@@ -135,7 +119,7 @@ contract RedstoneCoreUniversalProviderTest is Helper {
         assertTrue(answeredInRound == 0);
     }
 
-    function testLatestPriceRedUni() public {
+    function testLatestPriceRedCUni() public {
         updatePrice("BTC:270:8,ETH:16:8", marketIds);
 
         (, int256 btcRoundPrice, , , ) = redstoneCoreProvider.latestRoundData(
@@ -155,7 +139,7 @@ contract RedstoneCoreUniversalProviderTest is Helper {
         assertEq(ethPrice, 16 * 10 ** 18);
     }
 
-    function testConditionOneMetRedUni() public {
+    function testConditionOneMetRedCUni() public {
         uint256 conditionType = 1;
         uint256 marketIdOne = 1;
         redstoneCoreProvider.setConditionType(marketIdOne, conditionType);
@@ -173,7 +157,7 @@ contract RedstoneCoreUniversalProviderTest is Helper {
         assertEq(condition, true);
     }
 
-    function testConditionTwoMetRedUni() public {
+    function testConditionTwoMetRedCUni() public {
         updatePrice("BTC:270:8,ETH:16:8", marketIds);
         (bool condition, int256 price) = redstoneCoreProvider.conditionMet(
             20 ether,
@@ -187,19 +171,19 @@ contract RedstoneCoreUniversalProviderTest is Helper {
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
 
-    function testRevertConstructorInputsRedUni() public {
+    function testRevertConstructorInputsRedCUni() public {
         vm.expectRevert(RedstoneCoreUniversalProvider.InvalidInput.selector);
         new MockRedstoneCoreUniversalProvider(0);
     }
 
-    function testRevertConditionTypeSetRedUni() public {
+    function testRevertConditionTypeSetRedCUni() public {
         vm.expectRevert(
             RedstoneCoreUniversalProvider.ConditionTypeSet.selector
         );
         redstoneCoreProvider.setConditionType(2, 0);
     }
 
-    function testRevertInvalidInputConditionRedUni() public {
+    function testRevertInvalidInputConditionRedCUni() public {
         vm.expectRevert(RedstoneCoreUniversalProvider.InvalidInput.selector);
         redstoneCoreProvider.setConditionType(0, 0);
 
@@ -207,12 +191,12 @@ contract RedstoneCoreUniversalProviderTest is Helper {
         redstoneCoreProvider.setConditionType(0, 3);
     }
 
-    function testRevertInvalidInputFeedRedUni() public {
+    function testRevertInvalidInputFeedRedCUni() public {
         vm.expectRevert(RedstoneCoreUniversalProvider.InvalidInput.selector);
         redstoneCoreProvider.setPriceFeed(0, bytes32(0), 8);
     }
 
-    function testRevertOraclePriceZeroRedUni() public {
+    function testRevertOraclePriceZeroRedCUni() public {
         redstoneCoreProvider.setConditionType(marketIdMock, 1);
         redstoneCoreProvider.setPriceFeed(marketIdMock, ethFeed, 8);
 
@@ -220,7 +204,7 @@ contract RedstoneCoreUniversalProviderTest is Helper {
         redstoneCoreProvider.getLatestPrice(marketIdMock);
     }
 
-    function testRevertTimeOutRedUni() public {
+    function testRevertTimeOutRedCUni() public {
         redstoneCoreProvider.setConditionType(marketIdMock, 1);
         redstoneCoreProvider.setPriceFeed(marketIdMock, ethFeed, 8);
 

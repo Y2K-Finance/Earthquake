@@ -13,7 +13,7 @@ import {
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 import {IChainlinkUniversal} from "../PriceInterfaces.sol";
 
 contract ChainlinkUniversalProviderTest is Helper {

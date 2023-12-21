@@ -13,7 +13,7 @@ import {
     MockOracleAnswerZero,
     MockOracleRoundOutdated,
     MockOracleTimeOut
-} from "../MockOracles.sol";
+} from "../mocks/MockOracles.sol";
 import {IChainlink} from "../PriceInterfaces.sol";
 
 contract ChainlinkPriceProviderTest is Helper {
@@ -293,7 +293,7 @@ contract ChainlinkPriceProviderTest is Helper {
         chainlinkPriceProvider.getLatestPrice();
     }
 
-    function testRevertOracleTimeOutChainlink() public {
+    function testRevertPriceTimedOutChainlink() public {
         address mockAddress = address(
             new MockOracleTimeOut(block.timestamp, TIME_OUT)
         );
@@ -303,5 +303,8 @@ contract ChainlinkPriceProviderTest is Helper {
             mockAddress,
             TIME_OUT
         );
+
+        vm.expectRevert(ChainlinkPriceProvider.PriceTimedOut.selector);
+        chainlinkPriceProvider.getLatestPrice();
     }
 }

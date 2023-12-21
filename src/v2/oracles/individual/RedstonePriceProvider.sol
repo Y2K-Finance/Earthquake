@@ -125,5 +125,4 @@ contract RedstonePriceProvider is Ownable, IConditionProvider {
     error RoundIdOutdated();
     error PriceTimedOut();
     error ConditionTypeNotSet();
-    error ConditionTypeSet();
 }

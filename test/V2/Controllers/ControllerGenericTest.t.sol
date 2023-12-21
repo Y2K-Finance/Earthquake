@@ -14,7 +14,7 @@ import {TimeLock} from "../../../src/v2/TimeLock.sol";
 import {
     MockOracleConditionMet,
     MockOracleConditionNotMet
-} from "../oracles/MockOracles.sol";
+} from "../oracles/mocks/MockOracles.sol";
 
 contract ControllerGenericTest is Helper {
     VaultFactoryV2 public factory;
