@@ -4,8 +4,8 @@ pragma solidity 0.8.17;
 import {Helper} from "../../Helper.sol";
 import {VaultFactoryV2} from "../../../../src/v2/VaultFactoryV2.sol";
 import {
-    UmaV3DynamicAssertionProvider
-} from "../../../../src/v2/oracles/individual/UmaV3DynamicAssertionProvider.sol";
+    UmaV3AssertionProvider
+} from "../../../../src/v2/oracles/individual/UmaV3AssertionProvider.sol";
 import {TimeLock} from "../../../../src/v2/TimeLock.sol";
 import {
     MockOracleAnswerZero,
@@ -18,10 +18,10 @@ import {
     IOptimisticOracleV3
 } from "../../../../src/v2/interfaces/IOptimisticOracleV3.sol";
 
-contract UmaV3DynamicAssertionProviderTest is Helper {
+contract UmaV3AssertionProviderTest is Helper {
     uint256 public arbForkId;
     VaultFactoryV2 public factory;
-    UmaV3DynamicAssertionProvider public umaPriceProvider;
+    UmaV3AssertionProvider public umaPriceProvider;
     uint256 public marketId = 2;
     ERC20 public wethAsset;
 
@@ -41,7 +41,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         address timelock = address(new TimeLock(ADMIN));
         factory = new VaultFactoryV2(WETH, TREASURY, address(timelock));
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
@@ -57,6 +57,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     ////////////////////////////////////////////////
     function testUmaCreationDynamic() public {
         assertEq(umaPriceProvider.ASSERTION_LIVENESS(), 7200);
+        assertEq(umaPriceProvider.ASSERTION_COOLDOWN(), 600);
         assertEq(umaPriceProvider.currency(), WETH_ADDRESS);
         assertEq(
             umaPriceProvider.defaultIdentifier(),
@@ -99,23 +100,11 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         );
     }
 
-    function testUpdateAssertionData() public {
-        uint256 newData = 1e6;
-
-        vm.expectEmit(true, true, true, true);
-        emit AssertionDataUpdated(newData);
-        umaPriceProvider.updateAssertionData(newData);
-        (uint256 assertionData, uint256 updatedAt) = umaPriceProvider
-            .assertionData();
-        assertEq(assertionData, newData);
-        assertEq(updatedAt, block.timestamp);
-    }
-
     function testUpdateAssertionDataAndFetch() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3DynamicAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        // Deploying new UmaV3AssertionProvider
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
@@ -132,11 +121,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         // Moving forward so the constructor data is invalid
         vm.warp(block.timestamp + 2 days);
-        uint256 _newData = 4e6;
-        bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            _newData,
-            marketId
-        );
+        bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
 
         // Checking assertion links to marketId
         uint256 _marketId = umaPriceProvider.assertionIdToMarket(_assertionId);
@@ -185,6 +170,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         // Setting truthy state and checking is truth
         uint256 customMarketId = 3;
         MockUma mockUma = _stagingTruthyAssertion();
+
+        vm.warp(block.timestamp + 601);
         _stagingTruthyAssertionCustom(customMarketId, mockUma);
 
         // Checking both markets state set to true
@@ -209,8 +196,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function testConditionMetUmaDynamic() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3DynamicAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        // Deploying new UmaV3AssertionProvider
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
@@ -227,9 +214,6 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         // Moving forward so the constructor data is invalid
         vm.warp(block.timestamp + 2 days);
-        uint256 _newData = 4e6;
-        umaPriceProvider.updateAssertionData(_newData);
-
         vm.expectEmit(true, false, false, true);
         emit MarketAsserted(marketId, bytes32(abi.encode(0x12)));
         bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
@@ -294,8 +278,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function testFetchAssertionContractHasBalance() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3DynamicAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        // Deploying new UmaV3AssertionProvider
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
@@ -315,10 +299,6 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         // Moving forward so the constructor data is invalid
         vm.warp(block.timestamp + 2 days);
-        uint256 _newData = 4e6;
-        umaPriceProvider.updateAssertionData(_newData);
-
-        // Querying for assertion
         umaPriceProvider.fetchAssertion(marketId);
 
         // Checking umaPriceProvide balance declined
@@ -333,8 +313,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     //              REVERT CASES                  //
     ////////////////////////////////////////////////
     function testRevertConstructorInputsUma() public {
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        new UmaV3DynamicAssertionProvider(
+        vm.expectRevert(UmaV3AssertionProvider.InvalidInput.selector);
+        new UmaV3AssertionProvider(
             string(""),
             TIME_OUT,
             UMA_OO_V3,
@@ -342,8 +322,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        new UmaV3DynamicAssertionProvider(
+        vm.expectRevert(UmaV3AssertionProvider.InvalidInput.selector);
+        new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             0,
             UMA_OO_V3,
@@ -351,8 +331,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.ZeroAddress.selector);
-        new UmaV3DynamicAssertionProvider(
+        vm.expectRevert(UmaV3AssertionProvider.ZeroAddress.selector);
+        new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(0),
@@ -360,8 +340,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.ZeroAddress.selector);
-        new UmaV3DynamicAssertionProvider(
+        vm.expectRevert(UmaV3AssertionProvider.ZeroAddress.selector);
+        new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
@@ -369,8 +349,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
             REQUIRED_BOND
         );
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        new UmaV3DynamicAssertionProvider(
+        vm.expectRevert(UmaV3AssertionProvider.InvalidInput.selector);
+        new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             UMA_OO_V3,
@@ -380,41 +360,32 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     }
 
     function testRevertInvalidInputRequiredBond() public {
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
+        vm.expectRevert(UmaV3AssertionProvider.InvalidInput.selector);
         umaPriceProvider.updateRequiredBond(0);
     }
 
     function testRevertZeroAddressUpdateRelayer() public {
-        vm.expectRevert(UmaV3DynamicAssertionProvider.ZeroAddress.selector);
+        vm.expectRevert(UmaV3AssertionProvider.ZeroAddress.selector);
         umaPriceProvider.updateRelayer(address(0));
-    }
-
-    function testRevertInvalidInputAssertionData() public {
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidInput.selector);
-        umaPriceProvider.updateAssertionData(0);
     }
 
     function testRevertSetAssertionDescription() public {
         string memory newDescription = " USDC/USD exchange rate is above";
         umaPriceProvider.setAssertionDescription(marketId, newDescription);
 
-        vm.expectRevert(
-            UmaV3DynamicAssertionProvider.DescriptionAlreadySet.selector
-        );
+        vm.expectRevert(UmaV3AssertionProvider.DescriptionAlreadySet.selector);
         umaPriceProvider.setAssertionDescription(marketId, string(""));
     }
 
     function testRevertInvalidCallerCallback() public {
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidCaller.selector);
+        vm.expectRevert(UmaV3AssertionProvider.InvalidCaller.selector);
         umaPriceProvider.assertionResolvedCallback(bytes32(""), true);
     }
 
     function testRevertAssertionInactive() public {
         vm.prank(UMA_OO_V3);
 
-        vm.expectRevert(
-            UmaV3DynamicAssertionProvider.AssertionInactive.selector
-        );
+        vm.expectRevert(UmaV3AssertionProvider.AssertionInactive.selector);
         umaPriceProvider.assertionResolvedCallback(
             bytes32(abi.encode(0x12)),
             true
@@ -424,8 +395,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function testRevertCheckAssertionActive() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3DynamicAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        // Deploying new UmaV3AssertionProvider
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
@@ -439,15 +410,15 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         wethAsset.approve(address(umaPriceProvider), 1e18);
         umaPriceProvider.fetchAssertion(marketId);
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.AssertionActive.selector);
+        vm.expectRevert(UmaV3AssertionProvider.AssertionActive.selector);
         umaPriceProvider.fetchAssertion(marketId);
     }
 
     function testRevertFetchAssertionActive() public {
         MockUma mockUma = new MockUma();
 
-        // Deploying new UmaV3DynamicAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        // Deploying new UmaV3AssertionProvider
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
@@ -461,29 +432,21 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         wethAsset.approve(address(umaPriceProvider), 1e18);
         umaPriceProvider.fetchAssertion(marketId);
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.AssertionActive.selector);
+        vm.expectRevert(UmaV3AssertionProvider.AssertionActive.selector);
         umaPriceProvider.checkAssertion(marketId);
     }
 
     function testRevertFetchAssertionInvalidCaller() public {
         vm.startPrank(address(0x123));
-        vm.expectRevert(UmaV3DynamicAssertionProvider.InvalidCaller.selector);
+        vm.expectRevert(UmaV3AssertionProvider.InvalidCaller.selector);
         umaPriceProvider.fetchAssertion(marketId);
         vm.stopPrank();
-    }
-
-    function testRevertAssertionDataOutdated() public {
-        vm.warp(block.timestamp + 2 days);
-        vm.expectRevert(
-            UmaV3DynamicAssertionProvider.AssertionDataOutdated.selector
-        );
-        umaPriceProvider.fetchAssertion(marketId);
     }
 
     function testRevertCooldownPending() public {
         _stagingTruthyAssertion();
 
-        vm.expectRevert(UmaV3DynamicAssertionProvider.CooldownPending.selector);
+        vm.expectRevert(UmaV3AssertionProvider.CooldownPending.selector);
         umaPriceProvider.fetchAssertion(marketId);
     }
 
@@ -491,7 +454,7 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         _stagingTruthyAssertion();
 
         vm.warp(block.timestamp + umaPriceProvider.timeOut() + 1);
-        vm.expectRevert(UmaV3DynamicAssertionProvider.PriceTimedOut.selector);
+        vm.expectRevert(UmaV3AssertionProvider.PriceTimedOut.selector);
         umaPriceProvider.checkAssertion(marketId);
     }
 
@@ -501,8 +464,8 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
     function _stagingTruthyAssertion() internal returns (MockUma mockUma) {
         mockUma = new MockUma();
 
-        // Deploying new UmaV3DynamicAssertionProvider
-        umaPriceProvider = new UmaV3DynamicAssertionProvider(
+        // Deploying new UmaV3AssertionProvider
+        umaPriceProvider = new UmaV3AssertionProvider(
             UMA_DESCRIPTION,
             TIME_OUT,
             address(mockUma),
@@ -519,10 +482,6 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
 
         // Moving forward so the constructor data is invalid
         vm.warp(block.timestamp + 2 days);
-        uint256 _newData = 4e6;
-        umaPriceProvider.updateAssertionData(_newData);
-
-        // Querying for assertion
         bytes32 _assertionId = umaPriceProvider.fetchAssertion(marketId);
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
@@ -543,10 +502,6 @@ contract UmaV3DynamicAssertionProviderTest is Helper {
         wethAsset.approve(address(umaPriceProvider), 1e18);
 
         // Moving forward so the constructor data is invalid
-        uint256 _newData = 4e6;
-        umaPriceProvider.updateAssertionData(_newData);
-
-        // Querying for assertion
         bytes32 _assertionId = umaPriceProvider.fetchAssertion(_marketId);
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),

@@ -12,7 +12,7 @@ import "forge-std/console.sol";
 /// @notice Assertion provider for one data point with differing description
 /// @dev Example: (a) ETH vol is above <dataPoint>, and (b) ETH vol is below <dataPoint>
 /// @dev This provider would not work if you needed to check if x happened between time y and z
-contract UmaV3DynamicAssertionProvider is Ownable {
+contract UmaV3AssertionProvider is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
@@ -28,7 +28,7 @@ contract UmaV3DynamicAssertionProvider is Ownable {
 
     // Uma V3
     uint64 public constant ASSERTION_LIVENESS = 7200; // 2 hours.
-    uint256 public constant ASSERTION_COOLDOWN = 300; // 5 minutes.
+    uint256 public constant ASSERTION_COOLDOWN = 600; // 10 minutes.
     address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
     IOptimisticOracleV3 public immutable umaV3;
@@ -114,28 +114,6 @@ contract UmaV3DynamicAssertionProvider is Ownable {
     }
 
     /**
-        @notice Updates the data being used to assert in the uma assertion request
-        @param _newData is the new data for the assertion
-     */
-    function updateAssertionData(uint256 _newData) external onlyOwner {
-        _updateAssertionData(_newData);
-    }
-
-    /**
-        @notice Updates the assertion data and makes a request to Uma V3 for a market
-        @dev Updated data will be used for assertion then a callback will be received after LIVENESS_PERIOD
-        @param _newData is the new data for the assertion
-        @param _marketId is the marketId for the market
-     */
-    function updateAssertionDataAndFetch(
-        uint256 _newData,
-        uint256 _marketId
-    ) external onlyOwner returns (bytes32) {
-        _updateAssertionData(_newData);
-        return _fetchAssertion(_marketId);
-    }
-
-    /**
         @notice Toggles relayer status for an address
         @param _relayer is the address to update
      */
@@ -179,6 +157,30 @@ contract UmaV3DynamicAssertionProvider is Ownable {
             }
         }
         emit AnswersReset(_marketId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 CALLBACK
+    //////////////////////////////////////////////////////////////*/
+    // Callback from settled assertion.
+    // If the assertion was resolved true, then the asserter gets the reward and the market is marked as resolved.
+    // Otherwise, assertedOutcomeId is reset and the market can be asserted again.
+    function assertionResolvedCallback(
+        bytes32 _assertionId,
+        bool _assertedTruthfully
+    ) external {
+        if (msg.sender != address(umaV3)) revert InvalidCaller();
+
+        uint256 marketId = assertionIdToMarket[_assertionId];
+        MarketAnswer memory marketAnswer = marketIdToAnswer[marketId];
+        if (marketAnswer.activeAssertion == false) revert AssertionInactive();
+
+        marketAnswer.updatedAt = uint128(block.timestamp);
+        marketAnswer.answer = _assertedTruthfully ? 1 : 0;
+        marketAnswer.activeAssertion = false;
+        marketIdToAnswer[marketId] = marketAnswer;
+
+        emit AssertionResolved(_assertionId, _assertedTruthfully);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -230,46 +232,8 @@ contract UmaV3DynamicAssertionProvider is Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                 CALLBACK
-    //////////////////////////////////////////////////////////////*/
-    // Callback from settled assertion.
-    // If the assertion was resolved true, then the asserter gets the reward and the market is marked as resolved.
-    // Otherwise, assertedOutcomeId is reset and the market can be asserted again.
-    function assertionResolvedCallback(
-        bytes32 _assertionId,
-        bool _assertedTruthfully
-    ) external {
-        if (msg.sender != address(umaV3)) revert InvalidCaller();
-
-        uint256 marketId = assertionIdToMarket[_assertionId];
-        MarketAnswer memory marketAnswer = marketIdToAnswer[marketId];
-        if (marketAnswer.activeAssertion == false) revert AssertionInactive();
-
-        marketAnswer.updatedAt = uint128(block.timestamp);
-        marketAnswer.answer = _assertedTruthfully ? 1 : 0;
-        marketAnswer.activeAssertion = false;
-        marketIdToAnswer[marketId] = marketAnswer;
-
-        emit AssertionResolved(_assertionId, _assertedTruthfully);
-    }
-
-    /*//////////////////////////////////////////////////////////////
                                  INTERNAL
     //////////////////////////////////////////////////////////////*/
-    /**
-        @param _newData is the new data for the assertion
-        @dev updates the assertion data
-     */
-    function _updateAssertionData(uint256 _newData) private {
-        if (_newData == 0) revert InvalidInput();
-        assertionData = AssertionData({
-            assertionData: uint128(_newData),
-            updatedAt: uint128(block.timestamp)
-        });
-
-        emit AssertionDataUpdated(_newData);
-    }
-
     /**
         @dev AssertionDataOutdated check ensures the data being asserted is up to date
         @dev CooldownPending check ensures the cooldown period has passed since the last assertion
@@ -284,8 +248,6 @@ contract UmaV3DynamicAssertionProvider is Ownable {
         if (marketAnswer.activeAssertion == true) revert AssertionActive();
         if (block.timestamp - marketAnswer.updatedAt < ASSERTION_COOLDOWN)
             revert CooldownPending();
-        if ((block.timestamp - assertionData.updatedAt) > timeOut)
-            revert AssertionDataOutdated();
 
         // Configure bond and claim information
         uint256 minimumBond = umaV3.getMinimumBond(address(currency));
@@ -336,8 +298,7 @@ contract UmaV3DynamicAssertionProvider is Ownable {
             abi.encodePacked(
                 "As of assertion timestamp ",
                 _toUtf8BytesUint(block.timestamp),
-                _assertionDescription,
-                _toUtf8BytesUint(assertionData.assertionData)
+                _assertionDescription
             );
     }
 
@@ -377,7 +338,6 @@ contract UmaV3DynamicAssertionProvider is Ownable {
     error InvalidCaller();
     error AssertionActive();
     error AssertionInactive();
-    error AssertionDataOutdated();
     error CooldownPending();
     error DescriptionAlreadySet();
 }

@@ -16,8 +16,8 @@ import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
 import "../../src/v2/oracles/individual/UmaV2PriceProvider.sol";
 import "../../src/v2/oracles/individual/UmaV2AssertionProvider.sol";
-import "../../src/v2/oracles/individual/UmaV3PriceAssertionProvider.sol";
-import "../../src/v2/oracles/individual/UmaV3DynamicAssertionProvider.sol";
+import "../../src/v2/oracles/individual/UmaV3PriceProvider.sol";
+import "../../src/v2/oracles/individual/UmaV3AssertionProvider.sol";
 import "../../src/v2/oracles/individual/PythPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
 import "./V2Helper.sol";
@@ -170,7 +170,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // bytes
         //     memory assertionDescription = "The USDC/USD exchange is above 0.997";
         // address currency = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH_ADDRESS
-        // UmaV3PriceAssertionProvider umaPriceProvider = new UmaV3PriceAssertionProvider(
+        // UmaV3PriceProvider umaPriceProvider = new UmaV3PriceProvider(
         //         umaDecimals,
         //         umaDescription,
         //         timeOut,
@@ -185,13 +185,13 @@ contract V2DeployContracts is Script, HelperV2 {
         string memory marketDescription = "ETH Volatility";
         uint256 requiredBond = 501e6;
         address currency = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // USDC.e
-        UmaV3DynamicAssertionProvider umaV3Provider = new UmaV3DynamicAssertionProvider(
-                marketDescription,
-                timeOut,
-                umaOOV3,
-                currency,
-                requiredBond
-            );
+        UmaV3AssertionProvider umaV3Provider = new UmaV3AssertionProvider(
+            marketDescription,
+            timeOut,
+            umaOOV3,
+            currency,
+            requiredBond
+        );
 
         // address pythContract = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
         // // bytes32 fdUsdFeedId = 0xccdc1a08923e2e4f4b1e6ea89de6acbc5fe1948e9706f5604b8cb50bc1ed3979;
