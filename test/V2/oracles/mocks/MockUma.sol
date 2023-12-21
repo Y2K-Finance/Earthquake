@@ -39,7 +39,7 @@ contract MockUma {
         uint64 assertionLiveness,
         IERC20 currency,
         uint256 bond,
-        bytes32 defaultIdentifier,
+        bytes32 _defaultIdentifier,
         bytes32 domain
     ) external payable returns (bytes32 assertionId) {
         currency.transferFrom(msg.sender, address(this), bond);
@@ -51,7 +51,7 @@ contract MockUma {
             callBackAddress,
             sovereignSecurity,
             assertionLiveness,
-            defaultIdentifier,
+            _defaultIdentifier,
             domain
         );
     }
