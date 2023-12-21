@@ -20,12 +20,13 @@ contract UmaV2AssertionProvider is Ownable {
         uint8 roundId;
         uint8 answeredInRound;
         int8 assertion;
-        uint128 pendingRequestAt;
-        uint256 updatedAt;
+        uint128 updatedAt;
+        bool activeAssertion;
     }
 
-    uint256 public constant REQUEST_TIMEOUT = 3600 * 3;
-    uint256 public constant ORACLE_LIVENESS_TIME = 3600 * 2;
+    uint256 public constant REQUEST_TIMEOUT = 3600 * 2;
+    uint256 public constant COOLDOWN_TIME = 600;
+    uint256 public constant ORACLE_LIVENESS_TIME = 3600;
     bytes32 public constant PRICE_IDENTIFIER = "YES_OR_NO_QUERY";
     string public constant ANCILLARY_TAIL =
         ". P1: 0 for NO, P2: 1 for YES, P3: 2 for UNDETERMINED";
@@ -41,13 +42,11 @@ contract UmaV2AssertionProvider is Ownable {
     string public description;
     string public ancillaryData;
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
-
-    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
     event CoverageStartUpdated(uint256 startTime);
     event RewardUpdated(uint256 newReward);
     event PriceSettled(int256 price);
     event PriceRequested();
+    event BondWithdrawn(uint256 amount);
 
     constructor(
         uint256 _assertionTimeOut,
@@ -80,16 +79,6 @@ contract UmaV2AssertionProvider is Ownable {
     /*//////////////////////////////////////////////////////////////
                                  ADMIN
     //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
-    }
-
     function updateCoverageStart(uint128 _coverageStart) external onlyOwner {
         if (_coverageStart < coverageStart) revert InvalidInput();
         coverageStart = _coverageStart;
@@ -100,6 +89,16 @@ contract UmaV2AssertionProvider is Ownable {
         if (newReward == 0) revert InvalidInput();
         reward = newReward;
         emit RewardUpdated(newReward);
+    }
+
+    /**
+        @notice Withdraws the balance of the currency in the contract 
+        @dev This is likely to be the bond value remaining in the contract
+     */
+    function withdrawBond() external onlyOwner {
+        uint256 balance = currency.balanceOf(address(this));
+        currency.transfer(msg.sender, balance);
+        emit BondWithdrawn(balance);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -118,7 +117,7 @@ contract UmaV2AssertionProvider is Ownable {
         _answer.assertion = int8(_price);
         _answer.roundId = answer.roundId + 1;
         _answer.answeredInRound = answer.answeredInRound + 1;
-        _answer.pendingRequestAt = answer.pendingRequestAt;
+        _answer.activeAssertion = false;
         answer = _answer;
 
         emit PriceSettled(_price);
@@ -128,22 +127,27 @@ contract UmaV2AssertionProvider is Ownable {
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
     function requestLatestAssertion() external {
-        if (answer.pendingRequestAt + REQUEST_TIMEOUT > block.timestamp)
-            revert RequestInProgress();
+        if (answer.activeAssertion) revert RequestInProgress();
+        if (answer.updatedAt + COOLDOWN_TIME > block.timestamp)
+            revert CooldownPeriod();
 
         bytes memory _bytesAncillary = abi.encodePacked(
             ancillaryData,
             _toUtf8BytesUint(coverageStart),
             ANCILLARY_TAIL
         );
-        currency.transferFrom(msg.sender, address(this), reward);
-        currency.approve(address(oo), reward);
+        uint256 _reward = reward;
+
+        if (currency.balanceOf(address(this)) < _reward)
+            currency.transferFrom(msg.sender, address(this), _reward);
+        currency.approve(address(oo), _reward);
+
         oo.requestPrice(
             PRICE_IDENTIFIER,
             block.timestamp,
             _bytesAncillary,
             currency,
-            reward
+            _reward
         );
         oo.setCustomLiveness(
             PRICE_IDENTIFIER,
@@ -160,7 +164,7 @@ contract UmaV2AssertionProvider is Ownable {
             true
         );
 
-        answer.pendingRequestAt = uint128(block.timestamp);
+        answer.activeAssertion = true;
 
         emit PriceRequested();
     }
@@ -171,29 +175,25 @@ contract UmaV2AssertionProvider is Ownable {
     function checkAssertion() public view virtual returns (bool) {
         AssertionAnswer memory assertionAnswer = answer;
 
-        if (assertionAnswer.updatedAt == 0) revert OraclePriceZero();
-        if ((block.timestamp - assertionAnswer.updatedAt) > assertionTimeOut)
-            revert PriceTimedOut();
-
+        if (assertionAnswer.activeAssertion) revert RequestInProgress();
         if (assertionAnswer.assertion == 1) return true;
         else return false;
     }
 
     /** @notice Fetch price and return condition
-     * @param _marketId Market id
+     * @param _strike The strike price
      * @return boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
     function conditionMet(
-        uint256,
-        uint256 _marketId
+        uint256 _strike,
+        uint256
     ) public view virtual returns (bool, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
+        uint256 conditionType = _strike % 2 ** 1;
         bool condition = checkAssertion();
 
         if (conditionType == 1) return (condition, price);
-        else if (conditionType == 2) return (condition, price);
-        else revert ConditionTypeNotSet();
+        else return (condition, price);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -229,12 +229,9 @@ contract UmaV2AssertionProvider is Ownable {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
-    error OraclePriceZero();
     error ZeroAddress();
-    error PriceTimedOut();
     error InvalidInput();
-    error ConditionTypeNotSet();
-    error ConditionTypeSet();
     error InvalidCaller();
     error RequestInProgress();
+    error CooldownPeriod();
 }

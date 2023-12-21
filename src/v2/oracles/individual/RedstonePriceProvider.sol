@@ -124,5 +124,4 @@ contract RedstonePriceProvider is IConditionProvider {
     error RoundIdOutdated();
     error PriceTimedOut();
     error ConditionTypeNotSet();
-    error ConditionTypeSet();
 }

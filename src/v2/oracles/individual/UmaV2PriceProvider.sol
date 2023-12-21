@@ -23,12 +23,13 @@ contract UmaV2PriceProvider is Ownable {
         uint128 answeredInRound;
         int128 price;
         uint128 updatedAt;
-        uint256 pendingRequestAt;
+        bool activeAssertion;
     }
 
-    uint256 public constant ORACLE_LIVENESS_TIME = 3600 * 2;
+    uint256 public constant REQUEST_TIMEOUT = 3600 * 2;
+    uint256 public constant COOLDOWN_TIME = 600;
+    uint256 public constant ORACLE_LIVENESS_TIME = 3600;
     bytes32 public constant PRICE_IDENTIFIER = "TOKEN_PRICE";
-    uint256 public constant REQUEST_TIMEOUT = 3600 * 3;
 
     uint256 public immutable timeOut;
     IUmaV2 public immutable oo;
@@ -41,12 +42,10 @@ contract UmaV2PriceProvider is Ownable {
     string public description;
     string public ancillaryData;
 
-    mapping(uint256 => uint256) public marketIdToConditionType;
-
-    event MarketConditionSet(uint256 indexed marketId, uint256 conditionType);
     event RewardUpdated(uint256 newReward);
     event PriceSettled(int256 price);
     event PriceRequested();
+    event BondWithdrawn(uint256 amount);
 
     constructor(
         uint256 _timeOut,
@@ -80,20 +79,20 @@ contract UmaV2PriceProvider is Ownable {
     /*//////////////////////////////////////////////////////////////
                                  ADMIN
     //////////////////////////////////////////////////////////////*/
-    function setConditionType(
-        uint256 _marketId,
-        uint256 _condition
-    ) external onlyOwner {
-        if (marketIdToConditionType[_marketId] != 0) revert ConditionTypeSet();
-        if (_condition != 1 && _condition != 2) revert InvalidInput();
-        marketIdToConditionType[_marketId] = _condition;
-        emit MarketConditionSet(_marketId, _condition);
-    }
-
     function updateReward(uint256 newReward) external onlyOwner {
         if (newReward == 0) revert InvalidInput();
         reward = newReward;
         emit RewardUpdated(newReward);
+    }
+
+    /**
+        @notice Withdraws the balance of the currency in the contract 
+        @dev This is likely to be the bond value remaining in the contract
+     */
+    function withdrawBond() external onlyOwner {
+        uint256 balance = currency.balanceOf(address(this));
+        currency.transfer(msg.sender, balance);
+        emit BondWithdrawn(balance);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -112,7 +111,7 @@ contract UmaV2PriceProvider is Ownable {
         _answer.price = int128(_price);
         _answer.roundId = answer.roundId + 1;
         _answer.answeredInRound = answer.answeredInRound + 1;
-        _answer.pendingRequestAt = answer.pendingRequestAt;
+        _answer.activeAssertion = false;
         answer = _answer;
 
         emit PriceSettled(_price);
@@ -122,18 +121,22 @@ contract UmaV2PriceProvider is Ownable {
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
     function requestLatestPrice() external {
-        if (answer.pendingRequestAt + REQUEST_TIMEOUT > block.timestamp)
-            revert RequestInProgress();
-
+        if (answer.activeAssertion) revert RequestInProgress();
+        if (answer.updatedAt + COOLDOWN_TIME > block.timestamp)
+            revert CooldownPeriod();
         bytes memory _bytesAncillary = abi.encodePacked(ancillaryData);
-        currency.transferFrom(msg.sender, address(this), reward);
-        currency.approve(address(oo), reward);
+        uint256 _reward = reward;
+
+        if (currency.balanceOf(address(this)) < _reward)
+            currency.transferFrom(msg.sender, address(this), _reward);
+        currency.approve(address(oo), _reward);
+
         oo.requestPrice(
             PRICE_IDENTIFIER,
             block.timestamp,
             _bytesAncillary,
             currency,
-            reward
+            _reward
         );
         oo.setCustomLiveness(
             PRICE_IDENTIFIER,
@@ -150,7 +153,7 @@ contract UmaV2PriceProvider is Ownable {
             true
         );
 
-        answer.pendingRequestAt = block.timestamp;
+        answer.activeAssertion = true;
 
         emit PriceRequested();
     }
@@ -161,7 +164,7 @@ contract UmaV2PriceProvider is Ownable {
         returns (
             uint80 roundId,
             int256 price,
-            uint256 pendingRequestAt,
+            bool activeAssertion,
             uint256 updatedAt,
             uint80 answeredInRound
         )
@@ -170,7 +173,7 @@ contract UmaV2PriceProvider is Ownable {
         roundId = uint80(_answer.roundId);
         price = _answer.price;
         updatedAt = _answer.updatedAt;
-        pendingRequestAt = _answer.pendingRequestAt;
+        activeAssertion = _answer.activeAssertion;
         answeredInRound = uint80(_answer.answeredInRound);
     }
 
@@ -178,8 +181,15 @@ contract UmaV2PriceProvider is Ownable {
      * @return int256 Current token price
      */
     function getLatestPrice() public view returns (int256) {
-        (, int256 price, , uint256 updatedAt, ) = latestRoundData();
+        (
+            ,
+            int256 price,
+            bool activeAssertion,
+            uint256 updatedAt,
+
+        ) = latestRoundData();
         if (price <= 0) revert OraclePriceZero();
+        if (activeAssertion) revert RequestInProgress();
         if ((block.timestamp - updatedAt) > timeOut) revert PriceTimedOut();
         if (decimals < 18) {
             uint256 calcDecimals = 10 ** (18 - (decimals));
@@ -193,19 +203,17 @@ contract UmaV2PriceProvider is Ownable {
 
     /** @notice Fetch price and return condition
      * @param _strike Strike price
-     * @param _marketId Market id
      * @return boolean If condition is met i.e. strike > price
      * @return price Current price for token
      */
     function conditionMet(
         uint256 _strike,
-        uint256 _marketId
+        uint256
     ) public view virtual returns (bool, int256 price) {
-        uint256 conditionType = marketIdToConditionType[_marketId];
+        uint256 conditionType = _strike % 2 ** 1;
         price = getLatestPrice();
         if (conditionType == 1) return (int256(_strike) < price, price);
-        else if (conditionType == 2) return (int256(_strike) > price, price);
-        else revert ConditionTypeNotSet();
+        else return (int256(_strike) > price, price);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -215,8 +223,7 @@ contract UmaV2PriceProvider is Ownable {
     error ZeroAddress();
     error PriceTimedOut();
     error InvalidInput();
-    error ConditionTypeNotSet();
-    error ConditionTypeSet();
     error InvalidCaller();
     error RequestInProgress();
+    error CooldownPeriod();
 }

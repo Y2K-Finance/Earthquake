@@ -56,8 +56,6 @@ contract UmaV2AssertionProviderTest is Helper {
             ancillaryData,
             reward
         );
-        uint256 condition = 2;
-        umaV2AssertionProvider.setConditionType(marketId, condition);
         deal(USDC_TOKEN, address(this), 1000e6);
         IERC20(USDC_TOKEN).approve(address(umaV2AssertionProvider), 1000e6);
     }
@@ -66,7 +64,7 @@ contract UmaV2AssertionProviderTest is Helper {
     //                STATE                       //
     ////////////////////////////////////////////////
     function testUmaV2AssertionProvider() public {
-        assertEq(umaV2AssertionProvider.ORACLE_LIVENESS_TIME(), 3600 * 2);
+        assertEq(umaV2AssertionProvider.ORACLE_LIVENESS_TIME(), 3600);
         assertEq(umaV2AssertionProvider.PRICE_IDENTIFIER(), "YES_OR_NO_QUERY");
         assertEq(umaV2AssertionProvider.assertionTimeOut(), TIME_OUT);
         assertEq(address(umaV2AssertionProvider.oo()), umaV2);
@@ -92,17 +90,6 @@ contract UmaV2AssertionProviderTest is Helper {
     ////////////////////////////////////////////////
     //                ADMIN                       //
     ////////////////////////////////////////////////
-    function testSetConditionTypeUmaV2Assert() public {
-        uint256 _marketId = 911;
-        uint256 _condition = 1;
-
-        vm.expectEmit(true, true, true, true);
-        emit MarketConditionSet(_marketId, _condition);
-        umaV2AssertionProvider.setConditionType(_marketId, _condition);
-
-        assertEq(umaV2AssertionProvider.marketIdToConditionType(_marketId), 1);
-    }
-
     function testUpdateCoverageStartUmaV2Assert() public {
         uint128 newCoverageStart = uint128(block.timestamp + 1 days);
         vm.expectEmit(true, true, true, true);
@@ -119,6 +106,27 @@ contract UmaV2AssertionProviderTest is Helper {
         umaV2AssertionProvider.updateReward(newReward);
 
         assertEq(umaV2AssertionProvider.reward(), newReward);
+    }
+
+    function testWithdrawBondUmaV2Assert() public {
+        // Fetching balance before
+        IERC20 bondAsset = IERC20(USDC_TOKEN);
+        uint256 balance = bondAsset.balanceOf(address(this));
+
+        // Sending funds
+        uint256 bondAmount = 1e18;
+        deal(USDC_TOKEN, address(umaV2AssertionProvider), bondAmount);
+
+        // Checking contract balance updated
+        assertEq(
+            bondAsset.balanceOf(address(umaV2AssertionProvider)),
+            bondAmount
+        );
+        assertEq(bondAsset.balanceOf(address(this)), balance);
+
+        umaV2AssertionProvider.withdrawBond();
+        assertEq(bondAsset.balanceOf(address(umaV2AssertionProvider)), 0);
+        assertEq(bondAsset.balanceOf(address(this)), balance + bondAmount);
     }
 
     ////////////////////////////////////////////////
@@ -143,7 +151,6 @@ contract UmaV2AssertionProviderTest is Helper {
         IERC20(USDC_TOKEN).approve(address(umaV2AssertionProvider), 1000e6);
 
         // Configuring the pending answer
-        uint256 previousTimestamp = block.timestamp;
         umaV2AssertionProvider.requestLatestAssertion();
         vm.warp(block.timestamp + 1 days);
 
@@ -159,14 +166,14 @@ contract UmaV2AssertionProviderTest is Helper {
             uint8 roundId,
             uint8 answeredInRound,
             int8 _price,
-            uint256 pendingRequestAt,
-            uint256 updatedAt
+            uint256 updatedAt,
+            bool activeAssertion
         ) = umaV2AssertionProvider.answer();
 
         // Checking the data
         assertEq(roundId, 1);
         assertEq(_price, price);
-        assertEq(pendingRequestAt, previousTimestamp);
+        assertEq(activeAssertion, false);
         assertEq(updatedAt, block.timestamp);
         assertEq(answeredInRound, 1);
     }
@@ -175,9 +182,26 @@ contract UmaV2AssertionProviderTest is Helper {
     //                PUBLIC FUNCTIONS            //
     ////////////////////////////////////////////////
     function testrequestLatestAssertionUmaV2Assert() public {
+        uint256 balance = IERC20(USDC_TOKEN).balanceOf(address(this));
+        assertEq(balance, 1000e6);
+
         umaV2AssertionProvider.requestLatestAssertion();
-        (, , , uint128 pendingRequestAt, ) = umaV2AssertionProvider.answer();
-        assertEq(pendingRequestAt, block.timestamp);
+        (, , , , bool activeAssertion) = umaV2AssertionProvider.answer();
+        assertEq(activeAssertion, true);
+
+        assertEq(IERC20(USDC_TOKEN).balanceOf(address(this)), balance - reward);
+    }
+
+    function testrequestLatestAssertionNoTransferUmaV2Assert() public {
+        deal(USDC_TOKEN, address(umaV2AssertionProvider), 1000e6);
+        uint256 balance = IERC20(USDC_TOKEN).balanceOf(address(this));
+        assertEq(balance, 1000e6);
+
+        umaV2AssertionProvider.requestLatestAssertion();
+        (, , , , bool activeAssertion) = umaV2AssertionProvider.answer();
+        assertEq(activeAssertion, true);
+
+        assertEq(IERC20(USDC_TOKEN).balanceOf(address(this)), balance);
     }
 
     function testCheckAssertionUmaV2Assert() public {
@@ -192,11 +216,11 @@ contract UmaV2AssertionProviderTest is Helper {
         // Config the data with mock oracle
         _configureSettledPrice(true);
 
-        uint256 conditionType = 1;
+        // Condition type 1
+        uint256 strikeMetPrice = 100000000000001; // 0.001 ether
         uint256 marketIdOne = 1;
-        umaV2AssertionProvider.setConditionType(marketIdOne, conditionType);
         (bool condition, ) = umaV2AssertionProvider.conditionMet(
-            0.001 ether,
+            strikeMetPrice,
             marketIdOne
         );
 
@@ -207,8 +231,7 @@ contract UmaV2AssertionProviderTest is Helper {
         // Config the data with mock oracle
         _configureSettledPrice(false);
 
-        uint256 conditionType = 2;
-        umaV2AssertionProvider.setConditionType(marketId, conditionType);
+        // Condition type 2
         (bool condition, ) = umaV2AssertionProvider.conditionMet(
             2 ether,
             marketId
@@ -221,8 +244,7 @@ contract UmaV2AssertionProviderTest is Helper {
         // Config the data with mock oracle
         address mockUmaV2 = _configureSettledPrice(true);
 
-        uint256 conditionType = 2;
-        umaV2AssertionProvider.setConditionType(marketId, conditionType);
+        // Condition type 2
         (bool condition, int256 price) = umaV2AssertionProvider.conditionMet(
             2 ether,
             marketId
@@ -235,6 +257,7 @@ contract UmaV2AssertionProviderTest is Helper {
         assertEq(answeredInRound, 1);
 
         // Updating the price
+        vm.warp(block.timestamp + 601);
         _updatePrice(false, mockUmaV2);
         (condition, price) = umaV2AssertionProvider.conditionMet(
             2 ether,
@@ -312,16 +335,6 @@ contract UmaV2AssertionProviderTest is Helper {
         );
     }
 
-    function testRevertConditionTypeSetUmaV2Assert() public {
-        vm.expectRevert(UmaV2AssertionProvider.ConditionTypeSet.selector);
-        umaV2AssertionProvider.setConditionType(2, 0);
-    }
-
-    function testRevertInvalidInputConditionUmaV2Assert() public {
-        vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
-        umaV2AssertionProvider.setConditionType(0, 0);
-    }
-
     function testRevertInvalidInputCoverageStartUmaV2Assert() public {
         vm.expectRevert(UmaV2AssertionProvider.InvalidInput.selector);
         umaV2AssertionProvider.updateCoverageStart(0);
@@ -348,25 +361,18 @@ contract UmaV2AssertionProviderTest is Helper {
         umaV2AssertionProvider.requestLatestAssertion();
     }
 
-    function testRevertOraclePriceZeroCheckAssertionUmaV2Assert() public {
-        vm.expectRevert(UmaV2AssertionProvider.OraclePriceZero.selector);
-        umaV2AssertionProvider.checkAssertion();
+    function testRevertCooldownPeriodRequestLatestAssertionUmaV2Assert()
+        public
+    {
+        _configureSettledPrice(true);
+        vm.expectRevert(UmaV2AssertionProvider.CooldownPeriod.selector);
+        umaV2AssertionProvider.requestLatestAssertion();
     }
 
-    function testRevertPriceTimedOutCheckAssertionUmaV2Assert() public {
-        // Config the data with mock oracle
-        _configureSettledPrice(true);
-
-        vm.warp(block.timestamp + 2 days);
-        vm.expectRevert(UmaV2AssertionProvider.PriceTimedOut.selector);
+    function testRevertRequestInProgCheckAssertion() public {
+        umaV2AssertionProvider.requestLatestAssertion();
+        vm.expectRevert(UmaV2AssertionProvider.RequestInProgress.selector);
         umaV2AssertionProvider.checkAssertion();
-    }
-
-    function testRevertConditionTypeNotSetUmaV2Assert() public {
-        _configureSettledPrice(true);
-
-        vm.expectRevert(UmaV2AssertionProvider.ConditionTypeNotSet.selector);
-        umaV2AssertionProvider.conditionMet(0.001 ether, 1);
     }
 
     ////////////////////////////////////////////////
