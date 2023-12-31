@@ -143,7 +143,7 @@ contract V2DeployContracts is Script, HelperV2 {
             // );
 
             address _pyth = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
-            bytes32 _priceFeedId = 0xc1da1b73d7f01e7ddd54b3766cf7fcd644395ad14f70aa706ec5384c59e76692;
+            bytes32 _priceFeedId = 0x5bc91f13e412c07599167bae86f07543f076a638962b8d6017ec19dab4a82814;
             uint256 _timeOut = 24 hours;
             PythPriceProvider pythPriceProvider = new PythPriceProvider(
               _pyth, _priceFeedId, _timeOut

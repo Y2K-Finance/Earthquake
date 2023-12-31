@@ -85,7 +85,7 @@ contract V2DeployConfig is HelperV2 {
                         market.uri,
                         controller,
                         stringToUint(market.relayFee),
-                        market.depositFee,
+                        stringToUint(market.depositFee),
                         stringToUint(market.minQueueDeposit)
                     )
                 );

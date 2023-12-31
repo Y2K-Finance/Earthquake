@@ -62,7 +62,7 @@ contract HelperV2 is Script {
 
     struct ConfigMarketV2 {
         string depositAsset;
-        uint256 depositFee;
+        string depositFee;
         bool isDepeg;
         bool isGenericController;
         string minQueueDeposit;
