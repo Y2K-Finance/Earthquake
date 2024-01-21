@@ -28,6 +28,11 @@ contract V2DeployConfig is HelperV2 {
         );
         console.log("Address Factory", configAddresses.carouselFactory);
         contractToAddresses(configAddresses);
+        // console log y2k approval for factory
+        console2.log(
+            "Y2K allowance for factory",
+            IERC20(y2k).allowance(configAddresses.policy, configAddresses.carouselFactory)
+        );
     }
 
     function run() public {
