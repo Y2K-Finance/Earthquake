@@ -100,7 +100,7 @@ contract V2DeployConfig is HelperV2 {
             }
             // if controller is generic, set depeg condition (depeg 2, repeg 1)
             if (market.isGenericController) {
-                if(!market.isGenericController && !market.isDepeg) {
+                if(!market.isGenericController && !market.isDepegCondition) {
                     revert("Depeg only supported for generic controller");
                 }
                 // setDepegCondition(
@@ -153,9 +153,9 @@ contract V2DeployConfig is HelperV2 {
             }
 
             if (market.isGenericController) {
-                if (market.isDepeg && strikePrice % 2 ** 1 != 0)
+                if (market.isDepegCondition && strikePrice % 2 ** 1 != 0)
                     revert("Strike price must be even");
-                else if (!market.isDepeg && strikePrice % 2 ** 1 != 1)
+                else if (!market.isDepegCondition && strikePrice % 2 ** 1 != 1)
                     revert("Strike price must be odd");
             }
         }

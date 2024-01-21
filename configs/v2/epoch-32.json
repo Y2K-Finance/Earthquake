@@ -196,10 +196,10 @@
 			"withdrawalFee": 500
 		},
 		{
-			"name": "y2kPYUSD_990_WETH*",
+			"name": "y2kPYUSD_990_ETH*",
 			"strikePrice": "990000000000000000",
 			"token": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
-			"depositAsset": "WETH",
+			"depositAsset": "ETH",
 			"epochBegin": 1704844800,
 			"epochEnd": 1705276800,
 			"collatEmissions": "56818181818200000000",
