@@ -43,9 +43,9 @@ contract V2DeployConfig is HelperV2 {
 
         // fundKeepers(40000000000000000);
 
-        deploy();
+        // deploy();
 
-        // deployNullEpoch();
+        deployNullEpoch();
 
         vm.stopBroadcast();
     }
@@ -334,28 +334,44 @@ contract V2DeployConfig is HelperV2 {
     }
 
     uint256[] public marketIds = [
-        44285020224447742577916715973830335667697821344158427036525354635037016830837 // USDD 985
+        // 115677642346820381438193910536175683699063892721242791603421532303838012181085, // TUSD
+        93601944593345476072344843193813093085647514424424373919377230374357655731143, // TUSD
+        // 76701967050000321875042703061334997609004364812794785217276595646824090547563, // LUSD
+        57766427650726088851311587414883446645212442377811572965298655496781476287628 // CRVUSD
+        // 44285020224447742577916715973830335667697821344158427036525354635037016830837 // USDD
     ];
 
     function deployNullEpoch() public {
+
         // loop thwourh marketIds
         for (uint256 i = 0; i < marketIds.length; ++i) {
             uint256 marketId = marketIds[i];
-            (uint256 epochId, address[2] memory vaults) = factory
-                .createEpochWithEmissions(
-                    marketId,
-                    uint40(block.timestamp + uint256(3 minutes)),
-                    uint40(block.timestamp + uint256(6 minutes)),
-                    1,
-                    0,
-                    0
-                );
-            Carousel(vaults[0]).getDepositQueueLength() > 0
-                ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100)
-                : console2.log("No deposit in queue");
-            Carousel(vaults[1]).getDepositQueueLength() > 0
-                ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100)
-                : console2.log("No deposit in queue");
+            // (address[2] memory vaults)  = factory.marketIdToVaults(marketId, 0);
+            address premiumVault = factory.marketIdToVaults(marketId, 0);
+            address collateralVault = factory.marketIdToVaults(marketId, 1);
+            // (uint256 epochId, address[2] memory vaults) = factory
+            //     .createEpochWithEmissions(
+            //         marketId,
+            //         uint40(block.timestamp + uint256(3 minutes)),
+            //         uint40(block.timestamp + uint256(6 minutes)),
+            //         1,
+            //         0,
+            //         0
+            //     );
+            // mintQueues Premium
+            console.log("queues length, premium", Carousel(premiumVault).getDepositQueueLength());
+            // Carousel(vaults[0]).getDepositQueueLength() > 0
+            //     ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100)
+            //     : console2.log("No deposit in queue");
+
+            // mintQueues Collateral
+            console.log("queues length, collateral", Carousel(collateralVault).getDepositQueueLength());
+
+            // Carousel(vaults[1]).getDepositQueueLength() > 0
+            //     ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100)
+            //     : console2.log("No deposit in queue");
+
+            console.log("--Next Market--");
         }
     }
 }
