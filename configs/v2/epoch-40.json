@@ -1,7 +1,7 @@
 {
     "variables": {
     "newMarkets": true,
-    "amountOfNewMarkets": 14,
+    "amountOfNewMarkets": 15,
     "epochs": true,
     "amountOfNewEpochs": 33,
     "totalAmountOfEmittedTokens": 0,
@@ -12,7 +12,7 @@
             "isGenericController": false, 
             "isDepegCondition": true, 
             "depositAsset": "WETH", 
-            "depositFee": "0", 
+            "depositFee": 0, 
             "minQueueDeposit": "25000000000000000", 
             "name": "y2kDAI_997_WETH*", 
             "oracle": "0xc5c8e77b397e531b8ec06bfb0048328b30e9ecfb", 
@@ -47,6 +47,20 @@
 		  "token": "0xeEeeeEEeeeeEeEEEeeeeeEeEEEeeeeeeeEEeCCcc",
 		  "uri":  "https://y2k.finance"
 		},
+		{
+		  "isGenericController": true,
+		  "isDepegCondition": false,
+		  "depositAsset": "WETH",
+		  "depositFee": "0",
+		  "minQueueDeposit": "25000000000000000",
+		  "name": "y2kBTC_0.546_WETH_C3_UP*",
+		  "oracle": "0x60af4d691b544DF11F773a2e8843E67E78C70058",
+		  "relayFee": "200000000000000",
+		  "strikePrice": "546000000000000001",
+		  "token": "0xbbBBBBBbBBBbBbBbbbbbbBbBbBbbbBbBbBBbcccC",
+		  "uri": "https://y2k.finance"
+		},
+		
 		{
 		  "isGenericController": true,
 		  "isDepegCondition": false,

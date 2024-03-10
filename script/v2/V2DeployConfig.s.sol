@@ -43,9 +43,9 @@ contract V2DeployConfig is HelperV2 {
 
         // fundKeepers(40000000000000000);
 
-        // deploy();
+        deploy();
 
-        deployNullEpoch();
+        // deployNullEpoch();
 
         vm.stopBroadcast();
     }
