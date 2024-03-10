@@ -12,7 +12,7 @@
             "isGenericController": false, 
             "isDepegCondition": true, 
             "depositAsset": "WETH", 
-            "depositFee": 0, 
+            "depositFee": "0", 
             "minQueueDeposit": "25000000000000000", 
             "name": "y2kDAI_997_WETH*", 
             "oracle": "0xc5c8e77b397e531b8ec06bfb0048328b30e9ecfb", 
