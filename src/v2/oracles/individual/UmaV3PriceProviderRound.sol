@@ -9,8 +9,8 @@ import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice Price provider where Uma is used to check the price of a token or a custom script
-/// @dev This provider would work with any price or script compared with a timestamp
-contract UmaV3PriceProvider is Ownable {
+/// @dev This provider would work with any price or script compared with a timestamp and roundId
+contract UmaV3PriceProviderRound is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
@@ -21,7 +21,8 @@ contract UmaV3PriceProvider is Ownable {
 
     struct AssertionData {
         uint128 assertionData;
-        uint128 updatedAt;
+        uint128 roundId;
+        uint256 updatedAt;
     }
 
     // Uma V3
@@ -149,11 +150,12 @@ contract UmaV3PriceProvider is Ownable {
         @param _newData is the new data for the assertion
      */
     function updateAssertionDataAndFetch(
-        uint256 _newData
+        uint256 _newData,
+        uint256 _roundId
     ) external returns (bytes32) {
         if (_newData == 0) revert InvalidInput();
         if (whitelistRelayer[msg.sender] == false) revert InvalidCaller();
-        _updateAssertionData(_newData);
+        _updateAssertionData(_newData, _roundId);
         return _fetchAssertion();
     }
 
@@ -178,7 +180,7 @@ contract UmaV3PriceProvider is Ownable {
     function conditionMet(
         uint256 _strike,
         uint256
-    ) public view virtual returns (bool, int256 price) {
+    ) public view virtual returns (bool /** conditionMet */, int256 price) {
         uint256 conditionType = _strike % 2 ** 1;
         price = getLatestPrice();
 
@@ -193,10 +195,11 @@ contract UmaV3PriceProvider is Ownable {
         @param _newData is the new data for the assertion
         @dev updates the assertion data
      */
-    function _updateAssertionData(uint256 _newData) internal {
+    function _updateAssertionData(uint256 _newData, uint256 roundId) internal {
         assertionData = AssertionData({
             assertionData: uint128(_newData),
-            updatedAt: uint128(block.timestamp)
+            roundId: uint128(roundId),
+            updatedAt: block.timestamp
         });
 
         emit AssertionDataUpdated(_newData);
@@ -255,7 +258,9 @@ contract UmaV3PriceProvider is Ownable {
                 "As of assertion timestamp ",
                 _toUtf8BytesUint(block.timestamp),
                 assertionDescription,
-                _toUtf8BytesUint(assertionData.assertionData)
+                _toUtf8BytesUint(assertionData.assertionData),
+                " for roundId ",
+                _toUtf8BytesUint(assertionData.roundId)
             );
     }
 

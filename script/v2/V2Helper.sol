@@ -89,6 +89,7 @@ contract HelperV2 is Script {
     bool isTestEnv;
     CarouselFactory factory;
     CarouselFactory pausableFactory;
+
     function setVariables() public {
         string memory root = vm.projectRoot();
         // TODO: Set the variables correctly
@@ -125,6 +126,12 @@ contract HelperV2 is Script {
                 "/script/configs/configAddresses-V2.json"
             );
         }
+        // else {
+        //     path = string.concat(
+        //         root,
+        //         "/script/configs/configAddresses-V2.json"
+        //     );
+        // }
         string memory json = vm.readFile(path);
         bytes memory parseJsonByteCode = json.parseRaw(".configAddresses");
         constans = abi.decode(parseJsonByteCode, (ConfigAddressesV2));
@@ -164,11 +171,10 @@ contract HelperV2 is Script {
         KeeperV2Rollover(configAddresses.resolveKeeperGenericPausable).deposit{
             value: _amount
         }(_amount);
-        
+
         KeeperV2Rollover(configAddresses.rolloverKeeperPausable).deposit{
             value: _amount
         }(_amount);
-
     }
 
     function startKeepers(
@@ -176,29 +182,22 @@ contract HelperV2 is Script {
         uint256 _epochId,
         bool _isGenericController
     ) public {
-        address resolver = _isGenericController ?
-            // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+        address resolver = _isGenericController
+            ? // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
             //         configAddresses.resolveKeeperGeneric :
             //         configAddresses.resolveKeeperGenericPausable
             configAddresses.resolveKeeperGeneric
             : configAddresses.resolveKeeper;
-        KeeperV2(resolver).startTask(
-                _marketId,
-                _epochId
-        );
+        KeeperV2(resolver).startTask(_marketId, _epochId);
 
-        address rollover = 
-        _isGenericController ? 
-            // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
+        address rollover = _isGenericController
+            ? // ? _marketId ==  98949310992640213851983765150833189432751758546965601760898583298872224793782 ?
             //         configAddresses.rolloverKeeper :
             //         configAddresses.rolloverKeeperPausable
             configAddresses.rolloverKeeper
             : configAddresses.rolloverKeeper;
 
-        KeeperV2Rollover(rollover).startTask(
-            _marketId,
-            _epochId
-        );
+        KeeperV2Rollover(rollover).startTask(_marketId, _epochId);
 
         if (
             KeeperV2(resolver).tasks(
@@ -223,17 +222,17 @@ contract HelperV2 is Script {
         );
 
         console2.log("Resolve Keeper taskId: ");
-            console2.logBytes32(
-                KeeperV2(resolver).tasks(
-                    keccak256(abi.encodePacked(_marketId, _epochId))
-                )
-            );
-            console2.log("Rollover Keeper taskId: ");
-            console.logBytes32(
-                KeeperV2(rollover).tasks(
-                    keccak256(abi.encodePacked(_marketId, _epochId))
-                )
-            );
+        console2.logBytes32(
+            KeeperV2(resolver).tasks(
+                keccak256(abi.encodePacked(_marketId, _epochId))
+            )
+        );
+        console2.log("Rollover Keeper taskId: ");
+        console.logBytes32(
+            KeeperV2(rollover).tasks(
+                keccak256(abi.encodePacked(_marketId, _epochId))
+            )
+        );
     }
 
     function getController(
@@ -261,7 +260,7 @@ contract HelperV2 is Script {
         } else if (
             keccak256(abi.encodePacked(_depositAsset)) ==
             keccak256(abi.encodePacked(string("Y2K")))
-        ){
+        ) {
             return configAddresses.y2k;
         } else if (
             keccak256(abi.encodePacked(_depositAsset)) ==
@@ -313,7 +312,6 @@ contract HelperV2 is Script {
         // //TODO add more checks
     }
 
-
     function stringToInt(string memory s) public pure returns (int256) {
         // Convert the string into a bytes representation for easier manipulation
         bytes memory b = bytes(s);
@@ -329,8 +327,8 @@ contract HelperV2 is Script {
 
         // Check if the first character is a negative sign ("-")
         if (b.length > 0 && b[0] == bytes1(0x2D)) {
-            isNegative = true;  // Set the flag if it's negative
-            start = 1;          // Start parsing from the next character
+            isNegative = true; // Set the flag if it's negative
+            start = 1; // Start parsing from the next character
         }
 
         // Loop through each character of the string
@@ -360,5 +358,4 @@ contract HelperV2 is Script {
         // Then, cast the int256 to a uint256 and return
         return uint256(intResult);
     }
-
 }

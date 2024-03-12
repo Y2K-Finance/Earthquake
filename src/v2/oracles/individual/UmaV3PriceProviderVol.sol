@@ -9,8 +9,8 @@ import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice Price provider where Uma is used to check the price of a token or a custom script
-/// @dev This provider would work with any price or script compared with a timestamp
-contract UmaV3PriceProvider is Ownable {
+/// @dev This provider would work with any price or script compared with a timestamp and roundId
+contract UmaV3PriceProviderVol is Ownable {
     using SafeTransferLib for ERC20;
     struct MarketAnswer {
         bool activeAssertion;
@@ -21,11 +21,12 @@ contract UmaV3PriceProvider is Ownable {
 
     struct AssertionData {
         uint128 assertionData;
-        uint128 updatedAt;
+        uint128 assertionTimestamp;
+        uint256 updatedAt;
     }
 
     // Uma V3
-    uint64 public constant ASSERTION_LIVENESS = 7200; // 2 hours.
+    uint64 public constant ASSERTION_LIVENESS = 7200; // 2 hours. // TODO: 1 hour
     uint256 public constant ASSERTION_COOLDOWN = 600; // 10 minutes.
     address public immutable currency; // Currency used for all prediction markets
     bytes32 public immutable defaultIdentifier; // Identifier used for all prediction markets.
@@ -149,12 +150,31 @@ contract UmaV3PriceProvider is Ownable {
         @param _newData is the new data for the assertion
      */
     function updateAssertionDataAndFetch(
-        uint256 _newData
+        uint256 _newData,
+        uint256 _assertionTimestamp
     ) external returns (bytes32) {
         if (_newData == 0) revert InvalidInput();
         if (whitelistRelayer[msg.sender] == false) revert InvalidCaller();
-        _updateAssertionData(_newData);
+        _updateAssertionData(_newData, _assertionTimestamp);
         return _fetchAssertion();
+    }
+
+    function latestRoundData()
+        public
+        view
+        returns (
+            uint80 roundId,
+            int256 price,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
+        roundId = 0;
+        price = int256(globalAnswer.answer);
+        startedAt = assertionData.updatedAt;
+        updatedAt = globalAnswer.updatedAt;
+        answeredInRound = 0;
     }
 
     /** @notice Fetch the assertion state of the market
@@ -178,7 +198,7 @@ contract UmaV3PriceProvider is Ownable {
     function conditionMet(
         uint256 _strike,
         uint256
-    ) public view virtual returns (bool, int256 price) {
+    ) public view virtual returns (bool /** conditionMet */, int256 price) {
         uint256 conditionType = _strike % 2 ** 1;
         price = getLatestPrice();
 
@@ -193,10 +213,14 @@ contract UmaV3PriceProvider is Ownable {
         @param _newData is the new data for the assertion
         @dev updates the assertion data
      */
-    function _updateAssertionData(uint256 _newData) internal {
+    function _updateAssertionData(
+        uint256 _newData,
+        uint256 _assertionTimestamp
+    ) internal {
         assertionData = AssertionData({
             assertionData: uint128(_newData),
-            updatedAt: uint128(block.timestamp)
+            assertionTimestamp: uint128(_assertionTimestamp),
+            updatedAt: block.timestamp
         });
 
         emit AssertionDataUpdated(_newData);
@@ -253,7 +277,7 @@ contract UmaV3PriceProvider is Ownable {
         return
             abi.encodePacked(
                 "As of assertion timestamp ",
-                _toUtf8BytesUint(block.timestamp),
+                _toUtf8BytesUint(assertionData.assertionTimestamp),
                 assertionDescription,
                 _toUtf8BytesUint(assertionData.assertionData)
             );

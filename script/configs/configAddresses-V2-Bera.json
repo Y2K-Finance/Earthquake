@@ -1,0 +1,23 @@
+{
+  "configAddresses": {
+    "admin": "",
+    "arb": "",
+    "arbitrum_sequencer": "",
+    "carouselFactory": "",
+    "controller": "",
+    "controllerGeneric": "",
+    "controllerGenericPausable": "",
+    "gelatoOpsV2": "",
+    "gelatoTaskTreasury": "",
+    "pausableCarouselFactory": "",
+    "resolveKeeper": "",
+    "resolveKeeperGeneric": "",
+    "rolloverKeeper": "",
+    "resolveKeeperGenericPausable": "",
+    "rolloverKeeperPausable": "",
+    "policy": "",
+    "treasury": "",
+    "weth": "",
+    "y2k": ""
+  }
+}

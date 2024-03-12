@@ -139,8 +139,7 @@ contract UmaV3PriceProviderTest is Helper {
         vm.expectEmit(true, false, false, true);
         emit MarketAsserted(marketId, bytes32(abi.encode(0x12)));
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
 
         // Checking assertion links to marketId
@@ -206,8 +205,7 @@ contract UmaV3PriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
@@ -243,8 +241,7 @@ contract UmaV3PriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
@@ -276,8 +273,7 @@ contract UmaV3PriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
@@ -314,7 +310,7 @@ contract UmaV3PriceProviderTest is Helper {
 
         // Querying for assertion
         vm.warp(block.timestamp + 2 days);
-        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice);
 
         // Checking umaPriceProvide balance declined
         assertEq(
@@ -433,7 +429,7 @@ contract UmaV3PriceProviderTest is Helper {
 
     function testRevertInvalidInputAssertionData() public {
         vm.expectRevert(UmaV3PriceProvider.InvalidInput.selector);
-        umaPriceProvider.updateAssertionDataAndFetch(0, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(0);
     }
 
     function testRevertAssertionInvalidCaller() public {
@@ -441,7 +437,7 @@ contract UmaV3PriceProviderTest is Helper {
 
         vm.startPrank(address(0x123));
         vm.expectRevert(UmaV3PriceProvider.InvalidCaller.selector);
-        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice);
         vm.stopPrank();
     }
 
@@ -464,10 +460,10 @@ contract UmaV3PriceProviderTest is Helper {
         // Configuring the assertionInfo
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
-        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice);
 
         vm.expectRevert(UmaV3PriceProvider.AssertionActive.selector);
-        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice);
     }
 
     function testRevertCooldownPendingUpdateDataAndFetch() public {
@@ -490,8 +486,7 @@ contract UmaV3PriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
@@ -500,7 +495,7 @@ contract UmaV3PriceProviderTest is Helper {
         );
 
         vm.expectRevert(UmaV3PriceProvider.CooldownPending.selector);
-        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice);
     }
 
     function testRevertAssertionActiveUmaV3Price() public {
@@ -523,8 +518,7 @@ contract UmaV3PriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
@@ -534,7 +528,7 @@ contract UmaV3PriceProviderTest is Helper {
 
         // Moving time forward to revert
         vm.warp(block.timestamp + TIME_OUT + 1);
-        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice, marketId);
+        umaPriceProvider.updateAssertionDataAndFetch(assertionPrice);
 
         vm.expectRevert(UmaV3PriceProvider.AssertionActive.selector);
         umaPriceProvider.getLatestPrice();
@@ -560,8 +554,7 @@ contract UmaV3PriceProviderTest is Helper {
         deal(WETH_ADDRESS, address(this), 1e18);
         wethAsset.approve(address(umaPriceProvider), 1e18);
         bytes32 _assertionId = umaPriceProvider.updateAssertionDataAndFetch(
-            assertionPrice,
-            marketId
+            assertionPrice
         );
         mockUma.assertionResolvedCallback(
             address(umaPriceProvider),
