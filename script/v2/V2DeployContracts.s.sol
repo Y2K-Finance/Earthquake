@@ -12,6 +12,7 @@ import "../../src/v2/Controllers/ControllerGeneric.sol";
 import "../../src/v2/oracles/individual/ChainlinkPriceProvider.sol";
 import "../../src/v2/oracles/individual/RedstonePriceProvider.sol";
 import "../../src/v2/oracles/individual/DIAPriceProvider.sol";
+import "../../src/v2/oracles/individual/PythPriceProvider.sol";
 import "../../src/v2/oracles/individual/CVIPriceProvider.sol";
 import "../../src/v2/oracles/individual/GdaiPriceProvider.sol";
 import "../../src/v2/TimeLock.sol";
@@ -29,7 +30,7 @@ contract V2DeployContracts is Script, HelperV2 {
     using stdJson for string;
 
     function run() public {
-        ConfigAddressesV2 memory addresses = getConfigAddresses(false);
+        ConfigAddressesV2 memory addresses = getConfigAddresses(true); // false = prod, true = testing
         // address weth = addresses.weth;
         // address treasury = addresses.treasury;
         // address emissionToken = addresses.y2k;
@@ -61,7 +62,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // TimeLock timeLock = new TimeLock(policy);
         // factory.changeTimelocker(address(timeLock));
 
-        // CarouselFactoryPausable deployedVaultFactory = new CarouselFactoryPausable(
+        // CarouselFactory deployedVaultFactory = new CarouselFactory(
         //     addresses.weth,
         //     addresses.treasury,
         //     msg.sender,
@@ -69,7 +70,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // );
 
         // ControllerPeggedAssetV2 controller = new ControllerPeggedAssetV2(
-        //     address(vaultFactory),
+        //     address(deployedVaultFactory),
         //     addresses.arbitrum_sequencer
         // );
         // ControllerPeggedAssetV2 controller = ControllerPeggedAssetV2(0x68620dD41351Ff8d31702CE9B77d04805179eCe1);
@@ -77,7 +78,7 @@ contract V2DeployContracts is Script, HelperV2 {
         // vaultFactory.whitelistController(address(controller));
 
         // ControllerGeneric controllerGeneric = new ControllerGeneric(
-        //     addresses.carouselFactory,
+        //     address(deployedVaultFactory),
         //     addresses.treasury);
 
         // ControllerGeneric controllerGeneric = new ControllerGeneric(
@@ -86,67 +87,94 @@ contract V2DeployContracts is Script, HelperV2 {
         // );
 
         // deployedVaultFactory.whitelistController(address(controllerGeneric));
+        // deployedVaultFactory.whitelistController(address(controller));
         // carouselFactory.whitelistController(address(controllerGeneric));
-
-        // uint256 timeOut = 12 hours;
-        // address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
-        // address btcFeed = 0x6ce185860a4963106506C203335A2910413708e9;
-        // ChainlinkPriceProvider chainlinkPriceProviderMIM = new ChainlinkPriceProvider(
-        //         arbitrumSequencer,
-        //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
-        //         0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b,
-        //         timeOut
-        // );
-        //  ChainlinkPriceProvider chainlinkPriceProviderMAI = new ChainlinkPriceProvider(
-        //         arbitrumSequencer,
-        //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
-        //         0x59644ec622243878d1464A9504F9e9a31294128a,
-        //         timeOut
-        // );
-
-        // address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
-        // RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
-        //     addresses.carouselFactory,
-        //     vstPriceFeed,
-        //     "VST",
-        //     timeOut
-        // );
-
-        address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
-        GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
-
-        // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
-        // uint256 cviDecimals = 0;
-        // CVIPriceProvider cviPriceProvider = new CVIPriceProvider(
-        //     cviOracle,
-        //     timeOut,
-        //     cviDecimals
-        // );
-
-        // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
-        // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
-
         // vaultFactory.whitelistController(address(controller));
-        // KeeperV2 resolveKeeper = new KeeperV2(
-        //     payable(addresses.gelatoOpsV2),
-        //     payable(addresses.gelatoTaskTreasury),
-        //     address(controller)
-        // );
-        // KeeperV2GenericController(0x030754953308DC6782F7A04653929Fd25359ebCc).withdraw(3060778887280000);
-        // KeeperV2GenericController resolveKeeperGenericController = new KeeperV2GenericController(
-        //     payable(addresses.gelatoOpsV2),
-        //     payable(addresses.gelatoTaskTreasury),
-        //     address(controllerGeneric)
-        // );
-        // resolveKeeperGenericController.deposit{
-        //     value: 50000000000000000
-        // }(50000000000000000);
-        // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
-        // KeeperV2Rollover rolloverKeeperPausable = new KeeperV2Rollover(
-        //     payable(addresses.gelatoOpsV2),
-        //     payable(addresses.gelatoTaskTreasury),
-        //     address(deployedVaultFactory)
-        // );
+
+        /*//////////////////////////////////////////////////////////////
+                                ORACLES
+        //////////////////////////////////////////////////////////////*/
+
+            // uint256 timeOut = 12 hours;
+            // address arbitrumSequencer = 0xFdB631F5EE196F0ed6FAa767959853A9F217697D;
+            // address btcFeed = 0x6ce185860a4963106506C203335A2910413708e9;
+            // ChainlinkPriceProvider chainlinkPriceProviderMIM = new ChainlinkPriceProvider(
+            //         arbitrumSequencer,
+            //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
+            //         0x87121F6c9A9F6E90E59591E4Cf4804873f54A95b,
+            //         timeOut
+            // );
+            //  ChainlinkPriceProvider chainlinkPriceProviderMAI = new ChainlinkPriceProvider(
+            //         arbitrumSequencer,
+            //         0xCe74c745DBb3620B9B31A08C6f913ac361d987A7,
+            //         0x59644ec622243878d1464A9504F9e9a31294128a,
+            //         timeOut
+            // );
+
+            // address vstPriceFeed = 0xd2F9EB49F563aAacE73eb1D19305dD5812F33179;
+            // RedstonePriceProvider redstoneProvider = new RedstonePriceProvider(
+            //     addresses.carouselFactory,
+            //     vstPriceFeed,
+            //     "VST",
+            //     timeOut
+            // );
+
+            // address gdaiVault = 0xd85E038593d7A098614721EaE955EC2022B9B91B;
+            // GdaiPriceProvider gdaiPriceProvider = new GdaiPriceProvider(gdaiVault);
+
+            // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
+            // uint256 cviDecimals = 0;
+            // CVIPriceProvider cviPriceProvider = new CVIPriceProvider(
+            //     cviOracle,
+            //     timeOut,
+            //     cviDecimals
+            // );
+
+            // address diaOracleV2 = 0xd041478644048d9281f88558E6088e9da97df624;
+            // DIAPriceProvider diaPriceProvider = new DIAPriceProvider(diaOracleV2);
+
+           
+            // address cviOracle = 0x649813B6dc6111D67484BaDeDd377D32e4505F85;
+            // uint256 cviDecimals = 0;
+            // CVIPriceProvider cviPriceProvider = new CVIPriceProvider(
+            //     cviOracle,
+            //     timeOut,
+            //     cviDecimals
+            // );
+
+            address _pyth = 0xff1a0f4744e8582DF1aE09D5611b887B6a12925C;
+            bytes32 _priceFeedId = 0x5bc91f13e412c07599167bae86f07543f076a638962b8d6017ec19dab4a82814;
+            uint256 _timeOut = 24 hours;
+            PythPriceProvider pythPriceProvider = new PythPriceProvider(
+              _pyth, _priceFeedId, _timeOut
+            );
+
+            
+        /*//////////////////////////////////////////////////////////////
+                                KEEPERS
+        //////////////////////////////////////////////////////////////*/
+
+            // KeeperV2 resolveKeeper = new KeeperV2(
+            //     payable(addresses.gelatoOpsV2),
+            //     payable(addresses.gelatoTaskTreasury),
+            //     address(controller)
+            // );
+            
+            // KeeperV2GenericController(0x030754953308DC6782F7A04653929Fd25359ebCc).withdraw(3060778887280000);
+            // KeeperV2GenericController resolveKeeperGenericController = new KeeperV2GenericController(
+            //     payable(addresses.gelatoOpsV2),
+            //     payable(addresses.gelatoTaskTreasury),
+            //     address(controllerGeneric)
+            // );
+            // resolveKeeperGenericController.deposit{
+            //     value: 50000000000000000
+            // }(50000000000000000);
+            // KeeperV2Rollover(0xd061b747fD59368B31BE377CD995BdeF023705A3).withdraw(1000000000000000);
+            // KeeperV2Rollover rolloverKeeperPausable = new KeeperV2Rollover(
+            //     payable(addresses.gelatoOpsV2),
+            //     payable(addresses.gelatoTaskTreasury),
+            //     address(deployedVaultFactory)
+            // );
 
         vm.stopBroadcast();
 
@@ -164,9 +192,10 @@ contract V2DeployContracts is Script, HelperV2 {
         //     address(chainlinkPriceProviderMAI)
         // );
         // console2.log("Redstone Price Provider", address(redstoneProvider));
-        console2.log("Gdai Price Provider", address(gdaiPriceProvider));
+        // console2.log("Gdai Price Provider", address(gdaiPriceProvider));
         // console2.log("CVI Price Provider", address(cviPriceProvider));
         // console2.log("Dia Price Provider", address(diaPriceProvider));
+        console2.log("Pyth Price Provider", address(pythPriceProvider));
 
         // console2.log("resolveKeeper address", address(resolveKeeper));
         // console2.log("resolveKeeperGenericController address", address(resolveKeeperGenericController));

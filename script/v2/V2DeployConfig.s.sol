@@ -28,6 +28,11 @@ contract V2DeployConfig is HelperV2 {
         );
         console.log("Address Factory", configAddresses.carouselFactory);
         contractToAddresses(configAddresses);
+        // console log y2k approval for factory
+        console2.log(
+            "Y2K allowance for factory",
+            IERC20(y2k).allowance(configAddresses.policy, configAddresses.carouselFactory)
+        );
     }
 
     function run() public {
@@ -85,7 +90,7 @@ contract V2DeployConfig is HelperV2 {
                         market.uri,
                         controller,
                         stringToUint(market.relayFee),
-                        market.depositFee,
+                        stringToUint(market.depositFee),
                         stringToUint(market.minQueueDeposit)
                     )
                 );
@@ -97,6 +102,17 @@ contract V2DeployConfig is HelperV2 {
                 console2.log(
                     "-----------------------NEXT MARKETS----------------------"
                 );
+            }
+            // if controller is generic, set depeg condition (depeg 2, repeg 1)
+            if (market.isGenericController) {
+                if(!market.isGenericController && !market.isDepegCondition) {
+                    revert("Depeg only supported for generic controller");
+                }
+                // setDepegCondition(
+                //     market.oracle,
+                //     marketId,
+                //     market.isDepeg
+                // );
             }
             console2.log("\n");
         }
@@ -142,9 +158,9 @@ contract V2DeployConfig is HelperV2 {
             }
 
             if (market.isGenericController) {
-                if (market.isDepeg && strikePrice % 2 ** 1 != 0)
+                if (market.isDepegCondition && strikePrice % 2 ** 1 != 0)
                     revert("Strike price must be even");
-                else if (!market.isDepeg && strikePrice % 2 ** 1 != 1)
+                else if (!market.isDepegCondition && strikePrice % 2 ** 1 != 1)
                     revert("Strike price must be odd");
             }
         }
@@ -200,7 +216,7 @@ contract V2DeployConfig is HelperV2 {
             console2.log("epochId: ", epochId);
             console2.log("marketId: ", marketId);
 
-            deployKeeper(marketId, epochId, vaults, epoch);
+            // deployKeeper(marketId, epochId, vaults, epoch);
 
             console2.log("\n");
         }
@@ -310,7 +326,7 @@ contract V2DeployConfig is HelperV2 {
         }
 
         // deploy rollover and resolve keeper
-        startKeepers(marketId, epochId, epoch.isGenericController);
+        // startKeepers(marketId, epochId, false);
 
         console2.log(
             "------------------------------------------------------------"
@@ -318,31 +334,44 @@ contract V2DeployConfig is HelperV2 {
     }
 
     uint256[] public marketIds = [
-        102062669946436220800282965814418861703520361600036198831171353773735437582898,
-        19463494430787374236800916328272982194211552759358049028102840161626064590799,
-        43365822659564324551460842388001340228617494417519860688859686053122333904688,
-        2331975465739044783693470748756652505041645629776698023032314532662570347594
+        // 115677642346820381438193910536175683699063892721242791603421532303838012181085, // TUSD
+        93601944593345476072344843193813093085647514424424373919377230374357655731143, // TUSD
+        // 76701967050000321875042703061334997609004364812794785217276595646824090547563, // LUSD
+        57766427650726088851311587414883446645212442377811572965298655496781476287628 // CRVUSD
+        // 44285020224447742577916715973830335667697821344158427036525354635037016830837 // USDD
     ];
 
     function deployNullEpoch() public {
+
         // loop thwourh marketIds
         for (uint256 i = 0; i < marketIds.length; ++i) {
             uint256 marketId = marketIds[i];
-            (uint256 epochId, address[2] memory vaults) = factory
-                .createEpochWithEmissions(
-                    marketId,
-                    uint40(block.timestamp + uint256(10 minutes)),
-                    uint40(block.timestamp + uint256(15 minutes)),
-                    1,
-                    0,
-                    0
-                );
-            Carousel(vaults[0]).getDepositQueueLength() > 0
-                ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100)
-                : console2.log("No deposit in queue");
-            Carousel(vaults[1]).getDepositQueueLength() > 0
-                ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100)
-                : console2.log("No deposit in queue");
+            // (address[2] memory vaults)  = factory.marketIdToVaults(marketId, 0);
+            address premiumVault = factory.marketIdToVaults(marketId, 0);
+            address collateralVault = factory.marketIdToVaults(marketId, 1);
+            // (uint256 epochId, address[2] memory vaults) = factory
+            //     .createEpochWithEmissions(
+            //         marketId,
+            //         uint40(block.timestamp + uint256(3 minutes)),
+            //         uint40(block.timestamp + uint256(6 minutes)),
+            //         1,
+            //         0,
+            //         0
+            //     );
+            // mintQueues Premium
+            console.log("queues length, premium", Carousel(premiumVault).getDepositQueueLength());
+            // Carousel(vaults[0]).getDepositQueueLength() > 0
+            //     ? Carousel(vaults[0]).mintDepositInQueue(epochId, 100)
+            //     : console2.log("No deposit in queue");
+
+            // mintQueues Collateral
+            console.log("queues length, collateral", Carousel(collateralVault).getDepositQueueLength());
+
+            // Carousel(vaults[1]).getDepositQueueLength() > 0
+            //     ? Carousel(vaults[1]).mintDepositInQueue(epochId, 100)
+            //     : console2.log("No deposit in queue");
+
+            console.log("--Next Market--");
         }
     }
 }

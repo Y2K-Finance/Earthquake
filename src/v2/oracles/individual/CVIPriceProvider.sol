@@ -4,9 +4,8 @@ pragma solidity 0.8.17;
 import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {ICVIPriceFeed} from "../../interfaces/ICVIPriceFeed.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CVIPriceProvider is Ownable, IConditionProvider {
+contract CVIPriceProvider is IConditionProvider {
     uint256 public immutable timeOut;
     ICVIPriceFeed public priceFeedAdapter;
     uint256 public immutable decimals;

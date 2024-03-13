@@ -160,8 +160,8 @@ contract CarouselFactory is VaultFactoryV2 {
         uint16 _withdrawalFee,
         uint256 _premiumEmissions,
         uint256 _collatEmissions
-    ) public returns (uint256 epochId, address[2] memory vaults) {
-        // no need for onlyOwner modifier as createEpoch already has modifier
+    ) external onlyOwner returns (uint256 epochId, address[2] memory vaults) {
+        
         (epochId, vaults) = _createEpoch(
             _marketId,
             _epochBegin,

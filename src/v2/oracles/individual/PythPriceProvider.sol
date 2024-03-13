@@ -2,12 +2,11 @@
 pragma solidity 0.8.17;
 
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IPyth} from "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
-contract PythPriceProvider is Ownable, IConditionProvider {
+contract PythPriceProvider is IConditionProvider {
     using SafeCast for int256;
 
     IPyth public immutable pyth;

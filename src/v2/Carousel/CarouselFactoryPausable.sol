@@ -152,7 +152,7 @@ contract CarouselFactoryPausable is VaultFactoryV2Pausable {
         uint16 _withdrawalFee,
         uint256 _premiumEmissions,
         uint256 _collatEmissions
-    ) public returns (uint256 epochId, address[2] memory vaults) {
+    ) external onlyOwner returns (uint256 epochId, address[2] memory vaults) {
         // no need for onlyOwner modifier as createEpoch already has modifier
         (epochId, vaults) = _createEpoch(
             _marketId,

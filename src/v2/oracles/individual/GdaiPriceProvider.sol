@@ -3,9 +3,8 @@ pragma solidity 0.8.17;
 
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
 import {IGdaiPriceFeed} from "../../interfaces/IGdaiPriceFeed.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract GdaiPriceProvider is IConditionProvider, Ownable {
+contract GdaiPriceProvider is IConditionProvider {
     IGdaiPriceFeed public immutable gdaiPriceFeed;
     uint256 public immutable decimals;
     string public description;

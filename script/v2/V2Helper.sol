@@ -15,6 +15,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../keepers/KeeperV2.sol";
 import "../keepers/KeeperV2Rollover.sol";
 
+// import Farm Contracts
+
+import {StakingRewards} from "../../src/v2/Farms/StakingRewards.sol";
+
+
 /// @author MiguelBits
 
 contract HelperV2 is Script {
@@ -48,7 +53,6 @@ contract HelperV2 is Script {
         string depositAsset;
         uint40 epochBegin;
         uint40 epochEnd;
-        bool isGenericController;
         string name;
         string premiumEmissions;
         string strikePrice;
@@ -58,8 +62,8 @@ contract HelperV2 is Script {
 
     struct ConfigMarketV2 {
         string depositAsset;
-        uint256 depositFee;
-        bool isDepeg;
+        string depositFee;
+        bool isDepegCondition;
         bool isGenericController;
         string minQueueDeposit;
         string name;
@@ -264,7 +268,32 @@ contract HelperV2 is Script {
             keccak256(abi.encodePacked(string("DAI")))
         ) {
             return 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
-        } else {
+        }
+        else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("PENDLE")))
+        ) {
+            return 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8;
+        } 
+        else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("GMX")))
+        ) {
+            return 0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a;
+        } 
+         else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("WBTC")))
+        ) {
+            return 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
+        }
+        else if (
+            keccak256(abi.encodePacked(_depositAsset)) ==
+            keccak256(abi.encodePacked(string("USDC")))
+        ) {
+            return 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+        }
+        else {
             revert("depositAsset not found");
         }
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.17;
 
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -30,6 +30,8 @@ contract StakingRewards is
     using SafeMath for uint256;
     using SafeTransferLib for ERC20;
 
+    uint256 public constant decimals = 18; 
+
     /* ========== STATE VARIABLES ========== */
 
     ERC20 public immutable rewardsToken;
@@ -40,6 +42,9 @@ contract StakingRewards is
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     uint256 public id;
+
+    string public name;
+    string public symbol;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -75,13 +80,18 @@ contract StakingRewards is
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _epochEnd
+        uint256 _id,
+        uint256 _epochEnd,
+        string memory _name,
+        string memory _symbol
     ) Owned(_owner) {
         rewardsToken = ERC20(_rewardsToken);
         stakingToken = IERC1155(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
-        id = _epochEnd;
+        id = _id;
         rewardsDuration = _epochEnd - block.timestamp;
+        name = _name;
+        symbol = _symbol;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */

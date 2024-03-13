@@ -9,9 +9,8 @@ import {
 } from "@chainlink/interfaces/AggregatorV2V3Interface.sol";
 import {IVaultFactoryV2} from "../../interfaces/IVaultFactoryV2.sol";
 import {IConditionProvider} from "../../interfaces/IConditionProvider.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ChainlinkPriceProvider is Ownable, IConditionProvider {
+contract ChainlinkPriceProvider is IConditionProvider {
     uint16 private constant _GRACE_PERIOD_TIME = 3600;
     uint256 public immutable timeOut;
     IVaultFactoryV2 public immutable vaultFactory;
