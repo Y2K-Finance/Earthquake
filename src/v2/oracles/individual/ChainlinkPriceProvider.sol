@@ -67,6 +67,10 @@ contract ChainlinkPriceProvider is IConditionProvider {
             revert SequencerDown();
         }
 
+        if (startedAt == 0) {
+            revert InvalidRound();
+        }
+
         // Make sure the grace period has passed after the sequencer is back up - timeSinceUp <= PERIOD
         if ((block.timestamp - startedAt) <= _GRACE_PERIOD_TIME) {
             revert GracePeriodNotOver();
@@ -115,6 +119,7 @@ contract ChainlinkPriceProvider is IConditionProvider {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
     error SequencerDown();
+    error InvalidRound();
     error GracePeriodNotOver();
     error OraclePriceZero();
     error RoundIdOutdated();
